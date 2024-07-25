@@ -1,4 +1,4 @@
-import { ClerkModule } from './consumers/webhook/clerk/clerk.module';
+import { ClerkWebhooksModule } from './consumers/webhook/clerk/clerk-webhooks.module';
 import { Routes } from '@nestjs/core';
 
 export const routes: Routes = [
@@ -10,7 +10,7 @@ export const routes: Routes = [
         children: [
           {
             path: 'clerk',
-            module: ClerkModule,
+            module: ClerkWebhooksModule,
           },
         ],
       },
@@ -18,4 +18,4 @@ export const routes: Routes = [
   },
 ];
 
-export const modules = [ClerkModule];
+export const modules = [ClerkWebhooksModule];
