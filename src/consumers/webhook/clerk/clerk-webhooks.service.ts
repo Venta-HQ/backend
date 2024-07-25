@@ -23,7 +23,7 @@ export class ClerkWebhooksService {
   }
 
   async handleUserDeleted(event: UserWebhookEvent) {
-    await this.prisma.user.delete({
+    await this.prisma.user.deleteMany({
       where: {
         clerkId: event.data.id,
       },
