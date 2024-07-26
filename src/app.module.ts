@@ -4,7 +4,7 @@ import { RouterModule } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@sabinthedev/nestjs-prisma';
-import { LoggerModule } from '@/modules/logger.module';
+import { LoggerModule } from '@/lib/modules/logger.module';
 
 @Module({
   imports: [
