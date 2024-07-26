@@ -27,8 +27,8 @@ importers:
         specifier: 5.17.0
         version: 5.17.0(prisma@5.17.0)
       '@sabinthedev/nestjs-prisma':
-        specifier: ^1.0.42
-        version: 1.0.42(connection-string@4.4.0)
+        specifier: ^1.0.44
+        version: 1.0.44(connection-string@4.4.0)
       nestjs-pino:
         specifier: ^4.1.0
         version: 4.1.0(@nestjs/common@10.3.10(reflect-metadata@0.2.2)(rxjs@7.8.1))(pino-http@10.2.0)
@@ -610,8 +610,8 @@ packages:
   '@prisma/get-platform@5.17.0':
     resolution: {integrity: sha512-UlDgbRozCP1rfJ5Tlkf3Cnftb6srGrEQ4Nm3og+1Se2gWmCZ0hmPIi+tQikGDUVLlvOWx3Gyi9LzgRP+HTXV9w==}
 
-  '@sabinthedev/nestjs-prisma@1.0.42':
-    resolution: {integrity: sha512-fLGjpcYLA8od5W/tVnhBNqVIW/vrWP/aKY+QitdqWfvCiZoLLMqOebJ9BWhxkFr07bI2NLFwrdg8ZznQXBA/gQ==}
+  '@sabinthedev/nestjs-prisma@1.0.44':
+    resolution: {integrity: sha512-juOxWf1uZndULYmLg/e0pqQrNS/ZdKVWjmb+4Q2qRi8zNIWRsldpEvYNk2pcihcsLFBX4bd7NkE9bIl4+tJwcQ==}
     peerDependencies:
       connection-string: ^4.4.0
 
@@ -3818,7 +3818,7 @@ snapshots:
     dependencies:
       '@prisma/debug': 5.17.0
 
-  '@sabinthedev/nestjs-prisma@1.0.42(connection-string@4.4.0)':
+  '@sabinthedev/nestjs-prisma@1.0.44(connection-string@4.4.0)':
     dependencies:
       connection-string: 4.4.0
 

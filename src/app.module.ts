@@ -11,15 +11,29 @@ import { LoggerModule } from '@/modules/logger.module';
     ...modules,
     LoggerModule,
     PrismaModule.register({
+      logging: true,
       name: 'PRISMA',
       client: {
         class: PrismaClient,
-        initializer: (client) => {
-          console.log('Initializing Prisma Connection');
-          return client;
-        },
         options: {
-          log: ['info', 'warn', 'query', 'error'],
+          log: [
+            {
+              emit: 'event',
+              level: 'query',
+            },
+            {
+              emit: 'stdout',
+              level: 'error',
+            },
+            {
+              emit: 'stdout',
+              level: 'info',
+            },
+            {
+              emit: 'stdout',
+              level: 'warn',
+            },
+          ],
         },
       },
       global: true,
