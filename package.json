@@ -27,6 +27,10 @@
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "5.17.0",
     "@sabinthedev/nestjs-prisma": "^1.0.42",
+    "nestjs-pino": "^4.1.0",
+    "pino": "^9.3.2",
+    "pino-http": "^10.2.0",
+    "pino-loki": "^2.3.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "svix": "^1.25.0"
