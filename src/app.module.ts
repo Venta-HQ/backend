@@ -4,12 +4,14 @@ import { ConfigModule } from '@nestjs/config';
 import { RouterModule } from '@nestjs/core';
 import { PrismaClient } from '@prisma/client';
 import { PrismaModule } from '@sabinthedev/nestjs-prisma';
+import { RedisModule } from './lib/modules/redis.module';
 import { modules, routes } from './router';
 
 @Module({
 	imports: [
-		...modules,
+		ConfigModule.forRoot(),
 		LoggerModule,
+		RedisModule,
 		PrismaModule.register({
 			client: {
 				class: PrismaClient,
@@ -38,7 +40,7 @@ import { modules, routes } from './router';
 			logging: true,
 			name: 'PRISMA',
 		}),
-		ConfigModule.forRoot(),
+		...modules,
 		RouterModule.register(routes),
 	],
 })
