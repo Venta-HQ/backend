@@ -2,9 +2,9 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class ClerkWebhooksService {
+export class ClerkService {
   constructor(@Inject('PRISMA') private prisma: PrismaClient) {}
-  private readonly logger = new Logger(ClerkWebhooksService.name);
+  private readonly logger = new Logger(ClerkService.name);
 
   async handleUserCreated(id: string) {
     const userExists = await this.prisma.user.count({

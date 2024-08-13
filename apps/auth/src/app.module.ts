@@ -3,12 +3,12 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaModule } from '@sabinthedev/nestjs-prisma';
-import { ClerkController } from './clerk/clerk-webhooks.controller';
-import { ClerkWebhooksService } from './clerk/clerk-webhooks.service';
+import { ClerkController } from './clerk/clerk.controller';
+import { ClerkService } from './clerk/clerk.service';
 
 @Module({
 	controllers: [ClerkController],
-	providers: [ClerkWebhooksService],
+	providers: [ClerkService],
 	imports: [
 		ConfigModule.forRoot(),
 		LoggerModule.register('Auth Microservice'),
