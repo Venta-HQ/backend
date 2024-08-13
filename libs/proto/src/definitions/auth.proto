@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package auth;
+
+service AuthService {
+  rpc HandleClerkUserCreated (ClerkUserData) returns (ClerkWebhookResponse) {}
+  rpc HandleClerkUserDeleted (ClerkUserData) returns (ClerkWebhookResponse) {}
+}
+
+message Empty {
+
+}
+
+message ClerkUserData {
+    string id = 1;
+} 
+
+message ClerkWebhookEvent {
+    string type = 1;
+    string object = 2;
+    ClerkUserData event = 3;
+}
+
+message ClerkWebhookResponse {
+    string message = 1;
+}

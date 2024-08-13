@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/gateway/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/gateway/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/gateway",
+  "projects": {
+    "auth": {
+      "type": "application",
+      "root": "apps/auth",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/auth.proto"
+        ],
+        "tsConfigPath": "apps/auth/tsconfig.app.json"
+      }
+    },
+    "gateway": {
+      "type": "application",
+      "root": "apps/gateway",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/auth.proto"
+        ],
+        "tsConfigPath": "apps/gateway/tsconfig.app.json"
+      }
+    },
+    "nest/modules/redis": {
+      "type": "library",
+      "root": "libs/nest/modules/redis",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/modules/redis/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/modules/redis/tsconfig.lib.json"
+      }
+    },
+    "nest/modules/logger": {
+      "type": "library",
+      "root": "libs/nest/modules/logger",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/modules/logger/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/modules/logger/tsconfig.lib.json"
+      }
+    },
+    "nest/guards/signed-webhook": {
+      "type": "library",
+      "root": "libs/nest/guards/signed-webhook",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/guards/signed-webhook/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/guards/signed-webhook/tsconfig.lib.json"
+      }
+    },
+    "proto": {
+      "type": "library",
+      "root": "libs/proto",
+      "entryFile": "index",
+      "sourceRoot": "libs/proto/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/proto/tsconfig.lib.json"
+      }
+    }
+  }
+}
