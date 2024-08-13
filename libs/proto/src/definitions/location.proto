@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package auth;
+
+service LocationService {
+  rpc Test (Empty) returns (Empty) {}
+}
+
+message Empty {
+
+}

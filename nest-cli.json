@@ -69,6 +69,18 @@
       "compilerOptions": {
         "tsConfigPath": "libs/proto/tsconfig.lib.json"
       }
+    },
+    "location": {
+      "type": "application",
+      "root": "apps/location",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/location.proto"
+        ],
+        "tsConfigPath": "apps/location/tsconfig.app.json"
+      }
     }
   }
 }
