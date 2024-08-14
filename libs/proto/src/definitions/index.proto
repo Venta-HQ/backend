@@ -1,3 +1,4 @@
 syntax = "proto3";
 
 import public "auth.proto";
+import public "location.proto";

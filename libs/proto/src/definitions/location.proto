@@ -1,11 +1,36 @@
 syntax = "proto3";
 
-package auth;
+package location;
 
 service LocationService {
-  rpc Test (Empty) returns (Empty) {}
+  rpc UpdateVendorLocation (LocationUpdate) returns (Empty) {}
+  rpc VendorLocations (stream VendorLocationRequest) returns (stream VendorLocationResponse) {}
 }
 
 message Empty {
 
+}
+
+message VendorLocationRequest {
+    CurrentLocation location = 2;
+}
+
+message Vendor {
+    string id = 1;
+    double dist = 2;
+    CurrentLocation location = 3;
+}
+
+message VendorLocationResponse {
+    repeated Vendor vendors = 1;
+}
+
+message CurrentLocation {
+    double long = 1;
+    double lat = 2;
+}
+
+message LocationUpdate {
+    CurrentLocation location = 1;
+    string entityId = 2;
 }
