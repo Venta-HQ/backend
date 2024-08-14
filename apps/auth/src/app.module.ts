@@ -8,12 +8,10 @@ import { ClerkService } from './clerk/clerk.service';
 
 @Module({
 	controllers: [ClerkController],
-	providers: [ClerkService],
 	imports: [
 		ConfigModule.forRoot(),
 		LoggerModule.register('Auth Microservice'),
 		PrismaModule.register({
-			requestType: 'GRPC',
 			client: {
 				class: PrismaClient,
 				options: {
@@ -40,7 +38,9 @@ import { ClerkService } from './clerk/clerk.service';
 			global: true,
 			logging: true,
 			name: 'PRISMA',
+			requestType: 'GRPC',
 		}),
 	],
+	providers: [ClerkService],
 })
 export class AppModule {}

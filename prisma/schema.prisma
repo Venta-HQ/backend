@@ -21,3 +21,12 @@ model User {
 
   @@map("user")
 }
+
+model Vendor {
+  id   String @id @default(uuid())
+  // These lat/long values are used to show locations on the map without subscription to live location
+  lat  Float?
+  long Float?
+
+  @@map("vendor")
+}
