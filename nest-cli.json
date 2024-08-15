@@ -99,6 +99,18 @@
       "compilerOptions": {
         "tsConfigPath": "libs/algolia/tsconfig.lib.json"
       }
+    },
+    "websocket-gateway": {
+      "type": "application",
+      "root": "apps/websocket-gateway",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/location.proto"
+        ],
+        "tsConfigPath": "apps/websocket-gateway/tsconfig.app.json"
+      }
     }
   }
 }

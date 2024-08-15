@@ -15,6 +15,7 @@ export interface Empty {
 }
 
 export interface VendorLocationRequest {
+  callerId: string;
   location: CurrentLocation | undefined;
 }
 
@@ -25,6 +26,7 @@ export interface Vendor {
 }
 
 export interface VendorLocationResponse {
+  callerId: string;
   vendors: Vendor[];
 }
 

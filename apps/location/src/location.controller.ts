@@ -49,6 +49,7 @@ export class LocationController {
 			);
 
 			subject.next({
+				callerId: request.callerId,
 				vendors: vendorLocations.map((record) => ({
 					dist: record[1],
 					id: record[0],

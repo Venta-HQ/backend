@@ -12,6 +12,7 @@ message Empty {
 }
 
 message VendorLocationRequest {
+    string callerId = 1;
     CurrentLocation location = 2;
 }
 
@@ -22,7 +23,8 @@ message Vendor {
 }
 
 message VendorLocationResponse {
-    repeated Vendor vendors = 1;
+    string callerId = 1;
+    repeated Vendor vendors = 2;
 }
 
 message CurrentLocation {
