@@ -55,7 +55,6 @@ export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, On
 		},
 		@ConnectedSocket() _client: Socket,
 	): Promise<void> {
-		console.log({ data });
 		await this.locationService.updateVendorLocation({
 			entityId: data.id,
 			location: {
