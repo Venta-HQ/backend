@@ -33,7 +33,9 @@
     "@nestjs/microservices": "^10.4.0",
     "@nestjs/platform-express": "^10.0.0",
     "@prisma/client": "5.18.0",
+    "@prisma/extension-pulse": "^1.2.0",
     "@sabinthedev/nestjs-prisma": "^1.0.57",
+    "algoliasearch": "^5.0.0",
     "connection-string": "^4.4.0",
     "ioredis": "^5.4.1",
     "nestjs-pino": "^4.1.0",
@@ -96,7 +98,8 @@
       "^@app/nest/modules/redis(|/.*)$": "<rootDir>/libs/nest/modules/redis/src/$1",
       "^@app/nest/modules/logger(|/.*)$": "<rootDir>/libs/nest/modules/logger/src/$1",
       "^@app/nest/guards/signed-webhook(|/.*)$": "<rootDir>/libs/nest/guards/signed-webhook/src/$1",
-      "^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1"
+      "^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1",
+      "^@app/nest/modules/algolia(|/.*)$": "<rootDir>/libs/nest/modules/algolia/src/$1"
     }
   }
 }

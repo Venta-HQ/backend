@@ -81,6 +81,24 @@
         ],
         "tsConfigPath": "apps/location/tsconfig.app.json"
       }
+    },
+    "dbchange": {
+      "type": "application",
+      "root": "apps/dbchange",
+      "entryFile": "main",
+      "sourceRoot": "apps/dbchange/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/dbchange/tsconfig.app.json"
+      }
+    },
+    "algolia": {
+      "type": "library",
+      "root": "libs/algolia",
+      "entryFile": "index",
+      "sourceRoot": "libs/algolia/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/algolia/tsconfig.lib.json"
+      }
     }
   }
 }
