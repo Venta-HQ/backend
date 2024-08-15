@@ -1,15 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
-import { Module, DynamicModule } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({})
 export class LoggerModule {
-	static register(
-		appName: string
-	): DynamicModule {
+	static register(appName: string): DynamicModule {
 		return {
-			module: LoggerModule,
 			global: true,
 			imports: [
 				PinoLoggerModule.forRootAsync({
@@ -34,16 +31,16 @@ export class LoggerModule {
 									host: configService.get('LOKI_URL'),
 									interval: 5,
 									labels: {
-										app: appName
-									}
+										app: appName,
+									},
 								},
 								target: 'pino-loki',
-							}
+							},
 						},
 					}),
 				}),
 			],
-		}
+			module: LoggerModule,
+		};
 	}
 }
-
