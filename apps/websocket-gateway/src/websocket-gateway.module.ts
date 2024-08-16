@@ -3,7 +3,7 @@ import { LoggerModule } from '@app/nest/modules/logger';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { WebsocketsGateway } from './websocket.gateway';
+import { LocationWebsocketGateway } from './gateways/location.gateway';
 
 @Module({
 	imports: [
@@ -23,6 +23,6 @@ import { WebsocketsGateway } from './websocket.gateway';
 			],
 		}),
 	],
-	providers: [WebsocketsGateway],
+	providers: [LocationWebsocketGateway],
 })
 export class WebsocketGatewayModule {}

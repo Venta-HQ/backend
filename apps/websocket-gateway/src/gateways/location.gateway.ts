@@ -15,7 +15,7 @@ import {
 } from '@nestjs/websockets';
 
 @WebSocketGateway()
-export class WebsocketsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(WebSocketGateway.name);
 	private locationService: LocationServiceClient;
 	private vendorLocationRequest$ = new ReplaySubject<VendorLocationRequest>();
