@@ -1,5 +1,4 @@
-import { LoggerModule } from '@app/nest/modules/logger';
-import { RedisModule } from '@app/nest/modules/redis';
+import { LoggerModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';

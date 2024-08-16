@@ -1,4 +1,4 @@
-import { LoggerModule } from '@app/nest/modules/logger';
+import { LoggerModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';

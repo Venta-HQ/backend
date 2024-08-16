@@ -48,7 +48,8 @@
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
     "svix": "^1.29.0",
-    "ts-proto": "^1.181.1"
+    "ts-proto": "^1.181.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
@@ -102,7 +103,8 @@
       "^@app/nest/modules/logger(|/.*)$": "<rootDir>/libs/nest/modules/logger/src/$1",
       "^@app/nest/guards/signed-webhook(|/.*)$": "<rootDir>/libs/nest/guards/signed-webhook/src/$1",
       "^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1",
-      "^@app/nest/modules/algolia(|/.*)$": "<rootDir>/libs/nest/modules/algolia/src/$1"
+      "^@app/nest/modules/algolia(|/.*)$": "<rootDir>/libs/nest/modules/algolia/src/$1",
+      "^@app/apitypes(|/.*)$": "<rootDir>/libs/apitypes/src/$1"
     }
   }
 }

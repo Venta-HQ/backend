@@ -34,31 +34,40 @@
         "tsConfigPath": "apps/gateway/tsconfig.app.json"
       }
     },
-    "nest/modules/redis": {
+    "nest/modules": {
       "type": "library",
-      "root": "libs/nest/modules/redis",
+      "root": "libs/nest/modules/",
       "entryFile": "index",
-      "sourceRoot": "libs/nest/modules/redis/src",
+      "sourceRoot": "libs/nest/modules/",
       "compilerOptions": {
-        "tsConfigPath": "libs/nest/modules/redis/tsconfig.lib.json"
+        "tsConfigPath": "libs/nest/modules/tsconfig.lib.json"
       }
     },
-    "nest/modules/logger": {
+    "nest/guards": {
       "type": "library",
-      "root": "libs/nest/modules/logger",
+      "root": "libs/nest/guards/",
       "entryFile": "index",
-      "sourceRoot": "libs/nest/modules/logger/src",
+      "sourceRoot": "libs/nest/guards/",
       "compilerOptions": {
-        "tsConfigPath": "libs/nest/modules/logger/tsconfig.lib.json"
+        "tsConfigPath": "libs/nest/guards/tsconfig.lib.json"
       }
     },
-    "nest/guards/signed-webhook": {
+    "nest/pipes": {
       "type": "library",
-      "root": "libs/nest/guards/signed-webhook",
+      "root": "libs/nest/pipes/",
       "entryFile": "index",
-      "sourceRoot": "libs/nest/guards/signed-webhook/src",
+      "sourceRoot": "libs/nest/pipes/",
       "compilerOptions": {
-        "tsConfigPath": "libs/nest/guards/signed-webhook/tsconfig.lib.json"
+        "tsConfigPath": "libs/nest/pipes/tsconfig.lib.json"
+      }
+    },
+    "nest/filters": {
+      "type": "library",
+      "root": "libs/nest/filters/",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/filters/",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/filters/tsconfig.lib.json"
       }
     },
     "proto": {
@@ -91,15 +100,6 @@
         "tsConfigPath": "apps/dbchange/tsconfig.app.json"
       }
     },
-    "algolia": {
-      "type": "library",
-      "root": "libs/algolia",
-      "entryFile": "index",
-      "sourceRoot": "libs/algolia/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/algolia/tsconfig.lib.json"
-      }
-    },
     "websocket-gateway": {
       "type": "application",
       "root": "apps/websocket-gateway",
@@ -110,6 +110,15 @@
           "libs/proto/src/definitions/location.proto"
         ],
         "tsConfigPath": "apps/websocket-gateway/tsconfig.app.json"
+      }
+    },
+    "apitypes": {
+      "type": "library",
+      "root": "libs/apitypes",
+      "entryFile": "index",
+      "sourceRoot": "libs/apitypes/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/apitypes/tsconfig.lib.json"
       }
     }
   }

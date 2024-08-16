@@ -1,50 +1,30 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
-    "paths": {
-      "@app/nest/modules/redis": [
-        "libs/nest/modules/redis/src"
-      ],
-      "@app/nest/modules/redis/*": [
-        "libs/nest/modules/redis/src/*"
-      ],
-      "@app/nest/modules/logger": [
-        "libs/nest/modules/logger/src"
-      ],
-      "@app/nest/modules/logger/*": [
-        "libs/nest/modules/logger/src/*"
-      ],
-      "@app/nest/modules/algolia": [
-        "libs/nest/modules/algolia/src"
-      ],
-      "@app/nest/modules/algolia/*": [
-        "libs/nest/modules/algolia/src/*"
-      ],
-      "@app/nest/guards/signed-webhook": [
-        "libs/nest/guards/signed-webhook/src"
-      ],
-      "@app/nest/guards/signed-webhook/*": [
-        "libs/nest/guards/signed-webhook/src/*"
-      ],
-      "@app/proto/*": [
-        "libs/proto/src/lib/*.ts"
-      ]
-    }
-  }
+	"compilerOptions": {
+		"module": "commonjs",
+		"declaration": true,
+		"removeComments": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"allowSyntheticDefaultImports": true,
+		"target": "ES2021",
+		"sourceMap": true,
+		"outDir": "./dist",
+		"baseUrl": "./",
+		"incremental": true,
+		"skipLibCheck": true,
+		"strictNullChecks": false,
+		"noImplicitAny": false,
+		"strictBindCallApply": false,
+		"forceConsistentCasingInFileNames": false,
+		"noFallthroughCasesInSwitch": false,
+		"paths": {
+			"@app/nest/modules": ["libs/nest/modules"],
+			"@app/nest/guards": ["libs/nest/guards"],
+			"@app/nest/pipes": ["libs/nest/pipes"],
+			"@app/nest/filters": ["libs/nest/filters"],
+			"@app/proto/*": ["libs/proto/src/lib/*.ts"],
+			"@app/apitypes": ["libs/apitypes/src"],
+			"@app/apitypes/*": ["libs/apitypes/src/*"]
+		}
+	}
 }

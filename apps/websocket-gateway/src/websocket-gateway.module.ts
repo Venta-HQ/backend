@@ -1,7 +1,9 @@
 import { join } from 'path';
-import { LoggerModule } from '@app/nest/modules/logger';
+import { WsExceptionFilter } from '@app/nest/filters';
+import { LoggerModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LocationWebsocketGateway } from './gateways/location.gateway';
 
@@ -23,6 +25,12 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 			],
 		}),
 	],
-	providers: [LocationWebsocketGateway],
+	providers: [
+		{
+			provide: APP_FILTER,
+			useClass: WsExceptionFilter,
+		},
+		LocationWebsocketGateway,
+	],
 })
 export class WebsocketGatewayModule {}

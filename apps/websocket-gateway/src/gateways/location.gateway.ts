@@ -1,5 +1,7 @@
 import { ReplaySubject } from 'rxjs';
 import { Server, Socket } from 'socket.io';
+import { GenericLocationSyncData, GenericLocationSyncDataSchema } from '@app/apitypes';
+import { WsSchemaValidatorPipe } from '@app/nest/pipes';
 import { LocationServiceClient, VendorLocationRequest } from '@app/proto/location';
 import { Inject, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -48,11 +50,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	@SubscribeMessage('vendor_location_update')
 	async vendorLocationSync(
-		data: {
-			id: string;
-			lat: number;
-			long: number;
-		},
+		@MessageBody(new WsSchemaValidatorPipe(GenericLocationSyncDataSchema)) data: GenericLocationSyncData,
 		@ConnectedSocket() _client: Socket,
 	): Promise<void> {
 		await this.locationService.updateVendorLocation({
@@ -66,12 +64,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	@SubscribeMessage('user_location_update')
 	async userLocationSync(
-		@MessageBody()
-		data: {
-			id: string;
-			lat: number;
-			long: number;
-		},
+		@MessageBody(new WsSchemaValidatorPipe(GenericLocationSyncDataSchema)) data: GenericLocationSyncData,
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		this.vendorLocationRequest$.next({

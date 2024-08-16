@@ -1,4 +1,4 @@
-import { AlgoliaService } from '@app/nest/modules/algolia';
+import { AlgoliaService } from '@app/nest/modules';
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient, Vendor } from '@prisma/client';
