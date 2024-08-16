@@ -14,9 +14,9 @@ async function bootstrap() {
 		transport: Transport.GRPC,
 	});
 
-	await app.listen();
-
 	app.useLogger(app.get(Logger));
+
+	await app.listen();
 }
 
 bootstrap();
