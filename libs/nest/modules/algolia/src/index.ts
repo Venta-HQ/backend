@@ -1,2 +1,2 @@
-export * from './algolia.module';
-export * from './algolia.service';
+export * from './lib/algolia.module';
+export * from './lib/algolia.service';
