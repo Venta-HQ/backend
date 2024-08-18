@@ -2,7 +2,7 @@ import { join } from 'path';
 import { WsExceptionFilter } from '@app/nest/filters';
 import { LoggerModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LocationWebsocketGateway } from './gateways/location.gateway';
@@ -11,16 +11,20 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 	imports: [
 		ConfigModule.forRoot(),
 		LoggerModule.register('DB Change Microservice'),
-		ClientsModule.register({
+		ClientsModule.registerAsync({
 			clients: [
 				{
+					imports: [ConfigModule],
+					inject: [ConfigService],
 					name: 'LOCATION_SERVICE',
-					options: {
-						package: 'location',
-						protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-						url: 'localhost:5001',
-					},
-					transport: Transport.GRPC,
+					useFactory: (configService: ConfigService) => ({
+						options: {
+							package: 'location',
+							protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+							url: configService.get('LOCATION_SERVICE_ADDRESS'),
+						},
+						transport: Transport.GRPC,
+					}),
 				},
 			],
 		}),
