@@ -1,0 +1,24 @@
+model Vendor {
+    id   String @id @default(uuid())
+    // These lat/long values are used to show locations on the map without subscription to live location
+    lat  Float?
+    long Float?
+
+    // General details
+    name         String
+    description  String?
+    phone        String?
+    email        String?
+    website      String?
+    open         Boolean @default(false)
+    primaryImage String?
+
+    // Metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    owner User @relation(fields: [id], references: [id])
+
+    @@map("vendor")
+}
