@@ -120,6 +120,18 @@
       "compilerOptions": {
         "tsConfigPath": "libs/apitypes/tsconfig.lib.json"
       }
+    },
+    "vendor": {
+      "type": "application",
+      "root": "apps/location",
+      "entryFile": "main",
+      "sourceRoot": "apps/vendor/src",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/vendor.proto"
+        ],
+        "tsConfigPath": "apps/vendor/tsconfig.app.json"
+      }
     }
   }
 }
