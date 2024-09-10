@@ -34,12 +34,13 @@ export class VendorController implements OnModuleInit {
 			.pipe(
 				catchError((error) => {
 					if (error.code === status.NOT_FOUND) {
-						// Transform gRPC NOT_FOUND error to HTTP 404
+						this.logger.warn(error.message);
 						return throwError(() => new NotFoundException('Item not found'));
 					} else if (error.code === status.INVALID_ARGUMENT) {
-						// Transform other gRPC errors to HTTP 400
+						this.logger.warn(error.message);
 						return throwError(() => new BadRequestException('Invalid query params provided'));
 					} else {
+						this.logger.error('Unhandled error occurred', error);
 						return throwError(() => new InternalServerErrorException('An error occurred'));
 					}
 				}),
