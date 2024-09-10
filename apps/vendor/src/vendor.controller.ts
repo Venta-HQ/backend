@@ -21,7 +21,7 @@ export class VendorController {
 		}
 
 		const result = await this.vendorService.getVendorById(data.id);
-
+		console.log(result);
 		if (!result) {
 			this.logger.error(`Vendor with ID ${data.id} not found`);
 			throw new RpcException({

@@ -21,9 +21,8 @@ export interface VendorLookupData {
 
 export interface Vendor {
   id: string;
-  /** These lat/long values are used to show locations on the map without subscription to live location */
-  lat: number | undefined;
-  long:
+  lat?: number | undefined;
+  long?:
     | number
     | undefined;
   /** General details */

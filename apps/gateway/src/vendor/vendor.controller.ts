@@ -33,6 +33,7 @@ export class VendorController implements OnModuleInit {
 			})
 			.pipe(
 				catchError((error) => {
+					console.log(error);
 					if (error.code === status.NOT_FOUND) {
 						this.logger.warn(error.message);
 						return throwError(() => new NotFoundException('Item not found'));

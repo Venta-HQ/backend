@@ -10,7 +10,6 @@ export class VendorService {
 		const vendor = await this.prisma.vendor.findFirst({
 			where: { id },
 		});
-
 		return vendor;
 	}
 }
