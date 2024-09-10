@@ -2,3 +2,4 @@ syntax = "proto3";
 
 import public "user.proto";
 import public "location.proto";
+import public "vendor.proto";

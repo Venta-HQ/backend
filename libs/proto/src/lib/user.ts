@@ -9,7 +9,7 @@ import { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
 
-export const protobufPackage = "uesr";
+export const protobufPackage = "user";
 
 export interface Empty {
 }
@@ -28,7 +28,7 @@ export interface ClerkWebhookResponse {
   message: string;
 }
 
-export const UESR_PACKAGE_NAME = "uesr";
+export const USER_PACKAGE_NAME = "user";
 
 export interface UserServiceClient {
   handleClerkUserCreated(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;

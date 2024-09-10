@@ -24,5 +24,5 @@ COPY package.json ./
 COPY pnpm-lock.yaml ./
 
 RUN pnpm i --prod
-COPY --from=development /usr/src/app/dist/apps/auth/src ./dist
+COPY --from=development /usr/src/app/dist/apps/user/src ./dist
 CMD ["node","dist/main"]
