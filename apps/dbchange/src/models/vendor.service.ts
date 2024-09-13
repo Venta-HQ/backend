@@ -48,7 +48,13 @@ export class VendorService implements OnApplicationBootstrap {
 	}
 
 	async handleCreate(data: PulseCreateEvent<Vendor>) {
-		await this.algoliaService.createObject(AlgoliaIndex.VENDOR, data.created);
+		await this.algoliaService.createObject(AlgoliaIndex.VENDOR, {
+			...data.created,
+			_geoloc: {
+				lat: data.created.lat,
+				lng: data.created.long,
+			},
+		});
 	}
 
 	async handleDelete(data: PulseDeleteEvent<Vendor>) {
@@ -56,6 +62,12 @@ export class VendorService implements OnApplicationBootstrap {
 	}
 
 	async handleUpdate(data: PulseUpdateEvent<Vendor>) {
-		await this.algoliaService.updateObject(AlgoliaIndex.VENDOR, data.after.id, data.after);
+		await this.algoliaService.updateObject(AlgoliaIndex.VENDOR, data.after.id, {
+			...data.after,
+			_geoloc: {
+				lat: data.after.lat,
+				lng: data.after.long,
+			},
+		});
 	}
 }

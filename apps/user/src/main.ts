@@ -2,13 +2,13 @@ import { join } from 'path';
 import { Logger } from 'nestjs-pino';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { AppModule } from './app.module';
+import { UserModule } from './user.module';
 
 async function bootstrap() {
-	const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+	const app = await NestFactory.createMicroservice<MicroserviceOptions>(UserModule, {
 		options: {
-			package: 'auth',
-			protoPath: join(__dirname, `../proto/src/definitions/auth.proto`),
+			package: 'user',
+			protoPath: join(__dirname, `../proto/src/definitions/user.proto`),
 			url: 'localhost:5000',
 		},
 		transport: Transport.GRPC,

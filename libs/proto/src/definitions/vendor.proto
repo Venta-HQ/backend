@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package vendor;
+
+service VendorService {
+  rpc GetVendorById (VendorLookupData) returns (VendorLookupByIdResponse) {}
+}
+
+message Empty {
+
+}
+
+message VendorLookupData {
+    string id = 1;
+} 
+
+
+message Vendor {
+    string id = 1;
+
+    // These lat/long values are used to show locations on the map without subscription to live location
+    oneof float_or_null_lat {
+      float lat = 2;
+    }
+    oneof float_or_null_lng {
+      float long = 3;
+    }
+
+    // General details
+    string name = 4;       
+    string description = 5;
+    string phone = 6;
+    string email = 7;
+    string website = 8;
+    bool open = 9;
+    string primaryImage = 10;
+
+    // Metadata
+    google.protobuf.Timestamp createdAt = 11;
+    google.protobuf.Timestamp updatedAt = 12;
+}
+
+message VendorLookupByIdResponse {
+   Vendor vendor = 1;
+}

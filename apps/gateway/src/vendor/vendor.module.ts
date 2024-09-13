@@ -1,24 +1,24 @@
 import { join } from 'path';
-import { USER_PACKAGE_NAME, USER_SERVICE_NAME } from '@app/proto/user';
+import { VENDOR_PACKAGE_NAME, VENDOR_SERVICE_NAME } from '@app/proto/vendor';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ClerkWebhooksController } from './clerk-webhooks.controller';
+import { VendorController } from './vendor.controller';
 
 @Module({
-	controllers: [ClerkWebhooksController],
+	controllers: [VendorController],
 	imports: [
 		ClientsModule.registerAsync({
 			clients: [
 				{
 					imports: [ConfigModule],
 					inject: [ConfigService],
-					name: USER_SERVICE_NAME,
+					name: VENDOR_SERVICE_NAME,
 					useFactory: (configService: ConfigService) => ({
 						options: {
-							package: USER_PACKAGE_NAME,
-							protoPath: join(__dirname, `../proto/src/definitions/user.proto`),
-							url: configService.get('USER_SERVICE_ADDRESS'),
+							package: VENDOR_PACKAGE_NAME,
+							protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
+							url: configService.get('VENDOR_SERVICE_ADDRESS'),
 						},
 						transport: Transport.GRPC,
 					}),
@@ -28,4 +28,4 @@ import { ClerkWebhooksController } from './clerk-webhooks.controller';
 	],
 	providers: [],
 })
-export class ClerkWebhooksModule {}
+export class VendorModule {}

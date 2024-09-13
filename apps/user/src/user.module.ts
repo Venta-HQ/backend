@@ -10,7 +10,7 @@ import { ClerkService } from './clerk/clerk.service';
 	controllers: [ClerkController],
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('Auth Microservice'),
+		LoggerModule.register('User Microservice'),
 		PrismaModule.register({
 			client: {
 				class: PrismaClient,
@@ -43,4 +43,4 @@ import { ClerkService } from './clerk/clerk.service';
 	],
 	providers: [ClerkService],
 })
-export class AppModule {}
+export class UserModule {}

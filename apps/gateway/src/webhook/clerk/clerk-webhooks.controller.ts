@@ -1,4 +1,4 @@
-import { AUTH_SERVICE_NAME, AuthServiceClient } from '@app/proto/auth';
+import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
 import { Body, Controller, Inject, Logger, OnModuleInit, Post } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -6,12 +6,12 @@ import { ClientGrpc } from '@nestjs/microservices';
 @Controller()
 export class ClerkWebhooksController implements OnModuleInit {
 	private readonly logger = new Logger(ClerkWebhooksController.name);
-	private authService: AuthServiceClient;
+	private userService: UserServiceClient;
 
-	constructor(@Inject(AUTH_SERVICE_NAME) private client: ClientGrpc) {}
+	constructor(@Inject(USER_SERVICE_NAME) private client: ClientGrpc) {}
 
 	onModuleInit() {
-		this.authService = this.client.getService<AuthServiceClient>('AuthService');
+		this.userService = this.client.getService<UserServiceClient>('UserService');
 	}
 
 	@Post()
@@ -19,11 +19,11 @@ export class ClerkWebhooksController implements OnModuleInit {
 		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`);
 		switch (event.type) {
 			case 'user.created':
-				return this.authService.handleClerkUserCreated({
+				return this.userService.handleClerkUserCreated({
 					id: event.data.id,
 				});
 			case 'user.deleted':
-				return this.authService.handleClerkUserDeleted({
+				return this.userService.handleClerkUserDeleted({
 					id: event.data.id,
 				});
 			default:

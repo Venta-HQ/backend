@@ -1,4 +1,5 @@
 import { Routes } from '@nestjs/core';
+import { VendorModule } from './vendor/vendor.module';
 import { ClerkWebhooksModule } from './webhook/clerk/clerk-webhooks.module';
 
 export const routes: Routes = [
@@ -11,6 +12,10 @@ export const routes: Routes = [
 		],
 		path: 'webhook',
 	},
+	{
+		module: VendorModule,
+		path: 'vendor',
+	},
 ];
 
-export const modules = [ClerkWebhooksModule];
+export const modules = [ClerkWebhooksModule, VendorModule];
