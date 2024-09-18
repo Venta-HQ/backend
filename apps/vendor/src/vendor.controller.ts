@@ -34,4 +34,6 @@ export class VendorController {
 			vendor: result,
 		};
 	}
+
+	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {}
 }

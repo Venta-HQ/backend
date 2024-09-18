@@ -12,11 +12,25 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "vendor";
 
-export interface Empty {
+export interface VendorCreateData {
+  name: string;
+  description: string;
+  email: string;
+  phone: string;
+  website: string;
+  imageUrl: string;
+}
+
+export interface VendorCreateResponse {
+  id: string;
 }
 
 export interface VendorLookupData {
   id: string;
+}
+
+export interface VendorLookupByIdResponse {
+  vendor: Vendor | undefined;
 }
 
 export interface Vendor {
@@ -38,8 +52,7 @@ export interface Vendor {
   updatedAt: Date | undefined;
 }
 
-export interface VendorLookupByIdResponse {
-  vendor: Vendor | undefined;
+export interface Empty {
 }
 
 export const VENDOR_PACKAGE_NAME = "vendor";
@@ -55,6 +68,8 @@ wrappers[".google.protobuf.Timestamp"] = {
 
 export interface VendorServiceClient {
   getVendorById(request: VendorLookupData, metadata?: Metadata): Observable<VendorLookupByIdResponse>;
+
+  createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
 }
 
 export interface VendorServiceController {
@@ -62,11 +77,16 @@ export interface VendorServiceController {
     request: VendorLookupData,
     metadata?: Metadata,
   ): Promise<VendorLookupByIdResponse> | Observable<VendorLookupByIdResponse> | VendorLookupByIdResponse;
+
+  createVendor(
+    request: VendorCreateData,
+    metadata?: Metadata,
+  ): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
 }
 
 export function VendorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["getVendorById"];
+    const grpcMethods: string[] = ["getVendorById", "createVendor"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("VendorService", method)(constructor.prototype[method], method, descriptor);
