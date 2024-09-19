@@ -18,6 +18,7 @@ message VendorCreateData {
   string phone = 4;
   string website = 5;
   string imageUrl = 6;
+  string userId = 7;
 }
 
 message VendorCreateResponse {

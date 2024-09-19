@@ -1,3 +1,4 @@
+import { VendorCreateData } from '@app/proto/vendor';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
@@ -11,5 +12,21 @@ export class VendorService {
 			where: { id },
 		});
 		return vendor;
+	}
+
+	async createVendor(data: VendorCreateData) {
+		this.logger.log('Creating new vendor');
+		const vendor = await this.prisma.vendor.create({
+			data: {
+				...data,
+				owner: {
+					connect: {
+						clerkId: data.userId,
+					},
+				},
+			},
+		});
+
+		return vendor.id;
 	}
 }

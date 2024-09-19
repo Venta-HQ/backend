@@ -19,6 +19,7 @@ export interface VendorCreateData {
   phone: string;
   website: string;
   imageUrl: string;
+  userId: string;
 }
 
 export interface VendorCreateResponse {

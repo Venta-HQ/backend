@@ -1,10 +1,10 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IntegrationType, PrismaClient } from '@prisma/client';
+import { IntegrationType, PrismaClient, SubscriptionStatus } from '@prisma/client';
 
 @Injectable()
-export class ClerkService {
+export class SubscriptionService {
 	constructor(@Inject('PRISMA') private prisma: PrismaClient) {}
-	private readonly logger = new Logger(ClerkService.name);
+	private readonly logger = new Logger(SubscriptionService.name);
 
 	async handleUserCreated(id: string) {
 		const userExists = await this.prisma.user.count({
@@ -15,11 +15,10 @@ export class ClerkService {
 
 		if (!userExists) {
 			this.logger.log(`Creating new user`);
-			return await this.prisma.user.create({
+			await this.prisma.user.create({
 				data: {
 					clerkId: id,
 				},
-				select: { clerkId: true, id: true },
 			});
 		} else {
 			this.logger.log(`User already exists with clerkId: ${id}`);
@@ -36,16 +35,16 @@ export class ClerkService {
 	}
 
 	async createIntegration({ data, providerId, userId }: { data?: any; providerId?: string; userId: string }) {
-		this.logger.log('Creating integration record for clerk account', {
+		this.logger.log('Creating integration record for subscription', {
 			providerId: providerId,
-			type: IntegrationType.Clerk,
+			type: IntegrationType.RevenueCat,
 			userId: userId,
 		});
 		await this.prisma.integration.create({
 			data: {
 				data,
 				providerId,
-				type: IntegrationType.Clerk,
+				type: IntegrationType.RevenueCat,
 				user: {
 					connect: {
 						id: userId,
@@ -55,15 +54,18 @@ export class ClerkService {
 		});
 	}
 
-	async deleteIntegration({ providerId }: { providerId: string }) {
-		this.logger.log('Deleting integration record for clerk account', {
-			providerId: providerId,
-			type: IntegrationType.Clerk,
+	async createUserSubscription({ userId }: { userId: string }) {
+		this.logger.log('Creating subscription record for subscription', {
+			userId: userId,
 		});
-		await this.prisma.integration.deleteMany({
-			where: {
-				providerId,
-				type: IntegrationType.Clerk,
+		await this.prisma.userSubscription.create({
+			data: {
+				status: SubscriptionStatus.Active,
+				user: {
+					connect: {
+						id: userId,
+					},
+				},
 			},
 		});
 	}
