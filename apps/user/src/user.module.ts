@@ -5,9 +5,11 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaModule } from '@sabinthedev/nestjs-prisma';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
+import { SubscriptionController } from './subscription/subscription.controller';
+import { SubscriptionService } from './subscription/subscription.service';
 
 @Module({
-	controllers: [ClerkController],
+	controllers: [ClerkController, SubscriptionController],
 	imports: [
 		ConfigModule.forRoot(),
 		LoggerModule.register('User Microservice'),
@@ -41,6 +43,6 @@ import { ClerkService } from './clerk/clerk.service';
 			requestType: 'GRPC',
 		}),
 	],
-	providers: [ClerkService],
+	providers: [ClerkService, SubscriptionService],
 })
 export class UserModule {}
