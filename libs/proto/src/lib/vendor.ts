@@ -36,8 +36,9 @@ export interface VendorLookupByIdResponse {
 
 export interface Vendor {
   id: string;
-  lat?: number | undefined;
-  long?:
+  /** These lat/long values are used to show locations on the map without subscription to live location */
+  lat: number | undefined;
+  long:
     | number
     | undefined;
   /** General details */

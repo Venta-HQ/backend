@@ -1,8 +1,14 @@
 import { catchError, throwError } from 'rxjs';
+import { AuthedRequest } from '@app/apitypes/lib/helpers';
+import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
+import { AuthGuard } from '@app/nest/guards';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
 import {
 	BadRequestException,
+	Body,
 	Controller,
 	Get,
 	Inject,
@@ -11,6 +17,10 @@ import {
 	NotFoundException,
 	OnModuleInit,
 	Param,
+	Post,
+	Req,
+	UseGuards,
+	UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 
@@ -33,7 +43,6 @@ export class VendorController implements OnModuleInit {
 			})
 			.pipe(
 				catchError((error) => {
-					console.log(error);
 					if (error.code === status.NOT_FOUND) {
 						this.logger.warn(error.message);
 						return throwError(() => new NotFoundException('Item not found'));
@@ -46,5 +55,20 @@ export class VendorController implements OnModuleInit {
 					}
 				}),
 			);
+	}
+
+	@Post()
+	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
+	@UseGuards(AuthGuard)
+	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
+		return await this.vendorService.createVendor({
+			description: data.description,
+			email: data.email,
+			imageUrl: data.imageUrl,
+			name: data.name,
+			phone: data.phone,
+			userId: req.userId,
+			website: data.website,
+		});
 	}
 }

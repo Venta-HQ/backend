@@ -21,7 +21,7 @@ export class VendorService {
 				...data,
 				owner: {
 					connect: {
-						clerkId: data.userId,
+						id: data.userId,
 					},
 				},
 			},

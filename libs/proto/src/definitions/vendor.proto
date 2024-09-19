@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 package vendor;
 
@@ -39,12 +40,8 @@ message Vendor {
     string id = 1;
 
     // These lat/long values are used to show locations on the map without subscription to live location
-    oneof float_or_null_lat {
-      float lat = 2;
-    }
-    oneof float_or_null_lng {
-      float long = 3;
-    }
+    google.protobuf.FloatValue lat = 2;
+    google.protobuf.FloatValue long = 3;
 
     // General details
     string name = 4;       

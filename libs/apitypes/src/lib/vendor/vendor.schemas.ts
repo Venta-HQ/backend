@@ -1,11 +1,10 @@
 import { z } from 'zod';
 
 export const CreateVendorSchema = z.object({
-	clerkUserId: z.string(),
-	description: z.string(),
-	email: z.string(),
-	imageUrl: z.string(),
+	description: z.string().optional(),
+	email: z.string().optional(),
+	imageUrl: z.string().optional(),
 	name: z.string(),
-	phone: z.string(),
-	website: z.string(),
+	phone: z.string().optional(),
+	website: z.string().optional(),
 });
