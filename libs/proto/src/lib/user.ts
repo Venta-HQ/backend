@@ -20,7 +20,7 @@ export interface ClerkUserData {
 }
 
 export interface RevenueCatSubscriptionData {
-  userId: string;
+  clerkUserId: string;
   providerId: string;
   data: RevenueCatProviderData | undefined;
 }

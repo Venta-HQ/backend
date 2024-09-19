@@ -22,7 +22,7 @@ message ClerkUserData {
 
 
 message RevenueCatSubscriptionData {
-    string userId = 1;
+    string clerkUserId = 1;
     string providerId = 2;
     RevenueCatProviderData data = 3;
 }

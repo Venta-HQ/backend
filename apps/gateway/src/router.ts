@@ -1,6 +1,7 @@
 import { Routes } from '@nestjs/core';
 import { VendorModule } from './vendor/vendor.module';
 import { ClerkWebhooksModule } from './webhook/clerk/clerk-webhooks.module';
+import { SubscriptionWebhooksModule } from './webhook/subscription/subscription-webhooks.module';
 
 export const routes: Routes = [
 	{
@@ -8,6 +9,10 @@ export const routes: Routes = [
 			{
 				module: ClerkWebhooksModule,
 				path: 'clerk',
+			},
+			{
+				module: SubscriptionWebhooksModule,
+				path: 'subscription',
 			},
 		],
 		path: 'webhook',
@@ -18,4 +23,4 @@ export const routes: Routes = [
 	},
 ];
 
-export const modules = [ClerkWebhooksModule, VendorModule];
+export const modules = [ClerkWebhooksModule, SubscriptionWebhooksModule, VendorModule];

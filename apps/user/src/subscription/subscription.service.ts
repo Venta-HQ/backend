@@ -34,11 +34,11 @@ export class SubscriptionService {
 		});
 	}
 
-	async createIntegration({ data, providerId, userId }: { data?: any; providerId?: string; userId: string }) {
+	async createIntegration({ clerkUserId, data, providerId }: { clerkUserId: string; data?: any; providerId?: string }) {
 		this.logger.log('Creating integration record for subscription', {
+			clerkUserId: clerkUserId,
 			providerId: providerId,
 			type: IntegrationType.RevenueCat,
-			userId: userId,
 		});
 		await this.prisma.integration.create({
 			data: {
@@ -47,23 +47,23 @@ export class SubscriptionService {
 				type: IntegrationType.RevenueCat,
 				user: {
 					connect: {
-						id: userId,
+						clerkId: clerkUserId,
 					},
 				},
 			},
 		});
 	}
 
-	async createUserSubscription({ userId }: { userId: string }) {
+	async createUserSubscription({ clerkUserId }: { clerkUserId: string }) {
 		this.logger.log('Creating subscription record for subscription', {
-			userId: userId,
+			clerkUserId: clerkUserId,
 		});
 		await this.prisma.userSubscription.create({
 			data: {
 				status: SubscriptionStatus.Active,
 				user: {
 					connect: {
-						id: userId,
+						clerkId: clerkUserId,
 					},
 				},
 			},

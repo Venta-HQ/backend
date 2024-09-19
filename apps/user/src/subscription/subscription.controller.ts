@@ -13,14 +13,14 @@ export class SubscriptionController {
 	async handleSubscriptionCreated(data: RevenueCatSubscriptionData): Promise<SubscriptionCreatedResponse> {
 		// Create an Integration record
 		await this.subscriptionService.createIntegration({
+			clerkUserId: data.clerkUserId,
 			data: data.data,
 			providerId: data.providerId,
-			userId: data.userId,
 		});
 
 		// Create a user subscription record
 		await this.subscriptionService.createUserSubscription({
-			userId: data.userId,
+			clerkUserId: data.clerkUserId,
 		});
 
 		return { message: 'Success' };
