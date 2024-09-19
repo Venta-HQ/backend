@@ -61,14 +61,23 @@ export class VendorController implements OnModuleInit {
 	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
 	@UseGuards(AuthGuard)
 	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
-		return await this.vendorService.createVendor({
-			description: data.description,
-			email: data.email,
-			imageUrl: data.imageUrl,
-			name: data.name,
-			phone: data.phone,
-			userId: req.userId,
-			website: data.website,
-		});
+		return await this.vendorService
+			.createVendor({
+				description: data.description,
+				email: data.email,
+				imageUrl: data.imageUrl,
+				name: data.name,
+				phone: data.phone,
+				userId: req.userId,
+				website: data.website,
+			})
+			.pipe(
+				catchError((error) => {
+					if (error.code === status.INTERNAL) {
+						this.logger.error(error.message, error.details);
+						return throwError(() => new BadRequestException(error.message));
+					}
+				}),
+			);
 	}
 }
