@@ -9,7 +9,7 @@ async function bootstrap() {
 		options: {
 			package: 'auth',
 			protoPath: join(__dirname, `../proto/src/definitions/auth.proto`),
-			url: 'localhost:5000',
+			url: 'localhost:5005',
 		},
 		transport: Transport.GRPC,
 	});

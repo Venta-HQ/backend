@@ -27,6 +27,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	@WebSocketServer() server: Server;
 
 	afterInit(_server: Server) {
+		this.logger.log('Initializing websocket gateway');
 		this.locationService = this.grpcClient.getService<LocationServiceClient>('LocationService');
 		this.setUpVendorLocationStream();
 		this.logger.log('Initialized websocket gateway');
@@ -42,6 +43,9 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			next: ({ callerId, vendors }) => {
 				this.server.to(callerId).emit('vendor_sync', vendors);
 			},
+			error: (error) => {
+				this.logger.error('Error in location service stream', error);
+			}
 		});
 	}
 

@@ -10,21 +10,24 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('DB Change Microservice'),
+		LoggerModule.register('Websocket Gateway'),
 		ClientsModule.registerAsync({
 			clients: [
 				{
 					imports: [ConfigModule],
 					inject: [ConfigService],
 					name: 'LOCATION_SERVICE',
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							package: 'location',
-							protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-							url: configService.get('LOCATION_SERVICE_ADDRESS'),
-						},
-						transport: Transport.GRPC,
-					}),
+					useFactory: (configService: ConfigService) => {
+						console.log('end test', configService.get('LOCATION_SERVICE_ADDRESS'))
+						return {
+							options: {
+								package: 'location',
+								protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+								url: configService.get('LOCATION_SERVICE_ADDRESS'),
+							},
+							transport: Transport.GRPC,
+						}
+					},
 				},
 			],
 		}),

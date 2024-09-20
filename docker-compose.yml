@@ -1,7 +1,9 @@
 version: '3'
 
+name: venta-services
 networks:
-  loki:
+  venta:
+
 
 services:
   loki:
@@ -10,7 +12,7 @@ services:
       - '3100:3100'
     command: -config.file=/etc/loki/local-config.yaml
     networks:
-      - loki
+      - venta
 
   grafana:
     environment:
@@ -40,7 +42,7 @@ services:
     ports:
       - '3001:3000'
     networks:
-      - loki
+      - venta
 
   cache:
     image: redis:6.2-alpine
@@ -50,6 +52,63 @@ services:
     command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - cache:/data
+    networks:
+      - venta
+
+  auth:
+    networks:
+      - venta
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '5005:5005'
+
+  location:
+    networks:
+      - venta
+    build:
+      context: .
+      dockerfile: apps/location/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '5001:5001'
+
+  dbchange:
+    networks:
+      - venta
+    build:
+      context: .
+      dockerfile: apps/dbchange/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '5003:5003'
+
+  gateway:
+    networks:
+      - venta
+    build:
+      context: .
+      dockerfile: apps/gateway/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '5002:5002'
+
+  websocket-gateway:
+    networks:
+      - venta
+    build:
+      context: .
+      dockerfile: apps/websocket-gateway/Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '5004:5004'
 
 volumes:
   cache:

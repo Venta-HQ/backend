@@ -7,8 +7,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "build-proto": "protoc --plugin=protoc-gen-ts_proto=node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=libs/proto/src/lib -I libs/proto/src/definitions --ts_proto_opt=nestJs=true --ts_proto_opt=useDate=true --ts_proto_opt=addGrpcMetadata=true index.proto",
-    "prebuild": "npm run build-proto",
-    "prestart": "npm run build-proto",
+    "testprebuild": "npm run build-proto",
+    "prestart": "",
     "build": "nest build",
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
@@ -20,7 +20,14 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json"
+    "test:e2e": "jest --config ./apps/backend/test/jest-e2e.json",
+    "run:auth": "nest start auth ---watch",
+    "run:dbchange": "nest start dbchange ---watch",
+    "run:gateway": "nest start gateway ---watch",
+    "run:location": "nest start location ---watch",
+    "run:websocket-gateway": "nest start websocket-gateway ---watch",
+    "run:all": "concurrently \"pnpm run run:auth\" \"pnpm run run:dbchange\" \"pnpm run run:gateway\" \"pnpm run run:location\" \"pnpm run run:websocket-gateway\"",
+    "prisma:generate": "prisma generate"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.0.26",
@@ -62,6 +69,7 @@
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
+    "concurrently": "^8.2.2",
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
