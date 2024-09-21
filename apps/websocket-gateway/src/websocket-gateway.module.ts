@@ -10,7 +10,7 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('DB Change Microservice'),
+		LoggerModule.register('Websocket Gateway Microservice'),
 		ClientsModule.registerAsync({
 			clients: [
 				{

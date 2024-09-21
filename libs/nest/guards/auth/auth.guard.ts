@@ -7,19 +7,24 @@ export class AuthGuard implements CanActivate {
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest();
-
 		// Extract token from Authorization header (format: Bearer <token>)
 		const authHeader = request.headers['authorization'];
 		if (!authHeader) {
 			throw new UnauthorizedException('Missing authorization header');
 		}
 
+		const token = authHeader?.split(' ')[1];
+
+		if (!token) {
+			throw new UnauthorizedException('Malformed authorization header');
+		}
+
 		try {
 			// Use Clerk to verify the session token
-			const session = await this.clerkService.validateRequest(request);
+			const tokenContents = await this.clerkService.verifyToken(token);
 
 			// Attach the Clerk user info to the request for further use
-			request['userId'] = session.toAuth().userId;
+			request['userId'] = tokenContents.sub;
 
 			return true; // Allow access
 		} catch (error) {

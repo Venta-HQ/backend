@@ -1,6 +1,6 @@
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorAPISchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
@@ -58,7 +58,7 @@ export class VendorController implements OnModuleInit {
 	}
 
 	@Post()
-	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
+	@UsePipes(new SchemaValidatorPipe(CreateVendorAPISchema))
 	@UseGuards(AuthGuard)
 	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
 		return await this.vendorService
@@ -73,10 +73,14 @@ export class VendorController implements OnModuleInit {
 			})
 			.pipe(
 				catchError((error) => {
+					console.log(error);
+					// console.log(error);
 					if (error.code === status.INTERNAL) {
 						this.logger.error(error.message, error.details);
 						return throwError(() => new BadRequestException(error.message));
 					}
+
+					return throwError(() => new InternalServerErrorException('An error occurred'));
 				}),
 			);
 	}

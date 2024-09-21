@@ -20,6 +20,7 @@ export class VendorController {
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
+		console.log('Getting vendor');
 		if (!data.id) {
 			this.logger.error(`No ID provided`);
 			throw new RpcException({
@@ -46,10 +47,12 @@ export class VendorController {
 	@UsePipes(new GrpcSchemaValidatorPipe(CreateVendorSchema))
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
+		console.log('Creating vendor');
 		try {
 			const id = await this.vendorService.createVendor(data);
 			return { id };
 		} catch (e) {
+			console.log(e);
 			this.logger.error(`Error creating vendor with data`, {
 				data,
 			});

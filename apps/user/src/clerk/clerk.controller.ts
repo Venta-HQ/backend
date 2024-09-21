@@ -1,4 +1,4 @@
-import { ClerkWebhookEvent, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
+import { ClerkUserData, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { ClerkService } from './clerk.service';
@@ -10,9 +10,9 @@ export class ClerkController {
 	constructor(private readonly clerkService: ClerkService) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
-	async handleClerkUserCreated(data: ClerkWebhookEvent): Promise<ClerkWebhookResponse> {
-		this.logger.log(`Handling Clerk Webhook Event from Microservice: ${data.type}`);
-		const userData = await this.clerkService.handleUserCreated(data.event.id);
+	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
+		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
+		const userData = await this.clerkService.handleUserCreated(data.id);
 		if (userData.id) {
 			await this.clerkService.createIntegration({
 				providerId: userData.clerkId,
@@ -23,11 +23,11 @@ export class ClerkController {
 	}
 
 	@GrpcMethod(USER_SERVICE_NAME)
-	async handleClerkUserDeleted(data: ClerkWebhookEvent): Promise<ClerkWebhookResponse> {
-		this.logger.log(`Handling Clerk Webhook Event from Microservice: ${data.type}`);
-		await this.clerkService.handleUserDeleted(data.event.id);
+	async handleClerkUserDeleted(data: ClerkUserData): Promise<ClerkWebhookResponse> {
+		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
+		await this.clerkService.handleUserDeleted(data.id);
 		await this.clerkService.deleteIntegration({
-			providerId: data.event.id,
+			providerId: data.id,
 		});
 		return { message: 'Success' };
 	}
