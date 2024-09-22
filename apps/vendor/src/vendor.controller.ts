@@ -1,5 +1,3 @@
-import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
-import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -8,7 +6,7 @@ import {
 	VendorLookupData,
 } from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
-import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
 
@@ -20,7 +18,6 @@ export class VendorController {
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
-		console.log('Getting vendor');
 		if (!data.id) {
 			this.logger.error(`No ID provided`);
 			throw new RpcException({
@@ -44,15 +41,12 @@ export class VendorController {
 		};
 	}
 
-	@UsePipes(new GrpcSchemaValidatorPipe(CreateVendorSchema))
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
-		console.log('Creating vendor');
 		try {
 			const id = await this.vendorService.createVendor(data);
 			return { id };
 		} catch (e) {
-			console.log(e);
 			this.logger.error(`Error creating vendor with data`, {
 				data,
 			});

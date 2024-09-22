@@ -1,13 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IntegrationType, PrismaClient, SubscriptionStatus } from '@prisma/client';
+import { PrismaService } from '@app/nest/modules';
+import { Injectable, Logger } from '@nestjs/common';
+import { IntegrationType, SubscriptionStatus } from '@prisma/client';
 
 @Injectable()
 export class SubscriptionService {
-	constructor(@Inject('PRISMA') private prisma: PrismaClient) {}
+	constructor(private prisma: PrismaService) {}
 	private readonly logger = new Logger(SubscriptionService.name);
 
 	async handleUserCreated(id: string) {
-		const userExists = await this.prisma.user.count({
+		const userExists = await this.prisma.db.user.count({
 			where: {
 				clerkId: id,
 			},
@@ -15,7 +16,7 @@ export class SubscriptionService {
 
 		if (!userExists) {
 			this.logger.log(`Creating new user`);
-			await this.prisma.user.create({
+			await this.prisma.db.user.create({
 				data: {
 					clerkId: id,
 				},
@@ -27,7 +28,7 @@ export class SubscriptionService {
 
 	async handleUserDeleted(id: string) {
 		this.logger.log(`Deleting user with clerkId: ${id}`);
-		await this.prisma.user.deleteMany({
+		await this.prisma.db.user.deleteMany({
 			where: {
 				clerkId: id,
 			},
@@ -40,7 +41,7 @@ export class SubscriptionService {
 			providerId: providerId,
 			type: IntegrationType.RevenueCat,
 		});
-		await this.prisma.integration.create({
+		await this.prisma.db.integration.create({
 			data: {
 				data,
 				providerId,
@@ -58,7 +59,7 @@ export class SubscriptionService {
 		this.logger.log('Creating subscription record for subscription', {
 			clerkUserId: clerkUserId,
 		});
-		await this.prisma.userSubscription.create({
+		await this.prisma.db.userSubscription.create({
 			data: {
 				status: SubscriptionStatus.Active,
 				user: {

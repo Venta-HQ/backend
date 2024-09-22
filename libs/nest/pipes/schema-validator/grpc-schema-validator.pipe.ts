@@ -8,12 +8,13 @@ export class GrpcSchemaValidatorPipe implements PipeTransform {
 
 	constructor(private schema: ZodSchema) {}
 
-	transform(value: unknown, _metadata: ArgumentMetadata) {
+	transform(value: unknown, _metadata: any) {
 		try {
+			const requestBody = _metadata?.context.switchToRpc().getData();
+			console.log(requestBody);
 			return this.schema.parse(value);
 		} catch (error) {
 			this.logger.error(error);
-			console.log(error.errors, value);
 			if (error instanceof ZodError) {
 				const formattedErrors = error.errors.map((err) => ({
 					message: err.message,

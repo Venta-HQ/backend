@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { Observable, Subject } from 'rxjs';
+import { PrismaService } from '@app/nest/modules';
 import {
 	LOCATION_SERVICE_NAME,
 	LocationUpdate,
@@ -7,9 +8,8 @@ import {
 	VendorLocationResponse,
 } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Controller, Inject, Logger } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
-import { PrismaClient } from '@prisma/client';
 
 @Controller()
 export class LocationController {
@@ -17,13 +17,13 @@ export class LocationController {
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
-		@Inject('PRISMA') private prisma: PrismaClient,
+		private prisma: PrismaService,
 	) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
 	async updateVendorLocation(data: LocationUpdate) {
 		await this.redis.geoadd('vendor_locations', data.location.long, data.location.lat, data.entityId);
-		await this.prisma.vendor.update({
+		await this.prisma.db.vendor.update({
 			data: data.location,
 			where: {
 				id: data.entityId,

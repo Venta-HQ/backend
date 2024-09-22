@@ -1,14 +1,14 @@
+import { PrismaService } from '@app/nest/modules';
 import { VendorCreateData } from '@app/proto/vendor';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {
-	constructor(@Inject('PRISMA') private prisma: PrismaClient) {}
+	constructor(private prisma: PrismaService) {}
 	private readonly logger = new Logger(VendorService.name);
 
 	async getVendorById(id: string) {
-		const vendor = await this.prisma.vendor.findFirst({
+		const vendor = await this.prisma.db.vendor.findFirst({
 			where: { id },
 		});
 		return vendor;
@@ -16,12 +16,13 @@ export class VendorService {
 
 	async createVendor(data: VendorCreateData) {
 		this.logger.log('Creating new vendor');
-		const vendor = await this.prisma.vendor.create({
+		const { userId, ...rest } = data;
+		const vendor = await this.prisma.db.vendor.create({
 			data: {
-				...data,
+				...rest,
 				owner: {
 					connect: {
-						id: data.userId,
+						id: userId,
 					},
 				},
 			},

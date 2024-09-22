@@ -5,7 +5,6 @@ import { Injectable, Logger } from '@nestjs/common';
 export class ClerkService {
 	private readonly logger = new Logger(ClerkService.name);
 	private secretKey: string;
-
 	constructor(secretKey: string) {
 		this.secretKey = secretKey;
 	}

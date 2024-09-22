@@ -1,6 +1,6 @@
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { CreateVendorAPISchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
@@ -32,7 +32,7 @@ export class VendorController implements OnModuleInit {
 	constructor(@Inject(VENDOR_SERVICE_NAME) private client: ClientGrpc) {}
 
 	onModuleInit() {
-		this.vendorService = this.client.getService<VendorServiceClient>('VendorService');
+		this.vendorService = this.client.getService<VendorServiceClient>(VENDOR_SERVICE_NAME);
 	}
 
 	@Get('/:id')
@@ -58,8 +58,8 @@ export class VendorController implements OnModuleInit {
 	}
 
 	@Post()
-	@UsePipes(new SchemaValidatorPipe(CreateVendorAPISchema))
 	@UseGuards(AuthGuard)
+	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
 	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
 		return await this.vendorService
 			.createVendor({
@@ -73,8 +73,6 @@ export class VendorController implements OnModuleInit {
 			})
 			.pipe(
 				catchError((error) => {
-					console.log(error);
-					// console.log(error);
 					if (error.code === status.INTERNAL) {
 						this.logger.error(error.message, error.details);
 						return throwError(() => new BadRequestException(error.message));

@@ -11,7 +11,7 @@ export class ClerkWebhooksController implements OnModuleInit {
 	constructor(@Inject(USER_SERVICE_NAME) private client: ClientGrpc) {}
 
 	onModuleInit() {
-		this.userService = this.client.getService<UserServiceClient>('UserService');
+		this.userService = this.client.getService<UserServiceClient>(USER_SERVICE_NAME);
 	}
 
 	@Post()
