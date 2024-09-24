@@ -6,6 +6,7 @@ service UserService {
   rpc HandleClerkUserCreated (ClerkUserData) returns (ClerkWebhookResponse) {}
   rpc HandleClerkUserDeleted (ClerkUserData) returns (ClerkWebhookResponse) {}
   rpc HandleSubscriptionCreated (RevenueCatSubscriptionData) returns (SubscriptionCreatedResponse) {}
+  rpc GetUserVendors (UserVendorData) returns (UserVendorsResponse) {}
 }
 
 
@@ -15,11 +16,10 @@ service UserService {
 message ClerkWebhookResponse {
     string message = 1;
 }
+
 message ClerkUserData {
     string id = 1;
 } 
-
-
 
 message RevenueCatSubscriptionData {
     string clerkUserId = 1;
@@ -31,7 +31,20 @@ message SubscriptionCreatedResponse {
     string message = 1;
 }
 
+message UserVendorData {
+    string userId = 1;
+}
+
+message UserVendorsResponse {
+    repeated UserVendor vendors = 1;
+}
+
 // Helper Types
+message UserVendor {
+    string id = 1;
+    string name = 2;
+}
+
 message ClerkWebhookEvent {
     string type = 1;
     string object = 2;

@@ -5,10 +5,12 @@ import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
 import { SubscriptionController } from './subscription/subscription.controller';
 import { SubscriptionService } from './subscription/subscription.service';
+import { VendorController } from './vendor/vendor.controller';
+import { VendorService } from './vendor/vendor.service';
 
 @Module({
-	controllers: [ClerkController, SubscriptionController],
+	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [ConfigModule.forRoot(), LoggerModule.register('User Microservice'), PrismaModule.register()],
-	providers: [ClerkService, SubscriptionService],
+	providers: [ClerkService, SubscriptionService, VendorService],
 })
 export class UserModule {}
