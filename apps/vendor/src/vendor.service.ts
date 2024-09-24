@@ -1,6 +1,8 @@
 import { PrismaService } from '@app/nest/modules';
-import { VendorCreateData } from '@app/proto/vendor';
+import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
+import { status } from '@grpc/grpc-js';
 import { Injectable, Logger } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class VendorService {
@@ -29,5 +31,23 @@ export class VendorService {
 		});
 
 		return vendor.id;
+	}
+
+	async updateVendor(id: string, userId: string, data: Omit<VendorUpdateData, 'id' | 'userId'>) {
+		const exists = await this.prisma.db.vendor.count({
+			where: { id, owner: { id: userId } },
+		});
+
+		if (!exists) {
+			throw new RpcException({
+				code: status.NOT_FOUND,
+				message: `Vendor with ID ${id} not found or does not belong to user ${userId}`,
+			});
+		}
+
+		await this.prisma.db.vendor.update({
+			data,
+			where: { id, owner: { id: userId } },
+		});
 	}
 }

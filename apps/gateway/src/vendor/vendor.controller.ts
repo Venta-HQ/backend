@@ -1,7 +1,7 @@
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
-import { CreateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
+import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
@@ -18,6 +18,7 @@ import {
 	OnModuleInit,
 	Param,
 	Post,
+	Put,
 	Req,
 	UseGuards,
 	UsePipes,
@@ -36,6 +37,7 @@ export class VendorController implements OnModuleInit {
 	}
 
 	@Get('/:id')
+	@UsePipes(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
 		return await this.vendorService
 			.getVendorById({
@@ -76,6 +78,36 @@ export class VendorController implements OnModuleInit {
 					if (error.code === status.INTERNAL) {
 						this.logger.error(error.message, error.details);
 						return throwError(() => new BadRequestException(error.message));
+					}
+
+					return throwError(() => new InternalServerErrorException('An error occurred'));
+				}),
+			);
+	}
+
+	@Put('/:id')
+	@UseGuards(AuthGuard)
+	@UsePipes(new SchemaValidatorPipe(UpdateVendorSchema))
+	async updateVendor(@Param('id') id: string, @Body() data: UpdateVendorData, @Req() req: AuthedRequest) {
+		return await this.vendorService
+			.updateVendor({
+				description: data.description,
+				email: data.email,
+				id,
+				name: data.name,
+				phone: data.phone,
+				userId: req.userId,
+				website: data.website,
+			})
+			.pipe(
+				catchError((error) => {
+					this.logger.error(error.message, error.details);
+					if (error.code === status.INTERNAL) {
+						return throwError(() => new BadRequestException(error.message));
+					}
+
+					if (error.code === status.NOT_FOUND) {
+						return throwError(() => new NotFoundException(error.message));
 					}
 
 					return throwError(() => new InternalServerErrorException('An error occurred'));

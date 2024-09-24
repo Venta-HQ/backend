@@ -4,6 +4,8 @@ import {
 	VendorCreateResponse,
 	VendorLookupByIdResponse,
 	VendorLookupData,
+	VendorUpdateData,
+	VendorUpdateResponse,
 } from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
 import { Controller, Logger } from '@nestjs/common';
@@ -56,6 +58,34 @@ export class VendorController {
 					data,
 				},
 				message: `Could not create vendor`,
+			});
+		}
+	}
+
+	@GrpcMethod(VENDOR_SERVICE_NAME)
+	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
+		try {
+			const { id, userId, ...vendorUpdates } = data;
+			await this.vendorService.updateVendor(id, userId, vendorUpdates);
+			return {
+				message: 'Updated vendor',
+				success: true,
+			};
+		} catch (e) {
+			this.logger.error(`Error updating vendor with data`, {
+				data,
+			});
+
+			if (e.code) {
+				throw new RpcException(e);
+			}
+
+			throw new RpcException({
+				code: status.INTERNAL,
+				details: {
+					data,
+				},
+				message: `Could not update vendor`,
 			});
 		}
 	}

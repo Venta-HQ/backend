@@ -8,6 +8,7 @@ package vendor;
 service VendorService {
   rpc GetVendorById (VendorLookupData) returns (VendorLookupByIdResponse) {}
   rpc CreateVendor (VendorCreateData) returns (VendorCreateResponse) {}
+  rpc UpdateVendor (VendorUpdateData) returns (VendorUpdateResponse) {}
 }
 
 // Service Function Types
@@ -32,6 +33,21 @@ message VendorLookupData {
 
 message VendorLookupByIdResponse {
   Vendor vendor = 1;
+}
+
+message VendorUpdateData {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string email = 4;
+  string website = 5;
+  string phone = 6;
+  string userId = 7;
+}
+
+message VendorUpdateResponse {
+  string message = 1;
+  bool success = 2;
 }
 
 // Helper Types

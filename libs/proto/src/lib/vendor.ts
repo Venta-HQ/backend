@@ -34,6 +34,21 @@ export interface VendorLookupByIdResponse {
   vendor: Vendor | undefined;
 }
 
+export interface VendorUpdateData {
+  id: string;
+  name: string;
+  description: string;
+  email: string;
+  website: string;
+  phone: string;
+  userId: string;
+}
+
+export interface VendorUpdateResponse {
+  message: string;
+  success: boolean;
+}
+
 export interface Vendor {
   id: string;
   /** These lat/long values are used to show locations on the map without subscription to live location */
@@ -72,6 +87,8 @@ export interface VendorServiceClient {
   getVendorById(request: VendorLookupData, metadata?: Metadata): Observable<VendorLookupByIdResponse>;
 
   createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
+
+  updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
 }
 
 export interface VendorServiceController {
@@ -84,11 +101,16 @@ export interface VendorServiceController {
     request: VendorCreateData,
     metadata?: Metadata,
   ): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
+
+  updateVendor(
+    request: VendorUpdateData,
+    metadata?: Metadata,
+  ): Promise<VendorUpdateResponse> | Observable<VendorUpdateResponse> | VendorUpdateResponse;
 }
 
 export function VendorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["getVendorById", "createVendor"];
+    const grpcMethods: string[] = ["getVendorById", "createVendor", "updateVendor"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("VendorService", method)(constructor.prototype[method], method, descriptor);
