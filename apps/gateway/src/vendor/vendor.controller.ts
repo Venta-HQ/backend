@@ -87,8 +87,11 @@ export class VendorController implements OnModuleInit {
 
 	@Put('/:id')
 	@UseGuards(AuthGuard)
-	@UsePipes(new SchemaValidatorPipe(UpdateVendorSchema))
-	async updateVendor(@Param('id') id: string, @Body() data: UpdateVendorData, @Req() req: AuthedRequest) {
+	async updateVendor(
+		@Param('id') id: string,
+		@Body(new SchemaValidatorPipe(UpdateVendorSchema)) data: UpdateVendorData,
+		@Req() req: AuthedRequest,
+	) {
 		return await this.vendorService
 			.updateVendor({
 				description: data.description,

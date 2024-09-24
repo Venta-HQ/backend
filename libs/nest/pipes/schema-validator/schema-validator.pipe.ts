@@ -9,6 +9,7 @@ export class SchemaValidatorPipe implements PipeTransform {
 		try {
 			return this.schema.parse(value);
 		} catch (error) {
+			console.log(value, error);
 			this.logger.error(error);
 			if (error instanceof ZodError) {
 				const formattedErrors = error.errors.map((err) => ({
