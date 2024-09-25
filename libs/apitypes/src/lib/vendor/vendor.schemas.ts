@@ -13,7 +13,7 @@ export const UpdateVendorSchema = z.object({
 	description: z.string().nullable().optional(),
 	email: z.string().nullable().optional(),
 	imageUrl: z.string().nullable().optional(),
-	name: z.string(),
+	name: z.string().optional(),
 	phone: z.string().nullable().optional(),
 	website: z.string().nullable().optional(),
 });
