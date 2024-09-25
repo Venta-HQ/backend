@@ -12,17 +12,48 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "vendor";
 
-export interface Empty {
+export interface VendorCreateData {
+  name: string;
+  description: string;
+  email: string;
+  phone: string;
+  website: string;
+  imageUrl: string;
+  userId: string;
+}
+
+export interface VendorCreateResponse {
+  id: string;
 }
 
 export interface VendorLookupData {
   id: string;
 }
 
+export interface VendorLookupByIdResponse {
+  vendor: Vendor | undefined;
+}
+
+export interface VendorUpdateData {
+  id: string;
+  name: string;
+  description: string;
+  email: string;
+  website: string;
+  phone: string;
+  userId: string;
+}
+
+export interface VendorUpdateResponse {
+  message: string;
+  success: boolean;
+}
+
 export interface Vendor {
   id: string;
-  lat?: number | undefined;
-  long?:
+  /** These lat/long values are used to show locations on the map without subscription to live location */
+  lat: number | undefined;
+  long:
     | number
     | undefined;
   /** General details */
@@ -38,8 +69,7 @@ export interface Vendor {
   updatedAt: Date | undefined;
 }
 
-export interface VendorLookupByIdResponse {
-  vendor: Vendor | undefined;
+export interface Empty {
 }
 
 export const VENDOR_PACKAGE_NAME = "vendor";
@@ -55,6 +85,10 @@ wrappers[".google.protobuf.Timestamp"] = {
 
 export interface VendorServiceClient {
   getVendorById(request: VendorLookupData, metadata?: Metadata): Observable<VendorLookupByIdResponse>;
+
+  createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
+
+  updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
 }
 
 export interface VendorServiceController {
@@ -62,11 +96,21 @@ export interface VendorServiceController {
     request: VendorLookupData,
     metadata?: Metadata,
   ): Promise<VendorLookupByIdResponse> | Observable<VendorLookupByIdResponse> | VendorLookupByIdResponse;
+
+  createVendor(
+    request: VendorCreateData,
+    metadata?: Metadata,
+  ): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
+
+  updateVendor(
+    request: VendorUpdateData,
+    metadata?: Metadata,
+  ): Promise<VendorUpdateResponse> | Observable<VendorUpdateResponse> | VendorUpdateResponse;
 }
 
 export function VendorServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["getVendorById"];
+    const grpcMethods: string[] = ["getVendorById", "createVendor", "updateVendor"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("VendorService", method)(constructor.prototype[method], method, descriptor);

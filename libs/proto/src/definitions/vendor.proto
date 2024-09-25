@@ -1,32 +1,63 @@
 syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
 
 package vendor;
 
 service VendorService {
   rpc GetVendorById (VendorLookupData) returns (VendorLookupByIdResponse) {}
+  rpc CreateVendor (VendorCreateData) returns (VendorCreateResponse) {}
+  rpc UpdateVendor (VendorUpdateData) returns (VendorUpdateResponse) {}
 }
 
-message Empty {
+// Service Function Types
 
+message VendorCreateData {
+  string name = 1;
+  string description = 2;
+  string email = 3;
+  string phone = 4;
+  string website = 5;
+  string imageUrl = 6;
+  string userId = 7;
+}
+
+message VendorCreateResponse {
+  string id = 1;
 }
 
 message VendorLookupData {
-    string id = 1;
+  string id = 1;
 } 
 
+message VendorLookupByIdResponse {
+  Vendor vendor = 1;
+}
+
+message VendorUpdateData {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string email = 4;
+  string website = 5;
+  string phone = 6;
+  string userId = 7;
+}
+
+message VendorUpdateResponse {
+  string message = 1;
+  bool success = 2;
+}
+
+// Helper Types
 
 message Vendor {
     string id = 1;
 
     // These lat/long values are used to show locations on the map without subscription to live location
-    oneof float_or_null_lat {
-      float lat = 2;
-    }
-    oneof float_or_null_lng {
-      float long = 3;
-    }
+    google.protobuf.FloatValue lat = 2;
+    google.protobuf.FloatValue long = 3;
 
     // General details
     string name = 4;       
@@ -42,6 +73,6 @@ message Vendor {
     google.protobuf.Timestamp updatedAt = 12;
 }
 
-message VendorLookupByIdResponse {
-   Vendor vendor = 1;
+message Empty {
+
 }

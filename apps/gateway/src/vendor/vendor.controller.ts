@@ -1,8 +1,14 @@
 import { catchError, throwError } from 'rxjs';
+import { AuthedRequest } from '@app/apitypes/lib/helpers';
+import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
+import { AuthGuard } from '@app/nest/guards';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
 import {
 	BadRequestException,
+	Body,
 	Controller,
 	Get,
 	Inject,
@@ -11,6 +17,11 @@ import {
 	NotFoundException,
 	OnModuleInit,
 	Param,
+	Post,
+	Put,
+	Req,
+	UseGuards,
+	UsePipes,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 
@@ -22,10 +33,11 @@ export class VendorController implements OnModuleInit {
 	constructor(@Inject(VENDOR_SERVICE_NAME) private client: ClientGrpc) {}
 
 	onModuleInit() {
-		this.vendorService = this.client.getService<VendorServiceClient>('VendorService');
+		this.vendorService = this.client.getService<VendorServiceClient>(VENDOR_SERVICE_NAME);
 	}
 
 	@Get('/:id')
+	@UsePipes(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
 		return await this.vendorService
 			.getVendorById({
@@ -33,7 +45,6 @@ export class VendorController implements OnModuleInit {
 			})
 			.pipe(
 				catchError((error) => {
-					console.log(error);
 					if (error.code === status.NOT_FOUND) {
 						this.logger.warn(error.message);
 						return throwError(() => new NotFoundException('Item not found'));
@@ -44,6 +55,65 @@ export class VendorController implements OnModuleInit {
 						this.logger.error('Unhandled error occurred', error);
 						return throwError(() => new InternalServerErrorException('An error occurred'));
 					}
+				}),
+			);
+	}
+
+	@Post()
+	@UseGuards(AuthGuard)
+	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
+	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
+		return await this.vendorService
+			.createVendor({
+				description: data.description,
+				email: data.email,
+				imageUrl: data.imageUrl,
+				name: data.name,
+				phone: data.phone,
+				userId: req.userId,
+				website: data.website,
+			})
+			.pipe(
+				catchError((error) => {
+					if (error.code === status.INTERNAL) {
+						this.logger.error(error.message, error.details);
+						return throwError(() => new BadRequestException(error.message));
+					}
+
+					return throwError(() => new InternalServerErrorException('An error occurred'));
+				}),
+			);
+	}
+
+	@Put('/:id')
+	@UseGuards(AuthGuard)
+	async updateVendor(
+		@Param('id') id: string,
+		@Body(new SchemaValidatorPipe(UpdateVendorSchema)) data: UpdateVendorData,
+		@Req() req: AuthedRequest,
+	) {
+		return await this.vendorService
+			.updateVendor({
+				description: data.description,
+				email: data.email,
+				id,
+				name: data.name,
+				phone: data.phone,
+				userId: req.userId,
+				website: data.website,
+			})
+			.pipe(
+				catchError((error) => {
+					this.logger.error(error.message, error.details);
+					if (error.code === status.INTERNAL) {
+						return throwError(() => new BadRequestException(error.message));
+					}
+
+					if (error.code === status.NOT_FOUND) {
+						return throwError(() => new NotFoundException(error.message));
+					}
+
+					return throwError(() => new InternalServerErrorException('An error occurred'));
 				}),
 			);
 	}

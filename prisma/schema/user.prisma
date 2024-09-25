@@ -1,0 +1,35 @@
+model User {
+    id      String @id @default(uuid())
+    clerkId String @unique
+
+    // Metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    vendors          Vendor[]
+    UserSubscription UserSubscription?
+    integrations     Integration[]
+
+    @@map("user")
+}
+
+enum SubscriptionStatus {
+    Active
+    Cancelled
+    Inactive
+    Pending
+}
+
+model UserSubscription {
+    id     String             @id @default(uuid())
+    userId String             @unique
+    user   User               @relation(fields: [userId], references: [id])
+    status SubscriptionStatus @default(Inactive)
+
+    // Metadata
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@map("user_subscription")
+}

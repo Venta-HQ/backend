@@ -1,4 +1,12 @@
-import { VENDOR_SERVICE_NAME, VendorLookupByIdResponse, VendorLookupData } from '@app/proto/vendor';
+import {
+	VENDOR_SERVICE_NAME,
+	VendorCreateData,
+	VendorCreateResponse,
+	VendorLookupByIdResponse,
+	VendorLookupData,
+	VendorUpdateData,
+	VendorUpdateResponse,
+} from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod, RpcException } from '@nestjs/microservices';
@@ -21,7 +29,7 @@ export class VendorController {
 		}
 
 		const result = await this.vendorService.getVendorById(data.id);
-		console.log(result);
+
 		if (!result) {
 			this.logger.error(`Vendor with ID ${data.id} not found`);
 			throw new RpcException({
@@ -33,5 +41,52 @@ export class VendorController {
 		return {
 			vendor: result,
 		};
+	}
+
+	@GrpcMethod(VENDOR_SERVICE_NAME)
+	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
+		try {
+			const id = await this.vendorService.createVendor(data);
+			return { id };
+		} catch (e) {
+			this.logger.error(`Error creating vendor with data`, {
+				data,
+			});
+			throw new RpcException({
+				code: status.INTERNAL,
+				details: {
+					data,
+				},
+				message: `Could not create vendor`,
+			});
+		}
+	}
+
+	@GrpcMethod(VENDOR_SERVICE_NAME)
+	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
+		try {
+			const { id, userId, ...vendorUpdates } = data;
+			await this.vendorService.updateVendor(id, userId, vendorUpdates);
+			return {
+				message: 'Updated vendor',
+				success: true,
+			};
+		} catch (e) {
+			this.logger.error(`Error updating vendor with data`, {
+				data,
+			});
+
+			if (e.code) {
+				throw new RpcException(e);
+			}
+
+			throw new RpcException({
+				code: status.INTERNAL,
+				details: {
+					data,
+				},
+				message: `Could not update vendor`,
+			});
+		}
 	}
 }
