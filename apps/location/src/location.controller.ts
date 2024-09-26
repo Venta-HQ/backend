@@ -42,7 +42,7 @@ export class LocationController {
 				request.location.long,
 				request.location.lat,
 				'BYRADIUS',
-				190,
+				20,
 				'mi',
 				'WITHCOORD',
 				'WITHDIST',
