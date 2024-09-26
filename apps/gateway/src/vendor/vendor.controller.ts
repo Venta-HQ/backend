@@ -97,6 +97,7 @@ export class VendorController implements OnModuleInit {
 				description: data.description,
 				email: data.email,
 				id,
+				imageUrl: data.imageUrl,
 				name: data.name,
 				phone: data.phone,
 				userId: req.userId,

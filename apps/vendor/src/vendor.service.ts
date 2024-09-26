@@ -18,7 +18,7 @@ export class VendorService {
 
 	async createVendor(data: VendorCreateData) {
 		this.logger.log('Creating new vendor');
-		const { userId, ...rest } = data;
+		const { imageUrl, userId, ...rest } = data;
 		const vendor = await this.prisma.db.vendor.create({
 			data: {
 				...rest,
@@ -27,6 +27,7 @@ export class VendorService {
 						id: userId,
 					},
 				},
+				primaryImage: imageUrl,
 			},
 		});
 
@@ -45,8 +46,17 @@ export class VendorService {
 			});
 		}
 
+		const { imageUrl, ...updateData } = data;
+
 		await this.prisma.db.vendor.update({
-			data,
+			data: {
+				...updateData,
+				...(imageUrl
+					? {
+							primaryImage: imageUrl,
+						}
+					: {}),
+			},
 			where: { id, owner: { id: userId } },
 		});
 	}
