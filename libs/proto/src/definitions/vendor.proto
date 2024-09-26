@@ -43,6 +43,7 @@ message VendorUpdateData {
   string website = 5;
   string phone = 6;
   string userId = 7;
+  string imageUrl = 8;
 }
 
 message VendorUpdateResponse {

@@ -1,29 +1,18 @@
 import { join } from 'path';
-import { USER_PACKAGE_NAME, USER_SERVICE_NAME } from '@app/proto/user';
+import { GrpcInstanceModule } from '@app/nest/modules';
+import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ClerkWebhooksController } from './clerk-webhooks.controller';
 
 @Module({
 	controllers: [ClerkWebhooksController],
 	imports: [
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					imports: [ConfigModule],
-					inject: [ConfigService],
-					name: USER_SERVICE_NAME,
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							package: USER_PACKAGE_NAME,
-							protoPath: join(__dirname, `../proto/src/definitions/user.proto`),
-							url: configService.get('USER_SERVICE_ADDRESS'),
-						},
-						transport: Transport.GRPC,
-					}),
-				},
-			],
+		GrpcInstanceModule.register<UserServiceClient>({
+			protoPackage: USER_PACKAGE_NAME,
+			protoPath: join(__dirname, `../proto/src/definitions/user.proto`),
+			provide: USER_SERVICE_NAME,
+			serviceName: USER_SERVICE_NAME,
+			urlEnvVar: 'USER_SERVICE_ADDRESS',
 		}),
 	],
 	providers: [],

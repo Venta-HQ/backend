@@ -1,29 +1,24 @@
+import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import {
 	RevenueCatHandledEventTypes,
 	RevenueCatInitialPurchaseEventData,
 	RevenueCatWebhookEvent,
 } from '@app/apitypes/lib/subscription/subscription.types';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
-import { Body, Controller, Inject, Logger, OnModuleInit, Post } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
+import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 
 @Controller()
-export class SubscriptionWebhooksController implements OnModuleInit {
+export class SubscriptionWebhooksController {
 	private readonly logger = new Logger(SubscriptionWebhooksController.name);
-	private userService: UserServiceClient;
 
-	constructor(@Inject(USER_SERVICE_NAME) private client: ClientGrpc) {}
-
-	onModuleInit() {
-		this.userService = this.client.getService<UserServiceClient>('UserService');
-	}
+	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
 
 	@Post()
 	async handleSubscriptionCreated(@Body() body: RevenueCatWebhookEvent<RevenueCatInitialPurchaseEventData>) {
 		this.logger.log(`Handling RevenueCat Webhook Event: ${body.event.type}`);
 		switch (body.event.type) {
 			case RevenueCatHandledEventTypes.INITIAL_PURCHASE:
-				await this.userService.handleSubscriptionCreated({
+				await this.client.invoke('handleSubscriptionCreated', {
 					clerkUserId: body.event.subscriber_attributes.clerkUserId,
 					data: {
 						eventId: body.event.id,

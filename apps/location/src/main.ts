@@ -7,6 +7,7 @@ import { LocationModule } from './location.module';
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(LocationModule, {
+		logger: false,
 		options: {
 			package: LOCATION_PACKAGE_NAME,
 			protoPath: join(__dirname, `../proto/src/definitions/location.proto`),

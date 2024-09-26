@@ -1,3 +1,4 @@
+import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
@@ -15,7 +16,6 @@ import {
 	InternalServerErrorException,
 	Logger,
 	NotFoundException,
-	OnModuleInit,
 	Param,
 	Post,
 	Put,
@@ -23,48 +23,38 @@ import {
 	UseGuards,
 	UsePipes,
 } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
 
 @Controller()
-export class VendorController implements OnModuleInit {
+export class VendorController {
 	private readonly logger = new Logger(VendorController.name);
-	private vendorService: VendorServiceClient;
 
-	constructor(@Inject(VENDOR_SERVICE_NAME) private client: ClientGrpc) {}
-
-	onModuleInit() {
-		this.vendorService = this.client.getService<VendorServiceClient>(VENDOR_SERVICE_NAME);
-	}
+	constructor(@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>) {}
 
 	@Get('/:id')
-	@UsePipes(AuthGuard)
+	// @UsePipes(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
-		return await this.vendorService
-			.getVendorById({
-				id,
-			})
-			.pipe(
-				catchError((error) => {
-					if (error.code === status.NOT_FOUND) {
-						this.logger.warn(error.message);
-						return throwError(() => new NotFoundException('Item not found'));
-					} else if (error.code === status.INVALID_ARGUMENT) {
-						this.logger.warn(error.message);
-						return throwError(() => new BadRequestException('Invalid query params provided'));
-					} else {
-						this.logger.error('Unhandled error occurred', error);
-						return throwError(() => new InternalServerErrorException('An error occurred'));
-					}
-				}),
-			);
+		await this.client.invoke('getVendorById', { id }).pipe(
+			catchError((error) => {
+				if (error.code === status.NOT_FOUND) {
+					this.logger.warn(error.message);
+					return throwError(() => new NotFoundException('Item not found'));
+				} else if (error.code === status.INVALID_ARGUMENT) {
+					this.logger.warn(error.message);
+					return throwError(() => new BadRequestException('Invalid query params provided'));
+				} else {
+					this.logger.error('Unhandled error occurred', error);
+					return throwError(() => new InternalServerErrorException('An error occurred'));
+				}
+			}),
+		);
 	}
 
 	@Post()
 	@UseGuards(AuthGuard)
 	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
 	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
-		return await this.vendorService
-			.createVendor({
+		return await this.client
+			.invoke('createVendor', {
 				description: data.description,
 				email: data.email,
 				imageUrl: data.imageUrl,
@@ -92,8 +82,8 @@ export class VendorController implements OnModuleInit {
 		@Body(new SchemaValidatorPipe(UpdateVendorSchema)) data: UpdateVendorData,
 		@Req() req: AuthedRequest,
 	) {
-		return await this.vendorService
-			.updateVendor({
+		return await this.client
+			.invoke('updateVendor', {
 				description: data.description,
 				email: data.email,
 				id,
@@ -103,6 +93,7 @@ export class VendorController implements OnModuleInit {
 				userId: req.userId,
 				website: data.website,
 			})
+
 			.pipe(
 				catchError((error) => {
 					this.logger.error(error.message, error.details);

@@ -4,3 +4,4 @@ export * from './redis';
 export * from './clerk';
 export * from './prisma';
 export * from './upload';
+export * from './grpc-instance';

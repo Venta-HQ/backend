@@ -6,6 +6,7 @@ import { UserModule } from './user.module';
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(UserModule, {
+		logger: false,
 		options: {
 			package: 'user',
 			protoPath: join(__dirname, `../proto/src/definitions/user.proto`),

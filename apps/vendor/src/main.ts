@@ -6,6 +6,7 @@ import { VendorModule } from './vendor.module';
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(VendorModule, {
+		logger: false,
 		options: {
 			package: 'vendor',
 			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),

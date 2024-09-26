@@ -2,7 +2,9 @@ import { NestFactory } from '@nestjs/core';
 import { WebsocketGatewayModule } from './websocket-gateway.module';
 
 async function bootstrap() {
-	const app = await NestFactory.create(WebsocketGatewayModule);
+	const app = await NestFactory.create(WebsocketGatewayModule, {
+		logger: false,
+	});
 	await app.listen(5004);
 }
 bootstrap();

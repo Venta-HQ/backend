@@ -1,3 +1,4 @@
+import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { AuthGuard } from '@app/nest/guards';
@@ -10,30 +11,25 @@ import {
 	Inject,
 	InternalServerErrorException,
 	Logger,
-	OnModuleInit,
 	Req,
 	UseGuards,
 } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 
 @Controller()
-export class UserController implements OnModuleInit {
+export class UserController {
 	private readonly logger = new Logger(UserController.name);
-	private userService: UserServiceClient;
 
-	constructor(@Inject(USER_SERVICE_NAME) private client: ClientGrpc) {}
-
-	onModuleInit() {
-		this.userService = this.client.getService<UserServiceClient>(USER_SERVICE_NAME);
-	}
+	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
 
 	@Get('/vendors')
 	@UseGuards(AuthGuard)
 	async getUserVendors(@Req() req: AuthedRequest) {
-		return await this.userService
-			.getUserVendors({
+		return await this.client
+			.invoke('getUserVendors', {
 				userId: req.userId,
 			})
+
 			.pipe(
 				catchError((error) => {
 					if (error.code === status.INTERNAL) {

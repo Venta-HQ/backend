@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
+import { LokiOptions } from 'pino-loki/index';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
@@ -14,6 +15,14 @@ export class LoggerModule {
 					inject: [ConfigService],
 					useFactory: (configService: ConfigService) => ({
 						pinoHttp: {
+							base: { app: appName },
+							customProps: (req, _res) => {
+								const props = {};
+								if (req.id ?? req.headers['x-request-id']) {
+									props['traceId'] = req.id ?? req.headers['x-request-id'];
+								}
+								return props;
+							},
 							genReqId: (req, res) => {
 								const existingID = req.id ?? req.headers['x-request-id'];
 								if (existingID) return existingID;
@@ -22,19 +31,34 @@ export class LoggerModule {
 								return id;
 							},
 							transport: {
-								options: {
-									basicAuth: {
-										password: configService.get('LOKI_PASSWORD'),
-										username: configService.get('LOKI_USERNAME'),
+								targets: [
+									{
+										options: {
+											basicAuth: {
+												password: configService.get('LOKI_PASSWORD'),
+												username: configService.get('LOKI_USERNAME'),
+											},
+											batching: true,
+											host: configService.get('LOKI_URL'),
+											interval: 5,
+											propsToLabels: ['context', 'app', 'traceId'],
+										} satisfies LokiOptions,
+										target: 'pino-loki',
 									},
-									batching: true,
-									host: configService.get('LOKI_URL'),
-									interval: 5,
-									labels: {
-										app: appName,
-									},
-								},
-								target: 'pino-loki',
+									...(process.env.NODE_ENV !== 'production'
+										? [
+												{
+													options: {
+														colorize: true, // Enable colors in logs
+														ignore: 'pid,hostname,time,app,context',
+														levelFirst: true,
+														messageFormat: `[{app}] [{context}]: {msg}`,
+													},
+													target: 'pino-pretty', // Use pino-pretty for formatted output
+												},
+											]
+										: []),
+								],
 							},
 						},
 					}),
