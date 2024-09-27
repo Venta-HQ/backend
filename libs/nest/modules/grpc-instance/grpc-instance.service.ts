@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 
@@ -11,17 +12,17 @@ class GrpcInstance<T> {
 
 	invoke<K extends keyof T>(
 		method: K,
-		...data: T[K] extends (...args: any[]) => any ? Parameters<T[K]> : never
+		data: T[K] extends (...args: any[]) => any ? Parameters<T[K]>[0] : never,
 	): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
-		const metadata = {
-			traceId: this.request.id,
-		};
+		const metadata = new Metadata();
+
+		if (this.request.id) {
+			metadata.set('requestId', this.request.id);
+		}
 
 		// Adds our custom metadata
-		data[1] = { ...data[1], ...metadata };
-
 		if (this.service[method]) {
-			return (this.service[method] as (...args: any[]) => any)(...data);
+			return (this.service[method] as (...args: any[]) => any)(data, metadata);
 		}
 	}
 }

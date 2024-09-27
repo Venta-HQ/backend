@@ -1,6 +1,6 @@
 import { join } from 'path';
 import { WsExceptionFilter } from '@app/nest/filters';
-import { LoggerModule } from '@app/nest/modules';
+import { HttpLoggerModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
@@ -10,7 +10,7 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('Websocket Gateway Microservice'),
+		HttpLoggerModule.register('Websocket Gateway Microservice'),
 		ClientsModule.registerAsync({
 			clients: [
 				{

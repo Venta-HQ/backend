@@ -1,12 +1,11 @@
 import { join } from 'path';
-import { Logger } from 'nestjs-pino';
+import { GrpcLogger } from '@app/nest/modules';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { VendorModule } from './vendor.module';
 
 async function bootstrap() {
 	const app = await NestFactory.createMicroservice<MicroserviceOptions>(VendorModule, {
-		logger: false,
 		options: {
 			package: 'vendor',
 			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
@@ -15,7 +14,7 @@ async function bootstrap() {
 		transport: Transport.GRPC,
 	});
 
-	app.useLogger(app.get(Logger));
+	app.useLogger(app.get(GrpcLogger));
 
 	await app.listen();
 }

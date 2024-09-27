@@ -5,7 +5,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({})
-export class LoggerModule {
+export class HttpLoggerModule {
 	static register(appName: string): DynamicModule {
 		return {
 			global: true,
@@ -19,7 +19,7 @@ export class LoggerModule {
 							customProps: (req, _res) => {
 								const props = {};
 								if (req.id ?? req.headers['x-request-id']) {
-									props['traceId'] = req.id ?? req.headers['x-request-id'];
+									props['requestId'] = req.id ?? req.headers['x-request-id'];
 								}
 								return props;
 							},
@@ -41,7 +41,7 @@ export class LoggerModule {
 											batching: true,
 											host: configService.get('LOKI_URL'),
 											interval: 5,
-											propsToLabels: ['context', 'app', 'traceId'],
+											propsToLabels: ['context', 'app', 'requestId'],
 										} satisfies LokiOptions,
 										target: 'pino-loki',
 									},
@@ -64,7 +64,7 @@ export class LoggerModule {
 					}),
 				}),
 			],
-			module: LoggerModule,
+			module: HttpLoggerModule,
 		};
 	}
 }

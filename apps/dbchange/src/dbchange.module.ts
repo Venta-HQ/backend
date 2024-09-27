@@ -1,4 +1,4 @@
-import { AlgoliaModule, LoggerModule, PrismaModule } from '@app/nest/modules';
+import { AlgoliaModule, HttpLoggerModule, PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { VendorService } from './models/vendor.service';
@@ -7,7 +7,7 @@ import { VendorService } from './models/vendor.service';
 	controllers: [],
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('DB Change Microservice'),
+		HttpLoggerModule.register('DB Change Microservice'),
 		AlgoliaModule.register(),
 		PrismaModule.register(),
 	],
