@@ -1,6 +1,11 @@
 import { ReplaySubject } from 'rxjs';
 import { Server, Socket } from 'socket.io';
-import { GenericLocationSyncData, GenericLocationSyncDataSchema } from '@app/apitypes';
+import {
+	GenericLocationSyncData,
+	GenericLocationSyncDataSchema,
+	VendorLocationsRequestData,
+	VendorLocationsRequestDataSchema,
+} from '@app/apitypes';
 import { WsSchemaValidatorPipe } from '@app/nest/pipes';
 import { LocationServiceClient, VendorLocationRequest } from '@app/proto/location';
 import { Inject, Logger } from '@nestjs/common';
@@ -64,14 +69,27 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	@SubscribeMessage('user_location_update')
 	async userLocationSync(
-		@MessageBody(new WsSchemaValidatorPipe(GenericLocationSyncDataSchema)) data: GenericLocationSyncData,
+		@MessageBody(new WsSchemaValidatorPipe(VendorLocationsRequestDataSchema)) data: VendorLocationsRequestData,
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
+		const { neLocation, swLocation } = data;
+
+		if (!neLocation.lat || !neLocation.long || !swLocation.lat || !swLocation.long) {
+			this.server.to(client.id).emit('error', {
+				message: 'Bounding box not provided.',
+			});
+			return;
+		}
+
 		this.vendorLocationRequest$.next({
 			callerId: client.id,
-			location: {
-				lat: data.lat,
-				long: data.long,
+			neLocation: {
+				lat: neLocation.lat,
+				long: neLocation.long,
+			},
+			swLocation: {
+				lat: swLocation.lat,
+				long: swLocation.long,
 			},
 		});
 	}

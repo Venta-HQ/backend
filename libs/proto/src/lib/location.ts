@@ -16,13 +16,14 @@ export interface Empty {
 
 export interface VendorLocationRequest {
   callerId: string;
-  location: CurrentLocation | undefined;
+  swLocation: Location | undefined;
+  neLocation: Location | undefined;
 }
 
 export interface Vendor {
   id: string;
   dist: number;
-  location: CurrentLocation | undefined;
+  location: Location | undefined;
 }
 
 export interface VendorLocationResponse {
@@ -30,13 +31,13 @@ export interface VendorLocationResponse {
   vendors: Vendor[];
 }
 
-export interface CurrentLocation {
+export interface Location {
   long: number;
   lat: number;
 }
 
 export interface LocationUpdate {
-  location: CurrentLocation | undefined;
+  location: Location | undefined;
   entityId: string;
 }
 
