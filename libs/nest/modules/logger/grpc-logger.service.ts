@@ -1,26 +1,20 @@
 import { PinoLogger } from 'nestjs-pino';
 import { Injectable, LoggerService } from '@nestjs/common';
+import { RequestContextService } from './request-context.service';
 
 @Injectable()
 export class GrpcLogger implements LoggerService {
-	private requestId = 'no-request-id';
-	constructor(private logger: PinoLogger) {}
-
-	setRequestId(id: string) {
-		this.requestId = id;
-	}
-
-	clearRequest() {
-		this.requestId = 'no-request-id';
-		// this.context = 'none';
-	}
+	constructor(
+		private logger: PinoLogger,
+		private readonly requestContextService: RequestContextService,
+	) {}
 
 	log(message: string, context: string, optionalParams: { [K: string]: any }) {
 		return this.logger.info(
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);
@@ -31,7 +25,7 @@ export class GrpcLogger implements LoggerService {
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);
@@ -45,7 +39,7 @@ export class GrpcLogger implements LoggerService {
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);
@@ -59,7 +53,7 @@ export class GrpcLogger implements LoggerService {
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);
@@ -73,7 +67,7 @@ export class GrpcLogger implements LoggerService {
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);
@@ -87,7 +81,7 @@ export class GrpcLogger implements LoggerService {
 			{
 				...optionalParams,
 				context,
-				requestId: this.requestId,
+				requestId: this.requestContextService.get('requestId'),
 			},
 			message,
 		);

@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
 import { GrpcLogger } from './grpc-logger.service';
+import { RequestContextService } from './request-context.service';
 
 @Module({})
 export class GrpcLoggerModule {
@@ -55,11 +56,12 @@ export class GrpcLoggerModule {
 			],
 			module: GrpcLoggerModule,
 			providers: [
-				GrpcLogger,
+				RequestContextService,
 				{
 					provide: APP_INTERCEPTOR,
 					useClass: GrpcRequestIdInterceptor,
 				},
+				GrpcLogger,
 			],
 		};
 	}
