@@ -4,7 +4,7 @@ package location;
 
 service LocationService {
   rpc UpdateVendorLocation (LocationUpdate) returns (Empty) {}
-  rpc VendorLocations (stream VendorLocationRequest) returns (stream VendorLocationResponse) {}
+  rpc VendorLocations (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
 message Empty {
@@ -12,9 +12,8 @@ message Empty {
 }
 
 message VendorLocationRequest {
-    string callerId = 1;
-    Location swLocation = 2;
-    Location neLocation = 3;
+    Location swLocation = 1;
+    Location neLocation = 2;
 }
 
 message Vendor {
@@ -24,7 +23,6 @@ message Vendor {
 }
 
 message VendorLocationResponse {
-    string callerId = 1;
     repeated Vendor vendors = 2;
 }
 

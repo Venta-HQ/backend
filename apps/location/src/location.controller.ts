@@ -1,15 +1,9 @@
 import Redis from 'ioredis';
-import { Observable, Subject } from 'rxjs';
 import { PrismaService } from '@app/nest/modules';
-import {
-	LOCATION_SERVICE_NAME,
-	LocationUpdate,
-	VendorLocationRequest,
-	VendorLocationResponse,
-} from '@app/proto/location';
+import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Controller, Logger } from '@nestjs/common';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 
 // Function to calculate distance between two lat/lon points (Haversine formula)
 const getDistanceFromLatLon = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -72,52 +66,36 @@ export class LocationController {
 		});
 	}
 
-	@GrpcStreamMethod(LOCATION_SERVICE_NAME)
-	async vendorLocations(stream: Observable<VendorLocationRequest>) {
-		const subject = new Subject<VendorLocationResponse>();
-
-		const onNext = async (request: VendorLocationRequest) => {
-			const { neLocation, swLocation } = request;
-			const { centerLat, centerLon, height, width } = await calculateBoundingBoxDimensions({
-				neLocation,
-				swLocation,
-			});
-
-			const vendorLocations = await this.redis.geosearch(
-				'vendor_locations',
-				'BYBOX', // Specify the BYBOX method
-				width,
-				height,
-				'm',
-				'FROMLONLAT',
-				centerLon,
-				centerLat,
-				'WITHCOORD',
-				'WITHDIST', // Optional: include distance from the center
-			);
-
-			subject.next({
-				callerId: request.callerId,
-				vendors: vendorLocations.map((record) => ({
-					dist: record[1],
-					id: record[0],
-					location: {
-						lat: record[2][1],
-						long: record[2][0],
-					},
-				})),
-			});
-		};
-
-		stream.subscribe({
-			complete: () => subject.complete(),
-			error: (err) => {
-				this.logger.error(err.message);
-				subject.complete();
-			},
-			next: onNext,
+	@GrpcMethod(LOCATION_SERVICE_NAME)
+	async vendorLocations(request: VendorLocationRequest) {
+		const { neLocation, swLocation } = request;
+		const { centerLat, centerLon, height, width } = await calculateBoundingBoxDimensions({
+			neLocation,
+			swLocation,
 		});
 
-		return subject.asObservable();
+		const vendorLocations = await this.redis.geosearch(
+			'vendor_locations',
+			'BYBOX', // Specify the BYBOX method
+			width,
+			height,
+			'm',
+			'FROMLONLAT',
+			centerLon,
+			centerLat,
+			'WITHCOORD',
+			'WITHDIST', // Optional: include distance from the center
+		);
+
+		return {
+			vendors: vendorLocations.map((record) => ({
+				dist: record[1],
+				id: record[0],
+				location: {
+					lat: record[2][1],
+					long: record[2][0],
+				},
+			})),
+		};
 	}
 }

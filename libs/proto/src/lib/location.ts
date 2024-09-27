@@ -15,7 +15,6 @@ export interface Empty {
 }
 
 export interface VendorLocationRequest {
-  callerId: string;
   swLocation: Location | undefined;
   neLocation: Location | undefined;
 }
@@ -27,7 +26,6 @@ export interface Vendor {
 }
 
 export interface VendorLocationResponse {
-  callerId: string;
   vendors: Vendor[];
 }
 
@@ -46,23 +44,26 @@ export const LOCATION_PACKAGE_NAME = "location";
 export interface LocationServiceClient {
   updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Observable<Empty>;
 
-  vendorLocations(request: Observable<VendorLocationRequest>, metadata?: Metadata): Observable<VendorLocationResponse>;
+  vendorLocations(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
 }
 
 export interface LocationServiceController {
   updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
-  vendorLocations(request: Observable<VendorLocationRequest>, metadata?: Metadata): Observable<VendorLocationResponse>;
+  vendorLocations(
+    request: VendorLocationRequest,
+    metadata?: Metadata,
+  ): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
 }
 
 export function LocationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["updateVendorLocation"];
+    const grpcMethods: string[] = ["updateVendorLocation", "vendorLocations"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("LocationService", method)(constructor.prototype[method], method, descriptor);
     }
-    const grpcStreamMethods: string[] = ["vendorLocations"];
+    const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcStreamMethod("LocationService", method)(constructor.prototype[method], method, descriptor);

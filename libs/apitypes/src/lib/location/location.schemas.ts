@@ -7,7 +7,6 @@ export const GenericLocationSyncDataSchema = z.object({
 });
 
 export const VendorLocationsRequestDataSchema = z.object({
-	id: z.string(),
 	neLocation: z.object({
 		lat: z.number(),
 		long: z.number(),

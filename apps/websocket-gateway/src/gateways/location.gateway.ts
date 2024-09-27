@@ -1,4 +1,3 @@
-import { ReplaySubject } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
 	GenericLocationSyncData,
@@ -7,14 +6,12 @@ import {
 	VendorLocationsRequestDataSchema,
 } from '@app/apitypes';
 import { WsSchemaValidatorPipe } from '@app/nest/pipes';
-import { LocationServiceClient, VendorLocationRequest } from '@app/proto/location';
+import { LocationServiceClient } from '@app/proto/location';
 import { Inject, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
 	MessageBody,
-	OnGatewayConnection,
-	OnGatewayDisconnect,
 	OnGatewayInit,
 	SubscribeMessage,
 	WebSocketGateway,
@@ -22,10 +19,9 @@ import {
 } from '@nestjs/websockets';
 
 @WebSocketGateway()
-export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class LocationWebsocketGateway implements OnGatewayInit {
 	private readonly logger = new Logger(WebSocketGateway.name);
 	private locationService: LocationServiceClient;
-	private vendorLocationRequest$ = new ReplaySubject<VendorLocationRequest>();
 
 	constructor(@Inject('LOCATION_SERVICE') private grpcClient: ClientGrpc) {}
 
@@ -33,25 +29,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	afterInit(_server: Server) {
 		this.locationService = this.grpcClient.getService<LocationServiceClient>('LocationService');
-		this.setUpVendorLocationStream();
-		this.logger.log('Initialized websocket gateway');
 	}
-
-	setUpVendorLocationStream() {
-		const stream = this.locationService.vendorLocations(this.vendorLocationRequest$);
-
-		stream.subscribe({
-			complete: () => {
-				this.logger.log('Disconnecting from location service stream');
-			},
-			next: ({ callerId, vendors }) => {
-				this.server.to(callerId).emit('vendor_sync', vendors);
-			},
-		});
-	}
-
-	handleConnection(_client: Socket) {}
-	handleDisconnect(_client: Socket) {}
 
 	@SubscribeMessage('vendor_location_update')
 	async vendorLocationSync(
@@ -73,7 +51,6 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		@ConnectedSocket() client: Socket,
 	): Promise<void> {
 		const { neLocation, swLocation } = data;
-
 		if (!neLocation.lat || !neLocation.long || !swLocation.lat || !swLocation.long) {
 			this.server.to(client.id).emit('error', {
 				message: 'Bounding box not provided.',
@@ -81,16 +58,28 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			return;
 		}
 
-		this.vendorLocationRequest$.next({
-			callerId: client.id,
-			neLocation: {
-				lat: neLocation.lat,
-				long: neLocation.long,
-			},
-			swLocation: {
-				lat: swLocation.lat,
-				long: swLocation.long,
-			},
-		});
+		this.locationService
+			.vendorLocations({
+				neLocation: {
+					lat: neLocation.lat,
+					long: neLocation.long,
+				},
+				swLocation: {
+					lat: swLocation.lat,
+					long: swLocation.long,
+				},
+			})
+			.subscribe({
+				complete: () => {
+					console.log('gRPC stream completed');
+				},
+				error: (err) => {
+					console.error('Error receiving gRPC response:', err);
+				},
+				next: (response) => {
+					// Emit the response to the WebSocket
+					this.server.to(client.id).emit('vendor_sync', response.vendors);
+				},
+			});
 	}
 }
