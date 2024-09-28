@@ -18,7 +18,6 @@ message VendorLocationRequest {
 
 message Vendor {
     string id = 1;
-    double dist = 2;
     Location location = 3;
 }
 

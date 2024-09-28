@@ -3,7 +3,6 @@ import { z } from 'zod';
 export const VendorLocationUpdateDataSchema = z.object({
 	lat: z.number(),
 	long: z.number(),
-	vendorId: z.string(),
 });
 
 export const UpdateUserLocationDataSchema = z.object({
@@ -15,5 +14,4 @@ export const UpdateUserLocationDataSchema = z.object({
 		lat: z.number(),
 		long: z.number(),
 	}),
-	userId: z.string(),
 });

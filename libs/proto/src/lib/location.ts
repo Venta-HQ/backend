@@ -21,7 +21,6 @@ export interface VendorLocationRequest {
 
 export interface Vendor {
   id: string;
-  dist: number;
   location: Location | undefined;
 }
 

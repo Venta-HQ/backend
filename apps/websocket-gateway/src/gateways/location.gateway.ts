@@ -103,13 +103,14 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	}
 
 	@SubscribeMessage('updateVendorLocation')
-	updateVendorLocation(
+	async updateVendorLocation(
 		@MessageBody(new WsSchemaValidatorPipe(VendorLocationUpdateDataSchema)) data: VendorLocationUpdateData,
 		@ConnectedSocket() socket: Socket,
 	) {
+		const vendorId = await this.redis.get(`vendor:${socket.id}`);
 		// Store this in DB & REDIS for querying later
 		this.locationService.updateVendorLocation({
-			entityId: data.vendorId,
+			entityId: vendorId,
 			location: {
 				lat: data.lat,
 				long: data.long,
@@ -117,8 +118,8 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		});
 
 		// Let any interested clients know
-		socket.to(data.vendorId).emit('vendor_sync', {
-			id: data.vendorId,
+		socket.to(vendorId).emit('vendor_sync', {
+			id: vendorId,
 			location: {
 				lat: data.lat,
 				long: data.long,

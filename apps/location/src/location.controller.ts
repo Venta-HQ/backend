@@ -84,16 +84,14 @@ export class LocationController {
 			centerLon,
 			centerLat,
 			'WITHCOORD',
-			'WITHDIST', // Optional: include distance from the center
 		);
 
 		return {
 			vendors: vendorLocations.map((record) => ({
-				dist: record[1],
 				id: record[0],
 				location: {
-					lat: record[2][1],
-					long: record[2][0],
+					lat: record[1][1],
+					long: record[1][0],
 				},
 			})),
 		};
