@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
-export const GenericLocationSyncDataSchema = z.object({
-	id: z.string(),
+export const VendorLocationUpdateDataSchema = z.object({
 	lat: z.number(),
 	long: z.number(),
+	vendorId: z.string(),
 });
 
-export const VendorLocationsRequestDataSchema = z.object({
+export const UpdateUserLocationDataSchema = z.object({
 	neLocation: z.object({
 		lat: z.number(),
 		long: z.number(),
@@ -15,4 +15,5 @@ export const VendorLocationsRequestDataSchema = z.object({
 		lat: z.number(),
 		long: z.number(),
 	}),
+	userId: z.string(),
 });

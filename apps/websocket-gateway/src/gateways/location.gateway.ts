@@ -1,17 +1,22 @@
+import Redis from 'ioredis';
+import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
-	GenericLocationSyncData,
-	GenericLocationSyncDataSchema,
-	VendorLocationsRequestData,
-	VendorLocationsRequestDataSchema,
+	UpdateUserLocationData,
+	UpdateUserLocationDataSchema,
+	VendorLocationUpdateData,
+	VendorLocationUpdateDataSchema,
 } from '@app/apitypes';
 import { WsSchemaValidatorPipe } from '@app/nest/pipes';
 import { LocationServiceClient } from '@app/proto/location';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
 	MessageBody,
+	OnGatewayConnection,
+	OnGatewayDisconnect,
 	OnGatewayInit,
 	SubscribeMessage,
 	WebSocketGateway,
@@ -19,11 +24,14 @@ import {
 } from '@nestjs/websockets';
 
 @WebSocketGateway()
-export class LocationWebsocketGateway implements OnGatewayInit {
+export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(WebSocketGateway.name);
 	private locationService: LocationServiceClient;
 
-	constructor(@Inject('LOCATION_SERVICE') private grpcClient: ClientGrpc) {}
+	constructor(
+		@Inject('LOCATION_SERVICE') private grpcClient: ClientGrpc,
+		@InjectRedis() private readonly redis: Redis,
+	) {}
 
 	@WebSocketServer() server: Server;
 
@@ -31,13 +39,86 @@ export class LocationWebsocketGateway implements OnGatewayInit {
 		this.locationService = this.grpcClient.getService<LocationServiceClient>('LocationService');
 	}
 
-	@SubscribeMessage('vendor_location_update')
-	async vendorLocationSync(
-		@MessageBody(new WsSchemaValidatorPipe(GenericLocationSyncDataSchema)) data: GenericLocationSyncData,
-		@ConnectedSocket() _client: Socket,
-	): Promise<void> {
-		await this.locationService.updateVendorLocation({
-			entityId: data.id,
+	async handleConnection(client: Socket) {
+		// Keep a way to retrieve a user's socket id by userId
+		client.on('register-user', async (data) => {
+			if (data.userId) {
+				await this.redis.set(`user:${data.userId}:socketId`, client.id);
+				await this.redis.set(`user:${client.id}`, data.userId);
+			}
+		});
+
+		// When a vendor connects, store a record with their client ID
+		client.on('register-vendor', async (data) => {
+			if (data.vendorId) {
+				await this.redis.set(`vendor:${client.id}`, data.vendorId);
+			}
+		});
+	}
+
+	async handleDisconnect(client: any) {
+		// When a vendor disconnects, clear out
+		const vendorId = await this.redis.get(`vendor:${client.id}`);
+		const userId = await this.redis.get(`user:${client.id}`);
+		if (vendorId) {
+			// Remove the geolocation store
+			this.redis.zrem('vendor_locations', vendorId);
+			// Get all users in the room
+			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
+			// Let any interested clients know (Need to do this before disconnecting from room)
+			client.to(vendorId).emit('vendor_disconnect', {
+				id: vendorId,
+			});
+			usersInRoom.forEach(async (uid) => {
+				// Get that user's socket id
+				const socketId = await this.redis.get(`user:${uid}:socketId`);
+				if (socketId) {
+					// Get the socket
+					const socket = this.server.sockets.sockets.get(socketId);
+					if (socket) {
+						// Have the socket leave this vendor's room
+						socket.leave(vendorId);
+					}
+				}
+				// Update redis to remove that room from the user's list of rooms
+				await this.redis.srem(`user:${uid}:rooms`, vendorId);
+			});
+			// Delete room record
+			await this.redis.del(`room:${vendorId}:users`);
+			// Delete the vendor
+			await this.redis.del(`vendor:${client.id}`);
+		} else if (userId) {
+			// Remove this user from any room user lists it is a part of
+			const rooms = await this.redis.smembers(`user:${userId}:room`);
+			rooms.forEach(async (room) => {
+				await this.redis.srem(`room:${room}:users`, userId);
+			});
+			// Remove userId -> Socket ID connection
+			await this.redis.del(`user:${userId}:socketId`);
+			// Remove this user's list of rooms
+			await this.redis.del(`user:${userId}:room`);
+			// Remove user record
+			await this.redis.del(`user:${client.id}`);
+		}
+	}
+
+	@SubscribeMessage('updateVendorLocation')
+	updateVendorLocation(
+		@MessageBody(new WsSchemaValidatorPipe(VendorLocationUpdateDataSchema)) data: VendorLocationUpdateData,
+		@ConnectedSocket() socket: Socket,
+	) {
+		// Store this in DB & REDIS for querying later
+		this.locationService.updateVendorLocation({
+			entityId: data.vendorId,
+			location: {
+				lat: data.lat,
+				long: data.long,
+			},
+		});
+
+		// Let any interested clients know
+		socket.to(data.vendorId).emit('vendor_sync', {
+			id: data.vendorId,
 			location: {
 				lat: data.lat,
 				long: data.long,
@@ -45,21 +126,14 @@ export class LocationWebsocketGateway implements OnGatewayInit {
 		});
 	}
 
-	@SubscribeMessage('user_location_update')
-	async userLocationSync(
-		@MessageBody(new WsSchemaValidatorPipe(VendorLocationsRequestDataSchema)) data: VendorLocationsRequestData,
-		@ConnectedSocket() client: Socket,
-	): Promise<void> {
+	@SubscribeMessage('updateUserLocation')
+	async updateUserLocation(
+		@MessageBody(new WsSchemaValidatorPipe(UpdateUserLocationDataSchema)) data: UpdateUserLocationData,
+		@ConnectedSocket() socket: Socket,
+	) {
 		const { neLocation, swLocation } = data;
-		if (!neLocation.lat || !neLocation.long || !swLocation.lat || !swLocation.long) {
-			this.server.to(client.id).emit('error', {
-				message: 'Bounding box not provided.',
-			});
-			return;
-		}
-
-		this.locationService
-			.vendorLocations({
+		const { vendors } = await firstValueFrom(
+			this.locationService.vendorLocations({
 				neLocation: {
 					lat: neLocation.lat,
 					long: neLocation.long,
@@ -68,18 +142,33 @@ export class LocationWebsocketGateway implements OnGatewayInit {
 					lat: swLocation.lat,
 					long: swLocation.long,
 				},
-			})
-			.subscribe({
-				complete: () => {
-					console.log('gRPC stream completed');
-				},
-				error: (err) => {
-					console.error('Error receiving gRPC response:', err);
-				},
-				next: (response) => {
-					// Emit the response to the WebSocket
-					this.server.to(client.id).emit('vendor_sync', response.vendors);
-				},
+			}),
+		);
+		const userId = await this.redis.get(`user:${socket.id}`);
+		const currentRooms = await this.redis.smembers(`user:${userId}:rooms`);
+		const vendorIds = vendors.map((vendor) => vendor.id);
+
+		// Find all the rooms you no longer need
+		const roomsToLeave = currentRooms.filter((room) => !vendorIds.includes(room));
+		// Find all the vendors whose rooms you are not subscribed to already
+		const roomsToJoin = vendorIds.filter((room) => !currentRooms.includes(room));
+
+		if (roomsToLeave.length) {
+			this.redis.srem(`user:${userId}:room`, ...roomsToLeave);
+			roomsToLeave.forEach((room) => {
+				this.redis.srem(`room:${room}:users`, userId);
+				socket.leave(room);
 			});
+		}
+
+		if (roomsToJoin.length) {
+			this.redis.sadd(`user:${userId}:room`, ...roomsToJoin);
+			roomsToJoin.forEach((room) => {
+				this.redis.sadd(`room:${room}:users`, userId);
+				socket.join(room);
+			});
+		}
+
+		socket.emit('vendor_sync', vendors);
 	}
 }

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GenericLocationSyncDataSchema, VendorLocationsRequestDataSchema } from './location.schemas';
+import { UpdateUserLocationDataSchema, VendorLocationUpdateDataSchema } from './location.schemas';
 
-export type GenericLocationSyncData = z.infer<typeof GenericLocationSyncDataSchema>;
-export type VendorLocationsRequestData = z.infer<typeof VendorLocationsRequestDataSchema>;
+export type VendorLocationUpdateData = z.infer<typeof VendorLocationUpdateDataSchema>;
+export type UpdateUserLocationData = z.infer<typeof UpdateUserLocationDataSchema>;
