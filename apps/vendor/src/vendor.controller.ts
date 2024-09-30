@@ -1,3 +1,4 @@
+import { GrpcError } from '@app/nest/errors';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -7,9 +8,8 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
-import { status } from '@grpc/grpc-js';
 import { Controller, Logger } from '@nestjs/common';
-import { GrpcMethod, RpcException } from '@nestjs/microservices';
+import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
 
 @Controller()
@@ -22,20 +22,14 @@ export class VendorController {
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		if (!data.id) {
 			this.logger.error(`No ID provided`);
-			throw new RpcException({
-				code: status.INVALID_ARGUMENT,
-				message: `No ID provided`,
-			});
+			throw new GrpcError('API-00004', { message: 'No ID provided' });
 		}
 
 		const result = await this.vendorService.getVendorById(data.id);
 
 		if (!result) {
 			this.logger.error(`Vendor with ID ${data.id} not found`);
-			throw new RpcException({
-				code: status.NOT_FOUND,
-				message: `Vendor with ID ${data.id} not found`,
-			});
+			throw new GrpcError('API-00003', { entity: 'Vendor' });
 		}
 
 		return {
@@ -52,13 +46,7 @@ export class VendorController {
 			this.logger.error(`Error creating vendor with data`, {
 				data,
 			});
-			throw new RpcException({
-				code: status.INTERNAL,
-				details: {
-					data,
-				},
-				message: `Could not create vendor`,
-			});
+			throw new GrpcError('API-00005', { entity: 'Vendor' });
 		}
 	}
 
@@ -76,17 +64,11 @@ export class VendorController {
 				data,
 			});
 
-			if (e.code) {
-				throw new RpcException(e);
+			if (e instanceof GrpcError) {
+				throw e;
 			}
 
-			throw new RpcException({
-				code: status.INTERNAL,
-				details: {
-					data,
-				},
-				message: `Could not update vendor`,
-			});
+			throw new GrpcError('API-00006', { entity: 'Vendor' });
 		}
 	}
 }

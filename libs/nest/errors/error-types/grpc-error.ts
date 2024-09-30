@@ -1,17 +1,19 @@
-import { HttpException } from '@nestjs/common';
+import { status } from '@grpc/grpc-js';
+import { RpcException } from '@nestjs/microservices';
 import ERROR_OBJECT, { ERROR_CODES } from '../errorcodes';
 
-export class HttpError extends HttpException {
+export class GrpcError extends RpcException {
+	readonly code;
+	readonly errorCode;
 	constructor(code: keyof typeof ERROR_CODES, params?: Record<string, any>) {
 		if (!Object.keys(ERROR_OBJECT).includes(code)) {
-			super(
-				{
-					message: 'An unknown error occured',
-				},
-				500,
-			);
+			super({
+				code: status.UNKNOWN,
+				errorCode: '',
+				message: 'An unknown error occured',
+			});
 		} else {
-			const { message, status } = ERROR_OBJECT[code];
+			const { grpcCode, message } = ERROR_OBJECT[code];
 			let _message = message;
 			if (params) {
 				Object.keys(params).forEach((key) => {
@@ -26,13 +28,13 @@ export class HttpError extends HttpException {
 				});
 			}
 
-			super(
-				{
-					code,
-					message: `[${code}] ${_message}`,
-				},
-				status,
-			);
+			super({
+				code: grpcCode,
+				errorCode: code,
+				message: `[${code}] ${_message}`,
+			});
 		}
+		this.code = code;
+		this.errorCode = ERROR_OBJECT[code]['grpcCode'];
 	}
 }

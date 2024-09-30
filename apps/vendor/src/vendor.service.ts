@@ -1,3 +1,4 @@
+import { GrpcError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
 import { status } from '@grpc/grpc-js';
@@ -40,10 +41,7 @@ export class VendorService {
 		});
 
 		if (!exists) {
-			throw new RpcException({
-				code: status.NOT_FOUND,
-				message: `Vendor with ID ${id} not found or does not belong to user ${userId}`,
-			});
+			throw new GrpcError('API-00003', { entity: 'Vendor' });
 		}
 
 		const { imageUrl, ...updateData } = data;

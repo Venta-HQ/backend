@@ -1,9 +1,11 @@
 import Redis from 'ioredis';
+import { GrpcError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { Prisma } from '@prisma/client';
 
 // Function to calculate distance between two lat/lon points (Haversine formula)
 const getDistanceFromLatLon = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -57,13 +59,22 @@ export class LocationController {
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
 	async updateVendorLocation(data: LocationUpdate) {
-		await this.redis.geoadd('vendor_locations', data.location.long, data.location.lat, data.entityId);
-		await this.prisma.db.vendor.update({
-			data: data.location,
-			where: {
-				id: data.entityId,
-			},
-		});
+		try {
+			await this.redis.geoadd('vendor_locations', data.location.long, data.location.lat, data.entityId);
+			await this.prisma.db.vendor.update({
+				data: data.location,
+				where: {
+					id: data.entityId,
+				},
+			});
+		} catch (e) {
+			if (e instanceof Prisma.PrismaClientKnownRequestError) {
+				if (e.code === 'P2025') {
+					throw new GrpcError('API-00003', { entity: 'Vendor' });
+				}
+			}
+			throw new GrpcError('API-00006', { entity: 'Vendor' });
+		}
 	}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
@@ -74,35 +85,30 @@ export class LocationController {
 			swLocation,
 		});
 
-		const vendorLocations = await this.redis.geosearch(
-			'vendor_locations',
-			'BYBOX', // Specify the BYBOX method
-			width,
-			height,
-			'm',
-			'FROMLONLAT',
-			centerLon,
-			centerLat,
-			'WITHCOORD',
-		);
-
-		console.log({
-			vendors: vendorLocations.map((record) => ({
-				id: record[0],
-				location: {
-					lat: record[1][1],
-					long: record[1][0],
-				},
-			})),
-		});
-		return {
-			vendors: vendorLocations.map((record) => ({
-				id: record[0],
-				location: {
-					lat: record[1][1],
-					long: record[1][0],
-				},
-			})),
-		};
+		try {
+			const vendorLocations = await this.redis.geosearch(
+				'vendor_locations',
+				'BYBOX', // Specify the BYBOX method
+				width,
+				height,
+				'm',
+				'FROMLONLAT',
+				centerLon,
+				centerLat,
+				'WITHCOORD',
+			);
+			return {
+				vendors: vendorLocations.map((record) => ({
+					id: record[0],
+					location: {
+						lat: record[1][1],
+						long: record[1][0],
+					},
+				})),
+			};
+		} catch (e) {
+			this.logger.error(e);
+			throw new GrpcError('API-00007', { operation: 'GEO Search' });
+		}
 	}
 }

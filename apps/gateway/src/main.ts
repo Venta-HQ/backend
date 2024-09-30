@@ -1,5 +1,5 @@
-import { HttpErrorFilter } from 'libs/nest/filters/http-exception/http-exception.filter';
 import { Logger } from 'nestjs-pino';
+import { HttpErrorFilter } from '@app/nest/filters';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
