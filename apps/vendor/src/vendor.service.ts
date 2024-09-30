@@ -1,9 +1,7 @@
 import { GrpcError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
-import { status } from '@grpc/grpc-js';
 import { Injectable, Logger } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class VendorService {
