@@ -3,27 +3,11 @@ import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { HttpError } from '@app/nest/errors';
+import { GrpcError, HttpError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
-import { status } from '@grpc/grpc-js';
-import {
-	BadRequestException,
-	Body,
-	Controller,
-	Get,
-	Inject,
-	InternalServerErrorException,
-	Logger,
-	NotFoundException,
-	Param,
-	Post,
-	Put,
-	Req,
-	UseGuards,
-	UsePipes,
-} from '@nestjs/common';
+import { Body, Controller, Get, Inject, Logger, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 
 @Controller()
 export class VendorController {
@@ -35,17 +19,11 @@ export class VendorController {
 	@UseGuards(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
 		return await this.client.invoke('getVendorById', { id }).pipe(
-			catchError((error) => {
-				if (error.code === status.NOT_FOUND) {
-					this.logger.warn(error.message);
-					return throwError(() => new HttpError('API-00003', { entity: 'Vendor' }));
-				} else if (error.code === status.INVALID_ARGUMENT) {
-					this.logger.warn(error.message);
-					return throwError(() => new HttpError('API-00004', { message: 'Invalid query params' }));
-				} else {
-					this.logger.error('Unhandled error occurred', error);
-					return throwError(() => new HttpError('API-00001'));
+			catchError((error: GrpcError) => {
+				if (error.errorCode) {
+					throw new HttpError(error.errorCode, null, error.message);
 				}
+				return throwError(() => new HttpError('API-00001'));
 			}),
 		);
 	}
@@ -65,12 +43,10 @@ export class VendorController {
 				website: data.website,
 			})
 			.pipe(
-				catchError((error) => {
-					if (error.code === status.INTERNAL) {
-						this.logger.error(error.message, error.details);
-						return throwError(() => new BadRequestException(error.message));
+				catchError((error: GrpcError) => {
+					if (error.errorCode) {
+						throw new HttpError(error.errorCode, null, error.message);
 					}
-
 					return throwError(() => new HttpError('API-00001'));
 				}),
 			);
@@ -96,16 +72,10 @@ export class VendorController {
 			})
 
 			.pipe(
-				catchError((error) => {
-					this.logger.error(error.message, error.details);
-					if (error.code === status.INTERNAL) {
-						return throwError(() => new BadRequestException(error.message));
+				catchError((error: GrpcError) => {
+					if (error.errorCode) {
+						throw new HttpError(error.errorCode, null, error.message);
 					}
-
-					if (error.code === status.NOT_FOUND) {
-						return throwError(() => new HttpError('API-00003', { entity: 'Vendor' }));
-					}
-
 					return throwError(() => new HttpError('API-00001'));
 				}),
 			);

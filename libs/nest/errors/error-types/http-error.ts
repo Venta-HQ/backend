@@ -2,7 +2,7 @@ import { HttpException } from '@nestjs/common';
 import ERROR_OBJECT, { ERROR_CODES } from '../errorcodes';
 
 export class HttpError extends HttpException {
-	constructor(code: keyof typeof ERROR_CODES, params?: Record<string, any>) {
+	constructor(code: keyof typeof ERROR_CODES, params?: Record<string, any>, overrideMessage?: string) {
 		if (!Object.keys(ERROR_OBJECT).includes(code)) {
 			super(
 				{
@@ -29,7 +29,7 @@ export class HttpError extends HttpException {
 			super(
 				{
 					code,
-					message: `[${code}] ${_message}`,
+					message: overrideMessage ? overrideMessage : `[${code}] ${_message}`,
 				},
 				status,
 			);
