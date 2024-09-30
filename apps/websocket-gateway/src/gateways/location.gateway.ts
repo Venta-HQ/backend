@@ -81,7 +81,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 					}
 				}
 				// Update redis to remove that room from the user's list of rooms
-				await this.redis.srem(`user:${uid}:rooms`, vendorId);
+				await this.redis.srem(`user:${uid}:room`, vendorId);
 			});
 			// Delete room record
 			await this.redis.del(`room:${vendorId}:users`);
@@ -133,7 +133,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		@ConnectedSocket() socket: Socket,
 	) {
 		const { neLocation, swLocation } = data;
-		const { vendors } = (await firstValueFrom(
+		const { vendors } = await firstValueFrom(
 			this.locationService.vendorLocations({
 				neLocation: {
 					lat: neLocation.lat,
@@ -144,12 +144,12 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 					long: swLocation.long,
 				},
 			}),
-		)) ?? { vendors: [] };
+		);
 
 		const userId = await this.redis.get(`user:${socket.id}`);
-		const currentRooms = await this.redis.smembers(`user:${userId}:rooms`);
+		const currentRooms = await this.redis.smembers(`user:${userId}:room`);
 
-		const vendorIds = vendors.map((vendor) => vendor.id);
+		const vendorIds = (vendors ?? []).map((vendor) => vendor.id);
 
 		// Find all the rooms you no longer need
 		const roomsToLeave = currentRooms.filter((room) => !vendorIds.includes(room));
@@ -157,7 +157,6 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		const roomsToJoin = vendorIds.filter((room) => !currentRooms.includes(room));
 
 		if (roomsToLeave.length) {
-			console.log('Leaving rooms', roomsToLeave);
 			this.redis.srem(`user:${userId}:room`, ...roomsToLeave);
 			roomsToLeave.forEach((room) => {
 				this.redis.srem(`room:${room}:users`, userId);
@@ -166,7 +165,6 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		}
 
 		if (roomsToJoin.length) {
-			console.log('Joining rooms', roomsToJoin);
 			this.redis.sadd(`user:${userId}:room`, ...roomsToJoin);
 			roomsToJoin.forEach((room) => {
 				this.redis.sadd(`room:${room}:users`, userId);
@@ -174,6 +172,6 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			});
 		}
 
-		socket.emit('vendor_sync', vendors);
+		socket.emit('vendor_channels', vendors ?? []);
 	}
 }
