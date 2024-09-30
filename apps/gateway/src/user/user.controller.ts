@@ -1,6 +1,7 @@
 import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
+import { HttpError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { status } from '@grpc/grpc-js';
@@ -29,14 +30,13 @@ export class UserController {
 			.invoke('getUserVendors', {
 				userId: req.userId,
 			})
-
 			.pipe(
 				catchError((error) => {
 					if (error.code === status.INTERNAL) {
 						this.logger.error(error.message, error.details);
-						return throwError(() => new BadRequestException(error.message));
+						return throwError(() => new HttpError('API-00001')); // TODO: Handle different error types from GRPC
 					}
-					return throwError(() => new InternalServerErrorException('An error occurred'));
+					return throwError(() => new HttpError('API-00001'));
 				}),
 			);
 	}

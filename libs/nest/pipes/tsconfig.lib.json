@@ -2,7 +2,7 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"declaration": true,
-		"outDir": "../../dist/libs/nest/guards"
+		"outDir": "../../dist/libs/nest/pipes"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

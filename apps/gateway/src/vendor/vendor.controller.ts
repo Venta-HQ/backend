@@ -3,6 +3,7 @@ import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
+import { HttpError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
@@ -37,13 +38,13 @@ export class VendorController {
 			catchError((error) => {
 				if (error.code === status.NOT_FOUND) {
 					this.logger.warn(error.message);
-					return throwError(() => new NotFoundException('Item not found'));
+					return throwError(() => new HttpError('API-00003', { entity: 'Vendor' }));
 				} else if (error.code === status.INVALID_ARGUMENT) {
 					this.logger.warn(error.message);
-					return throwError(() => new BadRequestException('Invalid query params provided'));
+					return throwError(() => new HttpError('API-00004', { message: 'Invalid query params' }));
 				} else {
 					this.logger.error('Unhandled error occurred', error);
-					return throwError(() => new InternalServerErrorException('An error occurred'));
+					return throwError(() => new HttpError('API-00001'));
 				}
 			}),
 		);
@@ -70,7 +71,7 @@ export class VendorController {
 						return throwError(() => new BadRequestException(error.message));
 					}
 
-					return throwError(() => new InternalServerErrorException('An error occurred'));
+					return throwError(() => new HttpError('API-00001'));
 				}),
 			);
 	}
@@ -102,10 +103,10 @@ export class VendorController {
 					}
 
 					if (error.code === status.NOT_FOUND) {
-						return throwError(() => new NotFoundException(error.message));
+						return throwError(() => new HttpError('API-00003', { entity: 'Vendor' }));
 					}
 
-					return throwError(() => new InternalServerErrorException('An error occurred'));
+					return throwError(() => new HttpError('API-00001'));
 				}),
 			);
 	}

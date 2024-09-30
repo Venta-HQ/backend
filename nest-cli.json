@@ -71,6 +71,15 @@
         "tsConfigPath": "libs/nest/filters/tsconfig.lib.json"
       }
     },
+    "nest/errors": {
+      "type": "library",
+      "root": "libs/nest/errors/",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/errors/",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/errors/tsconfig.lib.json"
+      }
+    },
     "proto": {
       "type": "library",
       "root": "libs/proto",

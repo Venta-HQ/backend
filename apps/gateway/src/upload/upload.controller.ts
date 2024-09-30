@@ -1,3 +1,4 @@
+import { ERROR_CODES, HttpError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { UploadService } from '@app/nest/modules';
 import { Controller, Logger, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
@@ -13,6 +14,10 @@ export class UploadController {
 	@UseGuards(AuthGuard)
 	@UseInterceptors(FileInterceptor('file'))
 	uploadImage(@UploadedFile() file: Express.Multer.File) {
-		return this.uploadService.uploadImage(file);
+		try {
+			return this.uploadService.uploadImage(file);
+		} catch (e) {
+			throw new HttpError(ERROR_CODES['API-00002'], { message: e.message });
+		}
 	}
 }
