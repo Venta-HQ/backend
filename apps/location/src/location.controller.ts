@@ -86,6 +86,15 @@ export class LocationController {
 			'WITHCOORD',
 		);
 
+		console.log({
+			vendors: vendorLocations.map((record) => ({
+				id: record[0],
+				location: {
+					lat: record[1][1],
+					long: record[1][0],
+				},
+			})),
+		});
 		return {
 			vendors: vendorLocations.map((record) => ({
 				id: record[0],

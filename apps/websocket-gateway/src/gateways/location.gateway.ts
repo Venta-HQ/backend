@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, tap } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
 	UpdateUserLocationData,
@@ -8,7 +8,7 @@ import {
 	VendorLocationUpdateDataSchema,
 } from '@app/apitypes';
 import { WsSchemaValidatorPipe } from '@app/nest/pipes';
-import { LocationServiceClient } from '@app/proto/location';
+import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -29,14 +29,14 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	private locationService: LocationServiceClient;
 
 	constructor(
-		@Inject('LOCATION_SERVICE') private grpcClient: ClientGrpc,
+		@Inject(LOCATION_SERVICE_NAME) private grpcClient: ClientGrpc,
 		@InjectRedis() private readonly redis: Redis,
 	) {}
 
 	@WebSocketServer() server: Server;
 
 	afterInit(_server: Server) {
-		this.locationService = this.grpcClient.getService<LocationServiceClient>('LocationService');
+		this.locationService = this.grpcClient.getService<LocationServiceClient>(LOCATION_SERVICE_NAME);
 	}
 
 	async handleConnection(client: Socket) {
@@ -133,7 +133,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		@ConnectedSocket() socket: Socket,
 	) {
 		const { neLocation, swLocation } = data;
-		const { vendors } = await firstValueFrom(
+		const { vendors } = (await firstValueFrom(
 			this.locationService.vendorLocations({
 				neLocation: {
 					lat: neLocation.lat,
@@ -144,9 +144,11 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 					long: swLocation.long,
 				},
 			}),
-		);
+		)) ?? { vendors: [] };
+
 		const userId = await this.redis.get(`user:${socket.id}`);
 		const currentRooms = await this.redis.smembers(`user:${userId}:rooms`);
+
 		const vendorIds = vendors.map((vendor) => vendor.id);
 
 		// Find all the rooms you no longer need
@@ -155,6 +157,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		const roomsToJoin = vendorIds.filter((room) => !currentRooms.includes(room));
 
 		if (roomsToLeave.length) {
+			console.log('Leaving rooms', roomsToLeave);
 			this.redis.srem(`user:${userId}:room`, ...roomsToLeave);
 			roomsToLeave.forEach((room) => {
 				this.redis.srem(`room:${room}:users`, userId);
@@ -163,6 +166,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		}
 
 		if (roomsToJoin.length) {
+			console.log('Joining rooms', roomsToJoin);
 			this.redis.sadd(`user:${userId}:room`, ...roomsToJoin);
 			roomsToJoin.forEach((room) => {
 				this.redis.sadd(`room:${room}:users`, userId);
