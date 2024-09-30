@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { firstValueFrom, tap } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
 	UpdateUserLocationData,
@@ -50,6 +50,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 		// When a vendor connects, store a record with their client ID
 		client.on('register-vendor', async (data) => {
+			console.log('Registering vendor', data);
 			if (data.vendorId) {
 				await this.redis.set(`vendor:${client.id}`, data.vendorId);
 			}
@@ -108,6 +109,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		@ConnectedSocket() socket: Socket,
 	) {
 		const vendorId = await this.redis.get(`vendor:${socket.id}`);
+		console.log('Updating vendor location', data);
 		// Store this in DB & REDIS for querying later
 		this.locationService.updateVendorLocation({
 			entityId: vendorId,
