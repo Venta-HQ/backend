@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
@@ -11,33 +12,26 @@ import { WsSchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Logger } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
 	MessageBody,
 	OnGatewayConnection,
 	OnGatewayDisconnect,
-	OnGatewayInit,
 	SubscribeMessage,
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
 
 @WebSocketGateway()
-export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class LocationWebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(WebSocketGateway.name);
-	private locationService: LocationServiceClient;
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private grpcClient: ClientGrpc,
+		@Inject(LOCATION_SERVICE_NAME) private locationService: GrpcInstance<LocationServiceClient>,
 		@InjectRedis() private readonly redis: Redis,
 	) {}
 
 	@WebSocketServer() server: Server;
-
-	afterInit(_server: Server) {
-		this.locationService = this.grpcClient.getService<LocationServiceClient>(LOCATION_SERVICE_NAME);
-	}
 
 	async handleConnection(client: Socket) {
 		// Keep a way to retrieve a user's socket id by userId
@@ -111,7 +105,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		const vendorId = await this.redis.get(`vendor:${socket.id}`);
 		console.log('Updating vendor location', data);
 		// Store this in DB & REDIS for querying later
-		this.locationService.updateVendorLocation({
+		this.locationService.invoke('updateVendorLocation', {
 			entityId: vendorId,
 			location: {
 				lat: data.lat,
@@ -136,7 +130,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	) {
 		const { neLocation, swLocation } = data;
 		const { vendors } = await firstValueFrom(
-			this.locationService.vendorLocations({
+			this.locationService.invoke('vendorLocations', {
 				neLocation: {
 					lat: neLocation.lat,
 					long: neLocation.long,
