@@ -1,6 +1,6 @@
 import { ZodError, ZodSchema } from 'zod';
+import { WsError } from '@app/nest/errors';
 import { ArgumentMetadata, Logger, PipeTransform } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
 
 export class WsSchemaValidatorPipe implements PipeTransform {
 	private readonly logger = new Logger(WsSchemaValidatorPipe.name);
@@ -16,9 +16,18 @@ export class WsSchemaValidatorPipe implements PipeTransform {
 					message: err.message,
 					path: err.path.join('.'),
 				}));
-				throw new WsException({ validationErrors: formattedErrors });
+				throw new WsError(
+					'API-00004',
+					{
+						message: 'Validation failed',
+					},
+					null,
+					formattedErrors,
+				);
 			} else {
-				throw new WsException(`Validation failed`);
+				throw new WsError('API-00004', {
+					message: 'Validation failed',
+				});
 			}
 		}
 	}

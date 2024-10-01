@@ -36,6 +36,11 @@ const ERROR_OBJECTS = {
 		message: 'Operation failed: ${operation}',
 		status: 500,
 	},
+	'API-00008': {
+		grpcCode: status.PERMISSION_DENIED,
+		message: 'Unauthorized',
+		status: 401,
+	},
 };
 
 export default ERROR_OBJECTS;

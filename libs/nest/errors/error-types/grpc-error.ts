@@ -4,11 +4,18 @@ import ERROR_OBJECT, { ERROR_CODES } from '../errorcodes';
 
 export class GrpcError extends RpcException {
 	readonly code;
+	readonly data;
 	readonly errorCode;
-	constructor(code: keyof typeof ERROR_CODES, params?: Record<string, any>) {
+	constructor(
+		code: keyof typeof ERROR_CODES,
+		params?: Record<string, any>,
+		overrideMessage?: string,
+		data?: { [K: string]: any },
+	) {
 		if (!Object.keys(ERROR_OBJECT).includes(code)) {
 			super({
 				code: status.UNKNOWN,
+				data: data ?? null,
 				errorCode: '',
 				message: 'An unknown error occured',
 			});
@@ -30,11 +37,13 @@ export class GrpcError extends RpcException {
 
 			super({
 				code: grpcCode,
+				data: data ?? null,
 				errorCode: code,
-				message: `[${code}] ${_message}`,
+				message: overrideMessage ? overrideMessage : `[${code}] ${_message}`,
 			});
 		}
 		this.code = code;
+		this.data = data;
 		this.errorCode = ERROR_OBJECT[code]['grpcCode'];
 	}
 }

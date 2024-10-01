@@ -9,9 +9,10 @@ export class GrpcErrorFilter implements ExceptionFilter {
 		const code = exception.code || 'UNKNOWN_ERROR';
 		const message = exception.message || 'An unknown error occurred';
 		const errorCode = exception.errorCode || '';
+		const data = exception.data || null;
 
 		// You might want to create a response object, depending on your gRPC setup.
 		// For instance, if you are using gRPC with Protocol Buffers, you would typically return an error object.
-		response.error({ code, errorCode, message });
+		response.error({ code, data, errorCode, message });
 	}
 }

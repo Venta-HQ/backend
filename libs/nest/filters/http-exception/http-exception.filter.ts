@@ -9,10 +9,11 @@ export class HttpErrorFilter implements ExceptionFilter {
 		const response = ctx.getResponse<Response>();
 
 		const status = exception.getStatus();
-		const responseBody = exception.getResponse() as { code?: string; message: string };
+		const responseBody = exception.getResponse() as { code?: string; data?: any; message: string };
 
 		response.status(status).json({
 			code: responseBody.code || 'UNKNOWN_ERROR',
+			data: responseBody.data,
 			message: responseBody.message,
 			path: ctx.getRequest().url,
 			statusCode: status,

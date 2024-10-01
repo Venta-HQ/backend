@@ -1,7 +1,8 @@
 import Redis from 'ioredis';
+import { HttpError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { ClerkService } from '../../modules/clerk/clerk.service';
 
 @Injectable()
@@ -19,13 +20,13 @@ export class AuthGuard implements CanActivate {
 		const authHeader = request.headers['authorization'];
 
 		if (!authHeader) {
-			throw new UnauthorizedException('Missing authorization header');
+			throw new HttpError('API-00008');
 		}
 
 		const token = authHeader?.split(' ')[1];
 
 		if (!token) {
-			throw new UnauthorizedException('Malformed authorization header');
+			throw new HttpError('API-00008');
 		}
 
 		try {
@@ -46,7 +47,7 @@ export class AuthGuard implements CanActivate {
 				});
 
 				if (!internalUser) {
-					throw new UnauthorizedException('No user corresponds with this auth id');
+					throw new HttpError('API-00008');
 				}
 
 				// Cache the result
@@ -60,9 +61,7 @@ export class AuthGuard implements CanActivate {
 
 			return true; // Allow access
 		} catch (error) {
-			// Log the error and deny access if token verification fails
-			console.error('Invalid Clerk token:', error.message);
-			throw new UnauthorizedException('Invalid or expired token');
+			throw new HttpError('API-00008');
 		}
 	}
 }

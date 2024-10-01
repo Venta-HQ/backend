@@ -1,7 +1,6 @@
 import { ZodError, ZodSchema } from 'zod';
-import { status } from '@grpc/grpc-js';
+import { GrpcError } from '@app/nest/errors';
 import { Logger, PipeTransform } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
 
 export class GrpcSchemaValidatorPipe implements PipeTransform {
 	private readonly logger = new Logger(GrpcSchemaValidatorPipe.name);
@@ -18,13 +17,16 @@ export class GrpcSchemaValidatorPipe implements PipeTransform {
 					message: err.message,
 					path: err.path.join('.'),
 				}));
-				throw new RpcException({
-					code: status.INVALID_ARGUMENT,
-					details: { validationErrors: formattedErrors },
-				});
+				throw new GrpcError(
+					'API-00004',
+					{
+						message: `Validation failed`,
+					},
+					null,
+					formattedErrors,
+				);
 			} else {
-				throw new RpcException({
-					code: status.INVALID_ARGUMENT,
+				throw new GrpcError('API-00004', {
 					message: `Validation failed`,
 				});
 			}

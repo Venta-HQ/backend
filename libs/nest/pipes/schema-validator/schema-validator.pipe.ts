@@ -1,5 +1,6 @@
 import { ZodError, ZodSchema } from 'zod';
-import { ArgumentMetadata, BadRequestException, Logger, PipeTransform } from '@nestjs/common';
+import { HttpError } from '@app/nest/errors';
+import { ArgumentMetadata, Logger, PipeTransform } from '@nestjs/common';
 
 export class SchemaValidatorPipe implements PipeTransform {
 	private readonly logger = new Logger(SchemaValidatorPipe.name);
@@ -15,9 +16,18 @@ export class SchemaValidatorPipe implements PipeTransform {
 					message: err.message,
 					path: err.path.join('.'),
 				}));
-				throw new BadRequestException({ validationErrors: formattedErrors });
+				throw new HttpError(
+					'API-00004',
+					{
+						message: 'Validation failed',
+					},
+					null,
+					formattedErrors,
+				);
 			} else {
-				throw new BadRequestException(`Validation failed`);
+				throw new HttpError('API-00004', {
+					message: 'Validation failed',
+				});
 			}
 		}
 	}
