@@ -51,7 +51,6 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 		// When a vendor connects, store a record with their client ID
 		client.on('register-vendor', async (data) => {
-			console.log('Registering vendor', data);
 			if (data.vendorId) {
 				await this.redis.set(`vendor:${client.id}`, data.vendorId);
 			}
