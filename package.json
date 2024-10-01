@@ -20,7 +20,7 @@
     "start:location": "wait-on tcp:5005 && nest start location --watch",
     "start:dbchange": "wait-on tcp:5001 && nest start dbchange --watch",
     "start:gateway": "wait-on tcp:5003 && nest start gateway --watch",
-    "start:websocket-gateway": "wait-on tcp:3000 && nest start websocket-gateway --watch",
+    "start:websocket-gateway": "wait-on tcp:3000 && DEBUG=* nest start websocket-gateway --watch",
     "alert-done": "echo 'All Apps Are Ready!'",
     "prestart:all": "concurrently \"nest build user\" \"nest build vendor\" \"nest build location\" \"nest build dbchange\" \"nest build gateway\" \"nest build websocket-gateway\" \"pnpm alert-done\"",
     "start:all": "concurrently \"pnpm start:user\" \"pnpm start:vendor\" \"pnpm start:location\" \"pnpm start:dbchange\" \"pnpm start:gateway\" \"pnpm start:websocket-gateway\" \"wait-on tcp:5004 && pnpm alert-done\"",
