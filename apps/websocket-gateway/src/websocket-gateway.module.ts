@@ -14,7 +14,7 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 		RedisModule,
 		GrpcInstanceModule.register<LocationServiceClient>({
 			protoPackage: LOCATION_PACKAGE_NAME,
-			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
+			protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
 			provide: LOCATION_SERVICE_NAME,
 			serviceName: LOCATION_SERVICE_NAME,
 			urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
