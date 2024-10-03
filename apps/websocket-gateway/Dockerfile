@@ -48,4 +48,4 @@ RUN npm install pm2 -g
 COPY --from=development /usr/src/app/dist/apps/websocket-gateway/src ./dist
 COPY --from=development /usr/src/app/dist/apps/websocket-gateway/proto ./proto
 
-CMD ["pm2-runtime","dist/main"]
+CMD ["pm2-runtime","dist/main.js"]

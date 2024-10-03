@@ -51,4 +51,4 @@ RUN npm install pm2 -g
 COPY --from=development /usr/src/app/dist/apps/dbchange/src ./dist
 
 RUN pnpm run prisma:generate
-CMD ["pm2-runtime","dist/main"]
+CMD ["pm2-runtime","dist/main.js"]

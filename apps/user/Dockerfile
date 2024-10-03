@@ -52,4 +52,4 @@ COPY --from=development /usr/src/app/dist/apps/user/src ./dist
 COPY --from=development /usr/src/app/dist/apps/user/proto ./proto
 
 RUN pnpm run prisma:generate
-CMD ["pm2-runtime","dist/main"]
+CMD ["pm2-runtime","dist/main.js"]
