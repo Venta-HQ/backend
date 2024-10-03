@@ -40,7 +40,7 @@ export class HttpLoggerModule {
 											},
 											batching: true,
 											headers: {
-												'X-Scope-OrgID': configService.get('GRAFANA_ORG_ID') ?? null,
+												Authorization: configService.get('GRAFANA_SERVICE_ACC_TOKEN') ?? null,
 											},
 											host: configService.get('LOKI_URL'),
 											interval: 5,
