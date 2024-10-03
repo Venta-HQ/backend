@@ -10,16 +10,16 @@
   "monorepo": true,
   "root": "apps/gateway",
   "projects": {
-    "auth": {
+    "user": {
       "type": "application",
-      "root": "apps/auth",
+      "root": "apps/user",
       "entryFile": "src/main",
       "sourceRoot": "./",
       "compilerOptions": {
         "assets": [
-          "libs/proto/src/definitions/auth.proto"
+          "libs/proto/src/definitions/user.proto"
         ],
-        "tsConfigPath": "apps/auth/tsconfig.app.json"
+        "tsConfigPath": "apps/user/tsconfig.app.json"
       }
     },
     "gateway": {
@@ -29,7 +29,8 @@
       "sourceRoot": "./",
       "compilerOptions": {
         "assets": [
-          "libs/proto/src/definitions/auth.proto"
+          "libs/proto/src/definitions/user.proto",
+          "libs/proto/src/definitions/vendor.proto"
         ],
         "tsConfigPath": "apps/gateway/tsconfig.app.json"
       }
@@ -68,6 +69,15 @@
       "sourceRoot": "libs/nest/filters/",
       "compilerOptions": {
         "tsConfigPath": "libs/nest/filters/tsconfig.lib.json"
+      }
+    },
+    "nest/errors": {
+      "type": "library",
+      "root": "libs/nest/errors/",
+      "entryFile": "index",
+      "sourceRoot": "libs/nest/errors/",
+      "compilerOptions": {
+        "tsConfigPath": "libs/nest/errors/tsconfig.lib.json"
       }
     },
     "proto": {
@@ -119,6 +129,18 @@
       "sourceRoot": "libs/apitypes/src",
       "compilerOptions": {
         "tsConfigPath": "libs/apitypes/tsconfig.lib.json"
+      }
+    },
+    "vendor": {
+      "type": "application",
+      "root": "apps/vendor",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
+      "compilerOptions": {
+        "assets": [
+          "libs/proto/src/definitions/vendor.proto"
+        ],
+        "tsConfigPath": "apps/vendor/tsconfig.app.json"
       }
     }
   }

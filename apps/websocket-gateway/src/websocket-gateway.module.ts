@@ -1,6 +1,7 @@
 import { join } from 'path';
-import { WsExceptionFilter } from '@app/nest/filters';
-import { LoggerModule } from '@app/nest/modules';
+import { WsErrorFilter } from '@app/nest/filters';
+import { HttpLoggerModule, RedisModule } from '@app/nest/modules';
+import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
@@ -10,24 +11,22 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
-		LoggerModule.register('Websocket Gateway'),
+		RedisModule,
+		HttpLoggerModule.register('Websocket Gateway Microservice'),
 		ClientsModule.registerAsync({
 			clients: [
 				{
 					imports: [ConfigModule],
 					inject: [ConfigService],
-					name: 'LOCATION_SERVICE',
-					useFactory: (configService: ConfigService) => {
-						console.log('end test', configService.get('LOCATION_SERVICE_ADDRESS'))
-						return {
-							options: {
-								package: 'location',
-								protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-								url: configService.get('LOCATION_SERVICE_ADDRESS'),
-							},
-							transport: Transport.GRPC,
-						}
-					},
+					name: LOCATION_SERVICE_NAME,
+					useFactory: (configService: ConfigService) => ({
+						options: {
+							package: LOCATION_PACKAGE_NAME,
+							protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+							url: configService.get('LOCATION_SERVICE_ADDRESS'),
+						},
+						transport: Transport.GRPC,
+					}),
 				},
 			],
 		}),
@@ -35,7 +34,7 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 	providers: [
 		{
 			provide: APP_FILTER,
-			useClass: WsExceptionFilter,
+			useClass: WsErrorFilter,
 		},
 		LocationWebsocketGateway,
 	],
