@@ -104,8 +104,8 @@
     "dbchange": {
       "type": "application",
       "root": "apps/dbchange",
-      "entryFile": "main",
-      "sourceRoot": "apps/dbchange/src",
+      "entryFile": "src/main",
+      "sourceRoot": "./",
       "compilerOptions": {
         "tsConfigPath": "apps/dbchange/tsconfig.app.json"
       }

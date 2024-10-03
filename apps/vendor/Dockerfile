@@ -32,7 +32,7 @@ RUN pnpm i
 COPY . .
 
 RUN pnpm run prisma:generate
-RUN pnpm build location
+RUN pnpm build vendor
 
 FROM node:bullseye-slim AS production
 ARG NODE_ENV=production
@@ -47,8 +47,8 @@ COPY prisma ./prisma
 RUN npm i -g pnpm
 RUN pnpm i --prod
 
-COPY --from=development /usr/src/app/dist/apps/location/src ./dist
-COPY --from=development /usr/src/app/dist/apps/location/proto ./proto
+COPY --from=development /usr/src/app/dist/apps/vendor/src ./dist
+COPY --from=development /usr/src/app/dist/apps/vendor/proto ./proto
 
 RUN pnpm run prisma:generate
 CMD ["node","dist/main"]
