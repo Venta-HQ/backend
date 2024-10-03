@@ -29,11 +29,11 @@ export class GrpcLoggerModule {
 												username: configService.get('LOKI_USERNAME'),
 											},
 											batching: true,
-											headers: {
-												Authorization: configService.get('GRAFANA_SERVICE_ACC_TOKEN')
-													? `Bearer ${configService.get('GRAFANA_SERVICE_ACC_TOKEN')}`
-													: undefined,
-											},
+											// headers: {
+											// 	Authorization: configService.get('GRAFANA_SERVICE_ACC_TOKEN')
+											// 		? `Bearer ${configService.get('GRAFANA_SERVICE_ACC_TOKEN')}`
+											// 		: undefined,
+											// },
 											host: configService.get('LOKI_URL'),
 											interval: 5,
 											propsToLabels: ['context', 'app', 'requestId'],
