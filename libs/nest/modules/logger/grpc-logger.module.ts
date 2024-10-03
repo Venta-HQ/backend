@@ -29,6 +29,9 @@ export class GrpcLoggerModule {
 												username: configService.get('LOKI_USERNAME'),
 											},
 											batching: true,
+											headers: {
+												'X-Scope-OrgID': configService.get('GRAFANA_ORG_ID') ?? null,
+											},
 											host: configService.get('LOKI_URL'),
 											interval: 5,
 											propsToLabels: ['context', 'app', 'requestId'],
