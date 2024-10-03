@@ -43,8 +43,9 @@ COPY pnpm-lock.yaml ./
 
 RUN npm i -g pnpm
 RUN pnpm i --prod
+RUN pnpm install pm2 -g
 
 COPY --from=development /usr/src/app/dist/apps/websocket-gateway/src ./dist
 COPY --from=development /usr/src/app/dist/apps/websocket-gateway/proto ./proto
 
-CMD ["node","dist/main"]
+CMD ["pm2-runtime","dist/main"]

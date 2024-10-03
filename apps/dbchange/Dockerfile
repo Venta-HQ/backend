@@ -46,8 +46,9 @@ COPY prisma ./prisma
 
 RUN npm i -g pnpm
 RUN pnpm i --prod
+RUN pnpm install pm2 -g
 
 COPY --from=development /usr/src/app/dist/apps/dbchange/src ./dist
 
 RUN pnpm run prisma:generate
-CMD ["node","dist/main"]
+CMD ["pm2-runtime","dist/main"]
