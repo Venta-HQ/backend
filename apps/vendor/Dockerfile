@@ -32,7 +32,7 @@ RUN pnpm i
 COPY . .
 
 RUN pnpm run prisma:generate
-RUN pnpm build dbchange
+RUN pnpm build vendor
 
 FROM node:bullseye-slim AS production
 ARG NODE_ENV=production
@@ -48,7 +48,8 @@ RUN npm i -g pnpm
 RUN pnpm i --prod
 RUN npm install pm2 -g
 
-COPY --from=development /usr/src/app/dist/apps/dbchange/src ./dist
+COPY --from=development /usr/src/app/dist/apps/vendor/src ./dist
+COPY --from=development /usr/src/app/dist/apps/vendor/proto ./proto
 
 RUN pnpm run prisma:generate
 CMD ["pm2-runtime","dist/main.js"]
