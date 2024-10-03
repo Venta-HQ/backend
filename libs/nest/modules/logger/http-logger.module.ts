@@ -39,9 +39,9 @@ export class HttpLoggerModule {
 												username: configService.get('LOKI_USERNAME'),
 											},
 											batching: true,
-											headers: {
-												Authorization: configService.get('GRAFANA_SERVICE_ACC_TOKEN') ?? null,
-											},
+											// headers: {
+											// 	Authorization: configService.get('GRAFANA_SERVICE_ACC_TOKEN') ?? null,
+											// },
 											host: configService.get('LOKI_URL'),
 											interval: 5,
 											propsToLabels: ['context', 'app', 'requestId'],
