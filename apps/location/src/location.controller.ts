@@ -54,7 +54,7 @@ export class LocationController {
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
-		private prisma: PrismaService,
+		private readonly prisma: PrismaService,
 	) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)

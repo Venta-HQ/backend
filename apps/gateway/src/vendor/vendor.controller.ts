@@ -1,5 +1,5 @@
 import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
-import { catchError, throwError } from 'rxjs';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
@@ -18,21 +18,25 @@ export class VendorController {
 	@Get('/:id')
 	@UseGuards(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
-		return await this.client.invoke('getVendorById', { id }).pipe(
-			catchError((error: GrpcError) => {
-				if (error.errorCode) {
-					throw new HttpError(error.errorCode, null, error.message);
-				}
-				return throwError(() => new HttpError('API-00001'));
-			}),
+		const { vendor } = await firstValueFrom(
+			this.client.invoke('getVendorById', { id }).pipe(
+				catchError((error: GrpcError) => {
+					if (error.errorCode) {
+						throw new HttpError(error.errorCode, null, error.message);
+					}
+					return throwError(() => new HttpError('API-00001'));
+				}),
+			),
 		);
+
+		return vendor;
 	}
 
 	@Post()
 	@UseGuards(AuthGuard)
 	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
 	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
-		return await this.client
+		return this.client
 			.invoke('createVendor', {
 				description: data.description,
 				email: data.email,

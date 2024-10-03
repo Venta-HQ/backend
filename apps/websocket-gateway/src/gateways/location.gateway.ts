@@ -30,8 +30,8 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	private locationService: LocationServiceClient;
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private grpcClient: ClientGrpc,
-		@InjectRedis() private redis: Redis,
+		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
+		@InjectRedis() private readonly redis: Redis,
 	) {}
 
 	afterInit() {
@@ -110,13 +110,19 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 	) {
 		const vendorId = await this.redis.get(`vendor:${socket.id}`);
 		// Store this in DB & REDIS for querying later
-		this.locationService.updateVendorLocation({
-			entityId: vendorId,
-			location: {
-				lat: data.lat,
-				long: data.long,
-			},
-		});
+		try {
+			this.locationService
+				.updateVendorLocation({
+					entityId: vendorId,
+					location: {
+						lat: data.lat,
+						long: data.long,
+					},
+				})
+				.subscribe();
+		} catch (e) {
+			console.log(e);
+		}
 
 		// Let any interested clients know
 		socket.to(vendorId).emit('vendor_sync', {
