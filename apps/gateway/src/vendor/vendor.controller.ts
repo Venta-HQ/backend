@@ -38,8 +38,10 @@ export class VendorController {
 		}
 
 		return {
-			...vendor,
-			...overrides,
+			vendor: {
+				...vendor,
+				...overrides,
+			},
 		};
 	}
 

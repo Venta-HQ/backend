@@ -9,12 +9,6 @@ export class HttpError extends HttpException {
 		overrideMessage?: string,
 		data?: { [K: string]: any },
 	) {
-		console.log('Error', {
-			code,
-			params,
-			overrideMessage,
-			data,
-		});
 		if (!Object.keys(ERROR_OBJECT).includes(code)) {
 			super(
 				{

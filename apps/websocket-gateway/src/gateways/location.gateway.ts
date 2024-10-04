@@ -121,7 +121,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 				})
 				.subscribe();
 		} catch (e) {
-			console.log(e);
+			this.logger.error(e);
 		}
 
 		// Let any interested clients know
