@@ -29,7 +29,18 @@ export class VendorController {
 			),
 		);
 
-		return vendor;
+		let overrides = {};
+		if (vendor.lat === 0 && vendor.long === 0) {
+			overrides = {
+				lat: null,
+				long: null,
+			};
+		}
+
+		return {
+			...vendor,
+			...overrides,
+		};
 	}
 
 	@Post()

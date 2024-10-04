@@ -57,8 +57,8 @@ message Vendor {
     string id = 1;
 
     // These lat/long values are used to show locations on the map without subscription to live location
-    google.protobuf.FloatValue lat = 2;
-    google.protobuf.FloatValue long = 3;
+    float lat = 2;
+    float long = 3;
 
     // General details
     string name = 4;       
