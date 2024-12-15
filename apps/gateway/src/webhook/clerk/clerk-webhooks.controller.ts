@@ -23,7 +23,6 @@ export class ClerkWebhooksController {
 				});
 			default:
 				this.logger.warn('Unhandled Event Type');
-				throw new Error('Failure');
 		}
 	}
 }
