@@ -49,4 +49,4 @@ COPY --from=development /usr/src/app/dist/apps/websocket-gateway/proto ./proto
 
 EXPOSE 5004
 
-CMD ["node","dist/main.js"]
+CMD ["node", "dist/main.js"]
