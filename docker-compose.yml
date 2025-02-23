@@ -5,72 +5,79 @@ networks:
   venta:
 
 services:
-  user:
+  loki:
+    image: grafana/loki:2.9.2
+    ports:
+      - '3100:3100'
+    command: -config.file=/etc/loki/local-config.yaml
     networks:
       - venta
-    build:
-      context: .
-      dockerfile: apps/user/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5000:5000'
 
-  location:
+  grafana:
+    environment:
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    entrypoint:
+      - sh
+      - -euc
+      - |
+        mkdir -p /etc/grafana/provisioning/datasources
+        cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
+        apiVersion: 1
+        datasources:
+        - name: Loki
+          type: loki
+          access: proxy 
+          orgId: 1
+          url: http://loki:3100
+          basicAuth: false
+          isDefault: true
+          version: 1
+          editable: false
+        EOF
+        /run.sh
+    image: grafana/grafana:latest
+    ports:
+      - '3001:3000'
     networks:
       - venta
-    build:
-      context: .
-      dockerfile: apps/location/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5001:5001'
 
-  dbchange:
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
     networks:
       - venta
-    build:
-      context: .
-      dockerfile: apps/dbchange/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5003:5003'
 
-  gateway:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=venta
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - venta
-    build:
-      context: .
-      dockerfile: apps/gateway/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5002:5002'
-
-  websocket-gateway:
-    networks:
-      - venta
-    build:
-      context: .
-      dockerfile: apps/websocket-gateway/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5004:5004'
-
-  vendor:
-    networks:
-      - venta
-    build:
-      context: .
-      dockerfile: apps/vendor/Dockerfile
-    env_file:
-      - .env
-    ports:
-      - '5005:5005'
 
 volumes:
   cache:
+    driver: local
+  postgres_data:
     driver: local
