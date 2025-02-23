@@ -46,10 +46,12 @@ COPY prisma ./prisma
 
 RUN npm i -g pnpm
 RUN pnpm i --prod
-RUN npm install pm2 -g
 
 COPY --from=development /usr/src/app/dist/apps/location/src ./dist
 COPY --from=development /usr/src/app/dist/apps/location/proto ./proto
 
 RUN pnpm run prisma:generate
-CMD ["pm2-runtime","dist/main.js"]
+
+EXPOSE 5001
+
+CMD ["node","dist/main.js"]
