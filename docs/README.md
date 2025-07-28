@@ -60,6 +60,13 @@ Welcome to the Venta Backend documentation. This guide covers the architecture, 
 - Performance optimization
 - Health checks
 
+### [Request Tracing](./request-tracing.md)
+
+- Request ID propagation across services
+- Distributed tracing and debugging
+- Correlation and monitoring
+- Best practices for request tracking
+
 ## 🚀 Quick Start
 
 1. **Setup Environment**
