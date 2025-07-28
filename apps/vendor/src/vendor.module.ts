@@ -1,6 +1,6 @@
-import { RequestContextService } from 'libs/nest/modules/logger/request-context.service';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { ConfigModule, EventsModule, GrpcLoggerModule, PrismaModule } from '@app/nest/modules';
+import { RequestContextService } from '@app/nest/modules/logger/request-context.service';
 import { Module } from '@nestjs/common';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';

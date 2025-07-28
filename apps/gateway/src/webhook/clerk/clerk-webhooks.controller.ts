@@ -1,5 +1,5 @@
-import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { SignedWebhookGuard } from '@app/nest/guards';
+import GrpcInstance from '@app/nest/modules/grpc-instance/grpc-instance.service';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
 import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';

@@ -1,0 +1,69 @@
+{
+	"name": "location",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "apps/location/src",
+	"projectType": "application",
+	"targets": {
+		"build": {
+			"executor": "@nx/webpack:webpack",
+			"outputs": ["{options.outputPath}"],
+			"defaultConfiguration": "production",
+			"options": {
+				"target": "node",
+				"compiler": "tsc",
+				"outputPath": "dist/apps/location",
+				"main": "apps/location/src/main.ts",
+				"tsConfig": "apps/location/tsconfig.app.json",
+				"assets": [
+					{
+						"glob": "**/*",
+						"input": "libs/proto/src/definitions",
+						"output": "proto"
+					}
+				],
+				"isolatedConfig": true,
+				"webpackConfig": "apps/location/webpack.config.js"
+			},
+			"configurations": {
+				"development": {
+					"optimization": false,
+					"extractLicenses": false,
+					"inspect": false
+				},
+				"production": {
+					"optimization": true,
+					"extractLicenses": true,
+					"inspect": false
+				}
+			}
+		},
+		"serve": {
+			"executor": "@nx/js:node",
+			"defaultConfiguration": "development",
+			"options": {
+				"buildTarget": "location:build"
+			},
+			"configurations": {
+				"development": {
+					"buildTarget": "location:build:development"
+				},
+				"production": {
+					"buildTarget": "location:build:production"
+				}
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/apps/location"
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		}
+	},
+	"tags": []
+}
