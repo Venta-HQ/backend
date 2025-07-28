@@ -35,7 +35,7 @@ The Venta Backend uses an event-driven architecture with NATS for real-time comm
 
 ### Core Components
 
-#### Generic EventsService Interface (`libs/nest/modules/events/events.interface.ts`)
+#### Generic EventsService Interface
 
 ```typescript
 export interface IEventsService {
@@ -53,7 +53,7 @@ export interface EventMessage {
 }
 ```
 
-#### NATS Implementation (`libs/nest/modules/events/nats-events.service.ts`)
+#### NATS Implementation
 
 ```typescript
 @Injectable()

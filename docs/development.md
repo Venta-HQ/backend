@@ -5,31 +5,31 @@
 ### Project Structure
 
 ```
-venta-backend/
-├── apps/                          # Microservices
-│   ├── gateway/                   # HTTP API Gateway
-│   ├── user/                      # User management service
-│   ├── vendor/                    # Vendor management service
-│   ├── location/                  # Location tracking service
-│   ├── websocket-gateway/         # WebSocket connections
+project-root/
+├── services/                     # Microservices
+│   ├── gateway/                  # HTTP API Gateway
+│   ├── user/                     # User management service
+│   ├── vendor/                   # Vendor management service
+│   ├── location/                 # Location tracking service
+│   ├── websocket-gateway/        # WebSocket connections
 │   └── algolia-sync/              # Search index synchronization
-├── libs/                          # Shared libraries
-│   ├── apitypes/                  # API types and schemas
-│   ├── nest/                      # NestJS utilities
-│   │   ├── modules/               # Shared modules
-│   │   │   ├── events/            # Event system (provider-agnostic)
-│   │   │   ├── config/            # Configuration module
-│   │   │   ├── prisma/            # Database client
-│   │   │   ├── redis/             # Cache client
-│   │   │   └── clerk/             # Authentication
-│   │   ├── guards/                # Authentication guards
-│   │   ├── filters/               # Exception filters
-│   │   └── pipes/                 # Validation pipes
-│   └── proto/                     # gRPC protocol definitions
-├── prisma/                        # Database schema
-│   └── schema/                    # Split Prisma schemas
-├── docs/                          # Documentation
-└── docker-compose.yml             # Local infrastructure
+├── shared/                       # Shared libraries
+│   ├── api-types/                # API types and schemas
+│   ├── framework/                # Framework utilities
+│   │   ├── modules/              # Shared modules
+│   │   │   ├── events/           # Event system (provider-agnostic)
+│   │   │   ├── config/           # Configuration module
+│   │   │   ├── database/         # Database client
+│   │   │   ├── cache/            # Cache client
+│   │   │   └── auth/             # Authentication
+│   │   ├── guards/               # Authentication guards
+│   │   ├── filters/              # Exception filters
+│   │   └── pipes/                # Validation pipes
+│   └── proto/                    # gRPC protocol definitions
+├── database/                     # Database schema
+│   └── schema/                   # Database schemas
+├── docs/                         # Documentation
+└── docker-compose.yml            # Local infrastructure
 ```
 
 ### Naming Conventions
@@ -37,7 +37,7 @@ venta-backend/
 #### Files and Directories
 
 - **kebab-case**: Directory names (`user-service/`)
-- **camelCase**: File names (`userService.ts`)
+- **camelCase**: File names (`userService`)
 - **PascalCase**: Class names (`UserService`)
 - **UPPER_SNAKE_CASE**: Constants (`MAX_RETRY_COUNT`)
 
@@ -63,31 +63,31 @@ NATS_URL=nats://localhost:4222
 #### Service Module Structure
 
 ```
-apps/user/
+services/user/
 ├── src/
-│   ├── main.ts                    # Service entry point
-│   ├── user.module.ts             # Main module
-│   ├── controllers/               # gRPC controllers
-│   ├── services/                  # Business logic
-│   └── dto/                       # Data transfer objects
-├── Dockerfile                     # Service container
-└── tsconfig.app.json             # TypeScript config
+│   ├── main.ts                   # Service entry point
+│   ├── user.module.ts            # Main module
+│   ├── controllers/              # gRPC controllers
+│   ├── services/                 # Business logic
+│   └── dto/                      # Data transfer objects
+├── Dockerfile                    # Service container
+└── tsconfig.json                # TypeScript config
 ```
 
 #### Shared Library Structure
 
 ```
-libs/nest/modules/
-├── index.ts                       # Main exports
-├── config/                        # Configuration module
-├── events/                        # Event system (provider-agnostic)
-│   ├── events.interface.ts        # Generic interface
-│   ├── nats-events.service.ts     # NATS implementation
-│   ├── events.module.ts           # Module configuration
-│   └── index.ts                   # Exports
-├── prisma/                        # Database client
-├── redis/                         # Cache client
-└── clerk/                         # Authentication
+shared/framework/modules/
+├── index.ts                      # Main exports
+├── config/                       # Configuration module
+├── events/                       # Event system (provider-agnostic)
+│   ├── events.interface.ts       # Generic interface
+│   ├── events.service.ts         # Implementation
+│   ├── events.module.ts          # Module configuration
+│   └── index.ts                  # Exports
+├── database/                     # Database client
+├── cache/                        # Cache client
+└── auth/                         # Authentication
 ```
 
 ## Development Workflow
@@ -144,7 +144,7 @@ case 'vendor.promoted':
 #### Unit Tests
 
 ```typescript
-// apps/vendor/src/vendor.service.spec.ts
+// Example unit test structure
 describe('VendorService', () => {
 	let service: VendorService;
 	let eventsService: IEventsService;
@@ -184,7 +184,7 @@ describe('VendorService', () => {
 #### Integration Tests
 
 ```typescript
-// apps/vendor/test/vendor.integration.spec.ts
+// Example integration test structure
 describe('Vendor Integration', () => {
 	let app: INestApplication;
 
@@ -213,7 +213,7 @@ describe('Vendor Integration', () => {
 #### E2E Tests
 
 ```typescript
-// apps/gateway/test/vendor.e2e-spec.ts
+// Example E2E test structure
 describe('Vendor E2E', () => {
 	let app: INestApplication;
 
@@ -257,7 +257,7 @@ pnpm run lint --fix
 #### Pre-commit Hooks
 
 ```json
-// package.json
+// Example pre-commit configuration
 {
 	"husky": {
 		"hooks": {
@@ -313,7 +313,7 @@ REDIS_URL=redis://staging-redis
 
 ```bash
 # Build staging images
-docker build -f apps/gateway/Dockerfile -t venta-gateway:staging .
+docker build -f services/gateway/Dockerfile -t service:staging .
 
 # Deploy to staging
 docker-compose -f docker-compose.staging.yml up -d
@@ -334,15 +334,15 @@ docker-compose -f docker-compose.staging.yml up -d
 
 ```bash
 # Build production images
-docker build -f apps/gateway/Dockerfile -t venta-gateway:prod .
+docker build -f services/gateway/Dockerfile -t service:prod .
 
 # Deploy with health checks
 docker run -d \
-  --name venta-gateway \
-  --health-cmd="curl -f http://localhost:5002/health" \
+  --name service \
+  --health-cmd="curl -f http://localhost:3000/health" \
   --health-interval=30s \
-  -p 5002:5002 \
-  venta-gateway:prod
+  -p 3000:3000 \
+  service:prod
 ```
 
 ## Monitoring and Observability
@@ -486,8 +486,8 @@ await this.eventsService.subscribeToEvents(async (event) => {
 #### Database Queries
 
 ```typescript
-// Use Prisma efficiently
-const vendors = await this.prisma.vendor.findMany({
+// Use database client efficiently
+const vendors = await this.database.vendor.findMany({
 	where: { userId },
 	select: {
 		id: true,
@@ -503,11 +503,11 @@ const vendors = await this.prisma.vendor.findMany({
 ```typescript
 // Cache frequently accessed data
 const cacheKey = `user:${userId}`;
-let user = await this.redis.get(cacheKey);
+let user = await this.cache.get(cacheKey);
 
 if (!user) {
-	user = await this.prisma.user.findUnique({ where: { id: userId } });
-	await this.redis.set(cacheKey, JSON.stringify(user), 'EX', 3600);
+	user = await this.database.user.findUnique({ where: { id: userId } });
+	await this.cache.set(cacheKey, JSON.stringify(user), 'EX', 3600);
 }
 ```
 
@@ -555,7 +555,7 @@ async createVendor(@Request() req, @Body() data: CreateVendorDto) {
 
 #### Events Not Processing
 
-1. Check Redis connection
+1. Check event system connection
 2. Verify event consumer is running
 3. Check event type matching
 4. Review failed events
@@ -573,8 +573,8 @@ async createVendor(@Request() req, @Body() data: CreateVendorDto) {
 # Check service status
 ps aux | grep node
 
-# Monitor Redis
-redis-cli monitor
+# Monitor event system
+nats sub "events.*"
 
 # Check database
 psql $DATABASE_URL -c "SELECT * FROM pg_stat_activity;"

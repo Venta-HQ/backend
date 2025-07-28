@@ -24,7 +24,7 @@
 
 ```bash
 git clone <repository-url>
-cd venta-backend
+cd backend
 ```
 
 ### 2. Install Dependencies
@@ -207,19 +207,19 @@ pnpm run start:algolia-sync
 #### Build Base Image
 
 ```bash
-docker build -f Dockerfile.base -t venta-base .
+docker build -f Dockerfile.base -t base-image .
 ```
 
 #### Build Service Images
 
 ```bash
 # Build all services
-docker build -f apps/user/Dockerfile -t venta-user .
-docker build -f apps/vendor/Dockerfile -t venta-vendor .
-docker build -f apps/location/Dockerfile -t venta-location .
-docker build -f apps/gateway/Dockerfile -t venta-gateway .
-docker build -f apps/websocket-gateway/Dockerfile -t venta-websocket .
-docker build -f apps/algolia-sync/Dockerfile -t venta-algolia-sync .
+docker build -f services/user/Dockerfile -t user-service .
+docker build -f services/vendor/Dockerfile -t vendor-service .
+docker build -f services/location/Dockerfile -t location-service .
+docker build -f services/gateway/Dockerfile -t gateway-service .
+docker build -f services/websocket-gateway/Dockerfile -t websocket-service .
+docker build -f services/algolia-sync/Dockerfile -t algolia-sync-service .
 ```
 
 ### Docker Compose Development
@@ -233,7 +233,7 @@ services:
   user-service:
     build:
       context: .
-      dockerfile: apps/user/Dockerfile
+      dockerfile: services/user/Dockerfile
       target: development
     ports:
       - '5000:5000'
@@ -246,7 +246,7 @@ services:
   vendor-service:
     build:
       context: .
-      dockerfile: apps/vendor/Dockerfile
+      dockerfile: services/vendor/Dockerfile
       target: development
     ports:
       - '5005:5005'
@@ -304,17 +304,17 @@ pnpm run start:user 2>&1 | tee logs/user.log
 docker-compose logs -f user-service
 ```
 
-#### Redis Debugging
+#### NATS Debugging
 
 ```bash
-# Connect to Redis
-redis-cli -h localhost -p 6379
+# Connect to NATS CLI
+nats sub "events.*"
 
-# Monitor pub/sub
-redis-cli monitor
+# Monitor NATS traffic
+nats pub "events.test" "test message"
 
-# Check failed events
-redis-cli lrange failed_events 0 -1
+# Check NATS server status
+curl http://localhost:8222/healthz
 ```
 
 ### Health Monitoring
@@ -363,13 +363,13 @@ CLERK_SECRET_KEY=...
 
 ```bash
 # Build production images
-docker build -f apps/gateway/Dockerfile -t venta-gateway:prod .
-docker build -f apps/user/Dockerfile -t venta-user:prod .
+docker build -f services/gateway/Dockerfile -t gateway-service:prod .
+docker build -f services/user/Dockerfile -t user-service:prod .
 # ... build other services
 
 # Run production containers
-docker run -d --name venta-gateway -p 5002:5002 venta-gateway:prod
-docker run -d --name venta-user -p 5000:5000 venta-user:prod
+docker run -d --name gateway-service -p 5002:5002 gateway-service:prod
+docker run -d --name user-service -p 5000:5000 user-service:prod
 # ... run other services
 ```
 
@@ -407,7 +407,7 @@ readinessProbe:
 
 #### Events Not Processing
 
-1. Check Redis pub/sub is working
+1. Check NATS connection is working
 2. Verify event consumer is running
 3. Check Algolia API credentials
 4. Review failed events count
@@ -443,5 +443,6 @@ psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity;"
 1. **Explore the API**: Check the [API Documentation](./api.md)
 2. **Understand Events**: Read the [Event System Documentation](./events.md)
 3. **Review Architecture**: See the [Architecture Overview](./architecture.md)
-4. **Set up Monitoring**: Configure logging and metrics
-5. **Write Tests**: Add tests for your specific use cases
+4. **Explore Improvements**: Check [Architecture Improvements](./architecture-improvements.md)
+5. **Set up Monitoring**: Configure logging and metrics
+6. **Troubleshoot Issues**: Check the [Troubleshooting Guide](./troubleshooting.md)

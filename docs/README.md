@@ -25,13 +25,6 @@ Welcome to the Venta Backend documentation. This guide covers the architecture, 
 - WebSocket events
 - Authentication and authorization
 
-### [Event System](./events.md)
-
-- Event-driven architecture
-- NATS implementation with provider-agnostic design
-- Event types and schemas
-- Error handling and retries
-
 ### [Database Schema](./database.md)
 
 - Prisma schema structure
@@ -39,12 +32,26 @@ Welcome to the Venta Backend documentation. This guide covers the architecture, 
 - Migrations and seeding
 - Database best practices
 
+### [Event System](./events.md)
+
+- Event-driven architecture
+- NATS implementation with provider-agnostic design
+- Event types and schemas
+- Error handling and retries
+
 ### [Development Guide](./development.md)
 
 - Code organization
 - Testing strategies
 - Deployment pipeline
 - Monitoring and logging
+
+### [Architecture Improvements](./architecture-improvements.md)
+
+- Potential optimizations and enhancements
+- Performance improvements
+- Security enhancements
+- Monitoring and observability
 
 ### [Troubleshooting](./troubleshooting.md)
 
@@ -96,7 +103,7 @@ Welcome to the Venta Backend documentation. This guide covers the architecture, 
 
 - ✅ Replaced `dbchange` service with event-driven `algolia-sync`
 - ✅ Centralized configuration with validation
-- ✅ DRY Docker builds with `Dockerfile.base`
+- ✅ DRY Docker builds with shared base image
 - ✅ Enhanced error handling and retries
 - ✅ Improved monitoring and health checks
 
