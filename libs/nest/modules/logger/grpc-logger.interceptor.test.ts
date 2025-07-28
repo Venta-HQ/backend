@@ -1,15 +1,12 @@
 import { Observable, of, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CallHandler, ExecutionContext } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
 import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
-import { RequestContextService } from './request-context.service';
 
 describe('GrpcRequestIdInterceptor', () => {
 	let interceptor: GrpcRequestIdInterceptor;
-	let mockRequestContextService: vi.Mocked<RequestContextService>;
-	let mockExecutionContext: vi.Mocked<ExecutionContext>;
-	let mockCallHandler: vi.Mocked<CallHandler>;
+	let mockRequestContextService: any;
+	let mockExecutionContext: any;
+	let mockCallHandler: any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -62,7 +59,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -94,7 +91,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -122,9 +119,8 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise<void>((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: () => resolve(),
-					error: () => resolve(),
 					next: () => {},
 				});
 			});
@@ -217,9 +213,8 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise<void>((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: () => resolve(),
-					error: () => resolve(),
 					next: () => {},
 				});
 			});
@@ -247,7 +242,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -270,7 +265,7 @@ describe('GrpcRequestIdInterceptor', () => {
 			mockExecutionContext.switchToRpc.mockReturnValue(mockGrpcContext);
 			mockCallHandler.handle.mockReturnValue(of('success'));
 
-			let contextCallback: Function;
+			let contextCallback: () => void;
 			mockRequestContextService.run.mockImplementation((callback) => {
 				contextCallback = callback;
 				callback();
@@ -281,7 +276,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -316,7 +311,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -438,7 +433,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -467,7 +462,7 @@ describe('GrpcRequestIdInterceptor', () => {
 
 			// Wait for the observable to complete
 			await new Promise((resolve) => {
-				result.subscribe({
+				(result as any).subscribe({
 					complete: resolve,
 					next: () => {},
 				});
@@ -500,7 +495,7 @@ describe('GrpcRequestIdInterceptor', () => {
 				const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
 				promises.push(
 					new Promise((resolve) => {
-						result.subscribe({
+						(result as any).subscribe({
 							complete: resolve,
 							next: () => {},
 						});
@@ -536,7 +531,7 @@ describe('GrpcRequestIdInterceptor', () => {
 				const result = interceptor.intercept(mockExecutionContext, mockCallHandler);
 				promises.push(
 					new Promise((resolve) => {
-						result.subscribe({
+						(result as any).subscribe({
 							complete: resolve,
 							next: () => {},
 						});

@@ -21,24 +21,24 @@ export const UpdateVendorSchema = z.object({
 
 // gRPC schemas
 export const GrpcVendorCreateDataSchema = z.object({
-	name: z.string(),
 	description: z.string(),
 	email: z.string(),
-	phone: z.string(),
-	website: z.string(),
 	imageUrl: z.string(),
+	name: z.string(),
+	phone: z.string(),
 	userId: z.string(),
+	website: z.string(),
 });
 
 export const GrpcVendorUpdateDataSchema = z.object({
-	id: z.string(),
-	name: z.string(),
 	description: z.string(),
 	email: z.string(),
-	website: z.string(),
+	id: z.string(),
+	imageUrl: z.string(),
+	name: z.string(),
 	phone: z.string(),
 	userId: z.string(),
-	imageUrl: z.string(),
+	website: z.string(),
 });
 
 export const GrpcVendorLookupDataSchema = z.object({

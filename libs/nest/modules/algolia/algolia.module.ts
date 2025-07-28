@@ -16,7 +16,7 @@ export class AlgoliaModule {
 					useFactory: (configService: ConfigService) => {
 						const appId = configService.get('ALGOLIA_APPLICATION_ID');
 						const apiKey = configService.get('ALGOLIA_API_KEY');
-						
+
 						return new AlgoliaService(appId, apiKey);
 					},
 				},

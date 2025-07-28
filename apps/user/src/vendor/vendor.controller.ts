@@ -1,7 +1,7 @@
-import { ErrorCodes, AppError } from '@app/nest/errors';
+import { GrpcUserVendorDataSchema } from '@app/apitypes/lib/user/user.schemas';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
 import { USER_SERVICE_NAME, UserVendorData, UserVendorsResponse } from '@app/proto/user';
-import { GrpcUserVendorDataSchema } from '@app/apitypes/lib/user/user.schemas';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
@@ -18,10 +18,7 @@ export class VendorController {
 		const vendors = await this.vendorService.getUserVendors(data.userId);
 
 		if (!vendors) {
-			throw AppError.notFound(
-				ErrorCodes.USER_NOT_FOUND,
-				{ userId: data.userId }
-			);
+			throw AppError.notFound(ErrorCodes.USER_NOT_FOUND, { userId: data.userId });
 		}
 
 		return {

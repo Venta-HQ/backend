@@ -18,9 +18,9 @@ export class AlgoliaSyncController {
 	async eventsHealth() {
 		const health = await this.eventsService.healthCheck();
 		return {
-			status: 'ok',
-			service: 'algolia-sync-events',
 			eventsHealth: health,
+			service: 'algolia-sync-events',
+			status: 'ok',
 			timestamp: new Date().toISOString(),
 		};
 	}

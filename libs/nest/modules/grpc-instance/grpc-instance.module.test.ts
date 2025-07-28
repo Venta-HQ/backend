@@ -1,16 +1,7 @@
-import { beforeEach, describe, expect, it } from 'vitest';
-import { ConfigService } from '@nestjs/config';
+import { describe, expect, it } from 'vitest';
 import { GrpcInstanceModule } from './grpc-instance.module';
 
 describe('GrpcInstanceModule', () => {
-	let mockConfigService: any;
-
-	beforeEach(() => {
-		mockConfigService = {
-			get: () => {},
-		};
-	});
-
 	describe('register', () => {
 		const testConfig = {
 			protoPackage: 'test.package',
@@ -55,14 +46,14 @@ describe('GrpcInstanceModule', () => {
 			const module = GrpcInstanceModule.register(testConfig);
 
 			expect(module.providers).toHaveLength(1);
-			expect(module.providers[0].scope).toBeDefined();
+			expect((module.providers[0] as any).scope).toBeDefined();
 		});
 
 		it('should inject REQUEST and client', () => {
 			const module = GrpcInstanceModule.register(testConfig);
 
-			expect(module.providers[0].inject).toHaveLength(2);
-			expect(module.providers[0].inject[1]).toBe(`${testConfig.serviceName}-client`);
+			expect((module.providers[0] as any).inject).toHaveLength(2);
+			expect((module.providers[0] as any).inject[1]).toBe(`${testConfig.serviceName}-client`);
 		});
 	});
 
@@ -148,7 +139,7 @@ describe('GrpcInstanceModule', () => {
 				const module = GrpcInstanceModule.register(config);
 
 				expect(module.exports).toContain(config.provide);
-				expect(module.providers[0].inject[1]).toBe(`${config.serviceName}-client`);
+				expect((module.providers[0] as any).inject[1]).toBe(`${config.serviceName}-client`);
 			});
 		});
 
@@ -164,7 +155,7 @@ describe('GrpcInstanceModule', () => {
 			const module = GrpcInstanceModule.register(config);
 
 			expect(module.exports).toContain(config.provide);
-			expect(module.providers[0].inject[1]).toBe(`${config.serviceName}-client`);
+			expect((module.providers[0] as any).inject[1]).toBe(`${config.serviceName}-client`);
 		});
 	});
 
@@ -180,7 +171,7 @@ describe('GrpcInstanceModule', () => {
 
 			const module = GrpcInstanceModule.register(config);
 
-			expect(module.providers[0].inject[1]).toBe('-client');
+			expect((module.providers[0] as any).inject[1]).toBe('-client');
 		});
 
 		it('should handle empty provide name', () => {
@@ -252,15 +243,15 @@ describe('GrpcInstanceModule', () => {
 		it('should have a useFactory function', () => {
 			const module = GrpcInstanceModule.register(testConfig);
 
-			expect(module.providers[0].useFactory).toBeDefined();
-			expect(typeof module.providers[0].useFactory).toBe('function');
+			expect((module.providers[0] as any).useFactory).toBeDefined();
+			expect(typeof (module.providers[0] as any).useFactory).toBe('function');
 		});
 
 		it('should have correct inject array', () => {
 			const module = GrpcInstanceModule.register(testConfig);
 
-			expect(module.providers[0].inject).toHaveLength(2);
-			expect(module.providers[0].inject[1]).toBe(`${testConfig.serviceName}-client`);
+			expect((module.providers[0] as any).inject).toHaveLength(2);
+			expect((module.providers[0] as any).inject[1]).toBe(`${testConfig.serviceName}-client`);
 		});
 	});
 });

@@ -1,9 +1,9 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { describe, expect, it, beforeEach } from 'vitest';
-import { EventsModule } from './nats.module';
-import { NatsEventsService } from './nats-events.service';
+import { Test, TestingModule } from '@nestjs/testing';
 import { IEventsService } from './events.interface';
+import { NatsEventsService } from './nats-events.service';
+import { EventsModule } from './nats.module';
 
 describe('EventsModule (NATS)', () => {
 	let module: TestingModule;

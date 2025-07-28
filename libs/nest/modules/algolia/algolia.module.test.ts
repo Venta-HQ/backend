@@ -1,6 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { Test, TestingModule } from '@nestjs/testing';
 import { AlgoliaModule } from './algolia.module';
 import { AlgoliaService } from './algolia.service';
 
@@ -173,4 +173,4 @@ describe('AlgoliaModule', () => {
 			expect(algoliaService).toBeDefined();
 		});
 	});
-}); 
+});

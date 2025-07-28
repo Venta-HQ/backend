@@ -1,6 +1,6 @@
 import { join } from 'path';
-import { HttpLoggerModule, RedisModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
+import { HttpLoggerModule, RedisModule } from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -31,8 +31,6 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 			],
 		}),
 	],
-	providers: [
-		LocationWebsocketGateway,
-	],
+	providers: [LocationWebsocketGateway],
 })
 export class WebsocketGatewayModule {}

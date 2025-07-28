@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Metadata } from '@grpc/grpc-js';
 import { Logger } from '@nestjs/common';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
 import GrpcInstance from './grpc-instance.service';
 
 // Mock @grpc/grpc-js
@@ -34,8 +34,8 @@ describe('GrpcInstance', () => {
 
 		// Mock service
 		mockService = {
-			testMethod: vi.fn(),
 			anotherMethod: vi.fn(),
+			testMethod: vi.fn(),
 		};
 
 		grpcInstance = new GrpcInstance(mockRequest, mockService);
@@ -77,7 +77,7 @@ describe('GrpcInstance', () => {
 			const expectedResult = { success: true };
 			mockService.testMethod.mockReturnValue(expectedResult);
 
-			const result = instance.invoke('testMethod', testData);
+			const result = (instance as any).invoke('testMethod', testData);
 
 			expect(Metadata).toHaveBeenCalled();
 			expect(mockMetadata.set).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe('GrpcInstance', () => {
 			const expectedResult = { success: true };
 			mockService.testMethod.mockReturnValue(expectedResult);
 
-			const result = instance.invoke('testMethod', testData);
+			const result = (instance as any).invoke('testMethod', testData);
 
 			expect(Metadata).toHaveBeenCalled();
 			expect(mockMetadata.set).not.toHaveBeenCalled();
@@ -107,7 +107,7 @@ describe('GrpcInstance', () => {
 			const expectedResult = { success: true };
 			mockService.testMethod.mockReturnValue(expectedResult);
 
-			const result = instance.invoke('testMethod', testData);
+			const result = (instance as any).invoke('testMethod', testData);
 
 			expect(Metadata).toHaveBeenCalled();
 			expect(mockMetadata.set).not.toHaveBeenCalled();
@@ -248,7 +248,7 @@ describe('GrpcInstance', () => {
 			const instance = new GrpcInstance(mockRequest, emptyService);
 			const testData = { test: 'data' };
 
-			const result = instance.invoke('testMethod' as any, testData);
+			const result = (instance as any).invoke('testMethod', testData);
 
 			expect(result).toBeUndefined();
 		});
@@ -307,4 +307,4 @@ describe('GrpcInstance', () => {
 			expect(result2).toBe('result2');
 		});
 	});
-}); 
+});

@@ -4,12 +4,12 @@ import { AppExceptionFilter } from '../filters/exception.filter';
 
 @Global()
 @Module({
+	exports: [],
 	providers: [
 		{
 			provide: APP_FILTER,
 			useClass: AppExceptionFilter,
 		},
 	],
-	exports: [],
 })
 export class ErrorHandlingModule {}

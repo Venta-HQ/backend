@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
-import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
 import { GrpcLoggerModule } from './grpc-logger.module';
 import { GrpcLogger } from './grpc-logger.service';
 import { RequestContextService } from './request-context.service';

@@ -1,7 +1,7 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Logger } from '@nestjs/common';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { PrismaService } from './prisma.service';
 import { PrismaClient } from '@prisma/client';
+import { PrismaService } from './prisma.service';
 
 // Mock PrismaClient
 vi.mock('@prisma/client', () => ({
@@ -15,7 +15,7 @@ vi.mock('@prisma/extension-pulse', () => ({
 
 describe('PrismaService', () => {
 	let prismaService: PrismaService;
-	let mockPrismaClient: vi.Mocked<PrismaClient>;
+	let mockPrismaClient: any;
 	const connectionString = 'postgresql://user:pass@localhost:5432/db';
 	const pulseKey = 'pulse-api-key';
 
@@ -26,8 +26,8 @@ describe('PrismaService', () => {
 		mockPrismaClient = {
 			$connect: vi.fn(),
 			$disconnect: vi.fn(),
-			$on: vi.fn(),
 			$extends: vi.fn(() => ({ pulseClient: true })),
+			$on: vi.fn(),
 		} as any;
 
 		(PrismaClient as any).mockImplementation(() => mockPrismaClient);
@@ -83,12 +83,10 @@ describe('PrismaService', () => {
 		});
 
 		it('should log error events', () => {
-			const errorEvent = { message: 'Database error', code: 'P2002' };
-			
+			const errorEvent = { code: 'P2002', message: 'Database error' };
+
 			// Get the error event handler
-			const errorHandler = mockPrismaClient.$on.mock.calls.find(
-				call => call[0] === 'error'
-			)[1];
+			const errorHandler = mockPrismaClient.$on.mock.calls.find((call) => call[0] === 'error')[1];
 
 			errorHandler(errorEvent);
 
@@ -103,9 +101,7 @@ describe('PrismaService', () => {
 			};
 
 			// Get the query event handler
-			const queryHandler = mockPrismaClient.$on.mock.calls.find(
-				call => call[0] === 'query'
-			)[1];
+			const queryHandler = mockPrismaClient.$on.mock.calls.find((call) => call[0] === 'query')[1];
 
 			queryHandler(queryEvent);
 
@@ -202,10 +198,10 @@ describe('PrismaService', () => {
 			// Create separate mock instances
 			const mockClient1 = { ...mockPrismaClient, id: 'client1' };
 			const mockClient2 = { ...mockPrismaClient, id: 'client2' };
-			
+
 			(PrismaClient as any).mockImplementationOnce(() => mockClient1);
 			(PrismaClient as any).mockImplementationOnce(() => mockClient2);
-			
+
 			const service1 = new PrismaService(connectionString, pulseKey);
 			const service2 = new PrismaService('different-url', 'different-key');
 
@@ -217,10 +213,10 @@ describe('PrismaService', () => {
 			// Create separate mock instances with different Pulse clients
 			const mockClient1 = { ...mockPrismaClient, $extends: vi.fn(() => ({ pulseClient: 'pulse1' })) };
 			const mockClient2 = { ...mockPrismaClient, $extends: vi.fn(() => ({ pulseClient: 'pulse2' })) };
-			
+
 			(PrismaClient as any).mockImplementationOnce(() => mockClient1);
 			(PrismaClient as any).mockImplementationOnce(() => mockClient2);
-			
+
 			const service1 = new PrismaService(connectionString, pulseKey);
 			const service2 = new PrismaService('different-url', 'different-key');
 
@@ -228,4 +224,4 @@ describe('PrismaService', () => {
 			expect(service2.pulse).toEqual({ pulseClient: 'pulse2' });
 		});
 	});
-}); 
+});

@@ -9,7 +9,7 @@ vi.mock('./clerk.service', () => ({
 }));
 
 describe('ClerkModule', () => {
-	let mockConfigService: vi.Mocked<ConfigService>;
+	let mockConfigService: any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -56,17 +56,17 @@ describe('ClerkModule', () => {
 			const module = ClerkModule.register();
 
 			expect(module.providers).toHaveLength(1);
-			expect(module.providers[0].provide).toBe(ClerkService);
-			expect(module.providers[0].inject).toEqual([ConfigService]);
+			expect((module.providers[0] as any).provide).toBe(ClerkService);
+			expect((module.providers[0] as any).inject).toEqual([ConfigService]);
 		});
 	});
 
 	describe('useFactory', () => {
-		let useFactory: Function;
+		let useFactory: (configService: any) => any;
 
 		beforeEach(() => {
 			const module = ClerkModule.register();
-			useFactory = module.providers[0].useFactory;
+			useFactory = (module.providers[0] as any).useFactory;
 		});
 
 		it('should create ClerkService with valid configuration', () => {
@@ -164,11 +164,11 @@ describe('ClerkModule', () => {
 	});
 
 	describe('edge cases', () => {
-		let useFactory: Function;
+		let useFactory: (configService: any) => any;
 
 		beforeEach(() => {
 			const module = ClerkModule.register();
-			useFactory = module.providers[0].useFactory;
+			useFactory = (module.providers[0] as any).useFactory;
 		});
 
 		it('should handle config service throwing errors', () => {
@@ -182,14 +182,14 @@ describe('ClerkModule', () => {
 
 		it('should handle config service returning non-string values', () => {
 			const testCases = [
-				{ value: 123, expected: 123 },
-				{ value: true, expected: true },
-				{ value: false, expected: false },
-				{ value: {}, expected: {} },
-				{ value: [], expected: [] },
+				{ expected: 123, value: 123 },
+				{ expected: true, value: true },
+				{ expected: false, value: false },
+				{ expected: {}, value: {} },
+				{ expected: [], value: [] },
 			];
 
-			testCases.forEach(({ value, expected }) => {
+			testCases.forEach(({ expected, value }) => {
 				mockConfigService.get.mockReturnValue(value);
 				const result = useFactory(mockConfigService);
 

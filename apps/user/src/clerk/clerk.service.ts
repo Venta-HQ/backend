@@ -59,8 +59,8 @@ export class ClerkService {
 		await this.prisma.db.integration.deleteMany({
 			where: {
 				config: {
-					path: ['providerId'],
 					equals: providerId,
+					path: ['providerId'],
 				},
 				type: IntegrationType.Clerk,
 			},

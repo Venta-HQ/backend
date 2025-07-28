@@ -47,7 +47,7 @@ describe('SchemaValidatorPipe', () => {
 			const validData = {
 				location: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				name: 'Test Vendor',
 			};
@@ -77,9 +77,9 @@ describe('SchemaValidatorPipe', () => {
 	describe('invalid data', () => {
 		it('should throw AppError with validation details for invalid input', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			expect(() => pipe.transform(invalidData, {} as any)).toThrow(AppError);
@@ -87,9 +87,9 @@ describe('SchemaValidatorPipe', () => {
 
 		it('should include field and errors in validation error', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			try {
@@ -99,36 +99,36 @@ describe('SchemaValidatorPipe', () => {
 				expect(error.type).toBe(ErrorType.VALIDATION);
 				expect(error.code).toBe('VALIDATION_ERROR');
 				expect(error.details).toEqual({
-					field: 'age',
 					errors: [
 						{ message: 'Must be at least 18 years old', path: 'age' },
 						{ message: 'Invalid email format', path: 'email' },
 						{ message: 'Name is required', path: 'name' },
 					],
+					field: 'age',
 				});
 			}
 		});
 
 		it('should handle nested object validation errors', () => {
-			const pipe = new SchemaValidatorPipe(VendorSchema);
+			const nestedPipe = new SchemaValidatorPipe(VendorSchema);
 			const invalidData = {
-				name: 'Test Vendor',
 				location: {
 					lat: 'invalid',
 					long: 'invalid',
 				},
+				name: 'Test Vendor',
 			};
 
 			try {
-				pipe.transform(invalidData, {} as any);
+				nestedPipe.transform(invalidData, {} as any);
 			} catch (error) {
 				expect(error).toBeInstanceOf(AppError);
 				expect(error.details).toEqual({
-					field: 'location.lat',
 					errors: [
 						{ message: 'Expected number, received string', path: 'location.lat' },
 						{ message: 'Expected number, received string', path: 'location.long' },
 					],
+					field: 'location.lat',
 				});
 			}
 		});
@@ -160,10 +160,8 @@ describe('SchemaValidatorPipe', () => {
 				expect(error.type).toBe(ErrorType.VALIDATION);
 				expect(error.code).toBe('VALIDATION_ERROR');
 				expect(error.details).toEqual({
+					errors: [{ message: 'Expected object, received null', path: '' }],
 					field: '',
-					errors: [
-						{ message: 'Expected object, received null', path: '' },
-					],
 				});
 			}
 		});
@@ -176,10 +174,8 @@ describe('SchemaValidatorPipe', () => {
 				expect(error.type).toBe(ErrorType.VALIDATION);
 				expect(error.code).toBe('VALIDATION_ERROR');
 				expect(error.details).toEqual({
+					errors: [{ message: 'Required', path: '' }],
 					field: '',
-					errors: [
-						{ message: 'Required', path: '' },
-					],
 				});
 			}
 		});
@@ -205,7 +201,7 @@ describe('SchemaValidatorPipe', () => {
 				}),
 			});
 
-			const pipe = new SchemaValidatorPipe(NestedSchema);
+			const nestedPipe = new SchemaValidatorPipe(NestedSchema);
 			const invalidData = {
 				user: {
 					profile: {
@@ -215,40 +211,35 @@ describe('SchemaValidatorPipe', () => {
 			};
 
 			try {
-				pipe.transform(invalidData, {} as any);
+				nestedPipe.transform(invalidData, {} as any);
 			} catch (error) {
 				expect(error.details).toEqual({
+					errors: [{ message: 'String must contain at least 1 character(s)', path: 'user.profile.name' }],
 					field: 'user.profile.name',
-					errors: [
-						{ message: 'String must contain at least 1 character(s)', path: 'user.profile.name' },
-					],
 				});
 			}
 		});
 
 		it('should handle array path formatting', () => {
 			const ArraySchema = z.object({
-				users: z.array(z.object({
-					name: z.string().min(1),
-				})),
+				users: z.array(
+					z.object({
+						name: z.string().min(1),
+					}),
+				),
 			});
 
-			const pipe = new SchemaValidatorPipe(ArraySchema);
+			const arrayPipe = new SchemaValidatorPipe(ArraySchema);
 			const invalidData = {
-				users: [
-					{ name: '' },
-					{ name: 'Valid' },
-				],
+				users: [{ name: '' }, { name: 'Valid' }],
 			};
 
 			try {
-				pipe.transform(invalidData, {} as any);
+				arrayPipe.transform(invalidData, {} as any);
 			} catch (error) {
 				expect(error.details).toEqual({
+					errors: [{ message: 'String must contain at least 1 character(s)', path: 'users.0.name' }],
 					field: 'users.0.name',
-					errors: [
-						{ message: 'String must contain at least 1 character(s)', path: 'users.0.name' },
-					],
 				});
 			}
 		});
@@ -257,15 +248,15 @@ describe('SchemaValidatorPipe', () => {
 	describe('metadata handling', () => {
 		it('should ignore metadata parameter', () => {
 			const validData = {
-				name: 'John Doe',
-				email: 'john@example.com',
 				age: 25,
+				email: 'john@example.com',
+				name: 'John Doe',
 			};
 
 			const metadata = {
-				type: 'body',
-				metatype: Object,
 				data: 'user',
+				metatype: Object,
+				type: 'body',
 			};
 
 			const result = pipe.transform(validData, metadata as any);
@@ -285,9 +276,9 @@ describe('GrpcSchemaValidatorPipe', () => {
 	describe('valid data', () => {
 		it('should return parsed data for valid input', () => {
 			const validData = {
-				name: 'John Doe',
-				email: 'john@example.com',
 				age: 25,
+				email: 'john@example.com',
+				name: 'John Doe',
 			};
 
 			const result = pipe.transform(validData, {} as any);
@@ -299,9 +290,9 @@ describe('GrpcSchemaValidatorPipe', () => {
 	describe('invalid data', () => {
 		it('should throw AppError with validation details for invalid input', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			expect(() => pipe.transform(invalidData, {} as any)).toThrow(AppError);
@@ -309,9 +300,9 @@ describe('GrpcSchemaValidatorPipe', () => {
 
 		it('should include field and errors in validation error', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			try {
@@ -321,12 +312,12 @@ describe('GrpcSchemaValidatorPipe', () => {
 				expect(error.type).toBe(ErrorType.VALIDATION);
 				expect(error.code).toBe('VALIDATION_ERROR');
 				expect(error.details).toEqual({
-					field: 'age',
 					errors: [
 						{ message: 'Must be at least 18 years old', path: 'age' },
 						{ message: 'Invalid email format', path: 'email' },
 						{ message: 'Name is required', path: 'name' },
 					],
+					field: 'age',
 				});
 			}
 		});
@@ -344,9 +335,9 @@ describe('WsSchemaValidatorPipe', () => {
 	describe('valid data', () => {
 		it('should return parsed data for valid input', () => {
 			const validData = {
-				name: 'John Doe',
-				email: 'john@example.com',
 				age: 25,
+				email: 'john@example.com',
+				name: 'John Doe',
 			};
 
 			const result = pipe.transform(validData, {} as any);
@@ -358,9 +349,9 @@ describe('WsSchemaValidatorPipe', () => {
 	describe('invalid data', () => {
 		it('should throw AppError with validation details for invalid input', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			expect(() => pipe.transform(invalidData, {} as any)).toThrow(AppError);
@@ -368,9 +359,9 @@ describe('WsSchemaValidatorPipe', () => {
 
 		it('should include field and errors in validation error', () => {
 			const invalidData = {
-				name: '',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: '',
 			};
 
 			try {
@@ -380,12 +371,12 @@ describe('WsSchemaValidatorPipe', () => {
 				expect(error.type).toBe(ErrorType.VALIDATION);
 				expect(error.code).toBe('VALIDATION_ERROR');
 				expect(error.details).toEqual({
-					field: 'age',
 					errors: [
 						{ message: 'Must be at least 18 years old', path: 'age' },
 						{ message: 'Invalid email format', path: 'email' },
 						{ message: 'Name is required', path: 'name' },
 					],
+					field: 'age',
 				});
 			}
 		});
@@ -397,11 +388,11 @@ describe('Schema Validator Pipes Integration', () => {
 		const ComplexSchema = z.object({
 			user: z.object({
 				profile: z.object({
-					name: z.string().min(1),
 					email: z.string().email(),
+					name: z.string().min(1),
 					preferences: z.object({
-						theme: z.enum(['light', 'dark']),
 						notifications: z.boolean(),
+						theme: z.enum(['light', 'dark']),
 					}),
 				}),
 				settings: z.object({
@@ -414,11 +405,11 @@ describe('Schema Validator Pipes Integration', () => {
 		const validData = {
 			user: {
 				profile: {
-					name: 'John Doe',
 					email: 'john@example.com',
+					name: 'John Doe',
 					preferences: {
-						theme: 'dark',
 						notifications: true,
+						theme: 'dark',
 					},
 				},
 				settings: {
@@ -440,13 +431,13 @@ describe('Schema Validator Pipes Integration', () => {
 
 	it('should handle validation errors consistently across all pipes', () => {
 		const SimpleSchema = z.object({
-			name: z.string().min(1),
 			email: z.string().email(),
+			name: z.string().min(1),
 		});
 
 		const invalidData = {
-			name: '',
 			email: 'invalid',
+			name: '',
 		};
 
 		const httpPipe = new SchemaValidatorPipe(SimpleSchema);

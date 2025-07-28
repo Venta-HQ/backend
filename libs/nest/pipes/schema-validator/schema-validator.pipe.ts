@@ -19,7 +19,7 @@ export class SchemaValidatorPipe implements PipeTransform {
 				const firstError = error.errors[0];
 				const field = firstError.path.join('.');
 
-				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, { field, errors: formattedErrors });
+				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, { errors: formattedErrors, field });
 			} else {
 				throw AppError.validation(ErrorCodes.VALIDATION_ERROR);
 			}

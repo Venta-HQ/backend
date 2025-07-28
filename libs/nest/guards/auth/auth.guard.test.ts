@@ -1,9 +1,5 @@
-import Redis from 'ioredis';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExecutionContext } from '@nestjs/common';
-import { AppError, ErrorCodes } from '../../errors';
-import { ClerkService } from '../../modules/clerk/clerk.service';
-import { PrismaService } from '../../modules/prisma/prisma.service';
+import { AppError } from '../../errors';
 import { AuthGuard } from './auth.guard';
 
 // Mock dependencies
@@ -13,10 +9,10 @@ vi.mock('@nestjs-modules/ioredis', () => ({
 
 describe('AuthGuard', () => {
 	let authGuard: AuthGuard;
-	let mockClerkService: vi.Mocked<ClerkService>;
-	let mockPrismaService: vi.Mocked<PrismaService>;
-	let mockRedis: vi.Mocked<Redis>;
-	let mockExecutionContext: ExecutionContext;
+	let mockClerkService: any;
+	let mockPrismaService: any;
+	let mockRedis: any;
+	let mockExecutionContext: any;
 
 	beforeEach(() => {
 		mockClerkService = {
@@ -58,8 +54,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -74,8 +70,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -90,8 +86,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -170,8 +166,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -189,8 +185,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -211,8 +207,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -233,8 +229,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 
@@ -260,8 +256,8 @@ describe('AuthGuard', () => {
 
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 			await expect(authGuard.canActivate(mockExecutionContext)).rejects.toMatchObject({
-				type: 'AUTHENTICATION',
 				code: 'UNAUTHORIZED',
+				type: 'AUTHENTICATION',
 			});
 		});
 	});

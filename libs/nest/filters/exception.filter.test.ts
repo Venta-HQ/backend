@@ -7,16 +7,16 @@ import { AppExceptionFilter } from './exception.filter';
 
 // Mock Express Response
 const mockResponse = {
-	status: vi.fn().mockReturnThis(),
 	json: vi.fn().mockReturnThis(),
+	status: vi.fn().mockReturnThis(),
 };
 
 // Mock Express Request
 const mockRequest = {
-	url: '/api/test',
 	headers: {
 		'x-request-id': 'req_123',
 	},
+	url: '/api/test',
 };
 
 // Mock WebSocket Client
@@ -43,8 +43,8 @@ describe('AppExceptionFilter', () => {
 			mockHost = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: vi.fn().mockReturnValue({
-					getResponse: vi.fn().mockReturnValue(mockResponse),
 					getRequest: vi.fn().mockReturnValue(mockRequest),
+					getResponse: vi.fn().mockReturnValue(mockResponse),
 				}),
 				switchToRpc: vi.fn(),
 				switchToWs: vi.fn(),
@@ -80,8 +80,8 @@ describe('AppExceptionFilter', () => {
 				error: {
 					code: 'UNKNOWN_ERROR',
 					details: {
-						statusCode: 400,
 						originalError: expect.any(Object),
+						statusCode: 400,
 					},
 					message: 'Bad request',
 					path: '/api/test',
@@ -156,8 +156,8 @@ describe('AppExceptionFilter', () => {
 		it('should convert RpcException to AppError', () => {
 			const grpcError = {
 				code: 5, // NOT_FOUND
-				message: 'gRPC error message',
 				details: 'gRPC error details',
+				message: 'gRPC error message',
 			};
 			const rpcException = new RpcException(grpcError);
 
@@ -267,8 +267,8 @@ describe('AppExceptionFilter', () => {
 			mockHost = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: vi.fn().mockReturnValue({
-					getResponse: vi.fn().mockReturnValue(mockResponse),
 					getRequest: vi.fn().mockReturnValue(mockRequest),
+					getResponse: vi.fn().mockReturnValue(mockResponse),
 				}),
 				switchToRpc: vi.fn(),
 				switchToWs: vi.fn(),
@@ -301,31 +301,31 @@ describe('AppExceptionFilter', () => {
 			});
 		});
 
-		    it('should handle HttpException with complex response', () => {
-      const complexResponse = {
-        message: 'Validation failed',
-        error: 'Bad Request',
-        statusCode: 400,
-      };
-      const httpException = new HttpException(complexResponse, 400);
+		it('should handle HttpException with complex response', () => {
+			const complexResponse = {
+				error: 'Bad Request',
+				message: 'Validation failed',
+				statusCode: 400,
+			};
+			const httpException = new HttpException(complexResponse, 400);
 
-      filter.catch(httpException, mockHost);
+			filter.catch(httpException, mockHost);
 
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        error: {
-          code: 'UNKNOWN_ERROR',
-          details: {
-            statusCode: 400,
-            originalError: complexResponse,
-          },
-          message: 'Validation failed',
-          path: '/api/test',
-          requestId: 'req_123',
-          timestamp: expect.any(String),
-          type: ErrorType.INTERNAL,
-        },
-      });
-    });
+			expect(mockResponse.json).toHaveBeenCalledWith({
+				error: {
+					code: 'UNKNOWN_ERROR',
+					details: {
+						originalError: complexResponse,
+						statusCode: 400,
+					},
+					message: 'Validation failed',
+					path: '/api/test',
+					requestId: 'req_123',
+					timestamp: expect.any(String),
+					type: ErrorType.INTERNAL,
+				},
+			});
+		});
 
 		it('should handle HttpException with string response', () => {
 			const httpException = new HttpException('Simple error message', 500);
@@ -336,8 +336,8 @@ describe('AppExceptionFilter', () => {
 				error: {
 					code: 'UNKNOWN_ERROR',
 					details: {
-						statusCode: 500,
 						originalError: 'Simple error message',
+						statusCode: 500,
 					},
 					message: 'Simple error message',
 					path: '/api/test',

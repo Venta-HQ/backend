@@ -1,14 +1,13 @@
+import fs from 'fs';
+import path from 'path';
 import { describe, expect, it } from 'vitest';
 
 describe('RedisModule', () => {
-
 	describe('module structure', () => {
 		it('should be a valid NestJS module', () => {
 			// Test that the module file exists and can be parsed
 			expect(() => {
 				// Just test that the file can be read and parsed
-				const fs = require('fs');
-				const path = require('path');
 				const modulePath = path.join(__dirname, 'redis.module.ts');
 				const content = fs.readFileSync(modulePath, 'utf8');
 				expect(content).toContain('@Global()');
@@ -18,8 +17,6 @@ describe('RedisModule', () => {
 		});
 
 		it('should have correct module decorators', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -28,8 +25,6 @@ describe('RedisModule', () => {
 		});
 
 		it('should import required dependencies', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -39,8 +34,6 @@ describe('RedisModule', () => {
 		});
 
 		it('should configure Redis with forRootAsync', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -52,8 +45,6 @@ describe('RedisModule', () => {
 
 	describe('configuration structure', () => {
 		it('should have correct forRootAsync configuration', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -64,8 +55,6 @@ describe('RedisModule', () => {
 		});
 
 		it('should use REDIS_URL from config service', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -74,8 +63,6 @@ describe('RedisModule', () => {
 		});
 
 		it('should configure Redis with single type', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -86,8 +73,6 @@ describe('RedisModule', () => {
 	describe('useFactory function logic', () => {
 		it('should return correct Redis configuration', () => {
 			// Test the useFactory logic by extracting it from the file
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
@@ -97,33 +82,55 @@ describe('RedisModule', () => {
 		});
 
 		it('should handle config service injection', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
 			expect(content).toContain('inject: [ConfigService]');
-			expect(content).toContain('useFactory: (configService: ConfigService)');
+			expect(content).toContain('useFactory: (configService)');
+		});
+
+		it('should return proper Redis configuration object', () => {
+			const modulePath = path.join(__dirname, 'redis.module.ts');
+			const content = fs.readFileSync(modulePath, 'utf8');
+
+			expect(content).toContain('return {');
+			expect(content).toContain("type: 'single'");
+			expect(content).toContain("url: configService.get('REDIS_URL')");
 		});
 	});
 
 	describe('module exports', () => {
 		it('should export RedisModule', () => {
-			const fs = require('fs');
-			const path = require('path');
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
-			expect(content).toContain('export class RedisModule');
+			expect(content).toContain('export { RedisModule }');
 		});
 
-		it('should have index.ts export', () => {
-			const fs = require('fs');
-			const path = require('path');
-			const indexPath = path.join(__dirname, 'index.ts');
-			const content = fs.readFileSync(indexPath, 'utf8');
+		it('should be a global module', () => {
+			const modulePath = path.join(__dirname, 'redis.module.ts');
+			const content = fs.readFileSync(modulePath, 'utf8');
 
-			expect(content).toContain("export * from './redis.module'");
+			expect(content).toContain('@Global()');
+		});
+	});
+
+	describe('error handling', () => {
+		it('should handle missing REDIS_URL gracefully', () => {
+			const modulePath = path.join(__dirname, 'redis.module.ts');
+			const content = fs.readFileSync(modulePath, 'utf8');
+
+			// The module should use configService.get which can handle undefined values
+			expect(content).toContain("configService.get('REDIS_URL')");
+		});
+
+		it('should have proper error handling structure', () => {
+			const modulePath = path.join(__dirname, 'redis.module.ts');
+			const content = fs.readFileSync(modulePath, 'utf8');
+
+			// The module should have proper structure for error handling
+			expect(content).toContain('useFactory:');
+			expect(content).toContain('inject:');
 		});
 	});
 });

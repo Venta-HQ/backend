@@ -1,6 +1,5 @@
 import { Webhook } from 'svix';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ExecutionContext } from '@nestjs/common';
 import { SignedWebhookGuard } from './signed-webhook.guard';
 
 // Mock svix Webhook
@@ -9,8 +8,8 @@ vi.mock('svix', () => ({
 }));
 
 describe('SignedWebhookGuard', () => {
-	let mockWebhook: vi.Mocked<Webhook>;
-	let mockExecutionContext: ExecutionContext;
+	let mockWebhook: any;
+	let mockExecutionContext: any;
 	const secret = 'test-secret';
 
 	beforeEach(() => {
@@ -25,12 +24,12 @@ describe('SignedWebhookGuard', () => {
 		mockExecutionContext = {
 			switchToHttp: vi.fn().mockReturnValue({
 				getRequest: vi.fn().mockReturnValue({
-					rawBody: Buffer.from('test-payload'),
 					headers: {
 						'svix-id': 'test-id',
-						'svix-timestamp': 'test-timestamp',
 						'svix-signature': 'test-signature',
+						'svix-timestamp': 'test-timestamp',
 					},
+					rawBody: Buffer.from('test-payload'),
 				}),
 			}),
 		} as any;
@@ -66,8 +65,8 @@ describe('SignedWebhookGuard', () => {
 			expect(Webhook).toHaveBeenCalledWith(secret);
 			expect(mockWebhook.verify).toHaveBeenCalledWith('test-payload', {
 				'svix-id': 'test-id',
-				'svix-timestamp': 'test-timestamp',
 				'svix-signature': 'test-signature',
+				'svix-timestamp': 'test-timestamp',
 			});
 		});
 
@@ -85,8 +84,8 @@ describe('SignedWebhookGuard', () => {
 			expect(Webhook).toHaveBeenCalledWith(secret);
 			expect(mockWebhook.verify).toHaveBeenCalledWith('test-payload', {
 				'svix-id': 'test-id',
-				'svix-timestamp': 'test-timestamp',
 				'svix-signature': 'test-signature',
+				'svix-timestamp': 'test-timestamp',
 			});
 		});
 
@@ -94,14 +93,14 @@ describe('SignedWebhookGuard', () => {
 			const GuardClass = SignedWebhookGuard(secret);
 			const guard = new GuardClass();
 
-			const jsonPayload = JSON.stringify({ event: 'user.created', data: { id: '123' } });
+			const jsonPayload = JSON.stringify({ data: { id: '123' }, event: 'user.created' });
 			const request = {
-				rawBody: Buffer.from(jsonPayload),
 				headers: {
 					'svix-id': 'test-id',
-					'svix-timestamp': 'test-timestamp',
 					'svix-signature': 'test-signature',
+					'svix-timestamp': 'test-timestamp',
 				},
+				rawBody: Buffer.from(jsonPayload),
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -118,12 +117,12 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: Buffer.from(''),
 				headers: {
 					'svix-id': 'test-id',
-					'svix-timestamp': 'test-timestamp',
 					'svix-signature': 'test-signature',
+					'svix-timestamp': 'test-timestamp',
 				},
+				rawBody: Buffer.from(''),
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -140,8 +139,8 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: Buffer.from('test-payload'),
 				headers: {},
+				rawBody: Buffer.from('test-payload'),
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -160,11 +159,11 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: Buffer.from('test-payload'),
 				headers: {
 					'svix-id': 'test-id',
 					// Missing svix-timestamp and svix-signature
 				},
+				rawBody: Buffer.from('test-payload'),
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -257,12 +256,12 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: null,
 				headers: {
 					'svix-id': 'test-id',
-					'svix-timestamp': 'test-timestamp',
 					'svix-signature': 'test-signature',
+					'svix-timestamp': 'test-timestamp',
 				},
+				rawBody: null,
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -280,12 +279,12 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: undefined,
 				headers: {
 					'svix-id': 'test-id',
-					'svix-timestamp': 'test-timestamp',
 					'svix-signature': 'test-signature',
+					'svix-timestamp': 'test-timestamp',
 				},
+				rawBody: undefined,
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);
@@ -303,12 +302,12 @@ describe('SignedWebhookGuard', () => {
 			const guard = new GuardClass();
 
 			const request = {
-				rawBody: 'string-body',
 				headers: {
 					'svix-id': 'test-id',
-					'svix-timestamp': 'test-timestamp',
 					'svix-signature': 'test-signature',
+					'svix-timestamp': 'test-timestamp',
 				},
+				rawBody: 'string-body',
 			};
 
 			mockExecutionContext.switchToHttp().getRequest.mockReturnValue(request);

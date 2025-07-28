@@ -9,7 +9,7 @@ vi.mock('./prisma.service', () => ({
 }));
 
 describe('PrismaModule', () => {
-	let mockConfigService: vi.Mocked<ConfigService>;
+	let mockConfigService: any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -62,7 +62,7 @@ describe('PrismaModule', () => {
 	});
 
 	describe('useFactory', () => {
-		let useFactory: Function;
+		let useFactory: (configService: any) => any;
 
 		beforeEach(() => {
 			const module = PrismaModule.register();

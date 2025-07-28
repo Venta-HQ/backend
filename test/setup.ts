@@ -2,12 +2,12 @@ import 'reflect-metadata';
 
 // Global test setup
 beforeAll(() => {
-  // Set up any global test environment
-  process.env.NODE_ENV = 'test';
+	// Set up any global test environment
+	process.env.NODE_ENV = 'test';
 });
 
 afterAll(() => {
-  // Clean up any global test environment
+	// Clean up any global test environment
 });
 
 // Mock environment variables for testing
@@ -20,4 +20,4 @@ process.env.ALGOLIA_APPLICATION_ID = 'test_algolia_app_id';
 process.env.ALGOLIA_API_KEY = 'test_algolia_api_key';
 process.env.CLOUDINARY_CLOUD_NAME = 'test_cloudinary';
 process.env.CLOUDINARY_API_KEY = 'test_cloudinary_key';
-process.env.CLOUDINARY_API_SECRET = 'test_cloudinary_secret'; 
+process.env.CLOUDINARY_API_SECRET = 'test_cloudinary_secret';

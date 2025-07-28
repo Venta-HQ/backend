@@ -20,8 +20,8 @@ export class WsSchemaValidatorPipe implements PipeTransform {
 				const field = firstError.path.join('.');
 
 				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, {
-					field,
 					errors: formattedErrors,
+					field,
 				});
 			} else {
 				throw AppError.validation(ErrorCodes.VALIDATION_ERROR);

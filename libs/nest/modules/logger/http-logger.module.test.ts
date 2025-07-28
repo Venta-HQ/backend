@@ -1,6 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { Test, TestingModule } from '@nestjs/testing';
 import { HttpLoggerModule } from './http-logger.module';
 
 // Mock nestjs-pino
@@ -243,4 +243,4 @@ describe('HttpLoggerModule', () => {
 			expect(module).toBeDefined();
 		});
 	});
-}); 
+});

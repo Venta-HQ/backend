@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
-import { ErrorCodes, AppError } from '@app/nest/errors';
-import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
-import { PrismaService } from '@app/nest/modules';
-import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes/lib/location/location.schemas';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { PrismaService } from '@app/nest/modules';
+import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
+import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -73,16 +73,10 @@ export class LocationController {
 		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2025') {
-					throw AppError.notFound(
-						ErrorCodes.VENDOR_NOT_FOUND,
-						{ vendorId: data.entityId }
-					);
+					throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.entityId });
 				}
 			}
-			throw AppError.internal(
-				ErrorCodes.DATABASE_ERROR,
-				{ operation: 'update vendor location' }
-			);
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor location' });
 		}
 	}
 
@@ -118,10 +112,7 @@ export class LocationController {
 			};
 		} catch (e) {
 			this.logger.error(e);
-			throw AppError.internal(
-				ErrorCodes.DATABASE_ERROR,
-				{ operation: 'GEO Search' }
-			);
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'GEO Search' });
 		}
 	}
 }

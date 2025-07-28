@@ -1,35 +1,29 @@
-import { PinoLogger } from 'nestjs-pino';
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GrpcLogger } from './grpc-logger.service';
-import { RequestContextService } from './request-context.service';
 
 describe('GrpcLogger', () => {
 	let grpcLogger: GrpcLogger;
-	let mockPinoLogger: vi.Mocked<PinoLogger>;
-	let mockRequestContextService: vi.Mocked<RequestContextService>;
+	let mockPinoLogger: any;
+	let mockRequestContextService: any;
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 
 		mockPinoLogger = {
-			info: vi.fn(),
+			debug: vi.fn(),
 			error: vi.fn(),
 			fatal: vi.fn(),
+			info: vi.fn(),
 			warn: vi.fn(),
-			debug: vi.fn(),
 		} as any;
 
 		mockRequestContextService = {
 			get: vi.fn(),
-			set: vi.fn(),
 			run: vi.fn(),
+			set: vi.fn(),
 		} as any;
 
 		grpcLogger = new GrpcLogger(mockPinoLogger, mockRequestContextService);
-	});
-
-	afterEach(() => {
-		vi.restoreAllMocks();
 	});
 
 	describe('constructor', () => {
@@ -42,7 +36,7 @@ describe('GrpcLogger', () => {
 		it('should log info message with context and request ID', () => {
 			const message = 'Test log message';
 			const context = 'TestContext';
-			const optionalParams = { userId: '123', action: 'test' };
+			const optionalParams = { action: 'test', userId: '123' };
 			const requestId = 'req-123';
 
 			mockRequestContextService.get.mockReturnValue(requestId);
@@ -57,7 +51,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -77,7 +71,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: undefined,
 				},
-				message
+				message,
 			);
 		});
 
@@ -96,7 +90,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-123',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -120,7 +114,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -128,8 +122,8 @@ describe('GrpcLogger', () => {
 			const message = 'Database connection failed';
 			const context = 'DatabaseService';
 			const optionalParams = {
-				error: new Error('Connection timeout'),
 				attempt: 3,
+				error: new Error('Connection timeout'),
 				timeout: 5000,
 			};
 
@@ -144,7 +138,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-456',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -168,7 +162,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -187,7 +181,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-999',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -196,7 +190,7 @@ describe('GrpcLogger', () => {
 		it('should log warning message with context and request ID', () => {
 			const message = 'Deprecated method called';
 			const context = 'LegacyService';
-			const optionalParams = { method: 'oldMethod', alternative: 'newMethod' };
+			const optionalParams = { alternative: 'newMethod', method: 'oldMethod' };
 			const requestId = 'req-warn';
 
 			mockRequestContextService.get.mockReturnValue(requestId);
@@ -211,14 +205,14 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
 		it('should handle warning with performance metrics', () => {
 			const message = 'Slow query detected';
 			const context = 'QueryService';
-			const optionalParams = { duration: 1500, threshold: 1000, query: 'SELECT * FROM large_table' };
+			const optionalParams = { duration: 1500, query: 'SELECT * FROM large_table', threshold: 1000 };
 
 			mockRequestContextService.get.mockReturnValue('req-slow');
 			mockPinoLogger.warn.mockReturnValue(undefined);
@@ -231,7 +225,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-slow',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -240,7 +234,7 @@ describe('GrpcLogger', () => {
 		it('should log debug message with context and request ID', () => {
 			const message = 'Processing user request';
 			const context = 'UserService';
-			const optionalParams = { userId: '123', step: 'validation' };
+			const optionalParams = { step: 'validation', userId: '123' };
 			const requestId = 'req-debug';
 
 			mockRequestContextService.get.mockReturnValue(requestId);
@@ -255,7 +249,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -263,9 +257,9 @@ describe('GrpcLogger', () => {
 			const message = 'Cache miss';
 			const context = 'CacheService';
 			const optionalParams = {
+				hitRate: 0.85,
 				key: 'user:123:profile',
 				ttl: 3600,
-				hitRate: 0.85,
 			};
 
 			mockRequestContextService.get.mockReturnValue('req-cache');
@@ -279,7 +273,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-cache',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -288,7 +282,7 @@ describe('GrpcLogger', () => {
 		it('should log verbose message with context and request ID', () => {
 			const message = 'Detailed operation step';
 			const context = 'OperationService';
-			const optionalParams = { step: 1, totalSteps: 5, details: 'step details' };
+			const optionalParams = { details: 'step details', step: 1, totalSteps: 5 };
 			const requestId = 'req-verbose';
 
 			mockRequestContextService.get.mockReturnValue(requestId);
@@ -303,7 +297,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -311,8 +305,8 @@ describe('GrpcLogger', () => {
 			const message = 'Function entry';
 			const context = 'TraceService';
 			const optionalParams = {
-				function: 'processUserData',
 				args: ['userId', 'options'],
+				function: 'processUserData',
 				timestamp: new Date().toISOString(),
 			};
 
@@ -327,7 +321,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-trace',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -348,7 +342,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-null',
 				},
-				null
+				null,
 			);
 		});
 
@@ -367,7 +361,7 @@ describe('GrpcLogger', () => {
 					context: '',
 					requestId: 'req-empty',
 				},
-				message
+				message,
 			);
 		});
 
@@ -386,7 +380,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-null-params',
 				},
-				message
+				message,
 			);
 		});
 	});
@@ -445,7 +439,7 @@ describe('GrpcLogger', () => {
 					context,
 					requestId,
 				},
-				message
+				message,
 			);
 		});
 
@@ -467,15 +461,15 @@ describe('GrpcLogger', () => {
 					context,
 					requestId: 'req-1',
 				},
-				message
+				message,
 			);
 			expect(mockPinoLogger.info).toHaveBeenCalledWith(
 				{
 					context,
 					requestId: 'req-2',
 				},
-				message
+				message,
 			);
 		});
 	});
-}); 
+});

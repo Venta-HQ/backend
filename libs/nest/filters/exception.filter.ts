@@ -33,31 +33,31 @@ export class AppExceptionFilter implements ExceptionFilter {
 		// If it's a NestJS exception, convert it
 		if (exception instanceof HttpException) {
 			const response = exception.getResponse() as any;
-							return AppError.internal(response.message || exception.message, {
-					statusCode: exception.getStatus(),
-					originalError: response,
-				});
+			return AppError.internal(response.message || exception.message, {
+				originalError: response,
+				statusCode: exception.getStatus(),
+			});
 		}
 
 		if (exception instanceof RpcException) {
 			const error = exception.getError() as any;
-							return AppError.internal(error.message || 'gRPC error', {
-					code: error.code,
-					originalError: error,
-				});
+			return AppError.internal(error.message || 'gRPC error', {
+				code: error.code,
+				originalError: error,
+			});
 		}
 
 		if (exception instanceof WsException) {
 			const error = exception.getError() as any;
-							return AppError.internal(error.message || 'WebSocket error', { originalError: error });
+			return AppError.internal(error.message || 'WebSocket error', { originalError: error });
 		}
 
 		// For unknown errors, create a generic internal error
 		if (exception instanceof Error) {
-							return AppError.internal(exception.message, { stack: exception.stack });
+			return AppError.internal(exception.message, { stack: exception.stack });
 		}
 
-						return AppError.internal('An unknown error occurred', { originalError: exception });
+		return AppError.internal('An unknown error occurred', { originalError: exception });
 	}
 
 	private handleHttpException(error: AppError, host: ArgumentsHost) {

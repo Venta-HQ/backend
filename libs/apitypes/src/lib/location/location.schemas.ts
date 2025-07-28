@@ -8,16 +8,16 @@ export const VendorLocationUpdateDataSchema = z.object({
 
 // gRPC schemas for location service
 export const GrpcLocationSchema = z.object({
-	long: z.number(),
 	lat: z.number(),
+	long: z.number(),
 });
 
 export const GrpcLocationUpdateSchema = z.object({
-	location: GrpcLocationSchema.optional(),
 	entityId: z.string(),
+	location: GrpcLocationSchema.optional(),
 });
 
 export const GrpcVendorLocationRequestSchema = z.object({
-	swLocation: GrpcLocationSchema.optional(),
 	neLocation: GrpcLocationSchema.optional(),
+	swLocation: GrpcLocationSchema.optional(),
 });

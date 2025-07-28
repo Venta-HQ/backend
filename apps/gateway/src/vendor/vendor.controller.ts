@@ -3,7 +3,7 @@ import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { ErrorCodes, AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';

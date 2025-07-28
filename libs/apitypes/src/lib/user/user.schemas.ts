@@ -10,13 +10,13 @@ export const GrpcClerkUserDataSchema = z.object({
 });
 
 export const GrpcRevenueCatProviderDataSchema = z.object({
-	transactionId: z.string(),
 	eventId: z.string(),
 	productId: z.string(),
+	transactionId: z.string(),
 });
 
 export const GrpcRevenueCatSubscriptionDataSchema = z.object({
 	clerkUserId: z.string(),
-	providerId: z.string(),
 	data: GrpcRevenueCatProviderDataSchema.optional(),
+	providerId: z.string(),
 });
