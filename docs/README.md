@@ -1,119 +1,91 @@
-# Venta Backend Documentation
+# Documentation
 
-Welcome to the Venta Backend documentation. This guide covers the architecture, setup, and development practices for our NestJS microservices backend.
+This directory contains comprehensive documentation for the Venta Backend project.
 
-## 📚 Documentation Sections
+## Documentation Structure
 
-### [Architecture Overview](./architecture.md)
+### Getting Started
 
-- System architecture and design patterns
-- Service communication patterns
-- Event-driven architecture
-- Technology stack
+- **[Getting Started Guide](getting-started.md)** - Complete setup and first steps
+- **[Nx Monorepo Guide](nx-guide.md)** - Understanding and using the Nx workspace
 
-### [Getting Started](./getting-started.md)
+### Development
 
-- Environment setup
-- Local development
-- Docker deployment
-- Service configuration
+- **[Development Guide](development.md)** - Development workflow and best practices
+- **[API Documentation](api.md)** - API endpoints and usage
+- **[Architecture Overview](architecture.md)** - System design and architecture
+- **[Event System](events.md)** - Event-driven communication patterns
 
-### [API Documentation](./api.md)
+### Database & Infrastructure
 
-- Gateway API endpoints
-- gRPC service definitions
-- WebSocket events
-- Authentication and authorization
+- **[Database Guide](database.md)** - Database schema and management
+- **[Request Tracing](request-tracing.md)** - Distributed tracing and debugging
 
-### [Database Schema](./database.md)
+### Troubleshooting & Maintenance
 
-- Prisma schema structure
-- Model relationships
-- Migrations and seeding
-- Database best practices
+- **[Troubleshooting Guide](troubleshooting.md)** - Common issues and solutions
+- **[Architecture Improvements](architecture-improvements.md)** - Planned enhancements
 
-### [Event System](./events.md)
+## Quick Reference
 
-- Event-driven architecture
-- NATS implementation with provider-agnostic design
-- Event types and schemas
-- Error handling and retries
+### Essential Commands
 
-### [Development Guide](./development.md)
+```bash
+# Development
+pnpm start:all                    # Start all services
+pnpm start:{service-name}         # Start specific service
 
-- Code organization
-- Testing strategies
-- Deployment pipeline
-- Monitoring and logging
+# Building
+pnpm build                        # Build all projects
+nx build {project-name}           # Build specific project
 
-### [Architecture Improvements](./architecture-improvements.md)
+# Testing
+pnpm test                         # Run all tests
+nx test {project-name}            # Test specific project
 
-- Potential optimizations and enhancements
-- Performance improvements
-- Security enhancements
-- Monitoring and observability
+# Linting
+pnpm lint                         # Lint all projects
+nx lint {project-name}            # Lint specific project
+```
 
-### [Troubleshooting](./troubleshooting.md)
+### Project Structure
 
-- Common issues and solutions
-- Debugging techniques
-- Performance optimization
-- Health checks
+```
+{workspace-root}/
+├── apps/                         # Applications (microservices)
+│   ├── {app-name}/              # Individual application
+│   │   ├── src/                 # Source code
+│   │   ├── project.json         # Nx project configuration
+│   │   └── tsconfig.app.json    # TypeScript config
+├── libs/                         # Shared libraries
+│   ├── {lib-name}/              # Individual library
+│   │   ├── src/                 # Source code
+│   │   ├── project.json         # Nx project configuration
+│   │   └── tsconfig.lib.json    # TypeScript config
+├── prisma/                       # Database schema
+├── docs/                         # Documentation
+└── docker-compose.yml            # Local infrastructure
+```
 
-### [Request Tracing](./request-tracing.md)
+### Key Concepts
 
-- Request ID propagation across services
-- Distributed tracing and debugging
-- Correlation and monitoring
-- Best practices for request tracking
+- **Nx Monorepo**: Efficient build system with caching and dependency management
+- **Microservices**: Independent services communicating via gRPC and events
+- **Event-Driven**: Asynchronous communication using NATS
+- **Type Safety**: Full TypeScript coverage with shared type definitions
 
-## 🚀 Quick Start
+## Getting Help
 
-1. **Setup Environment**
+1. **Start Here**: Read the [Getting Started Guide](getting-started.md)
+2. **Understand Nx**: Review the [Nx Monorepo Guide](nx-guide.md)
+3. **Development**: Follow the [Development Guide](development.md)
+4. **Troubleshooting**: Check the [Troubleshooting Guide](troubleshooting.md)
 
-   ```bash
-   cp ENVIRONMENT.md .env
-   # Edit .env with your configuration
-   ```
+## Contributing
 
-2. **Install Dependencies**
+When updating documentation:
 
-   ```bash
-   pnpm install
-   ```
-
-3. **Start Services**
-
-   ```bash
-   pnpm run start:all
-   ```
-
-4. **Verify Health**
-   ```bash
-   curl http://localhost:5002/health  # Gateway
-   curl http://localhost:5006/health  # Algolia Sync
-   curl http://localhost:8222/healthz # NATS Server
-   ```
-
-## 📋 Recent Changes
-
-### v3.0.0 - NATS Migration & Provider-Agnostic Design
-
-- ✅ Migrated from Redis pub/sub to NATS for event system
-- ✅ Implemented provider-agnostic `IEventsService` interface
-- ✅ All services now use generic event service injection
-- ✅ Enhanced event persistence and subject-based routing
-- ✅ Zero-downtime provider migration capability
-- ✅ Improved monitoring and health checks
-
-### v2.0.0 - Event-Driven Refactor
-
-- ✅ Replaced `dbchange` service with event-driven `algolia-sync`
-- ✅ Centralized configuration with validation
-- ✅ DRY Docker builds with shared base image
-- ✅ Enhanced error handling and retries
-- ✅ Improved monitoring and health checks
-
-## 🤝 Contributing
-
-See [Development Guide](./development.md) for contribution guidelines and best practices.
+1. Use generic placeholders (e.g., `{project-name}`) instead of hard-coded paths
+2. Keep examples consistent with the current Nx setup
+3. Update related documentation when making changes
+4. Test all commands and examples before committing

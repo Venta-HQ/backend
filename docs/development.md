@@ -2,32 +2,48 @@
 
 ## Code Organization
 
-### Project Structure
+### Nx Monorepo Structure
+
+This project uses **Nx** for monorepo management with the following structure:
 
 ```
-project-root/
-├── services/                     # Microservices
+venta-backend/
+├── apps/                         # Applications (microservices)
 │   ├── gateway/                  # HTTP API Gateway
+│   │   ├── src/
+│   │   │   ├── main.ts           # Service entry point
+│   │   │   ├── app.module.ts     # Main module
+│   │   │   ├── upload/           # Upload functionality
+│   │   │   ├── user/             # User endpoints
+│   │   │   ├── vendor/           # Vendor endpoints
+│   │   │   └── webhook/          # Webhook handlers
+│   │   ├── project.json          # Nx project configuration
+│   │   ├── webpack.config.js     # Webpack configuration
+│   │   └── tsconfig.app.json     # TypeScript config
 │   ├── user/                     # User management service
 │   ├── vendor/                   # Vendor management service
 │   ├── location/                 # Location tracking service
 │   ├── websocket-gateway/        # WebSocket connections
-│   └── algolia-sync/              # Search index synchronization
-├── shared/                       # Shared libraries
-│   ├── api-types/                # API types and schemas
-│   ├── framework/                # Framework utilities
+│   └── algolia-sync/             # Search index synchronization
+├── libs/                         # Shared libraries
+│   ├── nest/                     # NestJS framework utilities
 │   │   ├── modules/              # Shared modules
-│   │   │   ├── events/           # Event system (provider-agnostic)
 │   │   │   ├── config/           # Configuration module
-│   │   │   ├── database/         # Database client
-│   │   │   ├── cache/            # Cache client
-│   │   │   └── auth/             # Authentication
+│   │   │   ├── events/           # Event system (provider-agnostic)
+│   │   │   ├── prisma/           # Database client
+│   │   │   ├── redis/            # Cache client
+│   │   │   ├── clerk/            # Authentication
+│   │   │   ├── algolia/          # Search integration
+│   │   │   ├── upload/           # File upload
+│   │   │   ├── logger/           # Logging utilities
+│   │   │   └── grpc-instance/    # gRPC client management
 │   │   ├── guards/               # Authentication guards
 │   │   ├── filters/              # Exception filters
-│   │   └── pipes/                # Validation pipes
-│   └── proto/                    # gRPC protocol definitions
-├── database/                     # Database schema
-│   └── schema/                   # Database schemas
+│   │   ├── pipes/                # Validation pipes
+│   │   └── errors/               # Error handling
+│   ├── proto/                    # gRPC protocol definitions
+│   └── apitypes/                 # API types and schemas
+├── prisma/                       # Database schema
 ├── docs/                         # Documentation
 └── docker-compose.yml            # Local infrastructure
 ```
@@ -60,34 +76,38 @@ NATS_URL=nats://localhost:4222
 
 ### Module Organization
 
-#### Service Module Structure
+#### Application Structure (apps/)
+
+Each application follows this structure:
 
 ```
-services/user/
+apps/gateway/
 ├── src/
 │   ├── main.ts                   # Service entry point
-│   ├── user.module.ts            # Main module
-│   ├── controllers/              # gRPC controllers
+│   ├── app.module.ts             # Main module
+│   ├── controllers/              # HTTP controllers
 │   ├── services/                 # Business logic
 │   └── dto/                      # Data transfer objects
-├── Dockerfile                    # Service container
-└── tsconfig.json                # TypeScript config
+├── project.json                  # Nx project configuration
+├── webpack.config.js             # Build configuration
+├── tsconfig.app.json             # TypeScript config
+└── Dockerfile                    # Service container
 ```
 
-#### Shared Library Structure
+#### Library Structure (libs/)
 
 ```
-shared/framework/modules/
+libs/nest/modules/
 ├── index.ts                      # Main exports
 ├── config/                       # Configuration module
 ├── events/                       # Event system (provider-agnostic)
 │   ├── events.interface.ts       # Generic interface
-│   ├── events.service.ts         # Implementation
+│   ├── nats-events.service.ts    # NATS implementation
 │   ├── events.module.ts          # Module configuration
 │   └── index.ts                  # Exports
-├── database/                     # Database client
-├── cache/                        # Cache client
-└── auth/                         # Authentication
+├── prisma/                       # Database client
+├── redis/                        # Cache client
+└── clerk/                        # Authentication
 ```
 
 ## Development Workflow
@@ -98,490 +118,344 @@ shared/framework/modules/
 
 ```bash
 # 1. Create feature branch
-git checkout -b feature/new-vendor-feature
+git checkout -b feature/new-feature
 
-# 2. Make changes
-# - Update service logic
-# - Add new events if needed
-# - Update API types
+# 2. Make changes to relevant apps/libs
+# 3. Test your changes
+nx test affected
 
-# 3. Test locally
-pnpm run start:all
-curl http://localhost:5002/health
+# 4. Build affected projects
+nx build affected
 
-# 4. Commit changes
+# 5. Commit and push
 git add .
-git commit -m "feat: add new vendor feature"
-
-# 5. Push and create PR
-git push origin feature/new-vendor-feature
+git commit -m "feat: add new feature"
+git push origin feature/new-feature
 ```
 
-#### Adding New Events
+#### Adding New Dependencies
 
-```typescript
-// 1. Define event type
-export interface VendorPromotedEvent extends VendorEvent {
-  type: 'vendor.promoted';
-  promotionType: 'featured' | 'sponsored';
-}
+```bash
+# Add to specific project
+pnpm add package-name --filter gateway
 
-// 2. Emit event in service (provider-agnostic)
-await this.eventsService.publishEvent('vendor.promoted', {
-  id: vendor.id,
-  promotionType: 'featured',
-  // ... other data
-});
+# Add to all projects
+pnpm add package-name
 
-// 3. Handle event in consumer
-case 'vendor.promoted':
-  await this.handleVendorPromoted(event.data);
-  break;
+# Add dev dependency to specific project
+pnpm add -D package-name --filter nest
 ```
 
 ### 2. Testing Strategy
 
 #### Unit Tests
 
-```typescript
-// Example unit test structure
-describe('VendorService', () => {
-	let service: VendorService;
-	let eventsService: IEventsService;
+```bash
+# Run all tests
+pnpm test
 
-	beforeEach(async () => {
-		const module = await Test.createTestingModule({
-			providers: [
-				VendorService,
-				{
-					provide: 'EventsService',
-					useValue: {
-						publishEvent: jest.fn(),
-						subscribeToEvents: jest.fn(),
-						subscribeToEventType: jest.fn(),
-						healthCheck: jest.fn(),
-					},
-				},
-			],
-		}).compile();
+# Run tests for specific project
+nx test gateway
 
-		service = module.get<VendorService>(VendorService);
-		eventsService = module.get<IEventsService>('EventsService');
-	});
+# Run tests in watch mode
+nx test nest --watch
 
-	it('should emit vendor.created event', async () => {
-		const vendorData = { name: 'Test Vendor', userId: 'user-1' };
-		await service.createVendor(vendorData);
-
-		expect(eventsService.publishEvent).toHaveBeenCalledWith(
-			'vendor.created',
-			expect.objectContaining({ name: 'Test Vendor' }),
-		);
-	});
-});
+# Run tests with coverage
+nx test gateway --coverage
 ```
 
 #### Integration Tests
 
-```typescript
-// Example integration test structure
-describe('Vendor Integration', () => {
-	let app: INestApplication;
+```bash
+# Test specific functionality
+nx test nest --testNamePattern="integration"
 
-	beforeEach(async () => {
-		const moduleFixture = await Test.createTestingModule({
-			imports: [VendorModule],
-		}).compile();
-
-		app = moduleFixture.createNestApplication();
-		await app.init();
-	});
-
-	it('should create vendor and emit event', async () => {
-		// Test the full flow
-		const result = await app.get(VendorService).createVendor({
-			name: 'Test Vendor',
-			userId: 'user-1',
-		});
-
-		expect(result).toBeDefined();
-		// Verify event was emitted (mock NATS)
-	});
-});
+# Test with specific environment
+NODE_ENV=test nx test gateway
 ```
 
-#### E2E Tests
+### 3. Building and Deployment
 
-```typescript
-// Example E2E test structure
-describe('Vendor E2E', () => {
-	let app: INestApplication;
-
-	beforeEach(async () => {
-		const moduleFixture = await Test.createTestingModule({
-			imports: [AppModule],
-		}).compile();
-
-		app = moduleFixture.createNestApplication();
-		await app.init();
-	});
-
-	it('/vendor (POST)', () => {
-		return request(app.getHttpServer())
-			.post('/vendor')
-			.set('Authorization', 'Bearer valid-token')
-			.send({ name: 'Test Vendor' })
-			.expect(201)
-			.expect((res) => {
-				expect(res.body.id).toBeDefined();
-			});
-	});
-});
-```
-
-### 3. Code Quality
-
-#### Linting and Formatting
+#### Development Builds
 
 ```bash
-# Format code
-pnpm run format
+# Build specific project
+nx build gateway --configuration=development
 
-# Lint code
-pnpm run lint
+# Build all projects
+pnpm build
 
-# Fix linting issues
-pnpm run lint --fix
+# Build affected projects only
+nx build affected
 ```
 
-#### Pre-commit Hooks
+#### Production Builds
+
+```bash
+# Build for production
+nx build gateway --configuration=production
+
+# Build all for production
+nx run-many --target=build --all --configuration=production
+```
+
+### 4. Code Quality
+
+#### Linting
+
+```bash
+# Lint all projects
+pnpm lint
+
+# Lint specific project
+nx lint gateway
+
+# Fix linting issues
+nx lint gateway --fix
+```
+
+#### Formatting
+
+```bash
+# Format all code
+pnpm format
+
+# Format specific files
+prettier --write "apps/gateway/src/**/*.ts"
+```
+
+## Nx Best Practices
+
+### 1. Project Configuration
+
+Each project has a `project.json` file that defines:
 
 ```json
-// Example pre-commit configuration
 {
-	"husky": {
-		"hooks": {
-			"pre-commit": "lint-staged"
-		}
-	},
-	"lint-staged": {
-		"*.ts": ["eslint --fix", "prettier --write"]
-	}
+  "name": "gateway",
+  "sourceRoot": "apps/gateway/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/gateway",
+        "main": "apps/gateway/src/main.ts",
+        "tsConfig": "apps/gateway/tsconfig.app.json"
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "options": {
+        "buildTarget": "gateway:build"
+      }
+    },
+    "test": {
+      "executor": "@nx/vite:test",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
 }
 ```
 
-## Deployment Pipeline
+### 2. Path Aliases
 
-### 1. Development Environment
+Use path aliases for clean imports:
 
-#### Local Development
+```typescript
+// In tsconfig.app.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@app/nest/modules": ["../../libs/nest/modules"],
+      "@app/nest/guards": ["../../libs/nest/guards"],
+      "@app/proto/*": ["../../libs/proto/src/*"],
+      "@app/apitypes": ["../../libs/apitypes/src"]
+    }
+  }
+}
 
-```bash
-# Start all services
-pnpm run start:all
-
-# Monitor logs
-docker-compose logs -f
-
-# Health checks
-curl http://localhost:5002/health
+// In code
+import { ConfigModule } from '@app/nest/modules';
+import { AuthGuard } from '@app/nest/guards';
 ```
 
-#### Docker Development
+### 3. Shared Libraries
+
+#### Creating New Libraries
 
 ```bash
-# Build and run with Docker
-docker-compose -f docker-compose.dev.yml up --build
+# Create new library
+nx generate @nx/js:library my-library --directory=libs
 
-# Hot reload with volumes
-docker-compose -f docker-compose.dev.yml up
+# Create new module
+nx generate @nx/js:library my-module --directory=libs/nest/modules
 ```
 
-### 2. Staging Environment
+#### Using Shared Libraries
 
-#### Environment Configuration
+```typescript
+// Export from library
+// libs/nest/modules/config/index.ts
+export * from './config.module';
+export * from './config.service';
+
+// Import in application
+// apps/gateway/src/app.module.ts
+import { ConfigModule } from '@app/nest/modules';
+```
+
+### 4. Environment Configuration
+
+#### Development Environment
 
 ```bash
-# Staging environment variables
-NODE_ENV=staging
-DATABASE_URL=postgresql://staging-db
-REDIS_URL=redis://staging-redis
-# ... other staging config
+# .env.development
+NODE_ENV=development
+DATABASE_URL=postgresql://localhost:5432/venta_dev
+REDIS_URL=redis://localhost:6379
 ```
 
-#### Deployment
+#### Test Environment
 
 ```bash
-# Build staging images
-docker build -f services/gateway/Dockerfile -t service:staging .
-
-# Deploy to staging
-docker-compose -f docker-compose.staging.yml up -d
+# .env.test
+NODE_ENV=test
+DATABASE_URL=postgresql://localhost:5432/venta_test
+REDIS_URL=redis://localhost:6379
 ```
 
-### 3. Production Environment
+## Debugging and Monitoring
 
-#### Production Checklist
-
-- [ ] Environment variables configured
-- [ ] Database migrations applied
-- [ ] Health checks implemented
-- [ ] Monitoring configured
-- [ ] SSL certificates installed
-- [ ] Backup strategy in place
-
-#### Deployment Commands
-
-```bash
-# Build production images
-docker build -f services/gateway/Dockerfile -t service:prod .
-
-# Deploy with health checks
-docker run -d \
-  --name service \
-  --health-cmd="curl -f http://localhost:3000/health" \
-  --health-interval=30s \
-  -p 3000:3000 \
-  service:prod
-```
-
-## Monitoring and Observability
-
-### 1. Logging Strategy
-
-#### Structured Logging
+### 1. Logging
 
 ```typescript
 // Use structured logging
-this.logger.log('Vendor created', {
-	vendorId: vendor.id,
-	userId: userId,
-	timestamp: new Date().toISOString(),
-	service: 'vendor-service',
-});
+import { Logger } from '@nestjs/common';
 
-// Error logging with context
-this.logger.error('Failed to create vendor', {
-	error: error.message,
-	stack: error.stack,
-	vendorData: data,
-	userId: userId,
-});
+@Injectable()
+export class VendorService {
+  private readonly logger = new Logger(VendorService.name);
+
+  async createVendor(data: CreateVendorDto) {
+    this.logger.log(`Creating vendor: ${data.name}`);
+    // ... implementation
+  }
+}
 ```
 
-#### Log Levels
-
-- **ERROR**: System errors, failed operations
-- **WARN**: Recoverable issues, retries
-- **INFO**: Important business events
-- **DEBUG**: Detailed debugging information
-
-### 2. Metrics and Monitoring
-
-#### Health Checks
+### 2. Health Checks
 
 ```typescript
+// Add health checks to services
+import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
+
 @Controller('health')
 export class HealthController {
+  constructor(private health: HealthCheckService) {}
+
   @Get()
-  health() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      version: process.env.npm_package_version,
-      uptime: process.uptime(),
-    };
-  }
-
-  @Get('detailed')
-  detailedHealth() {
-    return {
-      database: await this.checkDatabase(),
-      redis: await this.checkRedis(),
-      externalServices: await this.checkExternalServices(),
-    };
+  @HealthCheck()
+  check() {
+    return this.health.check([
+      () => this.prisma.$queryRaw`SELECT 1`,
+      () => this.redis.ping(),
+    ]);
   }
 }
 ```
 
-#### Performance Metrics
-
-```typescript
-// Track response times
-@Injectable()
-export class MetricsService {
-	trackRequest(method: string, path: string, duration: number) {
-		// Send to monitoring system
-		this.logger.log('Request metrics', {
-			method,
-			path,
-			duration,
-			timestamp: new Date().toISOString(),
-		});
-	}
-}
-```
-
-### 3. Alerting
-
-#### Critical Alerts
-
-- Service health check failures
-- High error rates (>5%)
-- Database connection issues
-- Redis memory usage >80%
-- Failed event count >100
-
-#### Business Alerts
-
-- Low user activity
-- High API response times
-- Failed payment processing
-- Search index sync failures
-
-## Best Practices
-
-### 1. Error Handling
-
-#### Service Level
-
-```typescript
-try {
-  const result = await this.externalService.call();
-  return result;
-} catch (error) {
-  this.logger.error('External service call failed', {
-    error: error.message,
-    service: 'external-service',
-    operation: 'call',
-  });
-
-  // Retry with exponential backoff
-  return this.retryOperation(() => this.externalService.call());
-}
-```
-
-#### Event Level
-
-```typescript
-// Always handle event processing errors
-await this.eventsService.subscribeToEvents(async (event) => {
-	try {
-		await this.processEvent(event);
-	} catch (error) {
-		this.logger.error('Event processing failed', {
-			eventType: event.type,
-			eventId: event.messageId,
-			error: error.message,
-		});
-
-		// Don't crash the service
-		// Failed events will be retried
-	}
-});
-```
-
-### 2. Performance Optimization
-
-#### Database Queries
-
-```typescript
-// Use database client efficiently
-const vendors = await this.database.vendor.findMany({
-	where: { userId },
-	select: {
-		id: true,
-		name: true,
-		// Only select needed fields
-	},
-	take: 10, // Limit results
-});
-```
-
-#### Caching Strategy
-
-```typescript
-// Cache frequently accessed data
-const cacheKey = `user:${userId}`;
-let user = await this.cache.get(cacheKey);
-
-if (!user) {
-	user = await this.database.user.findUnique({ where: { id: userId } });
-	await this.cache.set(cacheKey, JSON.stringify(user), 'EX', 3600);
-}
-```
-
-### 3. Security
-
-#### Input Validation
-
-```typescript
-// Use DTOs with validation
-export class CreateVendorDto {
-	@IsString()
-	@MinLength(1)
-	@MaxLength(100)
-	name: string;
-
-	@IsOptional()
-	@IsString()
-	@MaxLength(500)
-	description?: string;
-}
-```
-
-#### Authentication
-
-```typescript
-// Always validate tokens
-@UseGuards(AuthGuard)
-@Post('vendor')
-async createVendor(@Request() req, @Body() data: CreateVendorDto) {
-  const userId = req.userId; // From AuthGuard
-  return this.vendorService.createVendor({ ...data, userId });
-}
-```
-
-## Troubleshooting
-
-### Common Development Issues
-
-#### Service Won't Start
-
-1. Check environment variables
-2. Verify database connection
-3. Check port availability
-4. Review service logs
-
-#### Events Not Processing
-
-1. Check event system connection
-2. Verify event consumer is running
-3. Check event type matching
-4. Review failed events
-
-#### Performance Issues
-
-1. Monitor memory usage
-2. Check database queries
-3. Review caching strategy
-4. Monitor network latency
-
-### Debug Commands
+### 3. Performance Monitoring
 
 ```bash
-# Check service status
-ps aux | grep node
+# Monitor build performance
+nx graph
 
-# Monitor event system
-nats sub "events.*"
+# Check affected projects
+nx affected:graph
 
-# Check database
-psql $DATABASE_URL -c "SELECT * FROM pg_stat_activity;"
-
-# View logs
-tail -f logs/app.log
-
-# Health check
-curl http://localhost:5002/health
+# Analyze dependencies
+nx dep-graph
 ```
+
+## Common Patterns
+
+### 1. Service Communication
+
+```typescript
+// gRPC communication
+import { GrpcInstance } from '@app/nest/modules/grpc-instance/grpc-instance.service';
+
+@Injectable()
+export class VendorService {
+  constructor(
+    private readonly userClient: GrpcInstance<UserServiceClient>
+  ) {}
+
+  async createVendor(data: CreateVendorDto) {
+    // Call user service via gRPC
+    const user = await this.userClient.getUser(data.userId);
+    // ... implementation
+  }
+}
+```
+
+### 2. Event Publishing
+
+```typescript
+// Publish events
+import { EventsService } from '@app/nest/modules/events';
+
+@Injectable()
+export class VendorService {
+  constructor(private readonly eventsService: EventsService) {}
+
+  async createVendor(data: CreateVendorDto) {
+    const vendor = await this.prisma.vendor.create({ data });
+    
+    // Publish event
+    await this.eventsService.publishEvent('vendor.created', {
+      id: vendor.id,
+      name: vendor.name,
+      timestamp: new Date().toISOString()
+    });
+
+    return vendor;
+  }
+}
+```
+
+### 3. Error Handling
+
+```typescript
+// Use custom error filters
+import { HttpException, HttpStatus } from '@nestjs/common';
+
+@Injectable()
+export class VendorService {
+  async getVendor(id: string) {
+    const vendor = await this.prisma.vendor.findUnique({ where: { id } });
+    
+    if (!vendor) {
+      throw new HttpException(
+        `Vendor with ID ${id} not found`,
+        HttpStatus.NOT_FOUND
+      );
+    }
+    
+    return vendor;
+  }
+}
+```
+
+## Next Steps
+
+1. **Explore the Codebase**: Familiarize yourself with the project structure
+2. **Run Tests**: Ensure all tests pass with `pnpm test`
+3. **Start Development**: Use `pnpm start:all` to run all services
+4. **Read API Docs**: Check `docs/api.md` for endpoint documentation
+5. **Review Architecture**: See `docs/architecture.md` for system design

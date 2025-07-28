@@ -24,7 +24,7 @@
 
 ```bash
 git clone <repository-url>
-cd backend
+cd venta-backend
 ```
 
 ### 2. Install Dependencies
@@ -100,349 +100,189 @@ ALGOLIA_SYNC_SERVICE_URL=localhost:5006
 #### Using Docker (Recommended)
 
 ```bash
-# Start PostgreSQL, NATS, and Redis
-docker-compose up -d cache nats
+# Start local infrastructure
+docker-compose up -d postgres redis nats
 
-# Run database migrations
-pnpm run prisma:generate
-npx prisma migrate deploy
+# Generate Prisma client
+pnpm prisma:generate
+
+# Run migrations
+pnpm prisma db push
 ```
 
-#### Using Local PostgreSQL
+#### Manual Setup
 
 ```bash
 # Create database
 createdb venta_db
 
+# Generate Prisma client
+pnpm prisma:generate
+
 # Run migrations
-npx prisma migrate deploy
+pnpm prisma db push
 ```
 
-## Local Development
+## Development Workflow
 
-### Quick Start
+### Nx Monorepo Structure
 
-Start all services with a single command:
+This project uses **Nx** for monorepo management with the following structure:
+
+```
+venta-backend/
+├── apps/                         # Applications (microservices)
+│   ├── gateway/                  # HTTP API Gateway
+│   ├── user/                     # User management service
+│   ├── vendor/                   # Vendor management service
+│   ├── location/                 # Location tracking service
+│   ├── websocket-gateway/        # WebSocket connections
+│   └── algolia-sync/             # Search index synchronization
+├── libs/                         # Shared libraries
+│   ├── nest/                     # NestJS framework utilities
+│   │   ├── modules/              # Shared modules (config, events, etc.)
+│   │   ├── guards/               # Authentication guards
+│   │   ├── filters/              # Exception filters
+│   │   └── pipes/                # Validation pipes
+│   ├── proto/                    # gRPC protocol definitions
+│   └── apitypes/                 # API types and schemas
+├── prisma/                       # Database schema
+├── docs/                         # Documentation
+└── docker-compose.yml            # Local infrastructure
+```
+
+### Available Commands
+
+#### Build Commands
 
 ```bash
-# Build all services
-pnpm run prestart:all
+# Build all projects
+pnpm build
 
-# Start all services
-pnpm run start:all
+# Build specific project
+nx build gateway
+nx build user
+nx build vendor
+
+# Build libraries
+nx build nest
+nx build proto
+nx build apitypes
 ```
 
-### Individual Service Development
-
-Start services individually for development:
+#### Development Commands
 
 ```bash
-# Start specific services
-pnpm run start:user
-pnpm run start:vendor
-pnpm run start:location
-pnpm run start:gateway
-pnpm run start:websocket-gateway
-pnpm run start:algolia-sync
+# Start all services in development mode
+pnpm start:all
+
+# Start individual services
+pnpm start:gateway      # API Gateway
+pnpm start:user         # User service
+pnpm start:vendor       # Vendor service
+pnpm start:location     # Location service
+pnpm start:algolia-sync # Algolia sync service
+pnpm start:websocket-gateway # WebSocket gateway
+
+# Start with ngrok for webhook testing
+pnpm start:ngrok
 ```
 
-### Service Ports
-
-| Service           | Port | Description                        |
-| ----------------- | ---- | ---------------------------------- |
-| User Service      | 5000 | User management and authentication |
-| Location Service  | 5001 | Real-time location tracking        |
-| Gateway           | 5002 | HTTP API gateway                   |
-| WebSocket Gateway | 5004 | Real-time WebSocket connections    |
-| Vendor Service    | 5005 | Vendor management                  |
-| Algolia Sync      | 5006 | Search index synchronization       |
-| NATS Server       | 4222 | Event messaging                    |
-| NATS HTTP         | 8222 | NATS monitoring                    |
-
-### Development Workflow
-
-1. **Start Infrastructure**
-
-   ```bash
-   docker-compose up -d
-   ```
-
-2. **Start Services**
-
-   ```bash
-   pnpm run start:all
-   ```
-
-3. **Monitor Logs**
-
-   ```bash
-   # View all service logs
-   docker-compose logs -f
-
-   # View specific service logs
-   docker-compose logs -f nats
-   docker-compose logs -f cache
-   ```
-
-4. **Health Checks**
-
-   ```bash
-   # Check gateway health
-   curl http://localhost:5002/health
-
-   # Check algolia-sync health
-   curl http://localhost:5006/health
-
-   # Check NATS server health
-   curl http://localhost:8222/healthz
-
-   # Check event system
-   curl http://localhost:5006/health/events
-   ```
-
-## Docker Development
-
-### Building Images
-
-#### Build Base Image
-
-```bash
-docker build -f Dockerfile.base -t base-image .
-```
-
-#### Build Service Images
-
-```bash
-# Build all services
-docker build -f services/user/Dockerfile -t user-service .
-docker build -f services/vendor/Dockerfile -t vendor-service .
-docker build -f services/location/Dockerfile -t location-service .
-docker build -f services/gateway/Dockerfile -t gateway-service .
-docker build -f services/websocket-gateway/Dockerfile -t websocket-service .
-docker build -f services/algolia-sync/Dockerfile -t algolia-sync-service .
-```
-
-### Docker Compose Development
-
-Create a `docker-compose.dev.yml` for development:
-
-```yaml
-version: '3.8'
-
-services:
-  user-service:
-    build:
-      context: .
-      dockerfile: services/user/Dockerfile
-      target: development
-    ports:
-      - '5000:5000'
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-
-  vendor-service:
-    build:
-      context: .
-      dockerfile: services/vendor/Dockerfile
-      target: development
-    ports:
-      - '5005:5005'
-    environment:
-      - NODE_ENV=development
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
-
-  # ... other services
-```
-
-## Testing
-
-### Running Tests
+#### Testing Commands
 
 ```bash
 # Run all tests
 pnpm test
 
 # Run tests in watch mode
-pnpm run test:watch
+pnpm test:watch
 
 # Run tests with coverage
-pnpm run test:cov
+pnpm test:coverage
 
-# Run e2e tests
-pnpm run test:e2e
+# Run tests for specific project
+nx test nest
+nx test gateway
+
+# Run tests for libraries only
+pnpm test:libs
 ```
 
-### Testing Event System
+#### Linting and Formatting
 
 ```bash
-# Test event publishing
-curl -X POST http://localhost:5002/vendor \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Vendor", "description": "Test"}'
+# Lint all projects
+pnpm lint
 
-# Check if Algolia was updated
-curl http://localhost:5006/health/events
+# Format code
+pnpm format
 ```
 
-## Monitoring & Debugging
+### Development Tips
 
-### Logs
-
-#### Service Logs
+#### Using Nx Commands
 
 ```bash
-# View service logs
-pnpm run start:user 2>&1 | tee logs/user.log
+# Show all projects
+nx show projects
 
-# View Docker logs
-docker-compose logs -f user-service
+# Show project details
+nx show project gateway
+
+# Run commands for specific projects
+nx serve gateway --configuration=development
+nx build user --configuration=production
+nx test nest --watch
 ```
 
-#### NATS Debugging
+#### Hot Reload Development
 
 ```bash
-# Connect to NATS CLI
-nats sub "events.*"
+# Start a service with hot reload
+nx serve gateway --configuration=development
 
-# Monitor NATS traffic
-nats pub "events.test" "test message"
-
-# Check NATS server status
-curl http://localhost:8222/healthz
+# Start multiple services concurrently
+pnpm start:all
 ```
 
-### Health Monitoring
-
-#### Service Health
+#### Database Development
 
 ```bash
-# Check all services
-for port in 5000 5001 5002 5004 5005 5006; do
-  echo "Service on port $port:"
-  curl -s http://localhost:$port/health || echo "Service not responding"
-done
+# Generate Prisma client after schema changes
+pnpm prisma:generate
+
+# Push schema changes to database
+pnpm prisma db push
+
+# Open Prisma Studio
+npx prisma studio
 ```
 
-#### Event System Health
+## Next Steps
 
-```bash
-# Check event processing
-curl http://localhost:5006/health/events
-
-# Expected response
-{
-  "status": "ok",
-  "service": "algolia-sync-events",
-  "failedEventsCount": 0,
-  "timestamp": "2024-01-15T10:30:00.000Z"
-}
-```
-
-## Production Deployment
-
-### Environment Variables
-
-For production, ensure all environment variables are properly configured:
-
-```bash
-# Required for production
-NODE_ENV=production
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
-CLERK_SECRET_KEY=...
-# ... all other required variables
-```
-
-### Docker Production Builds
-
-```bash
-# Build production images
-docker build -f services/gateway/Dockerfile -t gateway-service:prod .
-docker build -f services/user/Dockerfile -t user-service:prod .
-# ... build other services
-
-# Run production containers
-docker run -d --name gateway-service -p 5002:5002 gateway-service:prod
-docker run -d --name user-service -p 5000:5000 user-service:prod
-# ... run other services
-```
-
-### Health Checks
-
-Implement health checks in your deployment:
-
-```bash
-# Kubernetes health check example
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 5002
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /health
-    port: 5002
-  initialDelaySeconds: 5
-  periodSeconds: 5
-```
+1. **Start Development**: Run `pnpm start:all` to start all services
+2. **Explore APIs**: Check the API documentation in `docs/api.md`
+3. **Run Tests**: Execute `pnpm test` to verify everything works
+4. **Read Architecture**: Review `docs/architecture.md` for system design
+5. **Check Troubleshooting**: See `docs/troubleshooting.md` for common issues
 
 ## Troubleshooting
 
 ### Common Issues
 
-#### Services Won't Start
-
-1. Check environment variables are set
-2. Verify database connection
-3. Check Redis connection
-4. Review service logs
-
-#### Events Not Processing
-
-1. Check NATS connection is working
-2. Verify event consumer is running
-3. Check Algolia API credentials
-4. Review failed events count
-
-#### Performance Issues
-
-1. Monitor Redis memory usage
-2. Check database connection pooling
-3. Review service resource usage
-4. Monitor network latency
-
-### Debug Commands
-
+**Port Conflicts**: If services fail to start, check if ports are already in use:
 ```bash
-# Check service status
-ps aux | grep node
-
-# Check port usage
-netstat -tulpn | grep :500
-
-# Check Docker containers
-docker ps -a
-
-# Check Redis memory
-redis-cli info memory
-
-# Check database connections
-psql $DATABASE_URL -c "SELECT count(*) FROM pg_stat_activity;"
+lsof -i :5000-5010
 ```
 
-## Next Steps
+**Database Connection**: Ensure PostgreSQL is running:
+```bash
+docker-compose ps postgres
+```
 
-1. **Explore the API**: Check the [API Documentation](./api.md)
-2. **Understand Events**: Read the [Event System Documentation](./events.md)
-3. **Review Architecture**: See the [Architecture Overview](./architecture.md)
-4. **Explore Improvements**: Check [Architecture Improvements](./architecture-improvements.md)
-5. **Set up Monitoring**: Configure logging and metrics
-6. **Troubleshoot Issues**: Check the [Troubleshooting Guide](./troubleshooting.md)
+**Nx Cache Issues**: Clear Nx cache if builds fail:
+```bash
+nx reset
+```
+
+For more detailed troubleshooting, see `docs/troubleshooting.md`.
