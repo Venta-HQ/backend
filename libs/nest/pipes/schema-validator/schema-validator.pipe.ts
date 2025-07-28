@@ -1,5 +1,5 @@
 import { ZodError, ZodSchema } from 'zod';
-import { HttpError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { ArgumentMetadata, Logger, PipeTransform } from '@nestjs/common';
 
 export class SchemaValidatorPipe implements PipeTransform {
@@ -16,18 +16,12 @@ export class SchemaValidatorPipe implements PipeTransform {
 					message: err.message,
 					path: err.path.join('.'),
 				}));
-				throw new HttpError(
-					'API-00004',
-					{
-						message: 'Validation failed',
-					},
-					null,
-					formattedErrors,
-				);
+				const firstError = error.errors[0];
+				const field = firstError.path.join('.');
+
+				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, { field, errors: formattedErrors });
 			} else {
-				throw new HttpError('API-00004', {
-					message: 'Validation failed',
-				});
+				throw AppError.validation(ErrorCodes.VALIDATION_ERROR);
 			}
 		}
 	}

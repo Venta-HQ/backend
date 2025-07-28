@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { GrpcError } from '@app/nest/errors';
+import { ErrorCodes, AppError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -70,10 +70,16 @@ export class LocationController {
 		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2025') {
-					throw new GrpcError('API-00003', { entity: 'Vendor' });
+					throw AppError.notFound(
+						ErrorCodes.VENDOR_NOT_FOUND,
+						{ vendorId: data.entityId }
+					);
 				}
 			}
-			throw new GrpcError('API-00006', { entity: 'Vendor' });
+			throw AppError.internal(
+				ErrorCodes.DATABASE_ERROR,
+				{ operation: 'update vendor location' }
+			);
 		}
 	}
 
@@ -108,7 +114,10 @@ export class LocationController {
 			};
 		} catch (e) {
 			this.logger.error(e);
-			throw new GrpcError('API-00007', { operation: 'GEO Search' });
+			throw AppError.internal(
+				ErrorCodes.DATABASE_ERROR,
+				{ operation: 'GEO Search' }
+			);
 		}
 	}
 }

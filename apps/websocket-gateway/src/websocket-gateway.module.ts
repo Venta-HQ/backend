@@ -1,10 +1,9 @@
 import { join } from 'path';
-import { WsErrorFilter } from '@app/nest/filters';
 import { HttpLoggerModule, RedisModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { LocationWebsocketGateway } from './gateways/location.gateway';
 
@@ -13,6 +12,7 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 		ConfigModule.forRoot(),
 		RedisModule,
 		HttpLoggerModule.register('Websocket Gateway Microservice'),
+		ErrorHandlingModule,
 		ClientsModule.registerAsync({
 			clients: [
 				{
@@ -32,10 +32,6 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 		}),
 	],
 	providers: [
-		{
-			provide: APP_FILTER,
-			useClass: WsErrorFilter,
-		},
 		LocationWebsocketGateway,
 	],
 })

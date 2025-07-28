@@ -1,7 +1,7 @@
 import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
 import { catchError, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { GrpcError, HttpError } from '@app/nest/errors';
+import { ErrorCodes, AppError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Controller, Get, Inject, Logger, Req, UseGuards } from '@nestjs/common';
@@ -20,11 +20,9 @@ export class UserController {
 				userId: req.userId,
 			})
 			.pipe(
-				catchError((error: GrpcError) => {
-					if (error.errorCode) {
-						throw new HttpError(error.errorCode, null, error.message);
-					}
-					return throwError(() => new HttpError('API-00001'));
+				catchError((error: any) => {
+					// The AppExceptionFilter will handle the error conversion
+					throw error;
 				}),
 			);
 	}

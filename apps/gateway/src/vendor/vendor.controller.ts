@@ -3,7 +3,7 @@ import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { GrpcError, HttpError } from '@app/nest/errors';
+import { ErrorCodes, AppError } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
@@ -20,11 +20,9 @@ export class VendorController {
 	async getVendorById(@Param('id') id: string) {
 		const { vendor } = await firstValueFrom(
 			this.client.invoke('getVendorById', { id }).pipe(
-				catchError((error: GrpcError) => {
-					if (error.errorCode) {
-						throw new HttpError(error.errorCode, null, error.message);
-					}
-					return throwError(() => new HttpError('API-00001'));
+				catchError((error: any) => {
+					// The AppExceptionFilter will handle the error conversion
+					throw error;
 				}),
 			),
 		);
@@ -60,11 +58,9 @@ export class VendorController {
 				website: data.website,
 			})
 			.pipe(
-				catchError((error: GrpcError) => {
-					if (error.errorCode) {
-						throw new HttpError(error.errorCode, null, error.message);
-					}
-					return throwError(() => new HttpError('API-00001'));
+				catchError((error: any) => {
+					// The AppExceptionFilter will handle the error conversion
+					throw error;
 				}),
 			);
 	}
@@ -89,11 +85,9 @@ export class VendorController {
 			})
 
 			.pipe(
-				catchError((error: GrpcError) => {
-					if (error.errorCode) {
-						throw new HttpError(error.errorCode, null, error.message);
-					}
-					return throwError(() => new HttpError('API-00001'));
+				catchError((error: any) => {
+					// The AppExceptionFilter will handle the error conversion
+					throw error;
 				}),
 			);
 	}

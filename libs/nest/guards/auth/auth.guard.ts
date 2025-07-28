@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { HttpError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
@@ -20,13 +20,13 @@ export class AuthGuard implements CanActivate {
 		const authHeader = request.headers['authorization'];
 
 		if (!authHeader) {
-			throw new HttpError('API-00008');
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 
 		const token = authHeader?.split(' ')[1];
 
 		if (!token) {
-			throw new HttpError('API-00008');
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 
 		try {
@@ -47,7 +47,7 @@ export class AuthGuard implements CanActivate {
 				});
 
 				if (!internalUser) {
-					throw new HttpError('API-00008');
+					throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 				}
 
 				// Cache the result
@@ -61,7 +61,7 @@ export class AuthGuard implements CanActivate {
 
 			return true; // Allow access
 		} catch (error) {
-			throw new HttpError('API-00008');
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 	}
 }

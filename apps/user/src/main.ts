@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { GrpcErrorFilter } from '@app/nest/filters';
 import { GrpcLogger } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -19,7 +18,7 @@ async function bootstrap() {
 		transport: Transport.GRPC,
 	});
 
-	app.useGlobalFilters(new GrpcErrorFilter());
+	// Error handling is configured in the ErrorHandlingModule
 	app.useLogger(app.get(GrpcLogger));
 
 	await app.startAllMicroservices();

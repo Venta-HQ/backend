@@ -1,3 +1,4 @@
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { ClerkModule, ConfigModule, HttpLoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { modules, routes } from './router';
 		RedisModule,
 		ClerkModule.register(),
 		PrismaModule.register(),
+		ErrorHandlingModule,
 		...modules,
 		RouterModule.register(routes),
 	],

@@ -1,4 +1,4 @@
-import { GrpcError } from '@app/nest/errors';
+import { ErrorCodes, AppError } from '@app/nest/errors';
 import { USER_SERVICE_NAME, UserVendorData, UserVendorsResponse } from '@app/proto/user';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -15,7 +15,10 @@ export class VendorController {
 		const vendors = await this.vendorService.getUserVendors(data.userId);
 
 		if (!vendors) {
-			throw new GrpcError('API-00003', { entity: 'Vendor ' });
+			throw AppError.notFound(
+				ErrorCodes.USER_NOT_FOUND,
+				{ userId: data.userId }
+			);
 		}
 
 		return {

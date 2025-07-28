@@ -1,4 +1,4 @@
-import { GrpcError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { IEventsService, PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -43,7 +43,7 @@ export class VendorService {
 		});
 
 		if (!exists) {
-			throw new GrpcError('API-00003', { entity: 'Vendor' });
+			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
 		}
 
 		const { imageUrl, ...updateData } = data;
@@ -64,7 +64,7 @@ export class VendorService {
 			where: { id, owner: { id: userId } },
 		});
 		if (!vendor) {
-			throw new GrpcError('API-00003', { entity: 'Vendor' });
+			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
 		}
 		await this.prisma.db.vendor.delete({
 			where: { id },
