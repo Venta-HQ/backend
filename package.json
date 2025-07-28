@@ -1,8 +1,6 @@
 {
 	"name": "venta-backend",
-	"nx": {
-		"included": false
-	},
+	"nx": {},
 	"version": "0.0.1",
 	"description": "",
 	"author": "",
@@ -82,20 +80,17 @@
 	"devDependencies": {
 		"@clerk/types": "^4.21.0",
 		"@ianvs/prettier-plugin-sort-imports": "^4.3.1",
-		"@nestjs/cli": "^10.0.0",
-		"@nestjs/schematics": "^10.0.0",
 		"@nestjs/testing": "^10.0.0",
 		"@nx/eslint-plugin": "^21.3.8",
 		"@nx/js": "^21.3.8",
 		"@nx/nest": "^21.3.8",
 		"@nx/node": "^21.3.8",
+		"@nx/vite": "^21.3.8",
 		"@nx/webpack": "^21.3.8",
 		"@nx/workspace": "^21.3.8",
 		"@types/express": "^4.17.17",
-		"@types/jest": "^29.5.2",
 		"@types/multer": "^1.4.12",
 		"@types/node": "^20.3.1",
-		"@types/supertest": "^6.0.0",
 		"@typescript-eslint/eslint-plugin": "^7.0.0",
 		"@typescript-eslint/parser": "^7.0.0",
 		"@vitest/coverage-v8": "^3.2.4",
@@ -108,12 +103,9 @@
 		"eslint-plugin-sort-keys": "^2.3.5",
 		"eslint-plugin-typescript-sort-keys": "^3.2.0",
 		"happy-dom": "^18.0.1",
-		"jest": "^29.5.0",
 		"nx": "21.3.8",
 		"prettier": "^3.0.0",
 		"source-map-support": "^0.5.21",
-		"supertest": "^7.0.0",
-		"ts-jest": "^29.1.0",
 		"ts-loader": "^9.4.3",
 		"ts-node": "^10.9.1",
 		"tsconfig-paths": "^4.2.0",
@@ -121,35 +113,5 @@
 		"vite-tsconfig-paths": "^5.1.4",
 		"vitest": "^3.2.4",
 		"wait-on": "^8.0.1"
-	},
-	"jest": {
-		"moduleFileExtensions": [
-			"js",
-			"json",
-			"ts"
-		],
-		"rootDir": ".",
-		"testRegex": ".*\\.spec\\.ts$",
-		"transform": {
-			"^.+\\.(t|j)s$": "ts-jest"
-		},
-		"collectCoverageFrom": [
-			"**/*.(t|j)s"
-		],
-		"coverageDirectory": "./coverage",
-		"testEnvironment": "node",
-		"roots": [
-			"<rootDir>/apps/",
-			"<rootDir>/libs/"
-		],
-		"moduleNameMapper": {
-			"^@app/nest/modules/redis(|/.*)$": "<rootDir>/libs/nest/modules/redis/src/$1",
-			"^@app/nest/modules/logger(|/.*)$": "<rootDir>/libs/nest/modules/logger/src/$1",
-			"^@app/nest/guards/signed-webhook(|/.*)$": "<rootDir>/libs/nest/guards/signed-webhook/src/$1",
-			"^@app/proto(|/.*)$": "<rootDir>/libs/proto/src/$1",
-			"^@app/nest/modules/algolia(|/.*)$": "<rootDir>/libs/nest/modules/algolia/src/$1",
-			"^@app/apitypes(|/.*)$": "<rootDir>/libs/apitypes/src/$1"
-		}
-	},
-	"nx": {}
+	}
 }
