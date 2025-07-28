@@ -10,6 +10,8 @@ services:
     ports:
       - '3100:3100'
     command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki-config.yaml:/etc/loki/local-config.yaml
     networks:
       - venta
 
@@ -43,16 +45,48 @@ services:
     networks:
       - venta
 
+  nats:
+    image: nats:2-alpine
+    restart: always
+    ports:
+      - '4222:4222'
+      - '8222:8222'
+    command: nats-server --jetstream --http_port 8222
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8222/healthz']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - venta
+
   cache:
     image: redis:6.2-alpine
     restart: always
     ports:
       - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-defaultpassword}
     volumes:
       - cache:/data
     networks:
       - venta
+
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: venta_db
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - venta
+
 volumes:
   cache:
+    driver: local
+  postgres:
     driver: local

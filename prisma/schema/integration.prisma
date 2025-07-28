@@ -1,16 +1,16 @@
 enum IntegrationType {
-    Clerk
     RevenueCat
+    Clerk
+    Cloudinary
+    Algolia
 }
 
 model Integration {
-    id         String          @id @default(uuid())
-    type       IntegrationType
-    data       Json?
-    providerId String?
-
-    user   User   @relation(fields: [userId], references: [id])
+    id     String          @id @default(uuid())
+    type   IntegrationType
     userId String
+    user   User            @relation(fields: [userId], references: [id])
+    config Json
 
     // Metadata
     createdAt DateTime @default(now())

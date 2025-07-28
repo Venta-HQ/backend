@@ -14,17 +14,10 @@ export class AlgoliaModule {
 					inject: [ConfigService],
 					provide: AlgoliaService,
 					useFactory: (configService: ConfigService) => {
-						if (!configService.get('ALGOLIA_APPLICATION_ID')) {
-							throw new Error('ALGOLIA_APPLICATION_ID required');
-						}
-						if (!configService.get('ALGOLIA_API_KEY')) {
-							throw new Error('ALGOLIA_API_KEY required');
-						}
-
-						return new AlgoliaService(
-							configService.get('ALGOLIA_APPLICATION_ID') ?? '',
-							configService.get('ALGOLIA_API_KEY') ?? '',
-						);
+						const appId = configService.get('ALGOLIA_APPLICATION_ID');
+						const apiKey = configService.get('ALGOLIA_API_KEY');
+						
+						return new AlgoliaService(appId, apiKey);
 					},
 				},
 			],

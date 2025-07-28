@@ -15,21 +15,11 @@ export class UploadModule {
 					inject: [ConfigService],
 					provide: UploadService,
 					useFactory: (configService: ConfigService) => {
-						if (!configService.get('CLOUDINARY_API_SECRET')) {
-							throw new Error('CLOUDINARY_API_SECRET required');
-						}
-						if (!configService.get('CLOUDINARY_API_KEY')) {
-							throw new Error('CLOUDINARY_API_KEY required');
-						}
-						if (!configService.get('CLOUDINARY_CLOUD_NAME')) {
-							throw new Error('CLOUDINARY_CLOUD_NAME required');
-						}
+						const apiKey = configService.get('CLOUDINARY_API_KEY');
+						const apiSecret = configService.get('CLOUDINARY_API_SECRET');
+						const cloudName = configService.get('CLOUDINARY_CLOUD_NAME');
 
-						return new UploadService(
-							configService.get('CLOUDINARY_API_KEY') ?? '',
-							configService.get('CLOUDINARY_API_SECRET') ?? '',
-							configService.get('CLOUDINARY_CLOUD_NAME') ?? '',
-						);
+						return new UploadService(apiKey, apiSecret, cloudName);
 					},
 				},
 			],

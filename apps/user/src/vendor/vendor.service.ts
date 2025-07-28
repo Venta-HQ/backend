@@ -1,9 +1,12 @@
-import { PrismaService } from '@app/nest/modules';
-import { Injectable, Logger } from '@nestjs/common';
+import { IEventsService, PrismaService } from '@app/nest/modules';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		@Inject('EventsService') private eventsService: IEventsService,
+	) {}
 	private readonly logger = new Logger(VendorService.name);
 
 	async getUserVendors(userId: string) {
