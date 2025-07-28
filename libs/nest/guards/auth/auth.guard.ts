@@ -50,10 +50,10 @@ export class AuthGuard implements CanActivate {
 					throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 				}
 
+				internalUserId = internalUser.id;
+
 				// Cache the result
 				await this.redis.set(`user:${tokenContents.sub}`, internalUserId, 'EX', 3600); // 3600 = 1hr
-
-				internalUserId = internalUser.id;
 			}
 
 			// Attach the Clerk user info to the request for further use

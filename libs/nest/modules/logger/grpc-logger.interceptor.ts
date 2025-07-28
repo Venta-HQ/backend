@@ -17,7 +17,8 @@ export class GrpcRequestIdInterceptor implements NestInterceptor {
 		return new Observable((observer) => {
 			this.requestContextService.run(() => {
 				// Set the requestId in the AsyncLocalStorage
-				this.requestContextService.set('requestId', requestId[0] ?? 'no-request-id');
+				const requestIdValue = requestId && requestId.length > 0 ? requestId[0] : 'no-request-id';
+				this.requestContextService.set('requestId', requestIdValue);
 
 				next.handle().subscribe({
 					complete: () => {

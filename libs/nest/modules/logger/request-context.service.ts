@@ -17,7 +17,7 @@ export class RequestContextService {
 		return store ? store.get(key) : undefined;
 	}
 
-	run(callback: (...args: any[]) => any) {
-		this.asyncLocalStorage.run(new Map(), callback);
+	run(callback: (...args: any[]) => any, ...args: any[]) {
+		return this.asyncLocalStorage.run(new Map(), () => callback(...args));
 	}
 }

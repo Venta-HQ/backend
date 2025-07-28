@@ -6,6 +6,12 @@ export const SignedWebhookGuard = (secret: string) => {
 		canActivate(context: ExecutionContext) {
 			const wh = new Webhook(secret);
 			const request = context.switchToHttp().getRequest();
+
+			// Handle null/undefined rawBody
+			if (!request.rawBody) {
+				return false;
+			}
+
 			const payload = request.rawBody.toString('utf8');
 			const headers = request.headers;
 
