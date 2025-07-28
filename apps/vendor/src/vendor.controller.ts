@@ -1,4 +1,10 @@
+import {
+	GrpcVendorCreateDataSchema,
+	GrpcVendorLookupDataSchema,
+	GrpcVendorUpdateDataSchema,
+} from '@app/apitypes/lib/vendor/vendor.schemas';
 import { AppError, ErrorCodes } from '@app/nest/errors';
+import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -8,7 +14,7 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
 
@@ -19,12 +25,8 @@ export class VendorController {
 	constructor(private readonly vendorService: VendorService) {}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
+	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorLookupDataSchema))
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
-		if (!data.id) {
-			this.logger.error(`No ID provided`);
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'id' });
-		}
-
 		const result = await this.vendorService.getVendorById(data.id);
 
 		if (!result) {
@@ -38,6 +40,7 @@ export class VendorController {
 	}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
+	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorCreateDataSchema))
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
 			const id = await this.vendorService.createVendor(data);
@@ -51,6 +54,7 @@ export class VendorController {
 	}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
+	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {
 			const { id, userId, ...vendorUpdates } = data;

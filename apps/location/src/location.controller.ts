@@ -1,9 +1,11 @@
 import Redis from 'ioredis';
 import { ErrorCodes, AppError } from '@app/nest/errors';
+import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
 import { PrismaService } from '@app/nest/modules';
 import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
+import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes/lib/location/location.schemas';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 
@@ -58,6 +60,7 @@ export class LocationController {
 	) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
+	@UsePipes(new GrpcSchemaValidatorPipe(GrpcLocationUpdateSchema))
 	async updateVendorLocation(data: LocationUpdate) {
 		try {
 			await this.redis.geoadd('vendor_locations', data.location.long, data.location.lat, data.entityId);
@@ -84,6 +87,7 @@ export class LocationController {
 	}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
+	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorLocationRequestSchema))
 	async vendorLocations(request: VendorLocationRequest) {
 		const { neLocation, swLocation } = request;
 		const { centerLat, centerLon, height, width } = await calculateBoundingBoxDimensions({
