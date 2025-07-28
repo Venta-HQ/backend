@@ -1,7 +1,6 @@
 import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
-import { catchError, throwError } from 'rxjs';
+import { catchError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Controller, Get, Inject, Logger, Req, UseGuards } from '@nestjs/common';

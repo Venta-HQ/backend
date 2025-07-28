@@ -1,9 +1,8 @@
 import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
-import { catchError, firstValueFrom, throwError } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';

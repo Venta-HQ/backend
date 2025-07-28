@@ -24,7 +24,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 	}
 
-	private convertToAppError(exception: unknown, host: ArgumentsHost): AppError {
+	private convertToAppError(exception: unknown, _host: ArgumentsHost): AppError {
 		// If it's already an AppError, return it
 		if (exception instanceof AppError) {
 			return exception;
@@ -86,7 +86,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 
 		const grpcException = error.toGrpcException();
-		const grpcError = grpcException.getError() as any;
+		const _grpcError = grpcException.getError() as any;
 
 		// For gRPC, we need to throw the exception to be handled by the gRPC framework
 		throw grpcException;
