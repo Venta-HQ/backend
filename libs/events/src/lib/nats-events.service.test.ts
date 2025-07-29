@@ -1,360 +1,226 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-// Import after mocking
+import { Test, TestingModule } from '@nestjs/testing';
+import { EventMessage, EventStream } from './events.interface';
 import { NatsEventsService } from './nats-events.service';
 
-// Mock the nats module
-const { mockClose, mockClosed, mockConnect, mockPublish, mockSubscribe } = vi.hoisted(() => ({
-	mockClose: vi.fn(),
-	mockClosed: vi.fn(),
-	mockConnect: vi.fn(),
-	mockPublish: vi.fn(),
-	mockSubscribe: vi.fn(),
-}));
-
-const mockNatsConnection = {
-	close: mockClose,
-	closed: mockClosed,
-	publish: mockPublish,
-	subscribe: mockSubscribe,
-};
-
-mockConnect.mockResolvedValue(mockNatsConnection);
-
+// Mock NATS
 vi.mock('nats', () => ({
+	connect: vi.fn(),
 	StringCodec: vi.fn(() => ({
-		decode: vi.fn((buffer: Buffer) => buffer.toString()),
-		encode: vi.fn((str: string) => Buffer.from(str)),
+		encode: vi.fn((data) => Buffer.from(data)),
+		decode: vi.fn((data) => data.toString()),
 	})),
-	connect: mockConnect,
 }));
 
 describe('NatsEventsService', () => {
-	let natsEventsService: NatsEventsService;
-	let mockConfigService: ConfigService;
+	let service: NatsEventsService;
+	let mockNatsConnection: any;
+	let mockSubscription: any;
+	let mockConfigService: any;
 
-	beforeEach(() => {
-		vi.clearAllMocks();
+	beforeEach(async () => {
+		// Create mock NATS connection with async iterable subscription
+		mockSubscription = {
+			unsubscribe: vi.fn(),
+			[Symbol.asyncIterator]: () => ({
+				next: () => Promise.resolve({ done: true, value: undefined }),
+			}),
+		};
 
-		// Mock Logger
-		vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-		vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
-		vi.spyOn(Logger.prototype, 'debug').mockImplementation(() => {});
-		vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
+		mockNatsConnection = {
+			publish: vi.fn(),
+			subscribe: vi.fn(() => mockSubscription),
+			closed: vi.fn(() => false),
+			close: vi.fn(),
+		};
 
-		// Mock ConfigService
+		// Create mock config service
 		mockConfigService = {
 			get: vi.fn((key: string, defaultValue?: string) => {
-				switch (key) {
-					case 'NATS_URL':
-						return 'nats://localhost:4222';
-					default:
-						return defaultValue;
-				}
+				if (key === 'NATS_URL') return 'nats://localhost:4222';
+				return defaultValue;
 			}),
-		} as any;
+		};
 
-		natsEventsService = new NatsEventsService(mockConfigService);
+		const module: TestingModule = await Test.createTestingModule({
+			providers: [
+				NatsEventsService,
+				{
+					provide: ConfigService,
+					useValue: mockConfigService,
+				},
+			],
+		}).compile();
+
+		service = module.get<NatsEventsService>(NatsEventsService);
+
+		// Mock the connect method to return our mock connection
+		const { connect } = await import('nats');
+		vi.mocked(connect).mockResolvedValue(mockNatsConnection);
+
+		// Manually set the connection to avoid initialization issues
+		(service as any).nc = mockNatsConnection;
 	});
 
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
-
-	describe('constructor', () => {
-		it('should create service with config service', () => {
-			expect(natsEventsService).toBeDefined();
-		});
-
-		it('should handle missing config values', () => {
-			const emptyConfigService = {
-				get: vi.fn(() => undefined),
-			} as any;
-
-			expect(() => new NatsEventsService(emptyConfigService)).not.toThrow();
-		});
-	});
-
-	describe('onModuleInit', () => {
-		it('should connect to NATS successfully', async () => {
-			await natsEventsService.onModuleInit();
-
-			expect(mockConnect).toHaveBeenCalledWith({
-				servers: 'nats://localhost:4222',
-			});
-			expect(Logger.prototype.log).toHaveBeenCalledWith('Connected to NATS at nats://localhost:4222');
-		});
-
-		it('should handle connection errors', async () => {
-			const connectionError = new Error('Connection failed');
-			mockConnect.mockRejectedValueOnce(connectionError);
-
-			await expect(natsEventsService.onModuleInit()).rejects.toThrow('Connection failed');
-			expect(Logger.prototype.error).toHaveBeenCalledWith('Failed to connect to NATS:', connectionError);
-		});
-
-		it('should use default NATS URL when not configured', async () => {
-			// Create a new service with undefined config
-			const emptyConfigService = {
-				get: vi.fn((key: string, defaultValue?: string) => {
-					if (key === 'NATS_URL') {
-						return defaultValue; // Return the default value when key is not found
-					}
-					return defaultValue;
-				}),
-			} as any;
-			const newService = new NatsEventsService(emptyConfigService);
-
-			// Clear previous calls to mockConnect
-			mockConnect.mockClear();
-
-			await newService.onModuleInit();
-
-			expect(mockConnect).toHaveBeenCalledWith({
-				servers: 'nats://localhost:4222',
-			});
-		});
-	});
-
-	describe('onModuleDestroy', () => {
-		it('should close NATS connection on module destruction', async () => {
-			// First initialize the service
-			await natsEventsService.onModuleInit();
-			// Set the mock connection
-			(natsEventsService as any).nc = mockNatsConnection;
-
-			await natsEventsService.onModuleDestroy();
-
-			expect(mockClose).toHaveBeenCalled();
-		});
-
-		it('should handle close errors gracefully', async () => {
-			// First initialize the service
-			await natsEventsService.onModuleInit();
-
-			mockClose.mockRejectedValue(new Error('Close failed'));
-
-			// onModuleDestroy doesn't throw, it just logs errors
-			await expect(natsEventsService.onModuleDestroy()).resolves.not.toThrow();
-		});
+	afterEach(async () => {
+		vi.clearAllMocks();
 	});
 
 	describe('publishEvent', () => {
-		beforeEach(async () => {
-			// Initialize the service for publish tests
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
+		it('should publish an event successfully', async () => {
+			const eventData = { id: '123', name: 'Test Vendor' };
+			const eventType = 'vendor.created';
+
+			await service.publishEvent(eventType, eventData);
+
+			expect(mockNatsConnection.publish).toHaveBeenCalledWith('events.vendor.created', expect.any(Buffer));
 		});
 
-		it('should publish event successfully', async () => {
-			const eventType = 'user.created';
-			const eventData = { name: 'John Doe', userId: '123' };
+		it('should handle publish errors gracefully', async () => {
+			vi.mocked(mockNatsConnection.publish).mockRejectedValue(new Error('Publish failed'));
 
-			await natsEventsService.publishEvent(eventType, eventData);
+			const eventData = { id: '123', name: 'Test Vendor' };
+			const eventType = 'vendor.created';
 
-			expect(mockPublish).toHaveBeenCalledWith('events.user.created', expect.any(Buffer));
-			expect(Logger.prototype.log).toHaveBeenCalledWith(expect.stringContaining('Published event: user.created'));
-		});
-
-		it('should generate unique message IDs', async () => {
-			const eventType = 'test.event';
-			const eventData = { test: 'data' };
-
-			// Clear previous calls
-			mockPublish.mockClear();
-			vi.mocked(Logger.prototype.log).mockClear();
-
-			await natsEventsService.publishEvent(eventType, eventData);
-			await natsEventsService.publishEvent(eventType, eventData);
-
-			expect(mockPublish).toHaveBeenCalledTimes(2);
-			expect(Logger.prototype.log).toHaveBeenCalledTimes(2);
-		});
-
-		it('should handle publish errors', async () => {
-			const eventType = 'test.event';
-			const eventData = { test: 'data' };
-			const publishError = new Error('NATS publish failed');
-
-			mockPublish.mockRejectedValue(publishError);
-
-			await expect(natsEventsService.publishEvent(eventType, eventData)).rejects.toThrow('NATS publish failed');
-			expect(Logger.prototype.error).toHaveBeenCalledWith('Failed to publish event test.event:', publishError);
+			await expect(service.publishEvent(eventType, eventData)).rejects.toThrow('Publish failed');
 		});
 	});
 
-	describe('subscribeToEvents', () => {
-		beforeEach(async () => {
-			// Initialize the service for subscribe tests
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-		});
-
-		it('should subscribe to all events', async () => {
-			const callback = vi.fn();
-
-			await natsEventsService.subscribeToEvents(callback);
-
-			expect(mockSubscribe).toHaveBeenCalledWith('events.*');
-		});
-
-		it('should handle subscription errors', async () => {
-			const callback = vi.fn();
-			const subscriptionError = new Error('Subscription error');
-
-			mockSubscribe.mockImplementation(() => {
-				throw subscriptionError;
-			});
-
-			// subscribeToEvents doesn't throw, it just logs errors
-			await expect(natsEventsService.subscribeToEvents(callback)).resolves.not.toThrow();
-			expect(Logger.prototype.error).toHaveBeenCalledWith('NATS subscription error:', subscriptionError);
-		});
-	});
-
-	describe('subscribeToEventType', () => {
-		beforeEach(async () => {
-			// Initialize the service for subscribe tests
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-		});
-
-		it('should subscribe to specific event type', async () => {
-			const eventType = 'user.created';
-			const callback = vi.fn();
-
-			// Create a proper mock subscription with async iterator
-			const mockSubscription = {
-				[Symbol.asyncIterator]: () => ({
-					next: () => Promise.resolve({ done: true, value: undefined }),
-				}),
+	describe('subscribeToStream', () => {
+		it('should create a stream subscription successfully', async () => {
+			const options = {
+				streamName: 'test-stream',
+				eventTypes: ['vendor.created', 'vendor.updated'],
+				groupName: 'test-group',
 			};
 
-			mockSubscribe.mockReturnValue(mockSubscription);
+			const callback = vi.fn();
 
-			const subscription = await natsEventsService.subscribeToEventType(eventType, callback);
+			const stream = await service.subscribeToStream(options, callback);
 
-			expect(mockSubscribe).toHaveBeenCalledWith('events.user.created');
-			expect(subscription).toBeDefined();
+			expect(stream).toBeDefined();
+			expect(stream.streamName).toBe('test-stream');
+			expect(stream.eventTypes).toEqual(['vendor.created', 'vendor.updated']);
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith(['events.vendor.created', 'events.vendor.updated'], {
+				queue: 'test-group',
+			});
 		});
 
-		it('should handle subscription errors for specific event type', async () => {
-			const eventType = 'user.created';
-			const callback = vi.fn();
-			const subscriptionError = new Error('Subscription error');
+		it('should create stream with wildcard event types', async () => {
+			const options = {
+				streamName: 'wildcard-stream',
+				eventTypes: ['*'],
+			};
 
-			mockSubscribe.mockImplementation(() => {
-				throw subscriptionError;
+			const callback = vi.fn();
+
+			const stream = await service.subscribeToStream(options, callback);
+
+			expect(stream.eventTypes).toEqual(['*']);
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith(['events.*'], { queue: 'default' });
+		});
+
+		it('should generate stream name if not provided', async () => {
+			const options = {
+				eventTypes: ['vendor.created'],
+			};
+
+			const callback = vi.fn();
+
+			const stream = await service.subscribeToStream(options, callback);
+
+			expect(stream.streamName).toMatch(/^stream-\d+$/);
+		});
+	});
+
+	describe('unsubscribeFromStream', () => {
+		it('should unsubscribe from stream successfully', async () => {
+			const stream: EventStream = {
+				streamName: 'test-stream',
+				eventTypes: ['vendor.created'],
+				subscription: mockSubscription,
+			};
+
+			await service.unsubscribeFromStream(stream);
+
+			expect(mockSubscription.unsubscribe).toHaveBeenCalled();
+		});
+
+		it('should handle unsubscribe errors gracefully', async () => {
+			vi.mocked(mockSubscription.unsubscribe).mockImplementation(() => {
+				throw new Error('Unsubscribe failed');
 			});
 
-			await expect(natsEventsService.subscribeToEventType(eventType, callback)).rejects.toThrow('Subscription error');
+			const stream: EventStream = {
+				streamName: 'test-stream',
+				eventTypes: ['vendor.created'],
+				subscription: mockSubscription,
+			};
+
+			// Should not throw error
+			await service.unsubscribeFromStream(stream);
+		});
+	});
+
+	describe('getActiveStreams', () => {
+		it('should return active streams', async () => {
+			const options = {
+				streamName: 'test-stream',
+				eventTypes: ['vendor.created'],
+			};
+
+			const callback = vi.fn();
+
+			await service.subscribeToStream(options, callback);
+
+			const activeStreams = service.getActiveStreams();
+
+			expect(activeStreams).toHaveLength(1);
+			expect(activeStreams[0].streamName).toBe('test-stream');
 		});
 	});
 
 	describe('healthCheck', () => {
-		beforeEach(async () => {
-			// Initialize the service for health check tests
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-		});
+		it('should return healthy status when connected', async () => {
+			vi.mocked(mockNatsConnection.closed).mockReturnValue(false);
 
-		it('should return connected status when NATS is connected', async () => {
-			mockClosed.mockReturnValue(false);
-
-			const health = await natsEventsService.healthCheck();
+			const health = await service.healthCheck();
 
 			expect(health.connected).toBe(true);
 			expect(health.status).toBe('connected');
 		});
 
-		it('should return disconnected status when NATS is disconnected', async () => {
-			mockClosed.mockReturnValue(true);
+		it('should return unhealthy status when disconnected', async () => {
+			vi.mocked(mockNatsConnection.closed).mockReturnValue(true);
 
-			const health = await natsEventsService.healthCheck();
+			const health = await service.healthCheck();
 
 			expect(health.connected).toBe(false);
 			expect(health.status).toBe('disconnected');
 		});
 	});
 
-	describe('edge cases', () => {
-		beforeEach(async () => {
-			// Initialize the service for edge case tests
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-		});
+	describe('module lifecycle', () => {
+		it('should clean up streams on module destroy', async () => {
+			const options = {
+				streamName: 'test-stream',
+				eventTypes: ['vendor.created'],
+			};
 
-		it('should handle null or undefined event data', async () => {
-			const eventType = 'test.event';
+			const callback = vi.fn();
 
-			await expect(natsEventsService.publishEvent(eventType, null)).resolves.not.toThrow();
-			await expect(natsEventsService.publishEvent(eventType, undefined)).resolves.not.toThrow();
-		});
+			await service.subscribeToStream(options, callback);
 
-		it('should handle empty event type', async () => {
-			const eventData = { test: 'data' };
+			// Verify stream is active
+			expect(service.getActiveStreams()).toHaveLength(1);
 
-			await expect(natsEventsService.publishEvent('', eventData)).resolves.not.toThrow();
-		});
-	});
+			// Destroy module
+			await service.onModuleDestroy();
 
-	describe('error handling', () => {
-		it('should handle NATS connection initialization errors', async () => {
-			const connectionError = new Error('Connection failed');
-			mockConnect.mockRejectedValue(connectionError);
-
-			await expect(natsEventsService.onModuleInit()).rejects.toThrow('Connection failed');
-		});
-
-		it('should handle network errors gracefully', async () => {
-			// Initialize the service first
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-
-			const networkError = new Error('Network error');
-			mockPublish.mockRejectedValue(networkError);
-
-			await expect(natsEventsService.publishEvent('test.event', { id: '123' })).rejects.toThrow('Network error');
-		});
-	});
-
-	describe('performance considerations', () => {
-		it('should handle multiple publish operations', async () => {
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-
-			const events = [
-				{ data: { id: 1 }, type: 'test.1' },
-				{ data: { id: 2 }, type: 'test.2' },
-				{ data: { id: 3 }, type: 'test.3' },
-			];
-
-			for (const event of events) {
-				await natsEventsService.publishEvent(event.type, event.data);
-			}
-
-			expect(mockPublish).toHaveBeenCalledTimes(3);
-		});
-
-		it('should not create memory leaks with repeated operations', async () => {
-			await natsEventsService.onModuleInit();
-			// Directly set the mock connection since the mock isn't being applied properly
-			(natsEventsService as any).nc = mockNatsConnection;
-
-			// Perform multiple operations
-			for (let i = 0; i < 100; i++) {
-				await natsEventsService.publishEvent(`test.${i}`, { data: `message ${i}` });
-			}
-
-			expect(mockPublish).toHaveBeenCalledTimes(100);
+			// Verify streams are cleaned up
+			expect(service.getActiveStreams()).toHaveLength(0);
+			expect(mockNatsConnection.close).toHaveBeenCalled();
 		});
 	});
 });

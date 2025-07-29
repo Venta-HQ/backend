@@ -1,105 +1,98 @@
 # Events Library
 
-This library provides event-driven communication and messaging utilities for the Venta backend services.
-
-## Overview
-
-The events library enables asynchronous communication between services using NATS messaging. It provides a clean interface for publishing and subscribing to events, supporting event-driven architecture patterns.
+This library provides a NATS-based event system for microservices communication with support for stream-based event listening.
 
 ## Features
 
-- **Event Publishing**: Publish events to message queues
-- **Event Subscription**: Subscribe to and handle events
-- **NATS Integration**: Message broker integration for reliable messaging
-- **Event Types**: Type-safe event definitions and handling
-- **Asynchronous Communication**: Non-blocking service communication
+- **Event Publishing**: Publish events to NATS with automatic message formatting
+- **Event Subscription**: Subscribe to specific event types or all events
+- **Stream-based Listening**: Create dedicated streams for specific event types with load balancing
+- **Queue Groups**: Support for load balancing across multiple instances
+- **Health Monitoring**: Built-in health checks for NATS connection
+- **Error Handling**: Automatic retry and failed event storage
 
-## Usage
+## Quick Start
 
-### Publishing Events
+### Installation
 
-Publish events to notify other services about important actions or state changes.
+The library is already included in the workspace. Import it in your module:
+
+```typescript
+import { EventsModule } from '@app/events';
+
+@Module({
+	imports: [EventsModule],
+	// ...
+})
+export class MyModule {}
+```
+
+### Basic Usage
 
 ```typescript
 import { IEventsService } from '@app/events';
-import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class UserService {
-	constructor(private readonly eventsService: IEventsService) {}
+export class MyService {
+	constructor(@Inject('EventsService') private eventsService: IEventsService) {}
 
-	async createUser(userData: CreateUserInput) {
-		const user = await this.prisma.user.create({ data: userData });
-
-		// Publish user created event
-		await this.eventsService.publish('user.created', {
-			userId: user.id,
-			email: user.email,
-			timestamp: new Date(),
-		});
-
+	async createUser(userData: any) {
+		const user = await this.userRepository.create(userData);
+		await this.eventsService.publishEvent('user.created', user);
 		return user;
 	}
 }
 ```
 
-### Subscribing to Events
-
-Subscribe to events to react to changes or actions from other services.
+### Stream-based Event Listening
 
 ```typescript
-import { IEventsService } from '@app/events';
-import { Injectable, OnModuleInit } from '@nestjs/common';
-
 @Injectable()
-export class NotificationService implements OnModuleInit {
-	constructor(private readonly eventsService: IEventsService) {}
+export class AnalyticsService implements OnModuleInit, OnModuleDestroy {
+	private userEventStream: any;
+
+	constructor(@Inject('EventsService') private eventsService: IEventsService) {}
 
 	async onModuleInit() {
-		// Subscribe to user events
-		await this.eventsService.subscribe('user.created', async (data) => {
-			await this.sendWelcomeEmail(data.email);
-		});
-
-		await this.eventsService.subscribe('user.updated', async (data) => {
-			await this.updateUserProfile(data.userId);
-		});
+		this.userEventStream = await this.eventsService.subscribeToStream(
+			{
+				streamName: 'analytics-user-events',
+				eventTypes: ['user.created', 'user.updated', 'user.deleted'],
+				groupName: 'analytics',
+			},
+			async (event) => {
+				// Handle event
+				await this.processEvent(event);
+			},
+		);
 	}
 
-	private async sendWelcomeEmail(email: string) {
-		// Send welcome email logic
+	async onModuleDestroy() {
+		if (this.userEventStream) {
+			await this.eventsService.unsubscribeFromStream(this.userEventStream);
+		}
 	}
 }
 ```
 
-### Event Types
+## Configuration
 
-Define and use typed events to ensure consistency and type safety.
+Set the `NATS_URL` environment variable:
 
-```typescript
-import { IEventsService } from '@app/events';
-
-interface UserCreatedEvent {
-	userId: string;
-	email: string;
-	timestamp: Date;
-}
-
-interface UserUpdatedEvent {
-	userId: string;
-	changes: Record<string, any>;
-	timestamp: Date;
-}
-
-// Publish typed events
-await this.eventsService.publish<UserCreatedEvent>('user.created', {
-	userId: '123',
-	email: 'user@example.com',
-	timestamp: new Date(),
-});
+```bash
+NATS_URL=nats://localhost:4222
 ```
 
-## Dependencies
+## API Reference
 
-- NATS for message brokering
-- NestJS for framework integration
+### IEventsService
+
+- `publishEvent<T>(eventType: string, data: T): Promise<void>`
+- `subscribeToEventType(eventType: string, callback: (event: EventMessage) => void): Promise<Subscription>`
+- `subscribeToEvents(callback: (event: EventMessage) => void): Promise<void>`
+- `subscribeToStream(options: StreamSubscriptionOptions, callback: (event: EventMessage) => void): Promise<EventStream>`
+- `unsubscribeFromStream(stream: EventStream): Promise<void>`
+- `getActiveStreams(): EventStream[]`
+- `healthCheck(): Promise<{ connected: boolean; status: string }>`
+
+For detailed documentation and examples, see the main project documentation.

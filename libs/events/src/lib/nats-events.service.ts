@@ -2,13 +2,14 @@
 import { connect, NatsConnection, StringCodec, Subscription } from 'nats';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EventMessage, IEventsService } from './events.interface';
+import { EventMessage, IEventsService, EventStream, StreamSubscriptionOptions } from './events.interface';
 
 @Injectable()
 export class NatsEventsService implements IEventsService {
 	private readonly logger = new Logger(NatsEventsService.name);
 	private nc!: NatsConnection;
 	private readonly sc = StringCodec();
+	private activeStreams: Map<string, EventStream> = new Map();
 
 	constructor(private readonly configService: ConfigService) {}
 
@@ -17,6 +18,11 @@ export class NatsEventsService implements IEventsService {
 	}
 
 	async onModuleDestroy() {
+		// Clean up all active streams
+		for (const stream of this.activeStreams.values()) {
+			await this.unsubscribeFromStream(stream);
+		}
+		
 		if (this.nc) {
 			await this.nc.close();
 		}
@@ -97,6 +103,65 @@ export class NatsEventsService implements IEventsService {
 		})();
 
 		return subscription;
+	}
+
+	async subscribeToStream(options: StreamSubscriptionOptions, callback: (event: EventMessage) => void): Promise<EventStream> {
+		const streamName = options.streamName || `stream-${Date.now()}`;
+		const eventTypes = options.eventTypes || ['*'];
+		
+		// Create subjects based on event types
+		const subjects = eventTypes.map(type => 
+			type === '*' ? 'events.*' : `events.${type}`
+		);
+
+		// Create subscription with queue group for load balancing
+		const queueGroup = options.groupName || 'default';
+		const subscription = this.nc.subscribe(subjects, { queue: queueGroup });
+
+		const stream: EventStream = {
+			streamName,
+			eventTypes,
+			subscription,
+		};
+
+		// Store the stream
+		this.activeStreams.set(streamName, stream);
+
+		// Process messages for this stream
+		(async () => {
+			for await (const msg of subscription) {
+				try {
+					const event: EventMessage = JSON.parse(this.sc.decode(msg.data));
+					
+					// Only process events that match the stream's event types
+					if (eventTypes.includes('*') || eventTypes.includes(event.type)) {
+						await callback(event);
+						this.logger.debug(`Stream ${streamName} processed ${event.type}: ${event.messageId}`);
+					}
+				} catch (error) {
+					this.logger.error(`Stream ${streamName} failed to process event:`, error);
+				}
+			}
+		})();
+
+		this.logger.log(`Created stream subscription: ${streamName} for events: ${eventTypes.join(', ')}`);
+		return stream;
+	}
+
+	async unsubscribeFromStream(stream: EventStream): Promise<void> {
+		try {
+			if (stream.subscription) {
+				stream.subscription.unsubscribe();
+				this.logger.log(`Unsubscribed from stream: ${stream.streamName}`);
+			}
+			this.activeStreams.delete(stream.streamName);
+		} catch (error) {
+			this.logger.error(`Failed to unsubscribe from stream ${stream.streamName}:`, error);
+		}
+	}
+
+	getActiveStreams(): EventStream[] {
+		return Array.from(this.activeStreams.values());
 	}
 
 	private async storeFailedEvent(eventType: string, data: any, error: any): Promise<void> {

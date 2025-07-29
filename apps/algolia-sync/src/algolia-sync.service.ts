@@ -1,12 +1,13 @@
 import { IEventsService } from '@app/events';
 import { AlgoliaService } from '@app/search';
 import { RetryUtil } from '@app/utils';
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
-export class AlgoliaSyncService implements OnModuleInit {
+export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
 	private readonly retryUtil: RetryUtil;
+	private vendorEventStream: any;
 
 	constructor(
 		private readonly algoliaService: AlgoliaService,
@@ -23,29 +24,45 @@ export class AlgoliaSyncService implements OnModuleInit {
 		await this.setupEventListeners();
 	}
 
+	async onModuleDestroy() {
+		if (this.vendorEventStream) {
+			await this.eventsService.unsubscribeFromStream(this.vendorEventStream);
+		}
+	}
+
 	private async setupEventListeners() {
 		this.logger.log('Setting up Algolia sync event listeners');
 
-		await this.eventsService.subscribeToEvents(async (event) => {
-			try {
-				switch (event.type) {
-					case 'vendor.created':
-						await this.handleVendorCreated(event.data);
-						break;
-					case 'vendor.updated':
-						await this.handleVendorUpdated(event.data);
-						break;
-					case 'vendor.deleted':
-						await this.handleVendorDeleted(event.data);
-						break;
-					default:
-						this.logger.debug(`Ignoring event type: ${event.type}`);
+		// Create a dedicated stream for vendor events
+		this.vendorEventStream = await this.eventsService.subscribeToStream(
+			{
+				streamName: 'algolia-sync-vendor-events',
+				eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted'],
+				groupName: 'algolia-sync',
+			},
+			async (event) => {
+				try {
+					switch (event.type) {
+						case 'vendor.created':
+							await this.handleVendorCreated(event.data);
+							break;
+						case 'vendor.updated':
+							await this.handleVendorUpdated(event.data);
+							break;
+						case 'vendor.deleted':
+							await this.handleVendorDeleted(event.data);
+							break;
+						default:
+							this.logger.debug(`Ignoring event type: ${event.type}`);
+					}
+				} catch (error) {
+					this.logger.error(`Failed to handle event ${event.type}:`, error);
+					// Could implement dead letter queue here for failed events
 				}
-			} catch (error) {
-				this.logger.error(`Failed to handle event ${event.type}:`, error);
-				// Could implement dead letter queue here for failed events
-			}
-		});
+			},
+		);
+
+		this.logger.log('Algolia sync event listeners setup complete');
 	}
 
 	private async handleVendorCreated(vendor: any) {
