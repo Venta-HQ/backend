@@ -65,5 +65,6 @@
 			"outputs": ["{options.outputFile}"]
 		}
 	},
-	"tags": []
+	"tags": ["scope:backend", "type:app"],
+	"implicitDependencies": ["nest", "proto", "apitypes"]
 }

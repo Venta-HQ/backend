@@ -14,6 +14,7 @@ module.exports = {
 	},
 	ignorePatterns: ['*.config.js', '*.js', '*.json', 'scripts', 'dist', '*.yaml', '*.yml', 'libs/proto/src/lib/*'],
 	rules: {
+		'@nx/enforce-module-boundaries': 'off',
 		'no-empty-function': 'off',
 		'@typescript-eslint/no-empty-function': 'off',
 		'@typescript-eslint/interface-name-prefix': 'off',
