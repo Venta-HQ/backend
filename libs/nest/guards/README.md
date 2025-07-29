@@ -1,47 +1,20 @@
-# Authentication Guards
+# Guards
 
-This directory contains NestJS guards for handling authentication and authorization across services.
+This directory contains NestJS guards for authentication and authorization.
 
 ## Available Guards
 
-### AuthGuard
+- **[AuthGuard](./auth/README.md)** - JWT-based authentication using Clerk with Redis caching
+- **[SignedWebhookGuard](./signed-webhook/README.md)** - Webhook signature verification using Svix
 
-General authentication guard for protecting routes and endpoints.
-
-**Usage:**
+## Usage
 
 ```typescript
-import { AuthGuard } from '@libs/nest/guards';
+import { AuthGuard, SignedWebhookGuard } from '@app/nest/guards';
 
-@Controller('protected')
+// Use AuthGuard for protected routes
 @UseGuards(AuthGuard)
-export class ProtectedController {
-	@Get()
-	getProtectedData() {
-		return 'This is protected data';
-	}
-}
+
+// Use SignedWebhookGuard for webhook endpoints
+@UseGuards(SignedWebhookGuard(process.env.WEBHOOK_SECRET))
 ```
-
-### SignedWebhookGuard
-
-Verifies webhook signatures to ensure requests are coming from trusted sources.
-
-**Usage:**
-
-```typescript
-import { SignedWebhookGuard } from '@libs/nest/guards';
-
-@Controller('webhooks')
-export class WebhookController {
-	@Post('clerk')
-	@UseGuards(SignedWebhookGuard)
-	handleClerkWebhook(@Body() payload: any) {
-		// Process webhook payload
-	}
-}
-```
-
-## Configuration
-
-Guards may require specific environment variables or configuration depending on the authentication provider being used. Refer to the individual guard documentation for specific requirements.
