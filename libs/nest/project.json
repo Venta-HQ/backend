@@ -1,7 +1,7 @@
 {
 	"name": "nest",
 	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "libs/nest/src",
+	"sourceRoot": "libs/nest",
 	"projectType": "library",
 	"targets": {
 		"build": {
@@ -9,7 +9,7 @@
 			"outputs": ["{options.outputPath}"],
 			"options": {
 				"outputPath": "dist/libs/nest",
-				"main": "libs/nest/src/index.ts",
+				"main": "libs/nest/index.ts",
 				"tsConfig": "libs/nest/tsconfig.lib.json",
 				"assets": ["libs/nest/*.md"]
 			}

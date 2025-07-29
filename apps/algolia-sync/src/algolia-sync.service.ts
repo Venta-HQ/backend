@@ -12,9 +12,9 @@ export class AlgoliaSyncService implements OnModuleInit {
 		@Inject('EventsService') private readonly eventsService: IEventsService,
 	) {
 		this.retryUtil = new RetryUtil({
+			logger: this.logger,
 			maxRetries: 3,
 			retryDelay: 1000,
-			logger: this.logger,
 		});
 	}
 
