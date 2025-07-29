@@ -1,9 +1,8 @@
 import { verifyToken } from '@clerk/clerk-sdk-node';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ClerkService {
-	private readonly logger = new Logger(ClerkService.name);
 	private secretKey: string;
 	constructor(secretKey: string) {
 		this.secretKey = secretKey;

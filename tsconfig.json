@@ -1,29 +1,4 @@
 {
-	"compilerOptions": {
-		"module": "commonjs",
-		"declaration": true,
-		"removeComments": true,
-		"emitDecoratorMetadata": true,
-		"experimentalDecorators": true,
-		"allowSyntheticDefaultImports": true,
-		"target": "ES2021",
-		"sourceMap": true,
-		"outDir": "./dist",
-		"incremental": true,
-		"skipLibCheck": true,
-		"strictNullChecks": false,
-		"noImplicitAny": false,
-		"strictBindCallApply": false,
-		"forceConsistentCasingInFileNames": false,
-		"noFallthroughCasesInSwitch": false,
-		"baseUrl": ".",
-		"paths": {
-			"@app/nest": ["libs/nest"],
-			"@app/nest/*": ["libs/nest/*"],
-			"@app/proto": ["libs/proto/src/lib"],
-			"@app/proto/*": ["libs/proto/src/lib/*"],
-			"@app/apitypes": ["libs/apitypes/src"],
-			"@app/apitypes/*": ["libs/apitypes/src/*"]
-		}
-	}
+	"extends": "./tsconfig.base.json",
+	"files": []
 }

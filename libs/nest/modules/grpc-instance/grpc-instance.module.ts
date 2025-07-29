@@ -6,7 +6,7 @@ import GrpcInstance from './grpc-instance.service';
 
 @Module({})
 export class GrpcInstanceModule {
-	static register<T>({
+	static register<T extends Record<string, any>>({
 		protoPackage,
 		protoPath,
 		provide,

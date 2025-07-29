@@ -21,7 +21,7 @@ export class AlgoliaService {
 		indexName: string,
 		entityId: string,
 		attributesToUpdate: any,
-	): Promise<UpdatedAtWithObjectIdResponse> {
+	): Promise<UpdatedAtWithObjectIdResponse | null> {
 		const { hits } = await this.client.searchSingleIndex({
 			indexName: 'vendor',
 			searchParams: {
@@ -37,7 +37,7 @@ export class AlgoliaService {
 					filters: entityId,
 				},
 			});
-			return;
+			return null;
 		}
 
 		return await this.client.partialUpdateObject({

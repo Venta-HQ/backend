@@ -1,8 +1,8 @@
 import Redis from 'ioredis';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { AppError, ErrorCodes } from '../../errors';
+import { PrismaService } from '../../modules';
 import { ClerkService } from '../../modules/clerk/clerk.service';
 
 @Injectable()

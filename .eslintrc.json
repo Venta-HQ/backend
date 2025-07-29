@@ -1,0 +1,51 @@
+{
+	"root": true,
+	"ignorePatterns": [
+		"dist",
+		"node_modules",
+		"*.config.js",
+		"*.js",
+		"*.json",
+		"scripts",
+		"*.yaml",
+		"*.yml",
+		"libs/proto/src/lib/*"
+	],
+	"plugins": ["@nx"],
+	"overrides": [
+		{
+			"files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+			"extends": ["plugin:@nx/typescript"],
+			"rules": {
+				"@nx/enforce-module-boundaries": [
+					"error",
+					{
+						"allow": [],
+						"depConstraints": [
+							{
+								"sourceTag": "scope:shared",
+								"onlyDependOnLibsWithTags": ["scope:shared"]
+							},
+							{
+								"sourceTag": "scope:backend",
+								"onlyDependOnLibsWithTags": ["scope:shared", "scope:backend"]
+							},
+							{
+								"sourceTag": "type:app",
+								"onlyDependOnLibsWithTags": ["type:utility", "type:data"]
+							},
+							{
+								"sourceTag": "type:utility",
+								"onlyDependOnLibsWithTags": ["type:utility"]
+							},
+							{
+								"sourceTag": "type:data",
+								"onlyDependOnLibsWithTags": ["type:data"]
+							}
+						]
+					}
+				]
+			}
+		}
+	]
+}

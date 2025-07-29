@@ -1,6 +1,6 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from 'crypto';
 import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
-import { LokiOptions } from 'pino-loki/index';
+import { LokiOptions } from 'pino-loki';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
@@ -26,62 +26,73 @@ export class LoggerModule {
 				PinoLoggerModule.forRootAsync({
 					imports: [ConfigModule],
 					inject: [ConfigService],
-					useFactory: (configService: ConfigService) => ({
-						pinoHttp: {
-							base: { app: appName },
-							// HTTP-specific request ID handling
-							...(protocol === 'http' || protocol === 'auto'
-								? {
-										customProps: (req: any, _res: any) => {
-											const props: any = {};
-											if (req.id ?? req.headers?.['x-request-id']) {
-												props['requestId'] = req.id ?? req.headers['x-request-id'];
-											}
-											return props;
-										},
-										genReqId: (req: any, res: any) => {
-											const existingID = req.id ?? req.headers?.['x-request-id'];
-											if (existingID) return existingID;
-											const id = randomUUID();
-											if (res?.setHeader) {
-												res.setHeader('x-request-id', id);
-											}
-											return id;
-										},
-									}
-								: {}),
-							transport: {
-								targets: [
-									{
-										options: {
-											basicAuth: {
-												password: configService.get('LOKI_PASSWORD'),
-												username: configService.get('LOKI_USERNAME'),
+					useFactory: (configService: ConfigService) => {
+						const lokiPassword = configService.get('LOKI_PASSWORD');
+						const lokiUsername = configService.get('LOKI_USERNAME');
+						const lokiUrl = configService.get('LOKI_URL');
+
+						// Validate required environment variables
+						if (!lokiPassword || !lokiUsername || !lokiUrl) {
+							throw new Error('Missing required LOKI environment variables');
+						}
+
+						return {
+							pinoHttp: {
+								base: { app: appName },
+								// HTTP-specific request ID handling
+								...(protocol === 'http' || protocol === 'auto'
+									? {
+											customProps: (req: any, _res: any) => {
+												const props: any = {};
+												if (req.id ?? req.headers?.['x-request-id']) {
+													props['requestId'] = req.id ?? req.headers['x-request-id'];
+												}
+												return props;
 											},
-											batching: true,
-											host: configService.get('LOKI_URL'),
-											interval: 5,
-											propsToLabels: ['context', 'app', 'requestId'],
-										} satisfies LokiOptions,
-										target: 'pino-loki',
-									},
-									...(process.env.NODE_ENV !== 'production'
-										? [
-												{
-													options: {
-														colorize: true,
-														ignore: 'pid,hostname,time,app,context',
-														levelFirst: true,
-														messageFormat: `[${appName}] [{context}]: {msg}`,
-													},
-													target: 'pino-pretty',
+											genReqId: (req: any, res: any) => {
+												const existingID = req.id ?? req.headers?.['x-request-id'];
+												if (existingID) return existingID;
+												const id = randomUUID();
+												if (res?.setHeader) {
+													res.setHeader('x-request-id', id);
+												}
+												return id;
+											},
+										}
+									: {}),
+								transport: {
+									targets: [
+										{
+											options: {
+												basicAuth: {
+													password: lokiPassword,
+													username: lokiUsername,
 												},
-											]
-										: []),
-								],
+												batching: true,
+												host: lokiUrl,
+												interval: 5,
+												propsToLabels: ['context', 'app', 'requestId'],
+											} satisfies LokiOptions,
+											target: 'pino-loki',
+										},
+										...(process.env.NODE_ENV !== 'production'
+											? [
+													{
+														options: {
+															colorize: true,
+															ignore: 'pid,hostname,time,app,context',
+															levelFirst: true,
+															messageFormat: `[${appName}] [{context}]: {msg}`,
+														},
+														target: 'pino-pretty',
+													},
+												]
+											: []),
+									],
+								},
 							},
-						},
-					}),
+						};
+					},
 				}),
 			],
 			module: LoggerModule,

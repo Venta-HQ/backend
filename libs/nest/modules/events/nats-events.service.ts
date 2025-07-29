@@ -7,10 +7,8 @@ import { EventMessage, IEventsService } from './events.interface';
 @Injectable()
 export class NatsEventsService implements IEventsService {
 	private readonly logger = new Logger(NatsEventsService.name);
-	private nc: NatsConnection;
+	private nc!: NatsConnection;
 	private readonly sc = StringCodec();
-	private readonly failedEventsKey = 'failed_events';
-	private readonly maxRetries = 3;
 
 	constructor(private readonly configService: ConfigService) {}
 
@@ -103,15 +101,8 @@ export class NatsEventsService implements IEventsService {
 
 	private async storeFailedEvent(eventType: string, data: any, error: any): Promise<void> {
 		try {
-			const _failedEvent = {
-				data,
-				error: error.message,
-				retryCount: 0,
-				timestamp: new Date().toISOString(),
-				type: eventType,
-			};
-
-			// Store in NATS key-value store or fallback to file
+			// Store failed event data for later processing
+			// Implementation would store the failed event data
 			this.logger.warn(`Stored failed event: ${eventType}`);
 		} catch (storeError) {
 			this.logger.error('Failed to store failed event:', storeError);
@@ -138,7 +129,7 @@ export class NatsEventsService implements IEventsService {
 	async healthCheck(): Promise<{ connected: boolean; status: string }> {
 		return {
 			connected: !this.nc.closed(),
-			status: this.nc.closed() ? 'disconnected' : 'connected',
+			status: (await this.nc.closed()) ? 'disconnected' : 'connected',
 		};
 	}
 }

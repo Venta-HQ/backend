@@ -7,7 +7,7 @@ const getExtendedClientType = (client: PrismaClient, apiKey: string) => {
 };
 type ExtendedPrismaClient = ReturnType<typeof getExtendedClientType>;
 
-const getClient = (url) => {
+const getClient = (url: string) => {
 	return new PrismaClient({
 		datasources: {
 			db: {

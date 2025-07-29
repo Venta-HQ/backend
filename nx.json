@@ -1,44 +1,24 @@
 {
 	"$schema": "./node_modules/nx/schemas/nx-schema.json",
-	"affected": {
-		"defaultBase": "main"
+	"namedInputs": {
+		"default": ["{projectRoot}/**/*", "sharedGlobals"],
+		"production": ["default"],
+		"sharedGlobals": []
 	},
-	"tasksRunnerOptions": {
-		"default": {
-			"runner": "nx/tasks-runners/default",
+	"plugins": [
+		{
+			"plugin": "@nx/js/typescript",
 			"options": {
-				"cacheableOperations": ["build", "lint", "test", "e2e"],
-				"parallel": 3
+				"typecheck": {
+					"targetName": "typecheck"
+				},
+				"build": {
+					"targetName": "build",
+					"configName": "tsconfig.lib.json",
+					"buildDepsName": "build-deps",
+					"watchDepsName": "watch-deps"
+				}
 			}
 		}
-	},
-	"targetDefaults": {
-		"build": {
-			"dependsOn": ["^build"],
-			"inputs": ["production", "^production"]
-		},
-		"test": {
-			"inputs": ["default", "^production", "{workspaceRoot}/vitest.config.ts"]
-		},
-		"lint": {
-			"inputs": ["default", "{workspaceRoot}/.eslintrc.js"]
-		}
-	},
-	"namedInputs": {
-		"default": ["{projectRoot}/**/*", "!{projectRoot}/**/*.spec.ts", "!{projectRoot}/**/*.test.ts"],
-		"production": [
-			"default",
-			"!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
-			"!{projectRoot}/tsconfig.spec.json",
-			"!{projectRoot}/jest.config.[jt]s",
-			"!{projectRoot}/src/test-setup.[jt]s",
-			"!{projectRoot}/test-setup.[jt]s",
-			"!{projectRoot}/**/*.stories.[jt]s?(x)",
-			"!{projectRoot}/**/*.mdx"
-		]
-	},
-	"workspaceLayout": {
-		"appsDir": "apps",
-		"libsDir": "libs"
-	}
+	]
 }

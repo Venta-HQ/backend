@@ -86,7 +86,8 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 
 		const grpcException = error.toGrpcException();
-		const _grpcError = grpcException.getError() as any;
+		// Error is created but not used directly - it's thrown by the framework
+		grpcException.getError() as any;
 
 		// For gRPC, we need to throw the exception to be handled by the gRPC framework
 		throw grpcException;
