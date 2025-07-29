@@ -37,7 +37,7 @@ Standardized error types, codes, and error handling utilities.
 
 Request validation and transformation:
 
-- **schema-validator** - Schema-based validation for HTTP, gRPC, and WebSocket requests
+- **schema-validator** - Universal schema-based validation for HTTP, gRPC, and WebSocket requests
 
 ## Usage
 

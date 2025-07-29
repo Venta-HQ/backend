@@ -1,5 +1,5 @@
 import { GrpcClerkUserDataSchema } from '@app/apitypes/lib/user/user.schemas';
-import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { ClerkUserData, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -12,7 +12,7 @@ export class ClerkController {
 	constructor(private readonly clerkService: ClerkService) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcClerkUserDataSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
 	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
 		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
 		const userData = await this.clerkService.handleUserCreated(data.id);
@@ -26,7 +26,7 @@ export class ClerkController {
 	}
 
 	@GrpcMethod(USER_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcClerkUserDataSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
 	async handleClerkUserDeleted(data: ClerkUserData): Promise<ClerkWebhookResponse> {
 		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
 		await this.clerkService.handleUserDeleted(data.id);

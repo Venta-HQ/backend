@@ -4,13 +4,11 @@ This directory contains NestJS pipes for request validation and transformation.
 
 ## Available Pipes
 
-### Schema Validator Pipes
+### Schema Validator Pipe
 
-Schema-based validation pipes for different transport protocols:
+A unified schema-based validation pipe that works across all transport protocols:
 
-- **SchemaValidatorPipe** - General schema validation for HTTP requests
-- **GrpcSchemaValidatorPipe** - Schema validation for gRPC requests
-- **WsSchemaValidatorPipe** - Schema validation for WebSocket messages
+- **SchemaValidatorPipe** - Universal schema validation for HTTP, gRPC, and WebSocket requests
 
 ## Usage
 
@@ -29,7 +27,8 @@ export class ApiController {
 
 ## Features
 
-- **Multi-Protocol Support**: Validation for HTTP, gRPC, and WebSocket requests
+- **Multi-Protocol Support**: Single implementation works for HTTP, gRPC, and WebSocket requests
 - **Schema-Based Validation**: Uses Zod schemas for type-safe validation
 - **Automatic Error Handling**: Provides clear validation error messages
 - **Performance Optimized**: Efficient validation with minimal overhead
+- **Protocol Agnostic**: Handles different metadata types automatically

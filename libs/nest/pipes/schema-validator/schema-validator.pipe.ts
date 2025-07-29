@@ -6,7 +6,8 @@ export class SchemaValidatorPipe implements PipeTransform {
 	private readonly logger = new Logger(SchemaValidatorPipe.name);
 
 	constructor(private schema: ZodSchema) {}
-	transform(value: unknown, _metadata: ArgumentMetadata) {
+
+	transform(value: unknown, _metadata: ArgumentMetadata | any) {
 		try {
 			return this.schema.parse(value);
 		} catch (error) {
@@ -19,7 +20,10 @@ export class SchemaValidatorPipe implements PipeTransform {
 				const firstError = error.errors[0];
 				const field = firstError.path.join('.');
 
-				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, { errors: formattedErrors, field });
+				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, {
+					errors: formattedErrors,
+					field,
+				});
 			} else {
 				throw AppError.validation(ErrorCodes.VALIDATION_ERROR);
 			}

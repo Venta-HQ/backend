@@ -1,6 +1,6 @@
 import { GrpcUserVendorDataSchema } from '@app/apitypes/lib/user/user.schemas';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { USER_SERVICE_NAME, UserVendorData, UserVendorsResponse } from '@app/proto/user';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
@@ -13,7 +13,7 @@ export class VendorController {
 	constructor(private readonly vendorService: VendorService) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcUserVendorDataSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcUserVendorDataSchema))
 	async getUserVendors(data: UserVendorData): Promise<UserVendorsResponse> {
 		const vendors = await this.vendorService.getUserVendors(data.userId);
 

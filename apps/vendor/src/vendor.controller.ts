@@ -4,7 +4,7 @@ import {
 	GrpcVendorUpdateDataSchema,
 } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcSchemaValidatorPipe } from '@app/nest/pipes';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -25,22 +25,21 @@ export class VendorController {
 	constructor(private readonly vendorService: VendorService) {}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorLookupDataSchema))
-	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
-		const result = await this.vendorService.getVendorById(data.id);
-
-		if (!result) {
-			this.logger.error(`Vendor with ID ${data.id} not found`);
-			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.id });
+	@UsePipes(new SchemaValidatorPipe(GrpcVendorLookupDataSchema))
+	async lookupVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
+		try {
+			const vendor = await this.vendorService.lookupVendorById(data.id);
+			return { vendor };
+		} catch (e) {
+			this.logger.error(`Error looking up vendor with id`, {
+				id: data.id,
+			});
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'lookup vendor' });
 		}
-
-		return {
-			vendor: result,
-		};
 	}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorCreateDataSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcVendorCreateDataSchema))
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
 			const id = await this.vendorService.createVendor(data);
@@ -54,27 +53,16 @@ export class VendorController {
 	}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
-	@UsePipes(new GrpcSchemaValidatorPipe(GrpcVendorUpdateDataSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {
-			const { id, userId, ...vendorUpdates } = data;
-			await this.vendorService.updateVendor(id, userId, vendorUpdates);
-			return {
-				message: 'Updated vendor',
-				success: true,
-			};
+			const vendor = await this.vendorService.updateVendor(data);
+			return { vendor };
 		} catch (e) {
 			this.logger.error(`Error updating vendor with data`, {
 				data,
 			});
-
-			if (e instanceof AppError) {
-				throw e;
-			}
-
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, {
-				operation: 'update vendor',
-			});
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor' });
 		}
 	}
 }
