@@ -1,21 +1,21 @@
-import { catchError } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
+import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
 import { AuthGuard } from '@app/auth';
-import GrpcInstance from '@app/grpc';
+import { GrpcInstance } from '@app/grpc';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { SchemaValidatorPipe } from '@app/validation';
-import { Body, Controller, Get, Inject, Logger, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 
 @Controller()
 export class VendorController {
-	private readonly logger = new Logger(VendorController.name);
-
 	constructor(@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>) {}
 
 	@Get('/:id')
 	@UseGuards(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
-		const { vendor } = await firstValueFrom(
+		const result = await firstValueFrom(
 			this.client.invoke('getVendorById', { id }).pipe(
 				catchError((error: any) => {
 					// The AppExceptionFilter will handle the error conversion
@@ -23,36 +23,23 @@ export class VendorController {
 				}),
 			),
 		);
-
-		let overrides = {};
-		if (vendor.lat === 0 && vendor.long === 0) {
-			overrides = {
-				lat: null,
-				long: null,
-			};
-		}
-
-		return {
-			vendor: {
-				...vendor,
-				...overrides,
-			},
-		};
+		return result;
 	}
 
 	@Post()
 	@UseGuards(AuthGuard)
 	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
-	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
+	async createVendor(@Req() req: AuthedRequest, @Body() data: CreateVendorData) {
 		return this.client
 			.invoke('createVendor', {
-				description: data.description,
-				email: data.email,
-				imageUrl: data.imageUrl,
-				name: data.name,
-				phone: data.phone,
+				...data,
 				userId: req.userId,
-				website: data.website,
+				name: data.name ?? '',
+				description: data.description ?? '',
+				email: data.email ?? '',
+				phone: data.phone ?? '',
+				website: data.website ?? '',
+				imageUrl: data.imageUrl ?? '',
 			})
 			.pipe(
 				catchError((error: any) => {
@@ -64,23 +51,19 @@ export class VendorController {
 
 	@Put('/:id')
 	@UseGuards(AuthGuard)
-	async updateVendor(
-		@Param('id') id: string,
-		@Body(new SchemaValidatorPipe(UpdateVendorSchema)) data: UpdateVendorData,
-		@Req() req: AuthedRequest,
-	) {
-		return await this.client
+	async updateVendor(@Param('id') id: string, @Req() req: AuthedRequest, @Body() data: UpdateVendorData) {
+		return this.client
 			.invoke('updateVendor', {
-				description: data.description,
-				email: data.email,
+				...data,
 				id,
-				imageUrl: data.imageUrl,
-				name: data.name,
-				phone: data.phone,
 				userId: req.userId,
-				website: data.website,
+				name: data.name ?? '',
+				description: data.description ?? '',
+				email: data.email ?? '',
+				phone: data.phone ?? '',
+				website: data.website ?? '',
+				imageUrl: data.imageUrl ?? '',
 			})
-
 			.pipe(
 				catchError((error: any) => {
 					// The AppExceptionFilter will handle the error conversion

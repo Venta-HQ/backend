@@ -72,5 +72,20 @@
 		}
 	},
 	"tags": ["scope:backend", "type:app"],
-	"implicitDependencies": ["nest", "proto", "apitypes"]
+	"implicitDependencies": [
+		"proto",
+		"apitypes",
+		"auth",
+		"config",
+		"database",
+		"errors",
+		"events",
+		"grpc",
+		"logger",
+		"redis",
+		"search",
+		"upload",
+		"utils",
+		"validation"
+	]
 }

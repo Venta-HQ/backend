@@ -2,8 +2,27 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"declaration": false,
-		"outDir": "../../dist/apps/gateway"
+		"outDir": "../../dist/apps/gateway",
+		"rootDir": "../../",
+		"composite": false,
+		"declarationMap": false
 	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+	"include": [
+		"src/**/*",
+		"../../libs/auth/src/index.ts",
+		"../../libs/config/src/index.ts",
+		"../../libs/database/src/index.ts",
+		"../../libs/errors/src/index.ts",
+		"../../libs/events/src/index.ts",
+		"../../libs/grpc/src/index.ts",
+		"../../libs/logger/src/index.ts",
+		"../../libs/redis/src/index.ts",
+		"../../libs/search/src/index.ts",
+		"../../libs/upload/src/index.ts",
+		"../../libs/utils/src/index.ts",
+		"../../libs/validation/src/index.ts",
+		"../../libs/apitypes/src/**/*",
+		"../../libs/proto/src/**/*"
+	],
+	"exclude": ["node_modules", "dist", "test", "**/*spec.ts", "**/*test.ts"]
 }

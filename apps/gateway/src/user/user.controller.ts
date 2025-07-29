@@ -1,22 +1,12 @@
 import { catchError } from 'rxjs';
+import { AuthedRequest } from '@app/apitypes/lib/helpers';
 import { AuthGuard } from '@app/auth';
-import GrpcInstance from '@app/grpc';
-import {
-	USER_SERVICE_NAME,
-	UserCreateData,
-	UserCreateResponse,
-	UserLookupByIdResponse,
-	UserLookupData,
-	UserUpdateData,
-	UserUpdateResponse,
-} from '@app/proto/user';
-import { Controller, Get, Inject, Logger, Req, UseGuards } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcInstance } from '@app/grpc';
+import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 
 @Controller()
 export class UserController {
-	private readonly logger = new Logger(UserController.name);
-
 	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
 
 	@Get('/vendors')
@@ -31,6 +21,7 @@ export class UserController {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;
 				}),
-			);
+			)
+			.toPromise();
 	}
 }

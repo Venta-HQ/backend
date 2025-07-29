@@ -15,6 +15,5 @@ import { ClerkWebhooksController } from './clerk-webhooks.controller';
 			urlEnvVar: 'USER_SERVICE_ADDRESS',
 		}),
 	],
-	providers: [],
 })
 export class ClerkWebhooksModule {}

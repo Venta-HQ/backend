@@ -33,7 +33,13 @@
 				"production": {
 					"optimization": true,
 					"extractLicenses": true,
-					"inspect": false
+					"inspect": false,
+					"fileReplacements": [
+						{
+							"replace": "apps/user/src/environments/environment.ts",
+							"with": "apps/user/src/environments/environment.prod.ts"
+						}
+					]
 				}
 			}
 		},
@@ -66,5 +72,20 @@
 		}
 	},
 	"tags": ["scope:backend", "type:app"],
-	"implicitDependencies": ["nest", "proto", "apitypes"]
+	"implicitDependencies": [
+		"proto",
+		"apitypes",
+		"auth",
+		"config",
+		"database",
+		"errors",
+		"events",
+		"grpc",
+		"logger",
+		"redis",
+		"search",
+		"upload",
+		"utils",
+		"validation"
+	]
 }

@@ -14,7 +14,13 @@
 				"outputPath": "dist/apps/algolia-sync",
 				"main": "apps/algolia-sync/src/main.ts",
 				"tsConfig": "apps/algolia-sync/tsconfig.app.json",
-				"assets": [],
+				"assets": [
+					{
+						"glob": "**/*",
+						"input": "libs/proto/src/definitions",
+						"output": "proto"
+					}
+				],
 				"isolatedConfig": true,
 				"webpackConfig": "apps/algolia-sync/webpack.config.js"
 			},
@@ -27,7 +33,13 @@
 				"production": {
 					"optimization": true,
 					"extractLicenses": true,
-					"inspect": false
+					"inspect": false,
+					"fileReplacements": [
+						{
+							"replace": "apps/algolia-sync/src/environments/environment.ts",
+							"with": "apps/algolia-sync/src/environments/environment.prod.ts"
+						}
+					]
 				}
 			}
 		},
@@ -60,5 +72,20 @@
 		}
 	},
 	"tags": ["scope:backend", "type:app"],
-	"implicitDependencies": ["nest"]
+	"implicitDependencies": [
+		"proto",
+		"apitypes",
+		"auth",
+		"config",
+		"database",
+		"errors",
+		"events",
+		"grpc",
+		"logger",
+		"redis",
+		"search",
+		"upload",
+		"utils",
+		"validation"
+	]
 }

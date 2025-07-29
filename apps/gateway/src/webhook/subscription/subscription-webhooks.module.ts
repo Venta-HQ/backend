@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { GrpcInstanceModule } from '@app/grpc';
+import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { SubscriptionWebhooksController } from './subscription-webhooks.controller';
 
@@ -14,6 +15,5 @@ import { SubscriptionWebhooksController } from './subscription-webhooks.controll
 			urlEnvVar: 'USER_SERVICE_ADDRESS',
 		}),
 	],
-	providers: [],
 })
 export class SubscriptionWebhooksModule {}

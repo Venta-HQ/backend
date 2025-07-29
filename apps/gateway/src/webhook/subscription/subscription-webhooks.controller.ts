@@ -1,8 +1,11 @@
-import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes/lib/user/user.schemas';
-import GrpcInstance from '@app/grpc';
-import { RevenueCatSubscriptionData, SubscriptionCreatedResponse, USER_SERVICE_NAME } from '@app/proto/user';
+import {
+	RevenueCatHandledEventTypes,
+	RevenueCatInitialPurchaseEventData,
+	RevenueCatWebhookEvent,
+} from '@app/apitypes/lib/subscription/subscription.types';
+import { GrpcInstance } from '@app/grpc';
+import { RevenueCatSubscriptionData, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
 
 @Controller()
 export class SubscriptionWebhooksController {
@@ -13,23 +16,31 @@ export class SubscriptionWebhooksController {
 	@Post()
 	async handleSubscriptionCreated(@Body() body: RevenueCatWebhookEvent<RevenueCatInitialPurchaseEventData>) {
 		this.logger.log(`Handling RevenueCat Webhook Event: ${body.event.type}`);
+		let payload: RevenueCatSubscriptionData | undefined;
 		switch (body.event.type) {
 			case RevenueCatHandledEventTypes.INITIAL_PURCHASE:
-				this.client
-					.invoke('handleSubscriptionCreated', {
-						clerkUserId: body.event.subscriber_attributes.clerkUserId,
-						data: {
-							eventId: body.event.id,
-							productId: body.event.product_id,
-							transactionId: body.event.transaction_id,
-						},
-						providerId: body.event.app_user_id,
-					})
-					.subscribe();
+				payload = {
+					clerkUserId: body.event.subscriber_attributes.clerkUserId,
+					providerId: body.event.product_id,
+					data: {
+						transactionId: body.event.transaction_id,
+						eventId: body.event.id,
+						productId: body.event.product_id,
+					},
+				};
 				break;
 			default:
-				this.logger.warn('Unhandled Event Type');
-				throw new Error('Failure');
+				this.logger.warn(`Unhandled RevenueCat event type: ${body.event.type}`);
+		}
+		if (payload) {
+			await this.client.invoke('handleSubscriptionCreated', payload).subscribe({
+				error: (error: any) => {
+					this.logger.error('Failed to handle subscription created', error);
+				},
+				next: () => {
+					this.logger.log('Successfully handled subscription created');
+				},
+			});
 		}
 	}
 }

@@ -2,5 +2,9 @@
 	"protoc": {
 		"options": ["--proto_path=${workspaceRoot}/libs/proto/src/definitions"]
 	},
-	"nxConsole.generateAiAgentRules": true
+	"nxConsole.generateAiAgentRules": true,
+	"typescript.preferences.includePackageJsonAutoImports": "on",
+	"typescript.suggest.autoImports": true,
+	"typescript.preferences.includeCompletionsForModuleExports": true,
+	"typescript.preferences.includeCompletionsWithSnippetText": true
 }
