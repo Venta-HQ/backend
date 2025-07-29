@@ -1,0 +1,19 @@
+{
+	"name": "upload",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/upload/src",
+	"projectType": "library",
+	"tags": ["scope:shared", "type:utility", "framework:nestjs"],
+	"targets": {
+		"build": {
+			"executor": "@nx/js:tsc",
+			"outputs": ["{options.outputPath}"],
+			"options": {
+				"outputPath": "dist/libs/upload",
+				"main": "libs/upload/src/index.ts",
+				"tsConfig": "libs/upload/tsconfig.lib.json",
+				"assets": ["libs/upload/*.md"]
+			}
+		}
+	}
+}

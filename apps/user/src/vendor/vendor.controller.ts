@@ -1,7 +1,13 @@
-import { GrpcUserVendorDataSchema } from '@app/apitypes/lib/user/user.schemas';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { USER_SERVICE_NAME, UserVendorData, UserVendorsResponse } from '@app/proto/user';
+import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { AppError, ErrorCodes } from '@app/errors';
+import {
+	USER_SERVICE_NAME,
+	VendorCreateData,
+	VendorCreateResponse,
+	VendorUpdateData,
+	VendorUpdateResponse,
+} from '@app/proto/user';
+import { SchemaValidatorPipe } from '@app/validation';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';

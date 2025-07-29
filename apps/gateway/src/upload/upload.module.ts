@@ -1,4 +1,5 @@
-import { UploadModule as _UploadModule, ClerkModule } from '@app/nest/modules';
+import { ClerkModule } from '@app/auth';
+import { UploadModule as _UploadModule } from '@app/upload';
 import { Module } from '@nestjs/common';
 import { UploadController } from './upload.controller';
 

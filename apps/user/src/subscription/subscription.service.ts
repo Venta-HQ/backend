@@ -1,4 +1,4 @@
-import { PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/database';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, SubscriptionStatus } from '@prisma/client';
 

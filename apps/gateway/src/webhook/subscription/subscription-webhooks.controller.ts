@@ -1,11 +1,8 @@
-import {
-	RevenueCatHandledEventTypes,
-	RevenueCatInitialPurchaseEventData,
-	RevenueCatWebhookEvent,
-} from '@app/apitypes/lib/subscription/subscription.types';
-import GrpcInstance from '@app/nest/modules/grpc-instance/grpc-instance.service';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes/lib/user/user.schemas';
+import GrpcInstance from '@app/grpc';
+import { RevenueCatSubscriptionData, SubscriptionCreatedResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
+import { ClientGrpc } from '@nestjs/microservices';
 
 @Controller()
 export class SubscriptionWebhooksController {

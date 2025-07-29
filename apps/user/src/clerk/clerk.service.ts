@@ -1,4 +1,13 @@
-import { PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/database';
+import {
+	USER_SERVICE_NAME,
+	UserCreateData,
+	UserCreateResponse,
+	UserLookupByIdResponse,
+	UserLookupData,
+	UserUpdateData,
+	UserUpdateResponse,
+} from '@app/proto/user';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 

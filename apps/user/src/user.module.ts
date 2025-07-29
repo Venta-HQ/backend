@@ -1,5 +1,8 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
-import { ConfigModule, EventsModule, LoggerModule, PrismaModule } from '@app/nest/modules';
+import { ConfigModule } from '@app/config';
+import { PrismaModule } from '@app/database';
+import { ErrorHandlingModule } from '@app/errors';
+import { EventsModule } from '@app/events';
+import { LoggerModule } from '@app/logger';
 import { Module } from '@nestjs/common';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';

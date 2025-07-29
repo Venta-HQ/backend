@@ -1,5 +1,13 @@
-import { IEventsService, PrismaService } from '@app/nest/modules';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '@app/database';
+import { IEventsService } from '@app/events';
+import {
+	USER_SERVICE_NAME,
+	VendorCreateData,
+	VendorCreateResponse,
+	VendorUpdateData,
+	VendorUpdateResponse,
+} from '@app/proto/user';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {

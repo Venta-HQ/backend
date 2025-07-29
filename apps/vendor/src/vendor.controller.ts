@@ -3,8 +3,7 @@ import {
 	GrpcVendorLookupDataSchema,
 	GrpcVendorUpdateDataSchema,
 } from '@app/apitypes/lib/vendor/vendor.schemas';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { AppError, ErrorCodes } from '@app/errors';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -14,6 +13,7 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
+import { SchemaValidatorPipe } from '@app/validation';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';

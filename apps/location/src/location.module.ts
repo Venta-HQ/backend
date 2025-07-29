@@ -1,5 +1,8 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
-import { ConfigModule, LoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { ConfigModule } from '@app/config';
+import { PrismaModule } from '@app/database';
+import { ErrorHandlingModule } from '@app/errors';
+import { LoggerModule } from '@app/logger';
+import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';

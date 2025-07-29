@@ -7,10 +7,25 @@ import {
 	VendorLocationUpdateData,
 	VendorLocationUpdateDataSchema,
 } from '@app/apitypes';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
+import {
+	GrpcLocationCreateDataSchema,
+	GrpcLocationLookupDataSchema,
+	GrpcLocationUpdateDataSchema,
+} from '@app/apitypes/lib/location/location.schemas';
+import { AppError, ErrorCodes } from '@app/errors';
+import GrpcInstance from '@app/grpc';
+import {
+	LOCATION_SERVICE_NAME,
+	LocationCreateData,
+	LocationCreateResponse,
+	LocationLookupByIdResponse,
+	LocationLookupData,
+	LocationUpdateData,
+	LocationUpdateResponse,
+} from '@app/proto/location';
+import { SchemaValidatorPipe } from '@app/validation';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, UsePipes } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,

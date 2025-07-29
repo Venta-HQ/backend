@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { AuthGuard } from '@app/nest/guards';
-import { UploadService } from '@app/nest/modules';
+import { AuthGuard } from '@app/auth';
+import { AppError, ErrorCodes } from '@app/errors';
+import { UploadService } from '@app/upload';
 import { Controller, Logger, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 

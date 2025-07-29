@@ -1,13 +1,19 @@
-import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes/lib/location/location.schemas';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import {
+	GrpcLocationCreateDataSchema,
+	GrpcLocationLookupDataSchema,
+	GrpcLocationUpdateDataSchema,
+} from '@app/apitypes/lib/location/location.schemas';
+import { AppError, ErrorCodes } from '@app/errors';
 import {
 	LOCATION_SERVICE_NAME,
+	LocationCreateData,
+	LocationCreateResponse,
+	LocationLookupByIdResponse,
+	LocationLookupData,
 	LocationUpdateData,
 	LocationUpdateResponse,
-	VendorLocationRequest,
-	VendorLocationResponse,
 } from '@app/proto/location';
+import { SchemaValidatorPipe } from '@app/validation';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { LocationService } from './location.service';
@@ -19,7 +25,7 @@ export class LocationController {
 	constructor(private readonly locationService: LocationService) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateSchema))
+	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateDataSchema))
 	async updateLocation(data: LocationUpdateData): Promise<LocationUpdateResponse> {
 		try {
 			const location = await this.locationService.updateLocation(data);

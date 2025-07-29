@@ -1,5 +1,6 @@
 import { join } from 'path';
-import { ClerkModule, GrpcInstanceModule } from '@app/nest/modules';
+import { ClerkModule } from '@app/auth';
+import { GrpcInstanceModule } from '@app/grpc';
 import { VENDOR_PACKAGE_NAME, VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { Module } from '@nestjs/common';
 import { VendorController } from './vendor.controller';

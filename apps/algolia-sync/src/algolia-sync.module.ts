@@ -1,4 +1,6 @@
-import { AlgoliaModule, EventsModule, LoggerModule } from '@app/nest/modules';
+import { EventsModule } from '@app/events';
+import { LoggerModule } from '@app/logger';
+import { AlgoliaModule } from '@app/search';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AlgoliaSyncController } from './algolia-sync.controller';

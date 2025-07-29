@@ -1,5 +1,5 @@
-import { IEventsService } from '@app/nest/modules';
-import { Controller, Get, Inject } from '@nestjs/common';
+import { IEventsService } from '@app/events';
+import { Controller, Logger } from '@nestjs/common';
 
 @Controller('health')
 export class AlgoliaSyncController {

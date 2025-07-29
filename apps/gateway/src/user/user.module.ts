@@ -1,5 +1,6 @@
 import { join } from 'path';
-import { ClerkModule, GrpcInstanceModule } from '@app/nest/modules';
+import { ClerkModule } from '@app/auth';
+import { GrpcInstanceModule } from '@app/grpc';
 import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';

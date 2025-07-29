@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { Logger } from '@app/nest/modules';
+import { Logger } from '@app/logger';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';

@@ -1,9 +1,17 @@
 import { catchError } from 'rxjs';
-import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { AuthGuard } from '@app/nest/guards';
-import GrpcInstance from '@app/nest/modules/grpc-instance/grpc-instance.service';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { AuthGuard } from '@app/auth';
+import GrpcInstance from '@app/grpc';
+import {
+	USER_SERVICE_NAME,
+	UserCreateData,
+	UserCreateResponse,
+	UserLookupByIdResponse,
+	UserLookupData,
+	UserUpdateData,
+	UserUpdateResponse,
+} from '@app/proto/user';
 import { Controller, Get, Inject, Logger, Req, UseGuards } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
 
 @Controller()
 export class UserController {

@@ -1,5 +1,9 @@
 import { join } from 'path';
-import { ConfigModule, EventsModule, GrpcInstanceModule, LoggerModule, PrismaModule } from '@app/nest/modules';
+import { ConfigModule } from '@app/config';
+import { PrismaModule } from '@app/database';
+import { EventsModule } from '@app/events';
+import { GrpcInstanceModule } from '@app/grpc';
+import { LoggerModule } from '@app/logger';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { LocationGateway } from './gateways/location.gateway';
