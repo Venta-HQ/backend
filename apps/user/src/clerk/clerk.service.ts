@@ -1,13 +1,4 @@
 import { PrismaService } from '@app/database';
-import {
-	USER_SERVICE_NAME,
-	UserCreateData,
-	UserCreateResponse,
-	UserLookupByIdResponse,
-	UserLookupData,
-	UserUpdateData,
-	UserUpdateResponse,
-} from '@app/proto/user';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 
@@ -33,6 +24,7 @@ export class ClerkService {
 			});
 		} else {
 			this.logger.log(`User already exists with clerkId: ${id}`);
+			return null;
 		}
 	}
 

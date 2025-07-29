@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { Logger } from '@app/logger';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -19,7 +18,6 @@ async function bootstrap() {
 	});
 
 	// Error handling is configured in the ErrorHandlingModule
-	app.useLogger(app.get(Logger));
 
 	await app.startAllMicroservices();
 	await app.listen(configService.get('USER_SERVICE_PORT', 5000));

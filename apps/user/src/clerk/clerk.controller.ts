@@ -16,7 +16,7 @@ export class ClerkController {
 	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
 		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
 		const userData = await this.clerkService.handleUserCreated(data.id);
-		if (userData.id) {
+		if (userData && userData.id) {
 			await this.clerkService.createIntegration({
 				providerId: userData.clerkId,
 				userId: userData.id,

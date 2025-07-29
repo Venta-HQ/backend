@@ -5,6 +5,7 @@ import {
 } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { AppError, ErrorCodes } from '@app/errors';
 import {
+	Vendor,
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
 	VendorCreateResponse,
@@ -29,7 +30,27 @@ export class VendorController {
 	async lookupVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
-			return { vendor };
+			if (!vendor) {
+				return { vendor: undefined };
+			}
+
+			// Convert Prisma vendor to proto Vendor type
+			const protoVendor: Vendor = {
+				id: vendor.id,
+				lat: vendor.lat || 0,
+				long: vendor.long || 0,
+				name: vendor.name,
+				description: vendor.description || '',
+				phone: vendor.phone || '',
+				email: vendor.email || '',
+				website: vendor.website || '',
+				open: vendor.open,
+				primaryImage: vendor.primaryImage || '',
+				createdAt: vendor.createdAt,
+				updatedAt: vendor.updatedAt,
+			};
+
+			return { vendor: protoVendor };
 		} catch (e) {
 			this.logger.error(`Error looking up vendor with id`, {
 				id: data.id,

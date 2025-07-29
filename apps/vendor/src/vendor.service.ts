@@ -1,16 +1,8 @@
 import { PrismaService } from '@app/database';
 import { AppError, ErrorCodes } from '@app/errors';
 import { IEventsService } from '@app/events';
-import {
-	VENDOR_SERVICE_NAME,
-	VendorCreateData,
-	VendorCreateResponse,
-	VendorLookupByIdResponse,
-	VendorLookupData,
-	VendorUpdateData,
-	VendorUpdateResponse,
-} from '@app/proto/vendor';
-import { Injectable, Logger } from '@nestjs/common';
+import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {

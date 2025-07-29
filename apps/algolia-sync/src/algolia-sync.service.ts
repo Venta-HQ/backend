@@ -1,7 +1,7 @@
 import { IEventsService } from '@app/events';
 import { AlgoliaService } from '@app/search';
 import { RetryUtil } from '@app/utils';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class AlgoliaSyncService implements OnModuleInit {

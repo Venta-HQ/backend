@@ -1,17 +1,10 @@
-import {
-	GrpcLocationCreateDataSchema,
-	GrpcLocationLookupDataSchema,
-	GrpcLocationUpdateDataSchema,
-} from '@app/apitypes/lib/location/location.schemas';
+import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes/lib/location/location.schemas';
 import { AppError, ErrorCodes } from '@app/errors';
 import {
 	LOCATION_SERVICE_NAME,
-	LocationCreateData,
-	LocationCreateResponse,
-	LocationLookupByIdResponse,
-	LocationLookupData,
-	LocationUpdateData,
-	LocationUpdateResponse,
+	LocationUpdate,
+	VendorLocationRequest,
+	VendorLocationResponse,
 } from '@app/proto/location';
 import { SchemaValidatorPipe } from '@app/validation';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
@@ -25,11 +18,11 @@ export class LocationController {
 	constructor(private readonly locationService: LocationService) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateDataSchema))
-	async updateLocation(data: LocationUpdateData): Promise<LocationUpdateResponse> {
+	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateSchema))
+	async updateVendorLocation(data: LocationUpdate): Promise<any> {
 		try {
-			const location = await this.locationService.updateLocation(data);
-			return { location };
+			await this.locationService.updateLocation(data);
+			return { success: true };
 		} catch (e) {
 			this.logger.error(`Error updating location with data`, {
 				data,
@@ -40,15 +33,15 @@ export class LocationController {
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorLocationRequestSchema))
-	async getVendorLocation(data: VendorLocationRequest): Promise<VendorLocationResponse> {
+	async vendorLocations(data: VendorLocationRequest): Promise<VendorLocationResponse> {
 		try {
-			const location = await this.locationService.getVendorLocation(data.vendorId);
-			return { location };
+			// TODO: Implement actual vendor location lookup logic
+			return { vendors: [] };
 		} catch (e) {
-			this.logger.error(`Error getting vendor location with data`, {
+			this.logger.error(`Error getting vendor locations with data`, {
 				data,
 			});
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'get vendor location' });
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'get vendor locations' });
 		}
 	}
 }

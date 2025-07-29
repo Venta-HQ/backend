@@ -6,13 +6,13 @@ import { GrpcInstanceModule } from '@app/grpc';
 import { LoggerModule } from '@app/logger';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Module } from '@nestjs/common';
-import { LocationGateway } from './gateways/location.gateway';
+import { LocationWebsocketGateway } from './gateways/location.gateway';
 
 @Module({
 	imports: [
 		ConfigModule,
 		EventsModule,
-		LoggerModule.register({ appName: 'WebSocket Gateway', protocol: 'ws' }),
+		LoggerModule.register({ appName: 'WebSocket Gateway', protocol: 'http' }),
 		PrismaModule.register(),
 		GrpcInstanceModule.register<LocationServiceClient>({
 			protoPackage: LOCATION_PACKAGE_NAME,
@@ -23,6 +23,6 @@ import { LocationGateway } from './gateways/location.gateway';
 		}),
 	],
 	controllers: [],
-	providers: [LocationGateway],
+	providers: [LocationWebsocketGateway],
 })
 export class WebsocketGatewayModule {}
