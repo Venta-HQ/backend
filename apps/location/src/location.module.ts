@@ -5,7 +5,6 @@ import { LoggerModule } from '@app/logger';
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 import { LocationController } from './location.controller';
-import { LocationService } from './location.service';
 
 @Module({
 	controllers: [LocationController],
@@ -16,6 +15,5 @@ import { LocationService } from './location.service';
 		RedisModule,
 		ErrorHandlingModule,
 	],
-	providers: [LocationService],
 })
 export class LocationModule {}

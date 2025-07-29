@@ -1,27 +1,34 @@
-import { SignedWebhookGuard } from '@app/auth';
+import { GrpcInstance } from '@app/grpc';
+import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
-import { Body, Controller, Logger, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 
 @Controller()
 export class ClerkWebhooksController {
 	private readonly logger = new Logger(ClerkWebhooksController.name);
 
+	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
+
 	@Post()
-	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
 	handleClerkEvent(@Body() event: UserWebhookEvent) {
-		this.logger.log(`Handling Clerk Webhook Event: ${(event as any).type}`);
-		switch ((event as any).type) {
+		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`);
+		switch (event.type) {
 			case 'user.created':
-				// Handle user creation
-				break;
-			case 'user.updated':
-				// Handle user updates
+				if (event.data?.id) {
+					return this.client.invoke('handleClerkUserCreated', {
+						id: event.data.id,
+					});
+				}
 				break;
 			case 'user.deleted':
-				// Handle user deletion
+				if (event.data?.id) {
+					return this.client.invoke('handleClerkUserDeleted', {
+						id: event.data.id,
+					});
+				}
 				break;
 			default:
-				this.logger.warn(`Unhandled Clerk event type: ${(event as any).type}`);
+				this.logger.warn('Unhandled Event Type');
 		}
 	}
 }
