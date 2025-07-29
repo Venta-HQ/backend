@@ -1,4 +1,6 @@
 {
 	"extends": "./tsconfig.base.json",
-	"files": []
+	"files": [],
+	"include": ["apps/**/*.ts", "libs/**/*.ts"],
+	"exclude": ["node_modules", "dist", "tmp"]
 }
