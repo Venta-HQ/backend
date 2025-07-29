@@ -28,7 +28,7 @@ export class VendorController {
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorLookupDataSchema))
 	async lookupVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		try {
-			const vendor = await this.vendorService.lookupVendorById(data.id);
+			const vendor = await this.vendorService.getVendorById(data.id);
 			return { vendor };
 		} catch (e) {
 			this.logger.error(`Error looking up vendor with id`, {
@@ -56,8 +56,8 @@ export class VendorController {
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {
-			const vendor = await this.vendorService.updateVendor(data);
-			return { vendor };
+			await this.vendorService.updateVendor(data.id, data.userId, data);
+			return { message: 'Vendor updated successfully', success: true };
 		} catch (e) {
 			this.logger.error(`Error updating vendor with data`, {
 				data,

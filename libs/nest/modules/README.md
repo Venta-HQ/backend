@@ -100,29 +100,79 @@ import { GrpcInstanceModule } from '@libs/nest/modules';
 export class AppModule {}
 ```
 
-### LoggerModule
+## LoggerModule
 
-Provides structured logging with Loki integration and request context tracking.
+A unified logging module that provides consistent logging across HTTP and gRPC protocols.
 
-**Usage:**
+### Features
+
+- **Unified Logger**: Single `Logger` service that works for both HTTP and gRPC
+- **Automatic Protocol Detection**: Automatically handles request IDs for both HTTP and gRPC
+- **Structured Logging**: Uses Pino for high-performance structured logging
+- **Loki Integration**: Automatic log aggregation with Grafana Loki
+- **Development Support**: Pretty printing in development environment
+- **Request Tracing**: Automatic request ID tracking across async operations
+
+### Usage
 
 ```typescript
-import { GrpcLoggerModule, HttpLoggerModule } from '@libs/nest/modules';
+import { LoggerModule } from '@app/nest/modules';
 
 @Module({
 	imports: [
-		GrpcLoggerModule.register('service-name'), // For gRPC services
-		HttpLoggerModule.register('service-name'), // For HTTP services
+		// For HTTP services
+		LoggerModule.register({ appName: 'MyApp', protocol: 'http' }),
+
+		// For gRPC services
+		LoggerModule.register({ appName: 'MyApp', protocol: 'grpc' }),
+
+		// Auto-detect (defaults to gRPC)
+		LoggerModule.register({ appName: 'MyApp', protocol: 'auto' }),
+
+		// Simple string registration (auto-detect)
+		LoggerModule.register('MyApp'),
 	],
 })
 export class AppModule {}
 ```
 
-**Required Environment Variables:**
+### Using the Logger
 
-- `LOKI_URL`
-- `LOKI_USERNAME` (optional)
-- `LOKI_PASSWORD` (optional)
+```typescript
+import { Logger } from '@app/nest/modules';
+
+@Injectable()
+export class MyService {
+	constructor(private readonly logger: Logger) {}
+
+	async doSomething() {
+		// Automatically includes request ID for both HTTP and gRPC
+		this.logger.log('Operation started', 'MyService');
+
+		// With additional context
+		this.logger.error('Something went wrong', 'MyService', {
+			userId: '123',
+			operation: 'doSomething',
+		});
+	}
+}
+```
+
+### Configuration
+
+The module automatically configures:
+
+- **HTTP**: Request ID handling via headers (`x-request-id`)
+- **gRPC**: Request ID handling via metadata and interceptors
+- **Loki**: Log aggregation with configurable labels
+- **Development**: Pretty printing with colorized output
+
+### Environment Variables
+
+- `LOKI_URL`: Loki server URL
+- `LOKI_USERNAME`: Loki username
+- `LOKI_PASSWORD`: Loki password
+- `NODE_ENV`: Environment (production/development)
 
 ### PrismaModule
 
@@ -146,7 +196,7 @@ export class AppModule {}
 
 ### RedisModule
 
-Provides caching and session storage using Redis.
+Provides Redis caching and session storage capabilities.
 
 **Usage:**
 
@@ -161,12 +211,11 @@ export class AppModule {}
 
 **Required Environment Variables:**
 
-- `REDIS_URL`
-- `REDIS_PASSWORD`
+- `REDIS_URL` (defaults to `redis://localhost:6379`)
 
 ### UploadModule
 
-Handles file uploads and management using Cloudinary.
+Handles file uploads using Cloudinary.
 
 **Usage:**
 
@@ -181,9 +230,9 @@ export class AppModule {}
 
 **Required Environment Variables:**
 
+- `CLOUDINARY_CLOUD_NAME`
 - `CLOUDINARY_API_KEY`
 - `CLOUDINARY_API_SECRET`
-- `CLOUDINARY_CLOUD_NAME`
 
 ## Global Modules
 

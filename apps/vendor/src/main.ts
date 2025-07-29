@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { GrpcLogger } from '@app/nest/modules';
+import { Logger } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -12,14 +12,14 @@ async function bootstrap() {
 	app.connectMicroservice<MicroserviceOptions>({
 		options: {
 			package: 'vendor',
-			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
+			protoPath: join(__dirname, `../../libs/proto/src/definitions/vendor.proto`),
 			url: configService.get('VENDOR_SERVICE_URL', 'localhost:5001'),
 		},
 		transport: Transport.GRPC,
 	});
 
 	// Error handling is configured in the ErrorHandlingModule
-	app.useLogger(app.get(GrpcLogger));
+	app.useLogger(app.get(Logger));
 
 	await app.startAllMicroservices();
 	await app.listen(configService.get('VENDOR_SERVICE_PORT', 5001));

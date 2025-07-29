@@ -1,6 +1,5 @@
 import { join } from 'path';
-import { GrpcLogger } from '@app/nest/modules';
-import { LOCATION_PACKAGE_NAME } from '@app/proto/location';
+import { Logger } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -12,18 +11,18 @@ async function bootstrap() {
 
 	app.connectMicroservice<MicroserviceOptions>({
 		options: {
-			package: LOCATION_PACKAGE_NAME,
-			protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-			url: configService.get('LOCATION_SERVICE_URL', 'localhost:5002'),
+			package: 'location',
+			protoPath: join(__dirname, `../../libs/proto/src/definitions/location.proto`),
+			url: configService.get('LOCATION_SERVICE_URL', 'localhost:5003'),
 		},
 		transport: Transport.GRPC,
 	});
 
 	// Error handling is configured in the ErrorHandlingModule
-	app.useLogger(app.get(GrpcLogger));
+	app.useLogger(app.get(Logger));
 
 	await app.startAllMicroservices();
-	await app.listen(configService.get('LOCATION_SERVICE_PORT', 5002));
+	await app.listen(configService.get('LOCATION_SERVICE_PORT', 5003));
 }
 
 bootstrap();

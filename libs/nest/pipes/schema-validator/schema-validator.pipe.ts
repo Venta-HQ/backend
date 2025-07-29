@@ -1,6 +1,6 @@
 import { ZodError, ZodSchema } from 'zod';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { ArgumentMetadata, Logger, PipeTransform } from '@nestjs/common';
+import { AppError, ErrorCodes } from '../../errors';
 
 export class SchemaValidatorPipe implements PipeTransform {
 	private readonly logger = new Logger(SchemaValidatorPipe.name);

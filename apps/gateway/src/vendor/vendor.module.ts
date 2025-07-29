@@ -10,7 +10,7 @@ import { VendorController } from './vendor.controller';
 		ClerkModule.register(),
 		GrpcInstanceModule.register<VendorServiceClient>({
 			protoPackage: VENDOR_PACKAGE_NAME,
-			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
+			protoPath: join(__dirname, `../../libs/proto/src/definitions/vendor.proto`),
 			provide: VENDOR_SERVICE_NAME,
 			serviceName: VENDOR_SERVICE_NAME,
 			urlEnvVar: 'VENDOR_SERVICE_ADDRESS',

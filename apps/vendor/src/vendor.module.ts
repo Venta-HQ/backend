@@ -1,6 +1,5 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
-import { ConfigModule, EventsModule, GrpcLoggerModule, PrismaModule } from '@app/nest/modules';
-import { RequestContextService } from '@app/nest/modules/logger/request-context.service';
+import { ConfigModule, EventsModule, LoggerModule, PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
@@ -9,11 +8,11 @@ import { VendorService } from './vendor.service';
 	controllers: [VendorController],
 	imports: [
 		ConfigModule,
-		GrpcLoggerModule.register('Vendor Microservice'),
+		LoggerModule.register({ appName: 'Vendor Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 		EventsModule,
 		ErrorHandlingModule,
 	],
-	providers: [VendorService, RequestContextService],
+	providers: [VendorService],
 })
 export class VendorModule {}

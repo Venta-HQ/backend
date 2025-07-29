@@ -12,7 +12,8 @@ export default defineConfig({
 			'@app/nest/guards': resolve(__dirname, 'libs/nest/guards'),
 			'@app/nest/modules': resolve(__dirname, 'libs/nest/modules'),
 			'@app/nest/pipes': resolve(__dirname, 'libs/nest/pipes'),
-			'@app/proto': resolve(__dirname, 'libs/proto/src'),
+			'@app/nest/utils': resolve(__dirname, 'libs/nest/utils'),
+			'@app/proto': resolve(__dirname, 'libs/proto/src/lib'),
 		},
 	},
 	test: {

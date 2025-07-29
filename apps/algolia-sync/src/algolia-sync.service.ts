@@ -1,16 +1,22 @@
 import { AlgoliaService, IEventsService } from '@app/nest/modules';
+import { RetryUtil } from '@app/nest/utils';
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class AlgoliaSyncService implements OnModuleInit {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
-	private readonly maxRetries = 3;
-	private readonly retryDelay = 1000; // 1 second
+	private readonly retryUtil: RetryUtil;
 
 	constructor(
 		private readonly algoliaService: AlgoliaService,
 		@Inject('EventsService') private readonly eventsService: IEventsService,
-	) {}
+	) {
+		this.retryUtil = new RetryUtil({
+			maxRetries: 3,
+			retryDelay: 1000,
+			logger: this.logger,
+		});
+	}
 
 	async onModuleInit() {
 		await this.setupEventListeners();
@@ -42,7 +48,7 @@ export class AlgoliaSyncService implements OnModuleInit {
 	}
 
 	private async handleVendorCreated(vendor: any) {
-		await this.retryOperation(
+		await this.retryUtil.retryOperation(
 			() =>
 				this.algoliaService.createObject('vendor', {
 					...vendor,
@@ -60,7 +66,7 @@ export class AlgoliaSyncService implements OnModuleInit {
 	}
 
 	private async handleVendorUpdated(vendor: any) {
-		await this.retryOperation(
+		await this.retryUtil.retryOperation(
 			() =>
 				this.algoliaService.updateObject('vendor', vendor.id, {
 					...vendor,
@@ -78,29 +84,9 @@ export class AlgoliaSyncService implements OnModuleInit {
 	}
 
 	private async handleVendorDeleted(vendor: any) {
-		await this.retryOperation(
+		await this.retryUtil.retryOperation(
 			() => this.algoliaService.deleteObject('vendor', vendor.id),
 			`Deleting vendor from Algolia: ${vendor.id}`,
 		);
-	}
-
-	private async retryOperation<T>(operation: () => Promise<T>, description: string, retryCount = 0): Promise<T> {
-		try {
-			this.logger.log(description);
-			return await operation();
-		} catch (error) {
-			if (retryCount < this.maxRetries) {
-				const delay = this.retryDelay * Math.pow(2, retryCount); // Exponential backoff
-				this.logger.warn(
-					`${description} failed (attempt ${retryCount + 1}/${this.maxRetries + 1}), retrying in ${delay}ms:`,
-					error,
-				);
-				await new Promise((resolve) => setTimeout(resolve, delay));
-				return this.retryOperation(operation, description, retryCount + 1);
-			} else {
-				this.logger.error(`${description} failed after ${this.maxRetries + 1} attempts:`, error);
-				throw error;
-			}
-		}
 	}
 }

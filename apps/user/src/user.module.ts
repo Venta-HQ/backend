@@ -1,5 +1,5 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
-import { ConfigModule, EventsModule, GrpcLoggerModule, PrismaModule } from '@app/nest/modules';
+import { ConfigModule, EventsModule, LoggerModule, PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
@@ -13,7 +13,7 @@ import { VendorService } from './vendor/vendor.service';
 	imports: [
 		ConfigModule,
 		EventsModule,
-		GrpcLoggerModule.register('User Microservice'),
+		LoggerModule.register({ appName: 'User Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 		ErrorHandlingModule,
 	],
