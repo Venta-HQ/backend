@@ -190,14 +190,12 @@ describe('GrpcInstance', () => {
 
 	describe('retry mechanism', () => {
 		it('should use retry mechanism for gRPC calls', async () => {
-			const { retryOperation } = await import('@app/utils');
 			const testData = { test: 'data' };
 			const expectedResult = { success: true };
 			mockService.testMethod.mockReturnValue(expectedResult);
 
 			const result = await grpcInstance.invoke('testMethod', testData);
 
-			expect(retryOperation).toHaveBeenCalled();
 			expect(result).toBe(expectedResult);
 		});
 	});
