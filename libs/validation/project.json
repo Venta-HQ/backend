@@ -14,6 +14,31 @@
 				"tsConfig": "libs/validation/tsconfig.lib.json",
 				"assets": ["libs/validation/*.md"]
 			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["libs/validation/**/*.ts"]
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/libs/validation"
+			}
+		},
+		"typecheck": {
+			"executor": "@nx/js:tsc",
+			"outputs": [],
+			"options": {
+				"outputPath": "dist/libs/validation",
+				"main": "libs/validation/src/index.ts",
+				"tsConfig": "libs/validation/tsconfig.lib.json",
+				"noEmit": true
+			}
 		}
 	}
 }

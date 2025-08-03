@@ -14,6 +14,31 @@
 				"tsConfig": "libs/database/tsconfig.lib.json",
 				"assets": ["libs/database/*.md"]
 			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["libs/database/**/*.ts"]
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/libs/database"
+			}
+		},
+		"typecheck": {
+			"executor": "@nx/js:tsc",
+			"outputs": [],
+			"options": {
+				"outputPath": "dist/libs/database",
+				"main": "libs/database/src/index.ts",
+				"tsConfig": "libs/database/tsconfig.lib.json",
+				"noEmit": true
+			}
 		}
 	}
 }

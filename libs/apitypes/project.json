@@ -25,6 +25,16 @@
 		"lint": {
 			"executor": "@nx/eslint:lint",
 			"outputs": ["{options.outputFile}"]
+		},
+		"typecheck": {
+			"executor": "@nx/js:tsc",
+			"outputs": [],
+			"options": {
+				"outputPath": "dist/libs/apitypes",
+				"main": "libs/apitypes/src/index.ts",
+				"tsConfig": "libs/apitypes/tsconfig.lib.json",
+				"noEmit": true
+			}
 		}
 	},
 	"tags": ["scope:shared", "type:data"]

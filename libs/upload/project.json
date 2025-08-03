@@ -14,6 +14,31 @@
 				"tsConfig": "libs/upload/tsconfig.lib.json",
 				"assets": ["libs/upload/*.md"]
 			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["libs/upload/**/*.ts"]
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/libs/upload"
+			}
+		},
+		"typecheck": {
+			"executor": "@nx/js:tsc",
+			"outputs": [],
+			"options": {
+				"outputPath": "dist/libs/upload",
+				"main": "libs/upload/src/index.ts",
+				"tsConfig": "libs/upload/tsconfig.lib.json",
+				"noEmit": true
+			}
 		}
 	}
 }

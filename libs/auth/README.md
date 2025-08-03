@@ -8,16 +8,16 @@ The auth library handles user authentication, authorization, and webhook verific
 
 ## Features
 
-- **Authentication Guards**: Protect routes by verifying user authentication
-- **Webhook Verification**: Validate signed webhooks from external services
-- **Clerk Integration**: User management and authentication services
-- **Authorization**: Role-based access control and user verification
+- **Authentication Guards**: Protect routes by verifying user authentication via Clerk tokens
+- **Webhook Verification**: Validate signed webhooks from external services using Svix
+- **Clerk Integration**: Token verification and user session management
+- **Redis Caching**: Efficient user ID caching to reduce database queries
 
 ## Usage
 
 ### Authentication Guard
 
-Protect routes by applying the authentication guard to controllers or individual endpoints.
+Protect routes by applying the authentication guard to controllers or individual endpoints. The guard verifies Clerk session tokens and caches user IDs in Redis.
 
 ```typescript
 import { AuthGuard } from '@app/auth';
@@ -32,6 +32,13 @@ export class ProtectedController {
 	}
 }
 ```
+
+The guard automatically:
+
+- Extracts the Bearer token from the Authorization header
+- Verifies the token using Clerk
+- Caches the internal user ID in Redis for 1 hour
+- Attaches the user ID to the request object
 
 ### Webhook Verification
 
@@ -52,9 +59,11 @@ export class WebhookController {
 }
 ```
 
-### User Management
+The guard verifies the webhook signature using Svix and the provided secret.
 
-Access user information and manage authentication state through the Clerk service.
+### Token Verification
+
+Use the Clerk service to verify session tokens and extract user information.
 
 ```typescript
 import { ClerkService } from '@app/auth';
@@ -64,14 +73,41 @@ import { Injectable } from '@nestjs/common';
 export class UserService {
 	constructor(private readonly clerkService: ClerkService) {}
 
-	async getUserInfo(userId: string) {
-		return await this.clerkService.getUser(userId);
+	async verifyUserToken(token: string) {
+		try {
+			const tokenContents = await this.clerkService.verifyToken(token);
+			return tokenContents;
+		} catch (error) {
+			throw new Error('Invalid or expired token');
+		}
 	}
 }
 ```
 
+### Module Registration
+
+Register the Clerk module in your application to enable authentication services.
+
+```typescript
+import { ClerkModule } from '@app/auth';
+import { Module } from '@nestjs/common';
+
+@Module({
+	imports: [ClerkModule.register()],
+	// ...
+})
+export class AppModule {}
+```
+
 ## Dependencies
 
-- Clerk SDK for user management
+- Clerk SDK for token verification
+- Svix for webhook signature verification
+- Redis for user ID caching
 - NestJS for framework integration
-- JWT for token handling
+- Prisma for database access
+
+## Environment Variables
+
+- `CLERK_SECRET_KEY`: Clerk secret key for token verification
+- `CLERK_WEBHOOK_SECRET`: Secret for webhook signature verification

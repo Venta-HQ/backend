@@ -14,6 +14,31 @@
 				"tsConfig": "libs/utils/tsconfig.lib.json",
 				"assets": ["libs/utils/*.md"]
 			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"],
+			"options": {
+				"lintFilePatterns": ["libs/utils/**/*.ts"]
+			}
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/libs/utils"
+			}
+		},
+		"typecheck": {
+			"executor": "@nx/js:tsc",
+			"outputs": [],
+			"options": {
+				"outputPath": "dist/libs/utils",
+				"main": "libs/utils/src/index.ts",
+				"tsConfig": "libs/utils/tsconfig.lib.json",
+				"noEmit": true
+			}
 		}
 	}
 }

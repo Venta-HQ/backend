@@ -4,69 +4,49 @@ This library provides general utility functions and helper methods for the Venta
 
 ## Overview
 
-The utils library contains common utility functions, retry mechanisms, and helper methods that are used across multiple services. It provides reusable functionality to reduce code duplication and improve maintainability.
+The utils library contains common utility functions and retry mechanisms that are used across multiple services. It provides reusable functionality to reduce code duplication and improve maintainability.
 
 ## Features
 
 - **Retry Utilities**: Robust retry mechanisms for external service calls
-- **Helper Functions**: Common utility functions used across services
-- **Error Handling**: Utility functions for error handling and recovery
-- **Data Processing**: Common data transformation and processing utilities
-- **Validation Helpers**: Utility functions for data validation
+- **Configurable Retry Options**: Customizable retry behavior with exponential backoff
+- **Error Handling**: Structured error logging and retry tracking
+- **Instance and Static Methods**: Both class-based and static utility methods
 
 ## Usage
 
 ### Retry Mechanisms
 
-Use retry utilities to handle transient failures in external service calls.
+Use retry utilities to handle transient failures in external service calls with configurable retry behavior.
+
+#### Instance-based Usage
 
 ```typescript
 import { RetryUtil } from '@app/utils';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class PaymentService {
-	async processPayment(paymentData: PaymentData) {
-		return await RetryUtil.withRetry(
-			async () => {
-				return await this.paymentGateway.charge(paymentData);
-			},
-			{
-				maxAttempts: 3,
-				delayMs: 1000,
-				backoffMultiplier: 2,
-				retryCondition: (error) => {
-					// Retry on network errors or 5xx responses
-					return error.code === 'NETWORK_ERROR' || (error.status >= 500 && error.status < 600);
-				},
-			},
-		);
+	private readonly retryUtil: RetryUtil;
+
+	constructor() {
+		this.retryUtil = new RetryUtil({
+			maxRetries: 3,
+			retryDelay: 1000,
+			backoffMultiplier: 2,
+			logger: new Logger(PaymentService.name),
+		});
 	}
 
-	async sendWebhook(url: string, data: any) {
-		return await RetryUtil.withRetry(
-			async () => {
-				const response = await fetch(url, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(data),
-				});
-
-				if (!response.ok) {
-					throw new Error(`Webhook failed: ${response.status}`);
-				}
-
-				return response.json();
-			},
-			{ maxAttempts: 5, delayMs: 2000 },
-		);
+	async processPayment(paymentData: PaymentData) {
+		return await this.retryUtil.retryOperation(async () => {
+			return await this.paymentGateway.charge(paymentData);
+		}, `Processing payment for ${paymentData.amount}`);
 	}
 }
 ```
 
-### Helper Functions
-
-Import common utility functions to avoid code duplication.
+#### Static Method Usage
 
 ```typescript
 import { RetryUtil } from '@app/utils';
@@ -74,8 +54,7 @@ import { RetryUtil } from '@app/utils';
 @Injectable()
 export class EmailService {
 	async sendEmail(to: string, subject: string, content: string) {
-		// Use retry utility for email sending
-		return await RetryUtil.withRetry(
+		return await RetryUtil.retry(
 			async () => {
 				return await this.emailProvider.send({
 					to,
@@ -83,24 +62,33 @@ export class EmailService {
 					content,
 				});
 			},
+			`Sending email to ${to}`,
 			{
-				maxAttempts: 3,
-				delayMs: 5000,
-				retryCondition: (error) => error.code === 'RATE_LIMIT',
+				maxRetries: 3,
+				retryDelay: 5000,
+				backoffMultiplier: 1.5,
 			},
 		);
-	}
-
-	async validateEmail(email: string): Promise<boolean> {
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
 	}
 }
 ```
 
-### Error Recovery
+### Retry Configuration
 
-Use utility functions for graceful error handling and recovery.
+Configure retry behavior with the following options:
+
+```typescript
+interface RetryOptions {
+	maxRetries?: number; // Default: 3
+	retryDelay?: number; // Default: 1000ms
+	backoffMultiplier?: number; // Default: 2 (exponential backoff)
+	logger?: Logger; // Default: new Logger(RetryUtil.name)
+}
+```
+
+### Error Handling
+
+The retry utility provides structured logging and error handling:
 
 ```typescript
 import { RetryUtil } from '@app/utils';
@@ -109,30 +97,56 @@ import { RetryUtil } from '@app/utils';
 export class DataSyncService {
 	async syncData() {
 		try {
-			return await RetryUtil.withRetry(
+			return await RetryUtil.retry(
 				async () => {
 					const data = await this.externalApi.fetchData();
 					await this.processData(data);
 					return data;
 				},
+				'Fetching and processing external data',
 				{
-					maxAttempts: 3,
-					delayMs: 1000,
-					onRetry: (attempt, error) => {
-						this.logger.warn(`Sync attempt ${attempt} failed`, { error: error.message });
-					},
+					maxRetries: 3,
+					retryDelay: 1000,
 				},
 			);
 		} catch (error) {
+			// Handle final failure after all retries
 			this.logger.error('Data sync failed after all retries', { error: error.message });
-			// Fallback to cached data or default values
 			return await this.getCachedData();
 		}
 	}
 }
 ```
 
+### Real-world Example
+
+Here's how the retry utility is used in the Algolia sync service:
+
+```typescript
+import { RetryUtil } from '@app/utils';
+
+@Injectable()
+export class AlgoliaSyncService {
+	private readonly retryUtil: RetryUtil;
+
+	constructor() {
+		this.retryUtil = new RetryUtil({
+			logger: this.logger,
+			maxRetries: 3,
+			retryDelay: 1000,
+		});
+	}
+
+	async handleVendorCreated(vendor: any) {
+		await this.retryUtil.retryOperation(
+			() => this.algoliaService.createObject('vendor', vendor),
+			`Creating vendor in Algolia: ${vendor.id}`,
+		);
+	}
+}
+```
+
 ## Dependencies
 
+- NestJS Logger for structured logging
 - TypeScript for type safety
-- NestJS for framework integration

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppError } from '../../errors';
+import { AppError } from '@app/errors';
 import { AuthGuard } from './auth.guard';
 
 // Mock dependencies
