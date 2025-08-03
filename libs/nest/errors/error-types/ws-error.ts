@@ -1,25 +1,25 @@
 import { status } from '@grpc/grpc-js';
 import { WsException } from '@nestjs/websockets';
-import ERROR_OBJECT, { ERROR_CODES } from '../errorcodes';
+import { ErrorCodes } from '../errorcodes';
 
 export class WsError extends WsException {
 	readonly code;
 	readonly data;
 	constructor(
-		code: keyof typeof ERROR_CODES,
+		code: keyof typeof ErrorCodes,
 		params?: Record<string, any>,
 		overrideMessage?: string,
 		data?: { [K: string]: any },
 	) {
-		if (!Object.keys(ERROR_OBJECT).includes(code)) {
+		if (!Object.keys(ErrorCodes).includes(code)) {
 			super({
 				code: status.UNKNOWN,
 				data: data ?? null,
-				message: 'An unknown error occured',
+				message: 'An unknown error occurred',
 			});
 		} else {
-			const { message } = ERROR_OBJECT[code];
-			let _message = message;
+			const message = ErrorCodes[code];
+			let _message: string = message;
 			if (params) {
 				Object.keys(params).forEach((key) => {
 					let val = params[key];
@@ -29,7 +29,7 @@ export class WsError extends WsException {
 						val = 'undefined';
 					}
 
-					_message = _message.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val);
+					_message = _message.replace(new RegExp('\\{' + key + '\\}', 'g'), String(val));
 				});
 			}
 

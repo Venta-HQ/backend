@@ -1,4 +1,5 @@
 import { verifyToken } from '@clerk/clerk-sdk-node';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
@@ -15,7 +16,7 @@ export class ClerkService {
 				secretKey: this.secretKey,
 			});
 		} catch (error) {
-			throw new Error('Invalid or expired token');
+			throw AppError.authentication(ErrorCodes.INVALID_TOKEN);
 		}
 	}
 }

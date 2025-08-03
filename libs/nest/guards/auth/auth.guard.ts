@@ -19,15 +19,15 @@ export class AuthGuard implements CanActivate {
 		// Extract token from Authorization header (format: Bearer <token>)
 		const authHeader = request.headers['authorization'];
 
-		if (!authHeader) {
-			throw new HttpError('API-00008');
-		}
+						if (!authHeader) {
+					throw new HttpError('UNAUTHORIZED');
+				}
 
 		const token = authHeader?.split(' ')[1];
 
-		if (!token) {
-			throw new HttpError('API-00008');
-		}
+						if (!token) {
+					throw new HttpError('UNAUTHORIZED');
+				}
 
 		try {
 			// Use Clerk to verify the session token
@@ -46,9 +46,9 @@ export class AuthGuard implements CanActivate {
 					},
 				});
 
-				if (!internalUser) {
-					throw new HttpError('API-00008');
-				}
+												if (!internalUser) {
+									throw new HttpError('UNAUTHORIZED');
+								}
 
 				// Cache the result
 				await this.redis.set(`user:${tokenContents.sub}`, internalUserId, 'EX', 3600); // 3600 = 1hr
@@ -61,7 +61,7 @@ export class AuthGuard implements CanActivate {
 
 			return true; // Allow access
 		} catch (error) {
-			throw new HttpError('API-00008');
+			throw new HttpError('UNAUTHORIZED');
 		}
 	}
 }

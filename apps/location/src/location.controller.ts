@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { GrpcError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { IEventsService, PrismaService } from '@app/nest/modules';
 import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -45,7 +45,7 @@ const calculateBoundingBoxDimensions = async ({
 		};
 	}
 
-	throw new Error('Unable to get visible bounds');
+	throw AppError.validation('Missing location bounds', { neLocation, swLocation });
 };
 
 @Controller()
@@ -76,12 +76,12 @@ export class LocationController {
 				timestamp: new Date().toISOString(),
 			});
 		} catch (e) {
-			if (e instanceof Prisma.PrismaClientKnownRequestError) {
-				if (e.code === 'P2025') {
-					throw new GrpcError('API-00003', { entity: 'Vendor' });
-				}
+					if (e instanceof Prisma.PrismaClientKnownRequestError) {
+			if (e.code === 'P2025') {
+				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.entityId });
 			}
-			throw new GrpcError('API-00006', { entity: 'Vendor' });
+		}
+		throw AppError.internal('Could not update vendor location', { entity: 'Vendor', originalError: e });
 		}
 	}
 
@@ -116,7 +116,7 @@ export class LocationController {
 			};
 		} catch (e) {
 			this.logger.error(e);
-			throw new GrpcError('API-00007', { operation: 'GEO Search' });
+			throw AppError.internal('GEO Search operation failed', { operation: 'GEO Search', originalError: e });
 		}
 	}
 }

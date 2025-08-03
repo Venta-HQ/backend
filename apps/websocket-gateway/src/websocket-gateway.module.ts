@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { WsErrorFilter } from '@app/nest/filters';
 import { EventsModule, HealthModule, HttpLoggerModule, RedisModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -12,6 +13,7 @@ import { ConnectionManagerService } from './services/connection-manager.service'
 @Module({
 	imports: [
 		ConfigModule.forRoot(),
+		ErrorHandlingModule,
 		RedisModule,
 		EventsModule,
 		HealthModule.forRoot({

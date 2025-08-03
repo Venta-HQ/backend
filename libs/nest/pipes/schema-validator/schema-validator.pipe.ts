@@ -17,7 +17,7 @@ export class SchemaValidatorPipe implements PipeTransform {
 					path: err.path.join('.'),
 				}));
 				throw new HttpError(
-					'API-00004',
+					'VALIDATION_ERROR',
 					{
 						message: 'Validation failed',
 					},
@@ -25,7 +25,7 @@ export class SchemaValidatorPipe implements PipeTransform {
 					formattedErrors,
 				);
 			} else {
-				throw new HttpError('API-00004', {
+				throw new HttpError('VALIDATION_ERROR', {
 					message: 'Validation failed',
 				});
 			}

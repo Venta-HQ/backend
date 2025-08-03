@@ -1,5 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { ClerkService } from './clerk.service';
 
 @Module({})
@@ -16,7 +17,7 @@ export class ClerkModule {
 					provide: ClerkService,
 					useFactory: (configService: ConfigService) => {
 						if (!configService.get('CLERK_SECRET_KEY')) {
-							throw new Error('CLERK_SECRET_KEY required');
+							throw AppError.internal('CLERK_SECRET_KEY required');
 						}
 
 						return new ClerkService(configService.get('CLERK_SECRET_KEY') ?? '');

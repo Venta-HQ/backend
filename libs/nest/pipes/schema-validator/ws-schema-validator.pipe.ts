@@ -17,7 +17,7 @@ export class WsSchemaValidatorPipe implements PipeTransform {
 					path: err.path.join('.'),
 				}));
 				throw new WsError(
-					'API-00004',
+					'VALIDATION_ERROR',
 					{
 						message: 'Validation failed',
 					},
@@ -25,7 +25,7 @@ export class WsSchemaValidatorPipe implements PipeTransform {
 					formattedErrors,
 				);
 			} else {
-				throw new WsError('API-00004', {
+				throw new WsError('VALIDATION_ERROR', {
 					message: 'Validation failed',
 				});
 			}

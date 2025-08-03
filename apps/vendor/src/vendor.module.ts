@@ -1,5 +1,6 @@
 import { RequestContextService } from 'libs/nest/modules/logger/request-context.service';
 import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { VendorController } from './vendor.controller';
@@ -9,6 +10,7 @@ import { VendorService } from './vendor.service';
 	controllers: [VendorController],
 	imports: [
 		ConfigModule.forRoot(),
+		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({
 			serviceName: 'vendor-service',

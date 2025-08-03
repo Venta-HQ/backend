@@ -1,25 +1,25 @@
 import { HttpException } from '@nestjs/common';
-import ERROR_OBJECT, { ERROR_CODES } from '../errorcodes';
+import { ErrorCodes } from '../errorcodes';
 
 export class HttpError extends HttpException {
 	private data;
 	constructor(
-		code: keyof typeof ERROR_CODES,
+		code: keyof typeof ErrorCodes,
 		params?: Record<string, any>,
 		overrideMessage?: string,
 		data?: { [K: string]: any },
 	) {
-		if (!Object.keys(ERROR_OBJECT).includes(code)) {
+		if (!Object.keys(ErrorCodes).includes(code)) {
 			super(
 				{
 					data: data ?? null,
-					message: 'An unknown error occured',
+					message: 'An unknown error occurred',
 				},
 				500,
 			);
 		} else {
-			const { message, status } = ERROR_OBJECT[code];
-			let _message = message;
+			const message = ErrorCodes[code];
+			let _message: string = message;
 			if (params) {
 				Object.keys(params).forEach((key) => {
 					let val = params[key];
@@ -29,7 +29,7 @@ export class HttpError extends HttpException {
 						val = 'undefined';
 					}
 
-					_message = _message.replace(new RegExp('\\$\\{' + key + '\\}', 'g'), val);
+					_message = _message.replace(new RegExp('\\{' + key + '\\}', 'g'), String(val));
 				});
 			}
 
@@ -39,7 +39,7 @@ export class HttpError extends HttpException {
 					data: data ?? null,
 					message: overrideMessage ? overrideMessage : `[${code}] ${_message}`,
 				},
-				status,
+				500,
 			);
 		}
 		this.data = data;

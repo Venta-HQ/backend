@@ -1,4 +1,4 @@
-import { GrpcError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
 import { Injectable, Logger } from '@nestjs/common';
@@ -39,7 +39,7 @@ export class VendorService {
 		});
 
 		if (!exists) {
-			throw new GrpcError('API-00003', { entity: 'Vendor' });
+			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
 		}
 
 		const { imageUrl, ...updateData } = data;

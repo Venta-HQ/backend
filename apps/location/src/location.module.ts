@@ -1,4 +1,5 @@
 import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LocationController } from './location.controller';
@@ -7,6 +8,7 @@ import { LocationController } from './location.controller';
 	controllers: [LocationController],
 	imports: [
 		ConfigModule.forRoot(),
+		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({
 			serviceName: 'location-service',

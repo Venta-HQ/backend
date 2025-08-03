@@ -1,5 +1,5 @@
 import { ZodError, ZodSchema } from 'zod';
-import { GrpcError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Logger, PipeTransform } from '@nestjs/common';
 
 export class GrpcSchemaValidatorPipe implements PipeTransform {
@@ -17,17 +17,16 @@ export class GrpcSchemaValidatorPipe implements PipeTransform {
 					message: err.message,
 					path: err.path.join('.'),
 				}));
-				throw new GrpcError(
-					'API-00004',
+				throw AppError.validation(
+					ErrorCodes.VALIDATION_ERROR,
 					{
-						message: `Validation failed`,
+						field: 'input',
+						errors: formattedErrors,
 					},
-					null,
-					formattedErrors,
 				);
 			} else {
-				throw new GrpcError('API-00004', {
-					message: `Validation failed`,
+				throw AppError.validation(ErrorCodes.VALIDATION_ERROR, {
+					field: 'input',
 				});
 			}
 		}

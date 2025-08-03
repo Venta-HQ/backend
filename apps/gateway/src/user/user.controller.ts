@@ -24,7 +24,7 @@ export class UserController {
 					if (error.errorCode) {
 						throw new HttpError(error.errorCode, null, error.message);
 					}
-					return throwError(() => new HttpError('API-00001'));
+					return throwError(() => new HttpError('INTERNAL_SERVER_ERROR'));
 				}),
 			);
 	}

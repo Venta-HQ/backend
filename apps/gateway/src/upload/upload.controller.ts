@@ -1,4 +1,4 @@
-import { ERROR_CODES, HttpError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { UploadService } from '@app/nest/modules';
 import { Controller, Logger, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
@@ -17,7 +17,7 @@ export class UploadController {
 		try {
 			return this.uploadService.uploadImage(file);
 		} catch (e) {
-			throw new HttpError(ERROR_CODES['API-00002'], { message: e.message });
+			throw AppError.validation(ErrorCodes.INVALID_INPUT, { message: e.message });
 		}
 	}
 }

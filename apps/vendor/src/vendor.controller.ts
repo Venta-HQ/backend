@@ -1,4 +1,4 @@
-import { GrpcError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { IEventsService } from '@app/nest/modules';
 import {
 	VENDOR_SERVICE_NAME,
@@ -26,14 +26,14 @@ export class VendorController {
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		if (!data.id) {
 			this.logger.error(`No ID provided`);
-			throw new GrpcError('API-00004', { message: 'No ID provided' });
+			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'id' });
 		}
 
 		const result = await this.vendorService.getVendorById(data.id);
 
 		if (!result) {
 			this.logger.error(`Vendor with ID ${data.id} not found`);
-			throw new GrpcError('API-00003', { entity: 'Vendor' });
+			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.id });
 		}
 
 		return {
@@ -59,7 +59,7 @@ export class VendorController {
 			this.logger.error(`Error creating vendor with data`, {
 				data,
 			});
-			throw new GrpcError('API-00005', { entity: 'Vendor' });
+			throw AppError.internal('Could not create vendor', { entity: 'Vendor', originalError: e });
 		}
 	}
 
@@ -86,11 +86,11 @@ export class VendorController {
 				data,
 			});
 
-			if (e instanceof GrpcError) {
+			if (e instanceof AppError) {
 				throw e;
 			}
 
-			throw new GrpcError('API-00006', { entity: 'Vendor' });
+			throw AppError.internal('Could not update vendor', { entity: 'Vendor', originalError: e });
 		}
 	}
 }

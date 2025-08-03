@@ -1,4 +1,5 @@
 import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClerkController } from './clerk/clerk.controller';
@@ -12,6 +13,7 @@ import { VendorService } from './vendor/vendor.service';
 	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [
 		ConfigModule.forRoot(),
+		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({
 			serviceName: 'user-service',

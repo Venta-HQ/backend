@@ -4,6 +4,7 @@ import {
 	RevenueCatInitialPurchaseEventData,
 	RevenueCatWebhookEvent,
 } from '@app/apitypes/lib/subscription/subscription.types';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 
@@ -32,7 +33,7 @@ export class SubscriptionWebhooksController {
 				break;
 			default:
 				this.logger.warn('Unhandled Event Type');
-				throw new Error('Failure');
+				throw AppError.internal('Unhandled webhook event type');
 		}
 	}
 }
