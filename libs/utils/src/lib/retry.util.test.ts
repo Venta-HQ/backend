@@ -74,7 +74,7 @@ describe('RetryUtil', () => {
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through the delay
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Retry delay
 
 			const result = await resultPromise;
 
@@ -98,7 +98,8 @@ describe('RetryUtil', () => {
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // First retry delay
+			await vi.advanceTimersByTimeAsync(2000); // Second retry delay
 
 			const result = await resultPromise;
 
@@ -107,13 +108,18 @@ describe('RetryUtil', () => {
 		});
 
 		it('should respect maxRetries limit', async () => {
-			const operation = vi.fn().mockRejectedValue(new Error('Always fails'));
+			const operation = vi.fn().mockImplementation(() => {
+				throw new Error('Always fails');
+			});
 			const description = 'Max retries test';
 
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Initial delay
+			await vi.advanceTimersByTimeAsync(2000); // First retry delay
+			await vi.advanceTimersByTimeAsync(4000); // Second retry delay
+			await vi.advanceTimersByTimeAsync(8000); // Third retry delay
 
 			await expect(resultPromise).rejects.toThrow('Always fails');
 
@@ -128,13 +134,16 @@ describe('RetryUtil', () => {
 	describe('retryOperation - custom configuration', () => {
 		it('should use custom maxRetries', async () => {
 			const customRetryUtil = new RetryUtil({ maxRetries: 1, logger: mockLogger });
-			const operation = vi.fn().mockRejectedValue(new Error('Always fails'));
+			const operation = vi.fn().mockImplementation(() => {
+				throw new Error('Always fails');
+			});
 			const description = 'Custom max retries';
 
 			const resultPromise = customRetryUtil.retryOperation(operation, description);
 
 			// Fast-forward through the delay
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Initial delay
+			await vi.advanceTimersByTimeAsync(2000); // First retry delay
 
 			await expect(resultPromise).rejects.toThrow('Always fails');
 
@@ -150,7 +159,7 @@ describe('RetryUtil', () => {
 			const resultPromise = customRetryUtil.retryOperation(operation, description);
 
 			// Fast-forward through the delay
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(500); // Custom retry delay
 
 			const result = await resultPromise;
 
@@ -171,7 +180,8 @@ describe('RetryUtil', () => {
 			const resultPromise = customRetryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // First retry delay (1000 * 1)
+			await vi.advanceTimersByTimeAsync(3000); // Second retry delay (1000 * 3)
 
 			const result = await resultPromise;
 
@@ -200,7 +210,7 @@ describe('RetryUtil', () => {
 			const resultPromise = RetryUtil.retry(operation, description, options);
 
 			// Fast-forward through the delay
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Retry delay
 
 			const result = await resultPromise;
 
@@ -212,13 +222,18 @@ describe('RetryUtil', () => {
 	describe('error handling', () => {
 		it('should preserve original error details', async () => {
 			const originalError = new Error('Custom error message');
-			const operation = vi.fn().mockRejectedValue(originalError);
+			const operation = vi.fn().mockImplementation(() => {
+				throw originalError;
+			});
 			const description = 'Error preservation test';
 
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Initial delay
+			await vi.advanceTimersByTimeAsync(2000); // First retry delay
+			await vi.advanceTimersByTimeAsync(4000); // Second retry delay
+			await vi.advanceTimersByTimeAsync(8000); // Third retry delay
 
 			await expect(resultPromise).rejects.toThrow('Custom error message');
 
@@ -226,13 +241,18 @@ describe('RetryUtil', () => {
 		});
 
 		it('should handle non-Error objects', async () => {
-			const operation = vi.fn().mockRejectedValue('String error');
+			const operation = vi.fn().mockImplementation(() => {
+				throw 'String error';
+			});
 			const description = 'Non-Error test';
 
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Initial delay
+			await vi.advanceTimersByTimeAsync(2000); // First retry delay
+			await vi.advanceTimersByTimeAsync(4000); // Second retry delay
+			await vi.advanceTimersByTimeAsync(8000); // Third retry delay
 
 			await expect(resultPromise).rejects.toBe('String error');
 		});
@@ -260,7 +280,8 @@ describe('RetryUtil', () => {
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // First retry delay
+			await vi.advanceTimersByTimeAsync(2000); // Second retry delay
 
 			await resultPromise;
 
@@ -275,13 +296,18 @@ describe('RetryUtil', () => {
 		});
 
 		it('should log final failure', async () => {
-			const operation = vi.fn().mockRejectedValue(new Error('Always fails'));
+			const operation = vi.fn().mockImplementation(() => {
+				throw new Error('Always fails');
+			});
 			const description = 'Final failure logging';
 
 			const resultPromise = retryUtil.retryOperation(operation, description);
 
 			// Fast-forward through all delays
-			await vi.runAllTimersAsync();
+			await vi.advanceTimersByTimeAsync(1000); // Initial delay
+			await vi.advanceTimersByTimeAsync(2000); // First retry delay
+			await vi.advanceTimersByTimeAsync(4000); // Second retry delay
+			await vi.advanceTimersByTimeAsync(8000); // Third retry delay
 
 			await expect(resultPromise).rejects.toThrow('Always fails');
 

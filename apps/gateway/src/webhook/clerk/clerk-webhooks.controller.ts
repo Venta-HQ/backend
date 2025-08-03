@@ -30,5 +30,6 @@ export class ClerkWebhooksController {
 			default:
 				this.logger.warn('Unhandled Event Type');
 		}
+		return { success: true };
 	}
 }

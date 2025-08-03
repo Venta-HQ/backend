@@ -17,7 +17,7 @@ export class UserController {
 				userId: req.userId,
 			})
 			.pipe(
-				catchError((error: any) => {
+				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;
 				}),

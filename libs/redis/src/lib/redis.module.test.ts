@@ -86,14 +86,14 @@ describe('RedisModule', () => {
 			const content = fs.readFileSync(modulePath, 'utf8');
 
 			expect(content).toContain('inject: [ConfigService]');
-			expect(content).toContain('useFactory: (configService)');
+			expect(content).toContain('useFactory: (configService: ConfigService)');
 		});
 
 		it('should return proper Redis configuration object', () => {
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
-			expect(content).toContain('return {');
+			expect(content).toContain('useFactory: (configService: ConfigService) => ({');
 			expect(content).toContain("type: 'single'");
 			expect(content).toContain("url: configService.get('REDIS_URL')");
 		});
@@ -104,7 +104,7 @@ describe('RedisModule', () => {
 			const modulePath = path.join(__dirname, 'redis.module.ts');
 			const content = fs.readFileSync(modulePath, 'utf8');
 
-			expect(content).toContain('export { RedisModule }');
+			expect(content).toContain('export class RedisModule {}');
 		});
 
 		it('should be a global module', () => {

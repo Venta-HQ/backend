@@ -17,7 +17,7 @@ export class VendorController {
 	async getVendorById(@Param('id') id: string) {
 		const result = await firstValueFrom(
 			this.client.invoke('getVendorById', { id }).pipe(
-				catchError((error: any) => {
+				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;
 				}),
@@ -42,7 +42,7 @@ export class VendorController {
 				imageUrl: data.imageUrl ?? '',
 			})
 			.pipe(
-				catchError((error: any) => {
+				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;
 				}),
@@ -65,7 +65,7 @@ export class VendorController {
 				imageUrl: data.imageUrl ?? '',
 			})
 			.pipe(
-				catchError((error: any) => {
+				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;
 				}),

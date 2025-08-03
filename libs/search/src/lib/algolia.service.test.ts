@@ -136,7 +136,7 @@ describe('AlgoliaService', () => {
 				},
 			});
 			expect(mockSearchClient.partialUpdateObject).not.toHaveBeenCalled();
-			expect(result).toBeUndefined();
+			expect(result).toBeNull();
 		});
 
 		it('should log warning when object not found', async () => {
@@ -286,7 +286,7 @@ describe('AlgoliaService', () => {
 			const updateResult = await algoliaService.updateObject(indexName, entityId, { name: 'test' });
 			const deleteResult = await algoliaService.deleteObject(indexName, entityId);
 
-			expect(updateResult).toBeUndefined();
+			expect(updateResult).toBeNull();
 			expect(deleteResult).toEqual([]);
 		});
 
@@ -300,7 +300,7 @@ describe('AlgoliaService', () => {
 			const updateResult = await algoliaService.updateObject(indexName, entityId, null);
 			const deleteResult = await algoliaService.deleteObject(indexName, entityId);
 
-			expect(updateResult).toBeUndefined();
+			expect(updateResult).toBeNull();
 			expect(deleteResult).toEqual([]);
 		});
 

@@ -9,6 +9,7 @@ The utils library contains common utility functions and retry mechanisms that ar
 ## Features
 
 - **Retry Utilities**: Robust retry mechanisms for external service calls
+- **Geospatial Utilities**: Distance calculations and bounding box operations
 - **Configurable Retry Options**: Customizable retry behavior with exponential backoff
 - **Error Handling**: Structured error logging and retry tracking
 - **Instance and Static Methods**: Both class-based and static utility methods
@@ -18,6 +19,51 @@ The utils library contains common utility functions and retry mechanisms that ar
 ### Retry Mechanisms
 
 Use retry utilities to handle transient failures in external service calls with configurable retry behavior.
+
+### Geospatial Utilities
+
+Use geospatial utilities for location-based calculations and operations.
+
+#### Distance Calculations
+
+```typescript
+import { GeospatialUtil } from '@app/utils';
+
+// Calculate distance between two points using Haversine formula
+const distance = GeospatialUtil.calculateDistance(lat1, lon1, lat2, lon2);
+// Returns distance in meters
+```
+
+#### Bounding Box Operations
+
+```typescript
+import { GeospatialUtil } from '@app/utils';
+
+// Calculate bounding box dimensions from southwest and northeast coordinates
+const boundingBox = GeospatialUtil.calculateBoundingBoxDimensions(
+  { lat: swLat, long: swLon },
+  { lat: neLat, long: neLon }
+);
+
+// Check if a point is within a bounding box
+const isInside = GeospatialUtil.isPointInBoundingBox(
+  { lat: pointLat, long: pointLon },
+  { lat: swLat, long: swLon },
+  { lat: neLat, long: neLon }
+);
+```
+
+#### Coordinate Conversions
+
+```typescript
+import { GeospatialUtil } from '@app/utils';
+
+// Convert degrees to radians
+const radians = GeospatialUtil.degreesToRadians(45);
+
+// Convert radians to degrees
+const degrees = GeospatialUtil.radiansToDegrees(Math.PI / 4);
+```
 
 #### Instance-based Usage
 

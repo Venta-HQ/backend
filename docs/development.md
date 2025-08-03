@@ -384,10 +384,72 @@ nx dep-graph
 
 ## Common Patterns
 
+### Standard Service Template
+
+```typescript
+@Injectable()
+export class StandardService {
+  private readonly logger = new Logger(StandardService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('EventsService') private readonly eventsService: IEventsService,
+  ) {}
+
+  async performOperation(data: any) {
+    this.logger.log(`Performing operation with data: ${JSON.stringify(data)}`);
+    
+    const result = await this.prisma.db.someTable.create({ data });
+    
+    // Emit event for state change
+    await this.eventsService.publishEvent('operation.completed', {
+      id: result.id,
+      timestamp: new Date().toISOString(),
+    });
+    
+    return result;
+  }
+}
+```
+
+### Standard Module Template
+
+```typescript
+@Module({
+  imports: [
+    ConfigModule,
+    LoggerModule.register({ appName: 'Service Name', protocol: 'grpc' }),
+    PrismaModule.register(),
+    EventsModule,
+    ErrorHandlingModule,
+  ],
+  controllers: [ServiceController],
+  providers: [ServiceService],
+})
+export class ServiceModule {}
+```
+
+### Standard Main.ts Template
+
+```typescript
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  const configService = app.get(ConfigService);
+  
+  // Standard logger setup
+  app.useLogger(app.get(Logger));
+  
+  // Standard error handling
+  app.useGlobalFilters(new AppExceptionFilter());
+  
+  await app.listen(configService.get('SERVICE_PORT'));
+}
+```
+
 ### 1. Service Communication
 
 ```typescript
-// gRPC communication
+// gRPC communication with automatic retry
 import { GrpcInstance } from '@app/nest/modules/grpc-instance/grpc-instance.service';
 
 @Injectable()
@@ -397,7 +459,7 @@ export class VendorService {
   ) {}
 
   async createVendor(data: CreateVendorDto) {
-    // Call user service via gRPC
+    // Call user service via gRPC (automatic retry included)
     const user = await this.userClient.getUser(data.userId);
     // ... implementation
   }
@@ -407,17 +469,19 @@ export class VendorService {
 ### 2. Event Publishing
 
 ```typescript
-// Publish events
-import { EventsService } from '@app/nest/modules/events';
+// Publish events for state changes
+import { IEventsService } from '@app/nest/modules/events';
 
 @Injectable()
 export class VendorService {
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    @Inject('EventsService') private readonly eventsService: IEventsService
+  ) {}
 
   async createVendor(data: CreateVendorDto) {
     const vendor = await this.prisma.vendor.create({ data });
     
-    // Publish event
+    // Publish event for state change
     await this.eventsService.publishEvent('vendor.created', {
       id: vendor.id,
       name: vendor.name,
@@ -432,8 +496,8 @@ export class VendorService {
 ### 3. Error Handling
 
 ```typescript
-// Use custom error filters
-import { HttpException, HttpStatus } from '@nestjs/common';
+// Use custom error filters and structured errors
+import { AppError, ErrorCodes } from '@app/errors';
 
 @Injectable()
 export class VendorService {
@@ -441,13 +505,40 @@ export class VendorService {
     const vendor = await this.prisma.vendor.findUnique({ where: { id } });
     
     if (!vendor) {
-      throw new HttpException(
-        `Vendor with ID ${id} not found`,
-        HttpStatus.NOT_FOUND
-      );
+      throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
     }
     
     return vendor;
+  }
+}
+```
+
+### 4. Geospatial Operations
+
+```typescript
+// Use geospatial utilities for location-based operations
+import { GeospatialUtil } from '@app/utils';
+
+@Injectable()
+export class LocationService {
+  async searchVendorsInArea(swLocation: Location, neLocation: Location) {
+    const boundingBox = GeospatialUtil.calculateBoundingBoxDimensions(
+      swLocation,
+      neLocation
+    );
+    
+    // Use bounding box for geospatial search
+    return await this.redis.geosearch(
+      'vendor_locations',
+      'BYBOX',
+      boundingBox.width,
+      boundingBox.height,
+      'm',
+      'FROMLONLAT',
+      boundingBox.centerLon,
+      boundingBox.centerLat,
+      'WITHCOORD'
+    );
   }
 }
 ```

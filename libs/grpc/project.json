@@ -4,6 +4,7 @@
 	"sourceRoot": "libs/grpc/src",
 	"projectType": "library",
 	"tags": ["scope:shared", "type:utility", "framework:nestjs"],
+	"implicitDependencies": ["utils"],
 	"targets": {
 		"build": {
 			"executor": "@nx/js:tsc",

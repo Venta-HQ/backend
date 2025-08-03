@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AppError, ErrorType } from '../../errors';
+import { AppError, ErrorType } from '@app/errors';
 import { SchemaValidatorPipe } from './schema-validator.pipe';
 
 // Test schemas

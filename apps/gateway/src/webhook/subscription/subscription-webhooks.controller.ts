@@ -34,7 +34,7 @@ export class SubscriptionWebhooksController {
 		}
 		if (payload) {
 			await this.client.invoke('handleSubscriptionCreated', payload).subscribe({
-				error: (error: any) => {
+				error: (error: Error) => {
 					this.logger.error('Failed to handle subscription created', error);
 				},
 				next: () => {

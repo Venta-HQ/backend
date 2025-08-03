@@ -8,6 +8,7 @@ import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } f
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 import { LocationWebsocketGateway } from './gateways/location.gateway';
+import { ConnectionManagerService } from './services/connection-manager.service';
 
 @Module({
 	imports: [
@@ -25,6 +26,6 @@ import { LocationWebsocketGateway } from './gateways/location.gateway';
 		}),
 	],
 	controllers: [],
-	providers: [LocationWebsocketGateway],
+	providers: [LocationWebsocketGateway, ConnectionManagerService],
 })
 export class WebsocketGatewayModule {}

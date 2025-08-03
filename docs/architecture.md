@@ -123,9 +123,23 @@ interface IEventsService {
 
 ### Event Types
 
+#### Vendor Events
 - `vendor.created`: New vendor created
 - `vendor.updated`: Vendor information updated
 - `vendor.deleted`: Vendor removed
+- `vendor.location.updated`: Vendor location updated
+
+#### User Events
+- `user.created`: New user created
+- `user.deleted`: User deleted
+- `user.integration.created`: User integration created
+- `user.integration.deleted`: User integration deleted
+
+#### WebSocket Events
+- `websocket.user.connected`: User WebSocket connection established
+- `websocket.user.disconnected`: User WebSocket connection closed
+- `websocket.vendor.connected`: Vendor WebSocket connection established
+- `websocket.vendor.disconnected`: Vendor WebSocket connection closed
 
 ### Benefits
 

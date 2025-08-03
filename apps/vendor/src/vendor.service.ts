@@ -73,7 +73,10 @@ export class VendorService {
 		await this.emitVendorEvent('vendor.deleted', vendor);
 	}
 
-	private async emitVendorEvent(type: 'vendor.created' | 'vendor.updated' | 'vendor.deleted', vendor: any) {
+	private async emitVendorEvent(
+		type: 'vendor.created' | 'vendor.updated' | 'vendor.deleted',
+		vendor: Record<string, unknown>,
+	) {
 		// Standardize key order
 		const payload = {
 			createdAt: vendor.createdAt,

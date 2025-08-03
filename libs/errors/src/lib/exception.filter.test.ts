@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ArgumentsHost, BadRequestException, HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError, ErrorType } from '../errors/error';
+import { AppError, ErrorType } from './error';
 import { AppExceptionFilter } from './exception.filter';
 
 // Mock Express Response

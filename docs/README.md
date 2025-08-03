@@ -25,6 +25,7 @@ This directory contains comprehensive documentation for the Venta Backend projec
 
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and solutions
 - **[Architecture Improvements](architecture-improvements.md)** - Planned enhancements
+- **[App Improvements](app-improvements.md)** - Current improvements and standards
 
 ## Quick Reference
 
@@ -73,6 +74,8 @@ nx lint {project-name}            # Lint specific project
 - **Microservices**: Independent services communicating via gRPC and events
 - **Event-Driven**: Asynchronous communication using NATS
 - **Type Safety**: Full TypeScript coverage with shared type definitions
+- **Automatic Retry**: Built-in retry logic for gRPC calls
+- **Geospatial Utilities**: Reusable location-based calculations
 
 ## Getting Help
 

@@ -33,7 +33,21 @@ export class LoggerModule {
 
 						// Validate required environment variables
 						if (!lokiPassword || !lokiUsername || !lokiUrl) {
-							throw new Error('Missing required LOKI environment variables');
+							// In test environment or when LOKI variables are missing, use console transport
+							return {
+								pinoHttp: {
+									base: { app: appName },
+									transport: {
+										target: 'pino-pretty',
+										options: {
+											colorize: true,
+											ignore: 'pid,hostname,time,app,context',
+											levelFirst: true,
+											messageFormat: `[${appName}] [{context}]: {msg}`,
+										},
+									},
+								},
+							};
 						}
 
 						return {

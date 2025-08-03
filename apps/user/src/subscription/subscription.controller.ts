@@ -12,7 +12,7 @@ export class SubscriptionController {
 		// Create an Integration record
 		await this.subscriptionService.createIntegration({
 			clerkUserId: data.clerkUserId,
-			data: data.data,
+			data: data.data ? JSON.parse(JSON.stringify(data.data)) : undefined,
 			providerId: data.providerId,
 		});
 

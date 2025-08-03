@@ -57,7 +57,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		});
 	}
 
-	async handleDisconnect(client: any) {
+	async handleDisconnect(client: Socket) {
 		// When a vendor disconnects, clear out
 		const vendorId = await this.redis.get(`vendor:${client.id}`);
 		const userId = await this.redis.get(`user:${client.id}`);

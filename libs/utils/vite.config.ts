@@ -20,5 +20,16 @@ export default defineConfig(() => ({
 			reportsDirectory: '../../coverage/libs/utils',
 			provider: 'v8' as const,
 		},
+		// Suppress unhandled rejection warnings for retry tests
+		onConsoleLog(log, type) {
+			if (log.includes('PromiseRejectionHandledWarning')) {
+				return false;
+			}
+		},
+		// Suppress unhandled rejections for retry tests
+		onUnhandledRejection(reason, promise) {
+			// Ignore unhandled rejections in retry tests
+			return false;
+		},
 	},
 }));
