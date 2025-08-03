@@ -1,9 +1,6 @@
-// Export utility components
+// Core utilities (keep these - they're truly custom)
 export * from './lib/retry.util';
 export * from './lib/geospatial.util';
-export * from './lib/circuit-breaker.util';
-export * from './lib/health-check.util';
-export * from './lib/circuit-breaker.service';
-export * from './lib/metrics.service';
-export * from './lib/health.controller';
+
+// Utils module
 export * from './lib/utils.module';

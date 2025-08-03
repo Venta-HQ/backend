@@ -1,4 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, Inject } from '@nestjs/common';
+import {
+	DiskHealthIndicator,
+	HealthCheck,
+	HealthCheckService,
+	MemoryHealthIndicator,
+	MicroserviceHealthIndicator,
+} from '@nestjs/terminus';
 
 export interface HealthControllerOptions {
 	serviceName: string;
@@ -10,7 +17,13 @@ export class HealthController {
 	private readonly serviceName: string;
 	private readonly additionalChecks?: () => Promise<Record<string, any>>;
 
-	constructor(options: HealthControllerOptions) {
+	constructor(
+		private health: HealthCheckService,
+		private memory: MemoryHealthIndicator,
+		private disk: DiskHealthIndicator,
+		private microservice: MicroserviceHealthIndicator,
+		@Inject('HEALTH_OPTIONS') options: HealthControllerOptions,
+	) {
 		this.serviceName = options.serviceName;
 		this.additionalChecks = options.additionalChecks;
 	}
@@ -19,64 +32,54 @@ export class HealthController {
 	 * Basic health check endpoint
 	 */
 	@Get()
+	@HealthCheck()
 	@HttpCode(HttpStatus.OK)
 	async getHealth() {
-		const baseHealth = {
-			status: 'healthy',
-			timestamp: new Date(),
-			service: this.serviceName,
-		};
+		const healthChecks = [
+			() => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
+			() => this.memory.checkRSS('memory_rss', 3000 * 1024 * 1024),
+			() => this.disk.checkStorage('disk', { path: '/', thresholdPercent: 0.9 }),
+		];
 
-		if (this.additionalChecks) {
-			try {
-				const additionalData = await this.additionalChecks();
-				return {
-					...baseHealth,
-					...additionalData,
-				};
-			} catch (error) {
-				return {
-					...baseHealth,
-					status: 'degraded',
-					error: error instanceof Error ? error.message : 'Unknown error',
-				};
-			}
-		}
-
-		return baseHealth;
+		return this.health.check(healthChecks);
 	}
 
 	/**
 	 * Detailed health check endpoint
 	 */
 	@Get('detailed')
+	@HealthCheck()
 	@HttpCode(HttpStatus.OK)
 	async getDetailedHealth() {
-		const baseHealth = {
-			status: 'healthy',
-			timestamp: new Date(),
-			service: this.serviceName,
-			uptime: process.uptime(),
-			memory: process.memoryUsage(),
-			version: process.env['npm_package_version'] || 'unknown',
-		};
+		const healthChecks = [
+			() => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
+			() => this.memory.checkRSS('memory_rss', 3000 * 1024 * 1024),
+			() => this.disk.checkStorage('disk', { path: '/', thresholdPercent: 0.9 }),
+			() => this.microservice.pingCheck('database', { transport: 5432, timeout: 5000 }),
+			() => this.microservice.pingCheck('redis', { transport: 6379, timeout: 5000 }),
+			() => this.microservice.pingCheck('nats', { transport: 4222, timeout: 5000 }),
+		];
 
+		const healthResult = await this.health.check(healthChecks);
+
+		// Add custom checks if provided
+		let customData = {};
 		if (this.additionalChecks) {
 			try {
-				const additionalData = await this.additionalChecks();
-				return {
-					...baseHealth,
-					...additionalData,
-				};
+				customData = await this.additionalChecks();
 			} catch (error) {
-				return {
-					...baseHealth,
-					status: 'degraded',
+				customData = {
 					error: error instanceof Error ? error.message : 'Unknown error',
 				};
 			}
 		}
 
-		return baseHealth;
+		return {
+			...healthResult,
+			service: this.serviceName,
+			uptime: process.uptime(),
+			version: process.env['npm_package_version'] || 'unknown',
+			...customData,
+		};
 	}
 }

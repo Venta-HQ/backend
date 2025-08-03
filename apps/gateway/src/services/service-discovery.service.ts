@@ -1,4 +1,4 @@
-import { CircuitBreakerService } from '@app/utils';
+import CircuitBreaker from 'opossum';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -13,13 +13,11 @@ interface ServiceInfo {
 export class ServiceDiscoveryService {
 	private readonly logger = new Logger(ServiceDiscoveryService.name);
 	private readonly services = new Map<string, ServiceInfo>();
+	private readonly breakers = new Map<string, CircuitBreaker>();
 	private readonly healthCheckInterval: number;
 	private readonly healthCheckTimeout: number;
 
-	constructor(
-		private readonly configService: ConfigService,
-		private readonly circuitBreakerService: CircuitBreakerService,
-	) {
+	constructor(private readonly configService: ConfigService) {
 		this.healthCheckInterval = this.configService.get('HEALTH_CHECK_INTERVAL', 30000);
 		this.healthCheckTimeout = this.configService.get('HEALTH_CHECK_TIMEOUT', 5000);
 		this.initializeServices();
@@ -121,11 +119,50 @@ export class ServiceDiscoveryService {
 			this.logger.warn(`Service ${serviceName} is unhealthy, attempting request anyway`);
 		}
 
-		return await this.circuitBreakerService.executeWithCircuitBreaker(serviceName, operation, {
-			timeout: options.timeout || 5000,
-			fallback: options.fallback || (() => ({ error: 'Service temporarily unavailable' })),
-			...options,
-		});
+		// Use opossum directly
+		let breaker = this.breakers.get(serviceName);
+
+		if (!breaker) {
+			breaker = new CircuitBreaker(operation, {
+				timeout: options.timeout || 5000,
+				errorThresholdPercentage: 50,
+				resetTimeout: 30000,
+				volumeThreshold: 10,
+			});
+
+			// Add event listeners for monitoring
+			breaker.on('open', () => {
+				this.logger.warn(`Circuit breaker opened for ${serviceName}`);
+			});
+
+			breaker.on('close', () => {
+				this.logger.log(`Circuit breaker closed for ${serviceName}`);
+			});
+
+			breaker.on('halfOpen', () => {
+				this.logger.log(`Circuit breaker half-open for ${serviceName}`);
+			});
+
+			breaker.on('fallback', (result: any) => {
+				this.logger.warn(`Circuit breaker fallback triggered for ${serviceName}`);
+			});
+
+			breaker.on('success', (result: any, runTime: number) => {
+				// Could integrate with metrics service here if needed
+			});
+
+			breaker.on('failure', (error: Error, runTime: number) => {
+				this.logger.error(`Circuit breaker failure for ${serviceName}:`, error);
+			});
+
+			breaker.on('reject', (error: Error) => {
+				this.logger.error(`Circuit breaker rejected for ${serviceName}:`, error);
+			});
+
+			this.breakers.set(serviceName, breaker);
+		}
+
+		return (await breaker.fire()) as T;
 	}
 
 	getAllServices(): ServiceInfo[] {
@@ -141,6 +178,15 @@ export class ServiceDiscoveryService {
 	}
 
 	getCircuitBreakerStats() {
-		return this.circuitBreakerService.getAllStats();
+		const stats: Record<string, any> = {};
+
+		for (const [serviceName, breaker] of this.breakers) {
+			stats[serviceName] = {
+				state: breaker.opened ? 'open' : breaker.halfOpen ? 'half-open' : 'closed',
+				stats: breaker.stats,
+			};
+		}
+
+		return stats;
 	}
 }

@@ -1,7 +1,7 @@
 import { ConfigModule } from '@app/config';
 import { ErrorHandlingModule } from '@app/errors';
+import { HealthModule } from '@app/health';
 import { LoggerModule } from '@app/logger';
-import { UtilsModule } from '@app/utils';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -13,7 +13,7 @@ import { ServiceDiscoveryService } from './services/service-discovery.service';
 		ConfigModule,
 		LoggerModule.register({ appName: 'gateway', protocol: 'http' }),
 		ErrorHandlingModule,
-		UtilsModule,
+		HealthModule.forRoot({ serviceName: 'gateway-service' }),
 		ThrottlerModule.forRoot([
 			{
 				ttl: 60000,

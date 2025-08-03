@@ -1,4 +1,5 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
+import { DynamicModule, Module } from '@nestjs/common';
+import { TerminusModule } from '@nestjs/terminus';
 import { HealthController } from './health.controller';
 
 export interface HealthModuleOptions {
@@ -9,15 +10,16 @@ export interface HealthModuleOptions {
 @Module({})
 export class HealthModule {
 	static forRoot(options: HealthModuleOptions): DynamicModule {
-		const healthControllerProvider: Provider = {
-			provide: HealthController,
-			useFactory: () => new HealthController(options),
-		};
-
 		return {
 			module: HealthModule,
+			imports: [TerminusModule],
 			controllers: [HealthController],
-			providers: [healthControllerProvider],
+			providers: [
+				{
+					provide: 'HEALTH_OPTIONS',
+					useValue: options,
+				},
+			],
 			exports: [HealthController],
 		};
 	}
