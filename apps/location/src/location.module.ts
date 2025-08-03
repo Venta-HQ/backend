@@ -6,9 +6,11 @@ import { LoggerModule } from '@app/logger';
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 import { LocationController } from './location.controller';
+import { LocationService } from './location.service';
 
 @Module({
 	controllers: [LocationController],
+	providers: [LocationService],
 	imports: [
 		ConfigModule,
 		LoggerModule.register({ appName: 'Location Microservice', protocol: 'grpc' }),
