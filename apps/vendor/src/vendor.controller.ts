@@ -1,4 +1,5 @@
 import { GrpcError } from '@app/nest/errors';
+import { IEventsService } from '@app/nest/modules';
 import {
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
@@ -8,7 +9,7 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Inject, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
 
@@ -16,7 +17,10 @@ import { VendorService } from './vendor.service';
 export class VendorController {
 	private readonly logger = new Logger(VendorController.name);
 
-	constructor(private readonly vendorService: VendorService) {}
+	constructor(
+		private readonly vendorService: VendorService,
+		@Inject('EventsService') private readonly eventsService: IEventsService,
+	) {}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
@@ -41,6 +45,15 @@ export class VendorController {
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
 			const id = await this.vendorService.createVendor(data);
+			
+			// Publish vendor created event
+			await this.eventsService.publishEvent('vendor.created', {
+				vendorId: id,
+				userId: data.userId,
+				data: data,
+				timestamp: new Date().toISOString(),
+			});
+
 			return { id };
 		} catch (e) {
 			this.logger.error(`Error creating vendor with data`, {
@@ -55,6 +68,15 @@ export class VendorController {
 		try {
 			const { id, userId, ...vendorUpdates } = data;
 			await this.vendorService.updateVendor(id, userId, vendorUpdates);
+			
+			// Publish vendor updated event
+			await this.eventsService.publishEvent('vendor.updated', {
+				vendorId: id,
+				userId: userId,
+				updates: vendorUpdates,
+				timestamp: new Date().toISOString(),
+			});
+
 			return {
 				message: 'Updated vendor',
 				success: true,

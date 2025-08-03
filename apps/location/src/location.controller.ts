@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 import { GrpcError } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
+import { IEventsService, PrismaService } from '@app/nest/modules';
 import { LOCATION_SERVICE_NAME, LocationUpdate, VendorLocationRequest } from '@app/proto/location';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Inject, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 
@@ -55,6 +55,7 @@ export class LocationController {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
+		@Inject('EventsService') private readonly eventsService: IEventsService,
 	) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
@@ -66,6 +67,13 @@ export class LocationController {
 				where: {
 					id: data.entityId,
 				},
+			});
+
+			// Publish vendor location updated event
+			await this.eventsService.publishEvent('vendor.location.updated', {
+				vendorId: data.entityId,
+				location: data.location,
+				timestamp: new Date().toISOString(),
 			});
 		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {

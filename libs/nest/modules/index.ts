@@ -1,4 +1,6 @@
 export * from './algolia';
+export * from './events';
+export * from './health';
 export * from './logger';
 export * from './redis';
 export * from './clerk';

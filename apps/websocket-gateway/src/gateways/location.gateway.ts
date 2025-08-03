@@ -1,4 +1,3 @@
-import Redis from 'ioredis';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import {
@@ -9,9 +8,9 @@ import {
 } from '@app/apitypes';
 import { WsSchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
+import { ConnectionManagerService } from '../services/connection-manager.service';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -31,7 +30,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
-		@InjectRedis() private readonly redis: Redis,
+		private readonly connectionManager: ConnectionManagerService,
 	) {}
 
 	afterInit() {
@@ -44,63 +43,20 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		// Keep a way to retrieve a user's socket id by userId
 		client.on('register-user', async (data) => {
 			if (data.userId) {
-				await this.redis.set(`user:${data.userId}:socketId`, client.id);
-				await this.redis.set(`user:${client.id}`, data.userId);
+				await this.connectionManager.registerUser(data.userId, client.id);
 			}
 		});
 
 		// When a vendor connects, store a record with their client ID
 		client.on('register-vendor', async (data) => {
 			if (data.vendorId) {
-				await this.redis.set(`vendor:${client.id}`, data.vendorId);
+				await this.connectionManager.registerVendor(data.vendorId, client.id);
 			}
 		});
 	}
 
 	async handleDisconnect(client: any) {
-		// When a vendor disconnects, clear out
-		const vendorId = await this.redis.get(`vendor:${client.id}`);
-		const userId = await this.redis.get(`user:${client.id}`);
-		if (vendorId) {
-			// Remove the geolocation store
-			this.redis.zrem('vendor_locations', vendorId);
-			// Get all users in the room
-			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
-			// Let any interested clients know (Need to do this before disconnecting from room)
-			client.to(vendorId).emit('vendor_disconnect', {
-				id: vendorId,
-			});
-			usersInRoom.forEach(async (uid) => {
-				// Get that user's socket id
-				const socketId = await this.redis.get(`user:${uid}:socketId`);
-				if (socketId) {
-					// Get the socket
-					const socket = this.server.sockets.sockets.get(socketId);
-					if (socket) {
-						// Have the socket leave this vendor's room
-						socket.leave(vendorId);
-					}
-				}
-				// Update redis to remove that room from the user's list of rooms
-				await this.redis.srem(`user:${uid}:room`, vendorId);
-			});
-			// Delete room record
-			await this.redis.del(`room:${vendorId}:users`);
-			// Delete the vendor
-			await this.redis.del(`vendor:${client.id}`);
-		} else if (userId) {
-			// Remove this user from any room user lists it is a part of
-			const rooms = await this.redis.smembers(`user:${userId}:room`);
-			rooms.forEach(async (room) => {
-				await this.redis.srem(`room:${room}:users`, userId);
-			});
-			// Remove userId -> Socket ID connection
-			await this.redis.del(`user:${userId}:socketId`);
-			// Remove this user's list of rooms
-			await this.redis.del(`user:${userId}:room`);
-			// Remove user record
-			await this.redis.del(`user:${client.id}`);
-		}
+		await this.connectionManager.handleDisconnect(client.id);
 	}
 
 	@SubscribeMessage('updateVendorLocation')
@@ -108,7 +64,7 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		@MessageBody(new WsSchemaValidatorPipe(VendorLocationUpdateDataSchema)) data: VendorLocationUpdateData,
 		@ConnectedSocket() socket: Socket,
 	) {
-		const vendorId = await this.redis.get(`vendor:${socket.id}`);
+		const vendorId = await this.connectionManager.getSocketVendorId(socket.id);
 		// Store this in DB & REDIS for querying later
 		try {
 			this.locationService
@@ -153,8 +109,8 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 			}),
 		);
 
-		const userId = await this.redis.get(`user:${socket.id}`);
-		const currentRooms = await this.redis.smembers(`user:${userId}:room`);
+		const userId = await this.connectionManager.getSocketUserId(socket.id);
+		const currentRooms = await this.connectionManager.getUserVendorRooms(userId);
 
 		const vendorIds = (vendors ?? []).map((vendor) => vendor.id);
 
@@ -164,17 +120,15 @@ export class LocationWebsocketGateway implements OnGatewayInit, OnGatewayConnect
 		const roomsToJoin = vendorIds.filter((room) => !currentRooms.includes(room));
 
 		if (roomsToLeave.length) {
-			this.redis.srem(`user:${userId}:room`, ...roomsToLeave);
-			roomsToLeave.forEach((room) => {
-				this.redis.srem(`room:${room}:users`, userId);
+			roomsToLeave.forEach(async (room) => {
+				await this.connectionManager.removeUserFromVendorRoom(userId, room);
 				socket.leave(room);
 			});
 		}
 
 		if (roomsToJoin.length) {
-			this.redis.sadd(`user:${userId}:room`, ...roomsToJoin);
-			roomsToJoin.forEach((room) => {
-				this.redis.sadd(`room:${room}:users`, userId);
+			roomsToJoin.forEach(async (room) => {
+				await this.connectionManager.addUserToVendorRoom(userId, room);
 				socket.join(room);
 			});
 		}

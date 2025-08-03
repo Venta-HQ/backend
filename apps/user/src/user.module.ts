@@ -1,4 +1,4 @@
-import { GrpcLoggerModule, PrismaModule } from '@app/nest/modules';
+import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ClerkController } from './clerk/clerk.controller';
@@ -10,7 +10,15 @@ import { VendorService } from './vendor/vendor.service';
 
 @Module({
 	controllers: [ClerkController, SubscriptionController, VendorController],
-	imports: [ConfigModule.forRoot(), GrpcLoggerModule.register('User Microservice'), PrismaModule.register()],
+	imports: [
+		ConfigModule.forRoot(),
+		EventsModule,
+		HealthModule.forRoot({
+			serviceName: 'user-service',
+		}),
+		GrpcLoggerModule.register('User Microservice'),
+		PrismaModule.register(),
+	],
 	providers: [ClerkService, SubscriptionService, VendorService],
 })
 export class UserModule {}
