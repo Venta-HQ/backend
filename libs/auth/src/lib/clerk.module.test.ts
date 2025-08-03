@@ -56,8 +56,8 @@ describe('ClerkModule', () => {
 			const module = ClerkModule.register();
 
 			expect(module.providers).toHaveLength(1);
-			expect((module.providers[0] as any).provide).toBe(ClerkService);
-			expect((module.providers[0] as any).inject).toEqual([ConfigService]);
+			expect((module.providers?.[0] as any).provide).toBe(ClerkService);
+			expect((module.providers?.[0] as any).inject).toEqual([ConfigService]);
 		});
 	});
 
@@ -66,7 +66,7 @@ describe('ClerkModule', () => {
 
 		beforeEach(() => {
 			const module = ClerkModule.register();
-			useFactory = (module.providers[0] as any).useFactory;
+			useFactory = (module.providers?.[0] as any).useFactory;
 		});
 
 		it('should create ClerkService with valid configuration', () => {
@@ -141,7 +141,7 @@ describe('ClerkModule', () => {
 			const module = ClerkModule.register();
 
 			expect(module.imports).toHaveLength(1);
-			expect(module.imports[0]).toBeDefined();
+			expect(module.imports?.[0]).toBeDefined();
 		});
 
 		it('should have correct module reference', () => {
@@ -168,7 +168,7 @@ describe('ClerkModule', () => {
 
 		beforeEach(() => {
 			const module = ClerkModule.register();
-			useFactory = (module.providers[0] as any).useFactory;
+			useFactory = (module.providers?.[0] as any).useFactory;
 		});
 
 		it('should handle config service throwing errors', () => {

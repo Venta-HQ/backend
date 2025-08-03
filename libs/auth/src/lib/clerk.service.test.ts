@@ -20,8 +20,12 @@ describe('ClerkService', () => {
 		vi.clearAllMocks();
 
 		// Mock Logger
-		vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-		vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
+		vi.spyOn(Logger.prototype, 'log').mockImplementation(() => {
+			// Empty implementation
+		});
+		vi.spyOn(Logger.prototype, 'error').mockImplementation(() => {
+			// Empty implementation
+		});
 
 		clerkService = new ClerkService(secretKey);
 	});
