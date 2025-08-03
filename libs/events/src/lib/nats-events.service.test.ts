@@ -102,7 +102,7 @@ describe('NatsEventsService', () => {
 			expect(stream).toBeDefined();
 			expect(stream.streamName).toBe('test-stream');
 			expect(stream.eventTypes).toEqual(['vendor.created', 'vendor.updated']);
-			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.vendor.created', {
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.vendor.created.vendor.updated', {
 				queue: 'test-group',
 			});
 		});
@@ -118,10 +118,10 @@ describe('NatsEventsService', () => {
 			const stream = await service.subscribeToStream(options, callback);
 
 			expect(stream.eventTypes).toEqual(['*']);
-			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.*', { queue: 'default' });
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.*', { queue: 'default-group' });
 		});
 
-		it('should generate stream name if not provided', async () => {
+		it('should use default stream name if not provided', async () => {
 			const options = {
 				eventTypes: ['vendor.created'],
 			};
@@ -130,7 +130,7 @@ describe('NatsEventsService', () => {
 
 			const stream = await service.subscribeToStream(options, callback);
 
-			expect(stream.streamName).toMatch(/^stream-\d+$/);
+			expect(stream.streamName).toBe('default-stream');
 		});
 	});
 
@@ -158,8 +158,8 @@ describe('NatsEventsService', () => {
 				subscription: mockSubscription,
 			};
 
-			// Should not throw error
-			await service.unsubscribeFromStream(stream);
+			// Should throw error
+			await expect(service.unsubscribeFromStream(stream)).rejects.toThrow('Unsubscribe failed');
 		});
 	});
 

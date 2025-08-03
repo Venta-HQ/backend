@@ -21,19 +21,11 @@ export class ClerkService {
 			select: { clerkId: true, id: true },
 		});
 
-		// Emit user created event with event sourcing
+		// Emit user created event
 		await this.eventsService.publishEvent('user.created', {
 			userId: user.id,
 			clerkId: user.clerkId,
 			timestamp: new Date().toISOString(),
-		}, {
-			aggregateId: user.id,
-			aggregateType: 'user',
-			userId: id, // Clerk ID as the user who triggered the event
-			metadata: {
-				source: 'clerk',
-				clerkId: id
-			}
 		});
 
 		return user;
@@ -60,14 +52,6 @@ export class ClerkService {
 				userId: user.id,
 				clerkId: user.clerkId,
 				timestamp: new Date().toISOString(),
-			}, {
-				aggregateId: user.id,
-				aggregateType: 'user',
-				userId: id, // Clerk ID as the user who triggered the event
-				metadata: {
-					source: 'clerk',
-					clerkId: id
-				}
 			});
 		}
 	}
@@ -87,22 +71,13 @@ export class ClerkService {
 			},
 		});
 
-		// Emit integration created event with event sourcing
+		// Emit integration created event
 		await this.eventsService.publishEvent('user.integration.created', {
 			integrationId: integration.id,
 			userId,
 			providerId,
 			type: IntegrationType.Clerk,
 			timestamp: new Date().toISOString(),
-		}, {
-			aggregateId: userId,
-			aggregateType: 'user',
-			userId: userId,
-			metadata: {
-				integrationId: integration.id,
-				providerId,
-				integrationType: IntegrationType.Clerk
-			}
 		});
 	}
 
@@ -142,15 +117,6 @@ export class ClerkService {
 				providerId,
 				type: IntegrationType.Clerk,
 				timestamp: new Date().toISOString(),
-			}, {
-				aggregateId: integration.userId,
-				aggregateType: 'user',
-				userId: integration.userId,
-				metadata: {
-					integrationId: integration.id,
-					providerId,
-					integrationType: IntegrationType.Clerk
-				}
 			});
 		}
 	}

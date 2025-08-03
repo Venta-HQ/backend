@@ -15,7 +15,6 @@ This directory contains comprehensive documentation for the Venta Backend projec
 - **[API Documentation](api.md)** - API endpoints and usage
 - **[Architecture Overview](architecture.md)** - System design and architecture
 - **[Event System](events.md)** - Event-driven communication patterns
-- **[Event Sourcing](event-sourcing.md)** - Event sourcing implementation
 
 ### Database & Infrastructure
 
@@ -72,7 +71,7 @@ nx lint {project-name}            # Lint specific project
 
 - **Nx Monorepo**: Efficient build system with caching and dependency management
 - **Microservices**: Independent services communicating via gRPC and events
-- **Event-Driven**: Asynchronous communication using NATS with event sourcing
+- **Event-Driven**: Asynchronous communication using NATS
 - **Type Safety**: Full TypeScript coverage with shared type definitions
 - **Service Discovery**: Dynamic service discovery with health monitoring and circuit breakers
 - **Resilience**: Built-in retry logic and circuit breaker protection

@@ -187,8 +187,6 @@ This document captures the analysis of all apps in the Venta Backend workspace, 
 - **Purpose**: Better service discovery and routing
 - **Considerations**: Service mesh, dynamic discovery, circuit breakers
 
-#### 3. Add Event Sourcing
-
 - **Purpose**: Track all state changes through events
 - **Benefits**: Audit trails, event replay, better debugging
 
@@ -267,7 +265,6 @@ export class ServiceModule {}
 
 - [x] Phase 3.1: Split WebSocket Gateway
 - [x] Phase 3.2: Improve Gateway Architecture
-- [x] Phase 3.3: Add Event Sourcing
 
 ### Completed
 

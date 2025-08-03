@@ -5,6 +5,7 @@ The Gateway service acts as the main HTTP API entry point for the Venta backend,
 ## Overview
 
 The Gateway service is a NestJS application that:
+
 - Provides HTTP API endpoints for all major functionality
 - Routes requests to appropriate microservices via gRPC with circuit breaker protection
 - Handles authentication and authorization
@@ -48,18 +49,20 @@ The Gateway service is a NestJS application that:
 ## Features
 
 ### 🔐 Authentication & Authorization
+
 - **Clerk Integration**: User authentication via Clerk tokens
 - **Auth Guards**: Route protection and user verification
 - **Webhook Verification**: Secure webhook processing
 
 ### 📡 API Endpoints
+
 - **User Management**: User CRUD operations and profile management
 - **Vendor Management**: Vendor creation, updates, and queries
 - **File Uploads**: Secure file upload and storage
 - **Webhooks**: External service integration (Clerk, RevenueCat)
-- **Event Sourcing**: Event history and replay endpoints
 
 ### 🔄 Service Communication
+
 - **gRPC Clients**: Type-safe communication with microservices
 - **Service Discovery**: Dynamic service discovery from environment variables
 - **Circuit Breakers**: Automatic failure detection and recovery
@@ -68,6 +71,7 @@ The Gateway service is a NestJS application that:
 - **Error Handling**: Centralized error management and responses
 
 ### 🏥 Health & Monitoring
+
 - **Service Health**: Monitor health of all microservices
 - **Circuit Breaker Stats**: Track circuit breaker states and failures
 - **Health Endpoints**: Comprehensive health checking capabilities
@@ -75,12 +79,15 @@ The Gateway service is a NestJS application that:
 ## API Endpoints
 
 ### Authentication
+
 All protected endpoints require a valid Clerk session token in the Authorization header:
+
 ```
 Authorization: Bearer <clerk-session-token>
 ```
 
 ### User Endpoints
+
 ```
 GET    /user/profile          # Get current user profile
 PUT    /user/profile          # Update user profile
@@ -88,6 +95,7 @@ GET    /user/vendors          # Get user's vendors
 ```
 
 ### Vendor Endpoints
+
 ```
 GET    /vendor/:id            # Get vendor by ID
 POST   /vendor                # Create new vendor
@@ -96,6 +104,7 @@ DELETE /vendor/:id            # Delete vendor
 ```
 
 ### Upload Endpoints
+
 ```
 POST   /upload/file           # Upload file
 GET    /upload/file/:id       # Get file by ID
@@ -103,12 +112,14 @@ DELETE /upload/file/:id       # Delete file
 ```
 
 ### Webhook Endpoints
+
 ```
 POST   /webhook/clerk         # Clerk user events
 POST   /webhook/subscription  # RevenueCat subscription events
 ```
 
 ### Health & Monitoring Endpoints
+
 ```
 GET    /health                # Basic health status
 GET    /health/detailed       # Detailed health information
@@ -117,7 +128,6 @@ GET    /health/circuit-breakers # Circuit breaker statistics
 GET    /health/reset-circuit-breakers # Reset circuit breakers (admin)
 ```
 
-### Event Sourcing Endpoints
 ```
 GET    /events/history        # Get event history
 GET    /events/replay         # Replay events
@@ -128,11 +138,13 @@ GET    /events/stats          # Get event statistics
 ## Setup
 
 ### Prerequisites
+
 - Node.js 18+
 - Docker (for containerized deployment)
 - Access to required services (Clerk, RevenueCat, etc.)
 
 ### Environment Variables
+
 ```bash
 # Service Configuration
 GATEWAY_SERVICE_PORT=5003
@@ -172,6 +184,7 @@ HEALTH_CHECK_TIMEOUT=5000
 ```
 
 ### Development
+
 ```bash
 # Install dependencies
 pnpm install
@@ -190,6 +203,7 @@ nx typecheck gateway
 ```
 
 ### Production Build
+
 ```bash
 # Build for production
 nx build gateway
@@ -199,6 +213,7 @@ nx serve gateway --configuration=production
 ```
 
 ### Docker Deployment
+
 ```bash
 # Build Docker image
 docker build -t venta-gateway .
@@ -210,6 +225,7 @@ docker run -p 5003:5003 venta-gateway
 ## Development
 
 ### Project Structure
+
 ```
 apps/gateway/
 ├── src/
@@ -220,8 +236,7 @@ apps/gateway/
 │   │   └── service-discovery.service.ts # Service discovery
 │   ├── health/                    # Health monitoring
 │   │   └── health.controller.ts   # Health endpoints
-│   ├── events/                    # Event sourcing
-│   │   └── event-sourcing.controller.ts # Event endpoints
+
 │   ├── upload/                    # File upload functionality
 │   │   ├── upload.controller.ts
 │   │   └── upload.module.ts
@@ -247,50 +262,51 @@ apps/gateway/
 ### Adding New Endpoints
 
 1. **Create Controller**:
+
 ```typescript
 @Controller('new-feature')
 export class NewFeatureController {
-  constructor(
-    private readonly serviceDiscovery: ServiceDiscoveryService
-  ) {}
+	constructor(private readonly serviceDiscovery: ServiceDiscoveryService) {}
 
-  @Get()
-  async getData() {
-    return await this.serviceDiscovery.executeRequest('new-service', () =>
-      this.client.invoke('getData', {})
-    );
-  }
+	@Get()
+	async getData() {
+		return await this.serviceDiscovery.executeRequest('new-service', () => this.client.invoke('getData', {}));
+	}
 }
 ```
 
 2. **Add to Router**:
+
 ```typescript
 // In router.ts
 export const routes = [
-  {
-    path: 'new-feature',
-    module: NewFeatureModule,
-  },
+	{
+		path: 'new-feature',
+		module: NewFeatureModule,
+	},
 ];
 ```
 
 3. **Update Module**:
+
 ```typescript
 // In app.module.ts
 imports: [
-  // ... existing imports
-  NewFeatureModule,
-]
+	// ... existing imports
+	NewFeatureModule,
+];
 ```
 
 ## Testing
 
 ### Unit Tests
+
 ```bash
 nx test gateway
 ```
 
 ### Integration Tests
+
 ```bash
 # Start test database
 docker-compose -f docker-compose.test.yml up -d
@@ -300,12 +316,14 @@ nx test gateway --testPathPattern=integration
 ```
 
 ### Service Discovery Testing
+
 ```bash
 # Test service discovery functionality
 npm run test:service-discovery
 ```
 
 ### API Testing
+
 ```bash
 # Using curl
 curl -H "Authorization: Bearer <token>" http://localhost:5003/vendor/123
@@ -320,12 +338,15 @@ curl http://localhost:5003/health/services
 ## Monitoring & Logging
 
 ### Logging
+
 The service uses structured logging with Pino:
+
 - Request/response logging
 - Error tracking
 - Performance metrics
 
 ### Health Checks
+
 ```
 GET /health                # Service health status
 GET /health/detailed       # Detailed health information
@@ -334,12 +355,14 @@ GET /health/circuit-breakers # Circuit breaker statistics
 ```
 
 ### Service Discovery
+
 - **Dynamic Discovery**: Automatically discovers services from environment variables
 - **Health Monitoring**: Continuously monitors service health
 - **Circuit Breakers**: Prevents cascading failures
 - **Fallback Support**: Legacy service address patterns supported
 
 ### Error Handling
+
 - Centralized error handling via `ErrorHandlingModule`
 - Structured error responses
 - Error logging and monitoring
@@ -348,6 +371,7 @@ GET /health/circuit-breakers # Circuit breaker statistics
 ## Dependencies
 
 ### Core Libraries
+
 - **NestJS**: Framework for building scalable server-side applications
 - **gRPC**: High-performance RPC framework for microservice communication
 - **Prisma**: Database ORM and query builder
@@ -355,6 +379,7 @@ GET /health/circuit-breakers # Circuit breaker statistics
 - **NATS**: Event streaming and messaging
 
 ### External Services
+
 - **Clerk**: User authentication and management
 - **RevenueCat**: Subscription and billing management
 - **Algolia**: Search functionality
@@ -371,6 +396,7 @@ GET /health/circuit-breakers # Circuit breaker statistics
 ### Common Issues
 
 **Port Already in Use**:
+
 ```bash
 # Check what's using the port
 lsof -i :5003
@@ -380,6 +406,7 @@ kill -9 <PID>
 ```
 
 **Database Connection Issues**:
+
 ```bash
 # Check database status
 docker ps | grep postgres
@@ -389,6 +416,7 @@ docker-compose restart postgres
 ```
 
 **Service Discovery Issues**:
+
 ```bash
 # Check service discovery
 curl http://localhost:5003/health/services
@@ -401,6 +429,7 @@ curl http://localhost:5003/health/reset-circuit-breakers
 ```
 
 **gRPC Connection Issues**:
+
 ```bash
 # Check microservice status
 nx serve user
@@ -408,4 +437,4 @@ nx serve vendor
 nx serve location
 ```
 
-For more detailed troubleshooting, see the main project documentation. 
+For more detailed troubleshooting, see the main project documentation.
