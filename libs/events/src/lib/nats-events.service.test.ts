@@ -102,7 +102,7 @@ describe('NatsEventsService', () => {
 			expect(stream).toBeDefined();
 			expect(stream.streamName).toBe('test-stream');
 			expect(stream.eventTypes).toEqual(['vendor.created', 'vendor.updated']);
-			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith(['events.vendor.created', 'events.vendor.updated'], {
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.vendor.created', {
 				queue: 'test-group',
 			});
 		});
@@ -118,7 +118,7 @@ describe('NatsEventsService', () => {
 			const stream = await service.subscribeToStream(options, callback);
 
 			expect(stream.eventTypes).toEqual(['*']);
-			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith(['events.*'], { queue: 'default' });
+			expect(mockNatsConnection.subscribe).toHaveBeenCalledWith('events.*', { queue: 'default' });
 		});
 
 		it('should generate stream name if not provided', async () => {

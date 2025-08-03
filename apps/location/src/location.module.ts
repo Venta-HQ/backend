@@ -1,6 +1,7 @@
 import { ConfigModule } from '@app/config';
 import { PrismaModule } from '@app/database';
 import { ErrorHandlingModule } from '@app/errors';
+import { EventsModule } from '@app/events';
 import { LoggerModule } from '@app/logger';
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { LocationController } from './location.controller';
 		PrismaModule.register(),
 		RedisModule,
 		ErrorHandlingModule,
+		EventsModule,
 	],
 })
 export class LocationModule {}

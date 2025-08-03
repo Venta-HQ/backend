@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import { PrismaService } from '@app/database';
 import { AppError, ErrorCodes } from '@app/errors';
+import { NatsEventsService } from '@app/events';
 import {
 	Empty,
 	LOCATION_SERVICE_NAME,
@@ -61,6 +62,7 @@ export class LocationController {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
+		private readonly eventsService: NatsEventsService,
 	) {}
 
 	@GrpcMethod(LOCATION_SERVICE_NAME)
@@ -80,6 +82,17 @@ export class LocationController {
 					id: data.entityId,
 				},
 			});
+
+			// Publish location update event
+			await this.eventsService.publishEvent('vendor.location.updated', {
+				vendorId: data.entityId,
+				location: {
+					lat: data.location.lat,
+					long: data.location.long,
+				},
+				timestamp: new Date().toISOString(),
+			});
+
 			return {};
 		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {

@@ -37,7 +37,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		this.vendorEventStream = await this.eventsService.subscribeToStream(
 			{
 				streamName: 'algolia-sync-vendor-events',
-				eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted'],
+				eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted', 'vendor.location.updated'],
 				groupName: 'algolia-sync',
 			},
 			async (event) => {
@@ -51,6 +51,9 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 							break;
 						case 'vendor.deleted':
 							await this.handleVendorDeleted(event.data);
+							break;
+						case 'vendor.location.updated':
+							await this.handleVendorLocationUpdated(event.data);
 							break;
 						default:
 							this.logger.debug(`Ignoring event type: ${event.type}`);
@@ -105,6 +108,19 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		await this.retryUtil.retryOperation(
 			() => this.algoliaService.deleteObject('vendor', vendor.id),
 			`Deleting vendor from Algolia: ${vendor.id}`,
+		);
+	}
+
+	private async handleVendorLocationUpdated(locationData: any) {
+		await this.retryUtil.retryOperation(
+			() =>
+				this.algoliaService.updateObject('vendor', locationData.vendorId, {
+					_geoloc: {
+						lat: locationData.location.lat,
+						lng: locationData.location.long,
+					},
+				}),
+			`Updating vendor location in Algolia: ${locationData.vendorId}`,
 		);
 	}
 }

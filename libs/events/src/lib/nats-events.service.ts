@@ -116,7 +116,9 @@ export class NatsEventsService implements IEventsService {
 
 		// Create subscription with queue group for load balancing
 		const queueGroup = options.groupName || 'default';
-		const subscription = this.nc.subscribe(subjects, { queue: queueGroup });
+		
+		// Subscribe to the first subject (NATS doesn't support array of subjects)
+		const subscription = this.nc.subscribe(subjects[0], { queue: queueGroup });
 
 		const stream: EventStream = {
 			streamName,
