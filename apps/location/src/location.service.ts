@@ -3,7 +3,7 @@ import { PrismaService } from '@app/database';
 import { AppError, ErrorCodes } from '@app/errors';
 import { IEventsService } from '@app/events';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
-import { GeospatialUtil, RetryUtil } from '@app/utils';
+import { RetryUtil } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -132,29 +132,18 @@ export class LocationService {
 		}
 
 		try {
-			// Calculate bounding box dimensions
-			const { centerLat, centerLon, height, width } = GeospatialUtil.calculateBoundingBoxDimensions(
-				{ lat: swLocation.lat, long: swLocation.long },
-				{ lat: neLocation.lat, long: neLocation.long },
-			);
-
 			// Search for vendors in the bounding box with retry
-			const vendorLocations = await this.retryUtil.retryOperation(
-				async () => {
-					return await this.redis.geosearch(
-						'vendor_locations',
-						'BYBOX', // Specify the BYBOX method
-						width,
-						height,
-						'm',
-						'FROMLONLAT',
-						centerLon,
-						centerLat,
-						'WITHCOORD',
-					);
-				},
-				'Search vendor locations in Redis'
-			);
+			const vendorLocations = await this.retryUtil.retryOperation(async () => {
+				return await this.redis.geosearch(
+					'vendor_locations',
+					'BYBOX',
+					swLocation.long,
+					swLocation.lat,
+					neLocation.long,
+					neLocation.lat,
+					'WITHCOORD',
+				);
+			}, 'Search vendor locations in Redis');
 
 			const vendors = vendorLocations.map((record: unknown) => {
 				const typedRecord = record as [string, [number, number]];
@@ -193,13 +182,10 @@ export class LocationService {
 	 */
 	async getVendorLocation(vendorId: string): Promise<{ lat: number; long: number } | null> {
 		try {
-			const coordinates = await this.retryUtil.retryOperation(
-				async () => {
-					return await this.redis.geopos('vendor_locations', vendorId);
-				},
-				'Get vendor location from Redis'
-			);
-			
+			const coordinates = await this.retryUtil.retryOperation(async () => {
+				return await this.redis.geopos('vendor_locations', vendorId);
+			}, 'Get vendor location from Redis');
+
 			if (!coordinates || !coordinates[0]) {
 				return null;
 			}
@@ -218,13 +204,10 @@ export class LocationService {
 	 */
 	async removeVendorLocation(vendorId: string): Promise<void> {
 		try {
-			await this.retryUtil.retryOperation(
-				async () => {
-					await this.redis.zrem('vendor_locations', vendorId);
-				},
-				'Remove vendor location from Redis'
-			);
-			
+			await this.retryUtil.retryOperation(async () => {
+				await this.redis.zrem('vendor_locations', vendorId);
+			}, 'Remove vendor location from Redis');
+
 			this.logger.log(`Removed vendor ${vendorId} from geospatial store`);
 		} catch (e) {
 			this.logger.error(`Failed to remove vendor location for ${vendorId}:`, e);
