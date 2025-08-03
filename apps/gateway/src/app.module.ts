@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/nest/guards';
-import { ClerkModule, EventsModule, HealthModule, HttpLoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { ClerkModule, EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -14,7 +14,7 @@ import { modules, routes } from './router';
 		HealthModule.forRoot({
 			serviceName: 'gateway-service',
 		}),
-		HttpLoggerModule.register('Gateway'),
+		LoggerModule.register({ appName: 'gateway', protocol: 'http' }),
 		RedisModule,
 		ClerkModule.register(),
 		PrismaModule.register(),

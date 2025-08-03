@@ -1,5 +1,4 @@
-import { RequestContextService } from 'libs/nest/modules/logger/request-context.service';
-import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, PrismaModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -15,9 +14,9 @@ import { VendorService } from './vendor.service';
 		HealthModule.forRoot({
 			serviceName: 'vendor-service',
 		}),
-		GrpcLoggerModule.register('Vendor Microservice'),
+		LoggerModule.register({ appName: 'Vendor Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 	],
-	providers: [VendorService, RequestContextService],
+	providers: [VendorService],
 })
 export class VendorModule {}

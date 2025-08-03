@@ -1,4 +1,4 @@
-import { EventsModule, GrpcLoggerModule, HealthModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -14,7 +14,7 @@ import { LocationController } from './location.controller';
 			serviceName: 'location-service',
 		}),
 		RedisModule,
-		GrpcLoggerModule.register('Location Microservice'),
+		LoggerModule.register({ appName: 'Location Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 	],
 	providers: [],
