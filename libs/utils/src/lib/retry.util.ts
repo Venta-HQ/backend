@@ -1,3 +1,4 @@
+import retry from 'retry';
 import { Logger } from '@nestjs/common';
 
 export interface RetryOptions {
@@ -7,42 +8,36 @@ export interface RetryOptions {
 	retryDelay?: number;
 }
 
-export class RetryUtil {
-	private readonly logger: Logger;
-	private readonly maxRetries: number;
-	private readonly retryDelay: number;
-	private readonly backoffMultiplier: number;
+export async function retryOperation<T>(
+	operation: () => Promise<T>,
+	description: string,
+	options: RetryOptions = {},
+): Promise<T> {
+	const logger = options.logger ?? new Logger('RetryUtil');
+	const maxRetries = options.maxRetries ?? 3;
+	const retryDelay = options.retryDelay ?? 1000;
+	const backoffMultiplier = options.backoffMultiplier ?? 2;
 
-	constructor(options: RetryOptions = {}) {
-		this.maxRetries = options.maxRetries ?? 3;
-		this.retryDelay = options.retryDelay ?? 1000;
-		this.backoffMultiplier = options.backoffMultiplier ?? 2;
-		this.logger = options.logger ?? new Logger(RetryUtil.name);
-	}
+	const operation_retry = retry.operation({
+		retries: maxRetries,
+		factor: backoffMultiplier,
+		minTimeout: retryDelay,
+		maxTimeout: retryDelay * Math.pow(backoffMultiplier, maxRetries),
+	});
 
-	async retryOperation<T>(operation: () => Promise<T>, description: string, retryCount = 0): Promise<T> {
-		try {
-			this.logger.log(description);
-			return await operation();
-		} catch (error) {
-			if (retryCount < this.maxRetries) {
-				const delay = this.retryDelay * Math.pow(this.backoffMultiplier, retryCount);
-				this.logger.warn(
-					`${description} failed (attempt ${retryCount + 1}/${this.maxRetries + 1}), retrying in ${delay}ms:`,
-					error,
-				);
-				await new Promise((resolve) => setTimeout(resolve, delay));
-				return this.retryOperation(operation, description, retryCount + 1);
-			} else {
-				this.logger.error(`${description} failed after ${this.maxRetries + 1} attempts:`, error);
-				throw error;
+	return new Promise((resolve, reject) => {
+		operation_retry.attempt(async (currentAttempt: number) => {
+			try {
+				logger.log(`${description} (attempt ${currentAttempt})`);
+				const result = await operation();
+				resolve(result);
+			} catch (error) {
+				logger.warn(`${description} failed (attempt ${currentAttempt}):`, error);
+				if (operation_retry.retry(error as Error)) {
+					return;
+				}
+				reject(operation_retry.mainError());
 			}
-		}
-	}
-
-	// Static method for one-off retry operations
-	static async retry<T>(operation: () => Promise<T>, description: string, options: RetryOptions = {}): Promise<T> {
-		const retryUtil = new RetryUtil(options);
-		return retryUtil.retryOperation(operation, description);
-	}
+		});
+	});
 }

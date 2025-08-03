@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/apitypes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
-import { RetryUtil } from '@app/utils';
+import { retryOperation } from '@app/utils';
 import { SchemaValidatorPipe } from '@app/validation';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -23,21 +23,13 @@ import { ConnectionManagerService } from '../services/connection-manager.service
 @WebSocketGateway({ namespace: '/vendor' })
 export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(VendorLocationGateway.name);
-	private readonly retryUtil: RetryUtil;
 	private locationService!: LocationServiceClient;
 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: ConnectionManagerService,
-	) {
-		this.retryUtil = new RetryUtil({
-			maxRetries: 3,
-			retryDelay: 1000,
-			backoffMultiplier: 2,
-			logger: this.logger,
-		});
-	}
+	) {}
 
 	afterInit() {
 		this.locationService = this.grpcClient.getService<LocationServiceClient>(LOCATION_SERVICE_NAME);
@@ -93,9 +85,13 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 				});
 
 			// Store vendor location in Redis for geospatial queries
-			await this.retryUtil.retryOperation(async () => {
-				await this.redis.zadd('vendor_locations', data.lat, vendorId);
-			}, 'Update vendor location in Redis');
+			await retryOperation(
+				async () => {
+					await this.redis.zadd('vendor_locations', data.lat, vendorId);
+				},
+				'Update vendor location in Redis',
+				{ logger: this.logger },
+			);
 
 			// Notify all users tracking this vendor about the location update
 			socket.to(vendorId).emit('vendor_sync', {

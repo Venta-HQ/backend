@@ -15,14 +15,8 @@ vi.mock('@app/utils', () => {
 		return await operation();
 	});
 
-	const MockRetryUtil = vi.fn().mockImplementation(() => {
-		return {
-			retryOperation: mockRetryOperation,
-		};
-	});
-
 	return {
-		RetryUtil: MockRetryUtil,
+		retryOperation: mockRetryOperation,
 	};
 });
 
@@ -196,14 +190,14 @@ describe('GrpcInstance', () => {
 
 	describe('retry mechanism', () => {
 		it('should use retry mechanism for gRPC calls', async () => {
-			const { RetryUtil } = await import('@app/utils');
+			const { retryOperation } = await import('@app/utils');
 			const testData = { test: 'data' };
 			const expectedResult = { success: true };
 			mockService.testMethod.mockReturnValue(expectedResult);
 
 			const result = await grpcInstance.invoke('testMethod', testData);
 
-			expect(RetryUtil).toHaveBeenCalled();
+			expect(retryOperation).toHaveBeenCalled();
 			expect(result).toBe(expectedResult);
 		});
 	});

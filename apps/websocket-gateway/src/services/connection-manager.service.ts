@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { IEventsService } from '@app/events';
-import { RetryUtil } from '@app/utils';
+import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -14,19 +14,11 @@ export interface ConnectionInfo {
 @Injectable()
 export class ConnectionManagerService {
 	private readonly logger = new Logger(ConnectionManagerService.name);
-	private readonly retryUtil: RetryUtil;
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly eventsService: IEventsService,
-	) {
-		this.retryUtil = new RetryUtil({
-			maxRetries: 3,
-			retryDelay: 1000,
-			backoffMultiplier: 2,
-			logger: this.logger,
-		});
-	}
+	) {}
 
 	/**
 	 * Register a user connection for location-based updates
@@ -36,7 +28,7 @@ export class ConnectionManagerService {
 	async registerUser(userId: string, socketId: string): Promise<void> {
 		try {
 			// Store user -> socket mapping with retry
-			await this.retryUtil.retryOperation(
+			await retryOperation(
 				async () => {
 					await this.redis.set(`user:${userId}:socketId`, socketId);
 					await this.redis.set(`socket:${socketId}:userId`, userId);
@@ -49,7 +41,8 @@ export class ConnectionManagerService {
 						}),
 					);
 				},
-				'Register user connection in Redis'
+				'Register user connection in Redis',
+				{ logger: this.logger },
 			);
 
 			// Emit connection event
@@ -74,7 +67,7 @@ export class ConnectionManagerService {
 	async registerVendor(vendorId: string, socketId: string): Promise<void> {
 		try {
 			// Store vendor -> socket mapping with retry
-			await this.retryUtil.retryOperation(
+			await retryOperation(
 				async () => {
 					await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
 					await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
@@ -87,7 +80,8 @@ export class ConnectionManagerService {
 						}),
 					);
 				},
-				'Register vendor connection in Redis'
+				'Register vendor connection in Redis',
+				{ logger: this.logger },
 			);
 
 			// Emit connection event

@@ -1,24 +1,17 @@
 import { EventStream, IEventsService } from '@app/events';
 import { AlgoliaService } from '@app/search';
-import { RetryUtil } from '@app/utils';
+import { retryOperation } from '@app/utils';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
 @Injectable()
 export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
-	private readonly retryUtil: RetryUtil;
 	private vendorEventStream: EventStream | null = null;
 
 	constructor(
 		private readonly algoliaService: AlgoliaService,
 		@Inject('EventsService') private readonly eventsService: IEventsService,
-	) {
-		this.retryUtil = new RetryUtil({
-			logger: this.logger,
-			maxRetries: 3,
-			retryDelay: 1000,
-		});
-	}
+	) {}
 
 	async onModuleInit() {
 		await this.setupEventListeners();
@@ -69,7 +62,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	private async handleVendorCreated(vendor: Record<string, unknown>) {
-		await this.retryUtil.retryOperation(
+		await retryOperation(
 			() =>
 				this.algoliaService.createObject('vendor', {
 					...vendor,
@@ -83,11 +76,12 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 						: {}),
 				}),
 			`Creating vendor in Algolia: ${vendor.id}`,
+			{ logger: this.logger },
 		);
 	}
 
 	private async handleVendorUpdated(vendor: Record<string, unknown>) {
-		await this.retryUtil.retryOperation(
+		await retryOperation(
 			() =>
 				this.algoliaService.updateObject('vendor', vendor.id as string, {
 					...vendor,
@@ -101,18 +95,20 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 						: {}),
 				}),
 			`Updating vendor in Algolia: ${vendor.id}`,
+			{ logger: this.logger },
 		);
 	}
 
 	private async handleVendorDeleted(vendor: Record<string, unknown>) {
-		await this.retryUtil.retryOperation(
+		await retryOperation(
 			() => this.algoliaService.deleteObject('vendor', vendor.id as string),
 			`Deleting vendor from Algolia: ${vendor.id}`,
+			{ logger: this.logger },
 		);
 	}
 
 	private async handleVendorLocationUpdated(locationData: Record<string, unknown>) {
-		await this.retryUtil.retryOperation(
+		await retryOperation(
 			() =>
 				this.algoliaService.updateObject('vendor', locationData.vendorId as string, {
 					_geoloc: {
@@ -121,6 +117,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 					},
 				}),
 			`Updating vendor location in Algolia: ${locationData.vendorId}`,
+			{ logger: this.logger },
 		);
 	}
 }

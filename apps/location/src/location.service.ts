@@ -3,7 +3,7 @@ import { PrismaService } from '@app/database';
 import { AppError, ErrorCodes } from '@app/errors';
 import { IEventsService } from '@app/events';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
-import { RetryUtil } from '@app/utils';
+import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -11,20 +11,12 @@ import { Prisma } from '@prisma/client';
 @Injectable()
 export class LocationService {
 	private readonly logger = new Logger(LocationService.name);
-	private readonly retryUtil: RetryUtil;
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
 		private readonly eventsService: IEventsService,
-	) {
-		this.retryUtil = new RetryUtil({
-			maxRetries: 3,
-			retryDelay: 1000,
-			backoffMultiplier: 2,
-			logger: this.logger,
-		});
-	}
+	) {}
 
 	/**
 	 * Update vendor location in both Redis geospatial store and database
@@ -38,9 +30,13 @@ export class LocationService {
 
 		try {
 			// Update Redis geospatial store with retry
-			await this.retryUtil.retryOperation(async () => {
-				await this.redis.geoadd('vendor_locations', data.location!.long, data.location!.lat, data.entityId);
-			}, 'Update vendor location in Redis');
+			await retryOperation(
+				async () => {
+					await this.redis.geoadd('vendor_locations', data.location!.long, data.location!.lat, data.entityId);
+				},
+				'Update vendor location in Redis',
+				{ logger: this.logger },
+			);
 
 			// Update database
 			await this.prisma.db.vendor.update({
@@ -87,9 +83,13 @@ export class LocationService {
 
 		try {
 			// Update Redis geospatial store with retry
-			await this.retryUtil.retryOperation(async () => {
-				await this.redis.geoadd('user_locations', data.location!.long, data.location!.lat, data.entityId);
-			}, 'Update user location in Redis');
+			await retryOperation(
+				async () => {
+					await this.redis.geoadd('user_locations', data.location!.long, data.location!.lat, data.entityId);
+				},
+				'Update user location in Redis',
+				{ logger: this.logger },
+			);
 
 			// Note: Database update skipped until migration is run
 			// await this.prisma.db.user.update({
@@ -133,17 +133,21 @@ export class LocationService {
 
 		try {
 			// Search for vendors in the bounding box with retry
-			const vendorLocations = await this.retryUtil.retryOperation(async () => {
-				return await this.redis.geosearch(
-					'vendor_locations',
-					'BYBOX',
-					swLocation.long,
-					swLocation.lat,
-					neLocation.long,
-					neLocation.lat,
-					'WITHCOORD',
-				);
-			}, 'Search vendor locations in Redis');
+			const vendorLocations = await retryOperation(
+				async () => {
+					return await this.redis.geosearch(
+						'vendor_locations',
+						'BYBOX',
+						swLocation.long,
+						swLocation.lat,
+						neLocation.long,
+						neLocation.lat,
+						'WITHCOORD',
+					);
+				},
+				'Search vendor locations in Redis',
+				{ logger: this.logger },
+			);
 
 			const vendors = vendorLocations.map((record: unknown) => {
 				const typedRecord = record as [string, [number, number]];
@@ -182,9 +186,13 @@ export class LocationService {
 	 */
 	async getVendorLocation(vendorId: string): Promise<{ lat: number; long: number } | null> {
 		try {
-			const coordinates = await this.retryUtil.retryOperation(async () => {
-				return await this.redis.geopos('vendor_locations', vendorId);
-			}, 'Get vendor location from Redis');
+			const coordinates = await retryOperation(
+				async () => {
+					return await this.redis.geopos('vendor_locations', vendorId);
+				},
+				'Get vendor location from Redis',
+				{ logger: this.logger },
+			);
 
 			if (!coordinates || !coordinates[0]) {
 				return null;
@@ -204,9 +212,13 @@ export class LocationService {
 	 */
 	async removeVendorLocation(vendorId: string): Promise<void> {
 		try {
-			await this.retryUtil.retryOperation(async () => {
-				await this.redis.zrem('vendor_locations', vendorId);
-			}, 'Remove vendor location from Redis');
+			await retryOperation(
+				async () => {
+					await this.redis.zrem('vendor_locations', vendorId);
+				},
+				'Remove vendor location from Redis',
+				{ logger: this.logger },
+			);
 
 			this.logger.log(`Removed vendor ${vendorId} from geospatial store`);
 		} catch (e) {
