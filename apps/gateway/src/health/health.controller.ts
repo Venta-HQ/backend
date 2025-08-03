@@ -11,31 +11,31 @@ export class HealthController {
 	}
 
 	/**
-	 * Basic health check endpoint
+	 * Basic health check
 	 */
 	@Get()
 	@HttpCode(HttpStatus.OK)
 	async getHealth() {
-		const status = await this.healthChecker.getHealthStatus();
-
-		return {
-			status: status.status,
-			timestamp: status.timestamp,
-			summary: status.summary,
-		};
+		return this.healthChecker.getHealthStatus();
 	}
 
 	/**
-	 * Detailed health check endpoint
+	 * Detailed health check with all services
 	 */
 	@Get('detailed')
 	@HttpCode(HttpStatus.OK)
 	async getDetailedHealth() {
-		return await this.healthChecker.getHealthStatus();
+		const basicHealth = await this.healthChecker.getHealthStatus();
+		const servicesHealth = await this.getServicesHealth();
+
+		return {
+			...basicHealth,
+			services: servicesHealth,
+		};
 	}
 
 	/**
-	 * Service discovery health check
+	 * Services health check
 	 */
 	@Get('services')
 	@HttpCode(HttpStatus.OK)
@@ -62,16 +62,6 @@ export class HealthController {
 	@HttpCode(HttpStatus.OK)
 	async getCircuitBreakerStats() {
 		return this.serviceDiscovery.getCircuitBreakerStats();
-	}
-
-	/**
-	 * Reset circuit breakers (admin endpoint)
-	 */
-	@Get('reset-circuit-breakers')
-	@HttpCode(HttpStatus.OK)
-	async resetCircuitBreakers() {
-		this.serviceDiscovery.resetCircuitBreakers();
-		return { message: 'Circuit breakers reset successfully' };
 	}
 
 	/**

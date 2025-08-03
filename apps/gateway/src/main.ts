@@ -1,4 +1,5 @@
-import { Logger } from 'nestjs-pino';
+import helmet from 'helmet';
+import { Logger } from '@app/logger';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
@@ -6,10 +7,29 @@ import { AppModule } from './app.module';
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 	const configService = app.get(ConfigService);
+	const logger = app.get(Logger);
 
-	// Error handling is configured in the ErrorHandlingModule
-	app.useLogger(app.get(Logger));
-	await app.listen(configService.get('GATEWAY_SERVICE_PORT', 5003), '0.0.0.0');
+	// Security headers
+	app.use(helmet());
+
+	// Global prefix
+	app.setGlobalPrefix('api');
+
+	// CORS configuration
+	app.enableCors({
+		origin: configService.get('CORS_ORIGIN', '*'),
+		methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+		allowedHeaders: ['Content-Type', 'Authorization'],
+		credentials: true,
+	});
+
+	const port = configService.get('GATEWAY_SERVICE_PORT', 3000);
+	await app.listen(port);
+
+	logger.log(`Gateway service is running on port ${port}`, 'Bootstrap', {});
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+	console.error('Failed to start gateway service:', error);
+	process.exit(1);
+});

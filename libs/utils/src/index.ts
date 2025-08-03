@@ -3,3 +3,7 @@ export * from './lib/retry.util';
 export * from './lib/geospatial.util';
 export * from './lib/circuit-breaker.util';
 export * from './lib/health-check.util';
+export * from './lib/circuit-breaker.service';
+export * from './lib/metrics.service';
+export * from './lib/health.controller';
+export * from './lib/utils.module';
