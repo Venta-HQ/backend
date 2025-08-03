@@ -88,7 +88,7 @@
 		"@nestjs/testing": "^10.0.0",
 		"@nx/eslint-plugin": "^21.3.8",
 		"@nx/js": "^21.3.8",
-		"@nx/nest": "^21.3.8",
+		"@nx/nest": "21.3.8",
 		"@nx/node": "^21.3.8",
 		"@nx/vite": "^21.3.8",
 		"@nx/web": "21.3.8",
