@@ -92,6 +92,20 @@ export class VendorService {
 			updatedAt: vendor.updatedAt,
 			website: vendor.website,
 		};
-		await this.eventsService.publishEvent(type, payload);
+
+		// Add event sourcing information
+		const eventOptions = {
+			aggregateId: vendor.id as string,
+			aggregateType: 'vendor',
+			userId: vendor.ownerId as string, // Assuming ownerId is available
+			metadata: {
+				eventType: type,
+				vendorName: vendor.name as string,
+				hasLocation: !!(vendor.lat && vendor.long),
+				hasImage: !!vendor.primaryImage,
+			},
+		};
+
+		await this.eventsService.publishEvent(type, payload, eventOptions);
 	}
 }

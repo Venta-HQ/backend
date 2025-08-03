@@ -1,31 +1,25 @@
-import { join } from 'path';
 import { ConfigModule } from '@app/config';
-import { PrismaModule } from '@app/database';
+import { ErrorHandlingModule } from '@app/errors';
 import { EventsModule } from '@app/events';
-import { GrpcInstanceModule } from '@app/grpc';
+import { HealthModule } from '@app/health';
 import { LoggerModule } from '@app/logger';
-import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
-import { LocationWebsocketGateway } from './gateways/location.gateway';
+import { UserLocationGateway } from './gateways/user-location.gateway';
+import { VendorLocationGateway } from './gateways/vendor-location.gateway';
 import { ConnectionManagerService } from './services/connection-manager.service';
 
 @Module({
 	imports: [
 		ConfigModule,
 		EventsModule,
-		LoggerModule.register({ appName: 'WebSocket Gateway', protocol: 'http' }),
-		PrismaModule.register(),
-		RedisModule,
-		GrpcInstanceModule.register<LocationServiceClient>({
-			protoPackage: LOCATION_PACKAGE_NAME,
-			protoPath: join(__dirname, `../../libs/proto/src/definitions/location.proto`),
-			provide: LOCATION_SERVICE_NAME,
-			serviceName: LOCATION_SERVICE_NAME,
-			urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
+		HealthModule.forRoot({
+			serviceName: 'websocket-gateway-service',
 		}),
+		LoggerModule.register({ appName: 'WebSocket Gateway', protocol: 'http' }),
+		RedisModule,
+		ErrorHandlingModule,
 	],
-	controllers: [],
-	providers: [LocationWebsocketGateway, ConnectionManagerService],
+	providers: [UserLocationGateway, VendorLocationGateway, ConnectionManagerService],
 })
 export class WebsocketGatewayModule {}

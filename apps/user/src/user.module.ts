@@ -2,6 +2,7 @@ import { ConfigModule } from '@app/config';
 import { PrismaModule } from '@app/database';
 import { ErrorHandlingModule } from '@app/errors';
 import { EventsModule } from '@app/events';
+import { HealthModule } from '@app/health';
 import { LoggerModule } from '@app/logger';
 import { Module } from '@nestjs/common';
 import { ClerkController } from './clerk/clerk.controller';
@@ -16,6 +17,9 @@ import { VendorService } from './vendor/vendor.service';
 	imports: [
 		ConfigModule,
 		EventsModule,
+		HealthModule.forRoot({
+			serviceName: 'user-service',
+		}),
 		LoggerModule.register({ appName: 'User Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 		ErrorHandlingModule,

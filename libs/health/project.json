@@ -1,0 +1,31 @@
+{
+	"name": "health",
+	"$schema": "../../node_modules/nx/schemas/project-schema.json",
+	"sourceRoot": "libs/health/src",
+	"projectType": "library",
+	"targets": {
+		"build": {
+			"executor": "@nx/js:tsc",
+			"outputs": ["{options.outputPath}"],
+			"options": {
+				"outputPath": "dist/libs/health",
+				"main": "libs/health/src/index.ts",
+				"tsConfig": "libs/health/tsconfig.lib.json",
+				"assets": ["libs/health/*.md"]
+			}
+		},
+		"lint": {
+			"executor": "@nx/eslint:lint",
+			"outputs": ["{options.outputFile}"]
+		},
+		"test": {
+			"executor": "@nx/vite:test",
+			"outputs": ["{options.reportsDirectory}"],
+			"options": {
+				"passWithNoTests": true,
+				"reportsDirectory": "../../coverage/libs/health"
+			}
+		}
+	},
+	"tags": ["scope:shared", "type:utility", "framework:nestjs"]
+}

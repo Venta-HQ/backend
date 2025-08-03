@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { IEventsService } from '@app/events';
+import { RetryUtil } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -13,11 +14,19 @@ export interface ConnectionInfo {
 @Injectable()
 export class ConnectionManagerService {
 	private readonly logger = new Logger(ConnectionManagerService.name);
+	private readonly retryUtil: RetryUtil;
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly eventsService: IEventsService,
-	) {}
+	) {
+		this.retryUtil = new RetryUtil({
+			maxRetries: 3,
+			retryDelay: 1000,
+			backoffMultiplier: 2,
+			logger: this.logger,
+		});
+	}
 
 	/**
 	 * Register a user connection for location-based updates
@@ -26,18 +35,21 @@ export class ConnectionManagerService {
 	 */
 	async registerUser(userId: string, socketId: string): Promise<void> {
 		try {
-			// Store user -> socket mapping
-			await this.redis.set(`user:${userId}:socketId`, socketId);
-			// Store socket -> user mapping
-			await this.redis.set(`socket:${socketId}:userId`, userId);
-			// Store connection info
-			await this.redis.set(
-				`connection:${socketId}`,
-				JSON.stringify({
-					userId,
-					socketId,
-					connectedAt: new Date().toISOString(),
-				}),
+			// Store user -> socket mapping with retry
+			await this.retryUtil.retryOperation(
+				async () => {
+					await this.redis.set(`user:${userId}:socketId`, socketId);
+					await this.redis.set(`socket:${socketId}:userId`, userId);
+					await this.redis.set(
+						`connection:${socketId}`,
+						JSON.stringify({
+							userId,
+							socketId,
+							connectedAt: new Date().toISOString(),
+						}),
+					);
+				},
+				'Register user connection in Redis'
 			);
 
 			// Emit connection event
@@ -61,18 +73,21 @@ export class ConnectionManagerService {
 	 */
 	async registerVendor(vendorId: string, socketId: string): Promise<void> {
 		try {
-			// Store vendor -> socket mapping
-			await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
-			// Store socket -> vendor mapping
-			await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
-			// Store connection info
-			await this.redis.set(
-				`connection:${socketId}`,
-				JSON.stringify({
-					vendorId,
-					socketId,
-					connectedAt: new Date().toISOString(),
-				}),
+			// Store vendor -> socket mapping with retry
+			await this.retryUtil.retryOperation(
+				async () => {
+					await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
+					await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
+					await this.redis.set(
+						`connection:${socketId}`,
+						JSON.stringify({
+							vendorId,
+							socketId,
+							connectedAt: new Date().toISOString(),
+						}),
+					);
+				},
+				'Register vendor connection in Redis'
 			);
 
 			// Emit connection event

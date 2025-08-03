@@ -37,6 +37,7 @@
 			"@app/errors": ["libs/errors/src/index.ts"],
 			"@app/events": ["libs/events/src/index.ts"],
 			"@app/grpc": ["libs/grpc/src/index.ts"],
+			"@app/health": ["libs/health/src/index.ts"],
 			"@app/logger": ["libs/logger/src/index.ts"],
 			"@app/proto": ["libs/proto/src/lib/index.ts"],
 			"@app/proto/*": ["libs/proto/src/lib/*"],

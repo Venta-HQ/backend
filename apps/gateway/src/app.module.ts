@@ -6,7 +6,10 @@ import { LoggerModule } from '@app/logger';
 import { RedisModule } from '@app/redis';
 import { Module } from '@nestjs/common';
 import { RouterModule } from '@nestjs/core';
+import { EventSourcingController } from './events/event-sourcing.controller';
+import { HealthController } from './health/health.controller';
 import { modules, routes } from './router';
+import { ServiceDiscoveryService } from './services/service-discovery.service';
 
 @Module({
 	imports: [
@@ -19,5 +22,7 @@ import { modules, routes } from './router';
 		RouterModule.register(routes),
 		ErrorHandlingModule,
 	],
+	controllers: [HealthController, EventSourcingController],
+	providers: [ServiceDiscoveryService],
 })
 export class AppModule {}

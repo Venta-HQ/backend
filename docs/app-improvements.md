@@ -263,17 +263,21 @@ export class ServiceModule {}
 - [x] Phase 2.2: Add Automatic Retry to gRPC Calls
 - [x] Phase 2.3: Improve Validation Coverage (documentation updated)
 
-### In Progress
+### Completed
 
-- [ ] Phase 3.1: Split WebSocket Gateway
-- [ ] Phase 3.2: Improve Gateway Architecture
-- [ ] Phase 3.3: Add Event Sourcing
+- [x] Phase 3.1: Split WebSocket Gateway
+- [x] Phase 3.2: Improve Gateway Architecture
+- [x] Phase 3.3: Add Event Sourcing
+
+### Completed
+
+- [x] **RetryUtil Adoption**: Added retry logic to Location Service (Redis operations) and WebSocket Gateway (Redis operations)
+- [x] **Event Pattern Coverage**: Completed missing events in Location Service (`user.location.updated`, `location.search.performed`)
+- [x] **Validation Standardization**: Added validation to User Service (subscription controller) and Location Service (all endpoints)
 
 ### Planned
 
-- [ ] Phase 3.1: Split WebSocket Gateway
-- [ ] Phase 3.2: Improve Gateway Architecture
-- [ ] Phase 3.3: Add Event Sourcing
+- [ ] Phase 4: Advanced Features (Future phases)
 
 ## Notes
 

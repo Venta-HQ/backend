@@ -15,16 +15,16 @@ This directory contains comprehensive documentation for the Venta Backend projec
 - **[API Documentation](api.md)** - API endpoints and usage
 - **[Architecture Overview](architecture.md)** - System design and architecture
 - **[Event System](events.md)** - Event-driven communication patterns
+- **[Event Sourcing](event-sourcing.md)** - Event sourcing implementation
 
 ### Database & Infrastructure
 
 - **[Database Guide](database.md)** - Database schema and management
-- **[Request Tracing](request-tracing.md)** - Distributed tracing and debugging
+- **[Service Discovery Setup](service-discovery-setup.md)** - Service discovery and health monitoring
 
 ### Troubleshooting & Maintenance
 
 - **[Troubleshooting Guide](troubleshooting.md)** - Common issues and solutions
-- **[Architecture Improvements](architecture-improvements.md)** - Planned enhancements
 - **[App Improvements](app-improvements.md)** - Current improvements and standards
 
 ## Quick Reference
@@ -72,9 +72,10 @@ nx lint {project-name}            # Lint specific project
 
 - **Nx Monorepo**: Efficient build system with caching and dependency management
 - **Microservices**: Independent services communicating via gRPC and events
-- **Event-Driven**: Asynchronous communication using NATS
+- **Event-Driven**: Asynchronous communication using NATS with event sourcing
 - **Type Safety**: Full TypeScript coverage with shared type definitions
-- **Automatic Retry**: Built-in retry logic for gRPC calls
+- **Service Discovery**: Dynamic service discovery with health monitoring and circuit breakers
+- **Resilience**: Built-in retry logic and circuit breaker protection
 - **Geospatial Utilities**: Reusable location-based calculations
 
 ## Getting Help

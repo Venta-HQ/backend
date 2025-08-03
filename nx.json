@@ -12,7 +12,7 @@
 	},
 	"plugins": [
 		{
-			"plugin": "@nx/js/typescript",
+			"plugin": "@nx/js",
 			"options": {
 				"typecheck": {
 					"targetName": "typecheck"
@@ -23,7 +23,8 @@
 					"buildDepsName": "build-deps",
 					"watchDepsName": "watch-deps"
 				}
-			}
+			},
+			"exclude": ["proto"]
 		},
 		{
 			"plugin": "@nx/eslint/plugin",
@@ -42,7 +43,7 @@
 				"serveStaticTargetName": "serve-static",
 				"typecheckTargetName": "typecheck",
 				"buildDepsTargetName": "build-deps",
-				"watchDepsTargetName": "watch-deps"
+				"watchDepsName": "watch-deps"
 			}
 		}
 	],

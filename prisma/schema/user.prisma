@@ -6,6 +6,10 @@ model User {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
+    // Location
+    lat  Float? // User latitude
+    long Float? // User longitude
+
     // Relations
     vendors          Vendor[]
     UserSubscription UserSubscription?
