@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import { SubscriptionController } from './subscription.controller';
-import { SubscriptionService } from './subscription.service';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/user', () => ({

@@ -1,7 +1,6 @@
 import { AppError } from '@app/nest/errors';
-import * as retryUtil from '@app/utils';
 import { Prisma } from '@prisma/client';
-import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';
+import { clearMocks, data, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';
 import { LocationService } from './location.service';
 
 // Mock the retry utility

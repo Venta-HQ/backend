@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import { errors } from '../../../../test/helpers/test-utils';
 import { UploadController } from './upload.controller';
 
 describe('UploadController', () => {

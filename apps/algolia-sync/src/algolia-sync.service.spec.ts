@@ -1,5 +1,4 @@
-import * as retryUtil from '@app/utils';
-import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';
+import { clearMocks, data, errors, mockEvents } from '../../../test/helpers/test-utils';
 import { AlgoliaSyncService } from './algolia-sync.service';
 
 // Mock the retry utility
@@ -65,7 +64,7 @@ describe('AlgoliaSyncService', () => {
 	});
 
 	describe('Event Handling', () => {
-		let eventHandler: Function;
+		let eventHandler: () => Promise<void>;
 		let mockStream: any;
 
 		beforeEach(async () => {

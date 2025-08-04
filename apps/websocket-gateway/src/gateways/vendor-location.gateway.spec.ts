@@ -1,7 +1,5 @@
-import { Server, Socket } from 'socket.io';
 import { vi } from 'vitest';
-import * as retryUtil from '@app/utils';
-import { clearMocks, data, errors, grpc, mockGrpcClient } from '../../../../test/helpers/test-utils';
+import { clearMocks, mockGrpcClient } from '../../../../test/helpers/test-utils';
 import { VendorLocationGateway } from './vendor-location.gateway';
 
 // Mock the retry utility

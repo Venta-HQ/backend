@@ -125,7 +125,7 @@ describe.skip('retryOperation', () => {
 
 		it.skip('should use custom backoff multiplier', async () => {
 			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
-			const attempt = 0;
+			const _attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
@@ -141,7 +141,7 @@ describe.skip('retryOperation', () => {
 	describe('logging behavior', () => {
 		it.skip('should log operation attempts', async () => {
 			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
-			const attempt = 0;
+			const _attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);

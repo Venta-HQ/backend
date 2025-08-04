@@ -1,7 +1,6 @@
 import { vi } from 'vitest';
-import { clearMocks, grpc, mockGrpcClient, mockRequest } from '../../../test/helpers/test-utils';
+import { clearMocks, mockRequest } from '../../../test/helpers/test-utils';
 import { VendorController } from './vendor.controller';
-import { VendorService } from './vendor.service';
 
 // Mock the proto modules
 vi.mock('@app/proto/vendor', () => ({

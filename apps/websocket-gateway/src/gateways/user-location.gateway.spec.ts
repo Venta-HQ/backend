@@ -1,7 +1,5 @@
-import { Server, Socket } from 'socket.io';
 import { vi } from 'vitest';
-import * as retryUtil from '@app/utils';
-import { clearMocks, data, errors, grpc, mockGrpcClient } from '../../../../test/helpers/test-utils';
+import { clearMocks, mockGrpcClient } from '../../../../test/helpers/test-utils';
 import { UserLocationGateway } from './user-location.gateway';
 
 // Mock the retry utility
@@ -29,10 +27,6 @@ describe('UserLocationGateway', () => {
 
 	beforeEach(() => {
 		grpcClient = mockGrpcClient();
-		const mockVendors = [
-			{ id: 'vendor-1', location: { lat: 40.7128, long: -74.006 } },
-			{ id: 'vendor-2', location: { lat: 40.7589, long: -73.9851 } },
-		];
 
 		locationService = {
 			vendorLocations: vi.fn(),

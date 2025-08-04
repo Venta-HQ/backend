@@ -1,7 +1,6 @@
 import { vi } from 'vitest';
-import { clearMocks, grpc, mockGrpcClient, mockRequest } from '../../../test/helpers/test-utils';
+import { clearMocks, mockRequest } from '../../../test/helpers/test-utils';
 import { LocationController } from './location.controller';
-import { LocationService } from './location.service';
 
 // Mock the proto modules
 vi.mock('@app/proto/location', () => ({

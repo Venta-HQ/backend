@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { ErrorCodes, WsError } from '@app/nest/errors';
+import { WsError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
@@ -17,7 +17,6 @@ export class WsAuthGuard implements CanActivate {
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const client = context.switchToWs().getClient();
-		const data = context.switchToWs().getData();
 
 		// Extract token from handshake auth or query parameters
 		const token = this.extractToken(client);

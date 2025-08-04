@@ -16,7 +16,7 @@ async function bootstrap() {
 		transport: Transport.GRPC,
 	});
 
-	const configService = app.get(ConfigService);
+	app.get(ConfigService);
 	app.useLogger(app.get(GrpcLogger));
 
 	await app.listen();

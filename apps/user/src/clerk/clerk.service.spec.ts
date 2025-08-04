@@ -1,4 +1,3 @@
-import { Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../../test/helpers/test-utils';
 import { ClerkService } from './clerk.service';

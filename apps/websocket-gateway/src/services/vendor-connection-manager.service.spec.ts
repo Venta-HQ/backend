@@ -1,5 +1,4 @@
-import * as retryUtil from '@app/utils';
-import { clearMocks, data, errors, mockEvents } from '../../../../test/helpers/test-utils';
+import { clearMocks, mockEvents } from '../../../../test/helpers/test-utils';
 import { VendorConnectionManagerService } from './vendor-connection-manager.service';
 
 // Mock the retry utility

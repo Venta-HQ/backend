@@ -32,8 +32,8 @@ export class WsRateLimitGuard implements CanActivate {
 	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
-		const client = context.switchToWs().getClient();
-		const key = this.generateKey(client);
+		const _client = context.switchToWs().getClient();
+		const key = this.generateKey(_client);
 
 		try {
 			const current = await this.redis.incr(key);
@@ -61,15 +61,15 @@ export class WsRateLimitGuard implements CanActivate {
 		}
 	}
 
-	private generateKey(client: any): string {
-		const userId = client.userId || 'anonymous';
-		const socketId = client.id || 'unknown';
-		const event = this.getEventName(client);
+	private generateKey(_client: any): string {
+		const userId = _client.userId || 'anonymous';
+		const socketId = _client.id || 'unknown';
+		const event = this.getEventName(_client);
 
 		return `${this.options.keyPrefix}${userId}:${event}:${socketId}`;
 	}
 
-	private getEventName(client: any): string {
+	private getEventName(_client: any): string {
 		// Try to get event name from the current context
 		// This might need adjustment based on how you access the event name
 		return 'default';

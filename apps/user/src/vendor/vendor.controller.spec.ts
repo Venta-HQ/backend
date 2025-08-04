@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import { VendorController } from './vendor.controller';
-import { VendorService } from './vendor.service';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/user', () => ({

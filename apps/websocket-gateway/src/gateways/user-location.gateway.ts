@@ -5,7 +5,6 @@ import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apity
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
-import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';

@@ -1,5 +1,4 @@
 import { AppError } from '@app/nest/errors';
-import * as retryUtil from '@app/utils';
 import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';
 import { VendorService } from './vendor.service';
 

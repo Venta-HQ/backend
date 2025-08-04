@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConnectionHealthService, ConnectionMetrics } from './connection-health.service';
+import { ConnectionHealthService } from './connection-health.service';
 
 // Mock Redis
 const mockRedis = {
