@@ -150,6 +150,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # NATS
+  nats:
+    image: nats:2.9-alpine
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: -js -m 8222
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
 
   # API Gateway
@@ -161,6 +174,7 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
       - REDIS_URL=redis://:redis_password@redis:6379
+      - NATS_URL=nats://nats:4222
       - USER_SERVICE_ADDRESS=user-service:5000
       - VENDOR_SERVICE_ADDRESS=vendor-service:5005
       - LOCATION_SERVICE_ADDRESS=location-service:5001

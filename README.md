@@ -191,6 +191,7 @@ docker-compose logs -f
 - **Communication**: gRPC for inter-service, HTTP for external APIs, WebSocket for real-time
 - **Database**: PostgreSQL with Prisma ORM
 - **Caching**: Redis for session management and caching
+- **Events**: NATS for event-driven communication between services
 - **Search**: Algolia integration for full-text search
 
 ## 🤝 Contributing

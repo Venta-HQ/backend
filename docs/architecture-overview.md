@@ -23,20 +23,18 @@ The Venta Backend is built as a microservices-based system using NestJS, followi
 ┌───────▼────────┐    ┌───────────▼──────────┐    ┌────────▼────────┐
 │  User Service  │    │  Vendor Service      │    │ Location Service│
 │ (apps/user)    │    │ (apps/vendor)        │    │(apps/location)  │
-└───────┬────────┘    └──────────┬───────────┘    └────────┬────────┘
-        │                        │                         │
-        └────────────────────────┼─────────────────────────┘
-                                 │
-                                         ┌─────────────▼─────────────┐
-                     │    Algolia Sync           │
-                     │  (apps/algolia-sync)      │
-                     └───────────────────────────┘
+└────────────────┘    └──────────────────────┘    └─────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
 │                WebSocket Gateway                            │
 │           (apps/websocket-gateway)                         │
 │                    Real-time connections                    │
 └─────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────▼─────────────┐
+                    │    Algolia Sync           │
+                    │  (apps/algolia-sync)      │
+                    └───────────────────────────┘
 ```
 
 ## Service Architecture
@@ -117,6 +115,10 @@ The Venta Backend is built as a microservices-based system using NestJS, followi
   - Webhook processing (Clerk, RevenueCat)
 
 ### 2. Asynchronous Communication
+- **NATS**: Message broker for event-driven communication
+  - Pub/sub pattern for loose coupling
+  - Event sourcing and CQRS support
+  - Reliable message delivery
 - **WebSocket**: Real-time bidirectional communication
   - Live updates and notifications
   - Connection state management
@@ -127,6 +129,8 @@ The Venta Backend is built as a microservices-based system using NestJS, followi
   - Third-party service notifications
 
 ### 3. Event-Driven Architecture
+- **Domain Events**: Business events that trigger actions across services
+- **Integration Events**: Events for external system integration
 - **WebSocket Events**: Real-time events for client applications
 - **Webhook Events**: External service events (Clerk, RevenueCat)
 - **Location Updates**: Real-time location data for vendors and users
