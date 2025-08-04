@@ -92,15 +92,15 @@ export class LocationService {
 			);
 
 			// Note: Database update skipped until migration is run
-			// await this.prisma.db.user.update({
-			// 	data: {
-			// 		lat: data.location.lat,
-			// 		long: data.location.long,
-			// 	},
-			// 	where: {
-			// 		id: data.entityId,
-			// 	},
-			// });
+			await this.prisma.db.user.update({
+				data: {
+					lat: data.location.lat,
+					long: data.location.long,
+				},
+				where: {
+					id: data.entityId,
+				},
+			});
 
 			// Publish user location update event
 			await this.eventsService.publishEvent('user.location.updated', {

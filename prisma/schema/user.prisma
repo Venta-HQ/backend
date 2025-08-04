@@ -1,6 +1,8 @@
 model User {
     id      String @id @default(uuid())
     clerkId String @unique
+    lat     Float?
+    long    Float?
 
     // Metadata
     createdAt DateTime @default(now())
