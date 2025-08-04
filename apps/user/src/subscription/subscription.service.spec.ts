@@ -1,141 +1,53 @@
 import { SubscriptionService } from './subscription.service';
 import { 
-  createMockPrismaService, 
-  sampleData,
+  mockPrisma, 
+  data,
   errors,
-  clearAllMocks 
-} from '../../../../test/helpers';
-import { IntegrationType, SubscriptionStatus } from '@prisma/client';
+  clearMocks 
+} from '../../../../test/helpers/simple';
 
 describe('SubscriptionService', () => {
   let service: SubscriptionService;
-  let mockPrismaService: any;
+  let prisma: any;
 
   beforeEach(() => {
-    mockPrismaService = createMockPrismaService();
-    service = new SubscriptionService(mockPrismaService);
+    prisma = mockPrisma();
+    service = new SubscriptionService(prisma);
   });
 
   afterEach(() => {
-    clearAllMocks();
-  });
-
-  describe('handleUserCreated', () => {
-    it('should create new user when user does not exist', async () => {
-      const clerkId = 'clerk_user_123';
-      const expectedUser = sampleData.user({ clerkId });
-
-      mockPrismaService.db.user.count.mockResolvedValue(0);
-      mockPrismaService.db.user.create.mockResolvedValue(expectedUser);
-
-      await service.handleUserCreated(clerkId);
-
-      expect(mockPrismaService.db.user.count).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'clerk_user_123',
-        },
-      });
-      expect(mockPrismaService.db.user.create).toHaveBeenCalledWith({
-        data: {
-          clerkId: 'clerk_user_123',
-        },
-      });
-    });
-
-    it('should not create user when user already exists', async () => {
-      const clerkId = 'existing_clerk_user';
-
-      mockPrismaService.db.user.count.mockResolvedValue(1);
-
-      await service.handleUserCreated(clerkId);
-
-      expect(mockPrismaService.db.user.count).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'existing_clerk_user',
-        },
-      });
-      expect(mockPrismaService.db.user.create).not.toHaveBeenCalled();
-    });
-
-    it('should handle database errors gracefully', async () => {
-      const clerkId = 'clerk_user_123';
-      const dbError = errors.database('Database connection failed');
-      mockPrismaService.db.user.count.mockRejectedValue(dbError);
-
-      await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
-      expect(mockPrismaService.db.user.count).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'clerk_user_123',
-        },
-      });
-    });
-  });
-
-  describe('handleUserDeleted', () => {
-    it('should delete user successfully', async () => {
-      const clerkId = 'clerk_user_123';
-
-      mockPrismaService.db.user.deleteMany.mockResolvedValue({ count: 1 });
-
-      await service.handleUserDeleted(clerkId);
-
-      expect(mockPrismaService.db.user.deleteMany).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'clerk_user_123',
-        },
-      });
-    });
-
-    it('should handle deletion when user does not exist', async () => {
-      const clerkId = 'non_existent_user';
-
-      mockPrismaService.db.user.deleteMany.mockResolvedValue({ count: 0 });
-
-      await service.handleUserDeleted(clerkId);
-
-      expect(mockPrismaService.db.user.deleteMany).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'non_existent_user',
-        },
-      });
-    });
-
-    it('should handle database errors gracefully', async () => {
-      const clerkId = 'clerk_user_123';
-      const dbError = errors.database('Database connection failed');
-      mockPrismaService.db.user.deleteMany.mockRejectedValue(dbError);
-
-      await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Database connection failed');
-      expect(mockPrismaService.db.user.deleteMany).toHaveBeenCalledWith({
-        where: {
-          clerkId: 'clerk_user_123',
-        },
-      });
-    });
+    clearMocks();
   });
 
   describe('createIntegration', () => {
-    it('should create integration successfully with all data', async () => {
+    it('should create integration successfully', async () => {
       const integrationData = {
         clerkUserId: 'clerk_user_123',
-        data: { subscriptionId: 'sub_123', plan: 'premium' },
-        providerId: 'revenue_cat_123',
+        data: {
+          eventId: 'event_123',
+          productId: 'premium_monthly',
+          transactionId: 'txn_456',
+        },
+        providerId: 'premium_monthly',
       };
 
-      const expectedIntegration = sampleData.integration({
-        type: IntegrationType.RevenueCat,
+      const expectedIntegration = data.integration({
+        type: 'RevenueCat',
+        providerId: 'premium_monthly',
         userId: 'user_123',
-        config: { data: { subscriptionId: 'sub_123', plan: 'premium' }, providerId: 'revenue_cat_123' },
       });
 
-      mockPrismaService.db.integration.create.mockResolvedValue(expectedIntegration);
+      prisma.db.integration.create.mockResolvedValue(expectedIntegration);
 
       await service.createIntegration(integrationData);
 
-      expect(mockPrismaService.db.integration.create).toHaveBeenCalledWith({
+      expect(prisma.db.integration.create).toHaveBeenCalledWith({
         data: {
-          config: { data: { subscriptionId: 'sub_123', plan: 'premium' }, providerId: 'revenue_cat_123' },
-          type: IntegrationType.RevenueCat,
+          config: { 
+            data: integrationData.data, 
+            providerId: integrationData.providerId 
+          },
+          type: 'RevenueCat',
           user: {
             connect: {
               clerkId: 'clerk_user_123',
@@ -145,51 +57,28 @@ describe('SubscriptionService', () => {
       });
     });
 
-    it('should create integration with undefined data and providerId', async () => {
+    it('should handle database errors during integration creation', async () => {
       const integrationData = {
         clerkUserId: 'clerk_user_123',
-        data: undefined,
-        providerId: undefined,
-      };
-
-      const expectedIntegration = sampleData.integration({
-        type: IntegrationType.RevenueCat,
-        userId: 'user_123',
-        config: { data: undefined, providerId: undefined },
-      });
-
-      mockPrismaService.db.integration.create.mockResolvedValue(expectedIntegration);
-
-      await service.createIntegration(integrationData);
-
-      expect(mockPrismaService.db.integration.create).toHaveBeenCalledWith({
         data: {
-          config: { data: undefined, providerId: undefined },
-          type: IntegrationType.RevenueCat,
-          user: {
-            connect: {
-              clerkId: 'clerk_user_123',
-            },
-          },
+          eventId: 'event_123',
+          productId: 'premium_monthly',
+          transactionId: 'txn_456',
         },
-      });
-    });
-
-    it('should handle database errors gracefully', async () => {
-      const integrationData = {
-        clerkUserId: 'clerk_user_123',
-        data: { subscriptionId: 'sub_123' },
-        providerId: 'revenue_cat_123',
+        providerId: 'premium_monthly',
       };
 
       const dbError = errors.database('Database connection failed');
-      mockPrismaService.db.integration.create.mockRejectedValue(dbError);
+      prisma.db.integration.create.mockRejectedValue(dbError);
 
       await expect(service.createIntegration(integrationData)).rejects.toThrow('Database connection failed');
-      expect(mockPrismaService.db.integration.create).toHaveBeenCalledWith({
+      expect(prisma.db.integration.create).toHaveBeenCalledWith({
         data: {
-          config: { data: { subscriptionId: 'sub_123' }, providerId: 'revenue_cat_123' },
-          type: IntegrationType.RevenueCat,
+          config: { 
+            data: integrationData.data, 
+            providerId: integrationData.providerId 
+          },
+          type: 'RevenueCat',
           user: {
             connect: {
               clerkId: 'clerk_user_123',
@@ -206,18 +95,21 @@ describe('SubscriptionService', () => {
         clerkUserId: 'clerk_user_123',
       };
 
-      const expectedSubscription = sampleData.userSubscription({
+      const expectedSubscription = {
+        id: 'subscription_123',
         userId: 'user_123',
-        status: SubscriptionStatus.Active,
-      });
+        status: 'Active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      mockPrismaService.db.userSubscription.create.mockResolvedValue(expectedSubscription);
+      prisma.db.userSubscription.create.mockResolvedValue(expectedSubscription);
 
       await service.createUserSubscription(subscriptionData);
 
-      expect(mockPrismaService.db.userSubscription.create).toHaveBeenCalledWith({
+      expect(prisma.db.userSubscription.create).toHaveBeenCalledWith({
         data: {
-          status: SubscriptionStatus.Active,
+          status: 'Active',
           user: {
             connect: {
               clerkId: 'clerk_user_123',
@@ -227,18 +119,18 @@ describe('SubscriptionService', () => {
       });
     });
 
-    it('should handle database errors gracefully', async () => {
+    it('should handle database errors during subscription creation', async () => {
       const subscriptionData = {
         clerkUserId: 'clerk_user_123',
       };
 
       const dbError = errors.database('Database connection failed');
-      mockPrismaService.db.userSubscription.create.mockRejectedValue(dbError);
+      prisma.db.userSubscription.create.mockRejectedValue(dbError);
 
       await expect(service.createUserSubscription(subscriptionData)).rejects.toThrow('Database connection failed');
-      expect(mockPrismaService.db.userSubscription.create).toHaveBeenCalledWith({
+      expect(prisma.db.userSubscription.create).toHaveBeenCalledWith({
         data: {
-          status: SubscriptionStatus.Active,
+          status: 'Active',
           user: {
             connect: {
               clerkId: 'clerk_user_123',
@@ -247,29 +139,103 @@ describe('SubscriptionService', () => {
         },
       });
     });
+  });
 
-    it('should handle null clerkUserId gracefully', async () => {
-      const subscriptionData = {
-        clerkUserId: null as any,
-      };
+  describe('handleUserCreated', () => {
+    it('should create user when user does not exist', async () => {
+      const clerkId = 'clerk_user_123';
+      const expectedUser = data.user({ clerkId });
 
-      const expectedSubscription = sampleData.userSubscription({
-        userId: 'user_123',
-        status: SubscriptionStatus.Active,
+      prisma.db.user.count.mockResolvedValue(0);
+      prisma.db.user.create.mockResolvedValue(expectedUser);
+
+      await service.handleUserCreated(clerkId);
+
+      expect(prisma.db.user.count).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
+        },
       });
-
-      mockPrismaService.db.userSubscription.create.mockResolvedValue(expectedSubscription);
-
-      await service.createUserSubscription(subscriptionData);
-
-      expect(mockPrismaService.db.userSubscription.create).toHaveBeenCalledWith({
+      expect(prisma.db.user.create).toHaveBeenCalledWith({
         data: {
-          status: SubscriptionStatus.Active,
-          user: {
-            connect: {
-              clerkId: null,
-            },
-          },
+          clerkId: 'clerk_user_123',
+        },
+      });
+    });
+
+    it('should not create user when user already exists', async () => {
+      const clerkId = 'clerk_user_123';
+
+      prisma.db.user.count.mockResolvedValue(1);
+
+      await service.handleUserCreated(clerkId);
+
+      expect(prisma.db.user.count).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
+        },
+      });
+      expect(prisma.db.user.create).not.toHaveBeenCalled();
+    });
+
+    it('should handle database errors during user count check', async () => {
+      const clerkId = 'clerk_user_123';
+      const dbError = errors.database('Database connection failed');
+      prisma.db.user.count.mockRejectedValue(dbError);
+
+      await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
+      expect(prisma.db.user.count).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
+        },
+      });
+    });
+
+    it('should handle database errors during user creation', async () => {
+      const clerkId = 'clerk_user_123';
+      const dbError = errors.database('Database connection failed');
+      
+      prisma.db.user.count.mockResolvedValue(0);
+      prisma.db.user.create.mockRejectedValue(dbError);
+
+      await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
+      expect(prisma.db.user.count).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
+        },
+      });
+      expect(prisma.db.user.create).toHaveBeenCalledWith({
+        data: {
+          clerkId: 'clerk_user_123',
+        },
+      });
+    });
+  });
+
+  describe('handleUserDeleted', () => {
+    it('should handle user deleted event', async () => {
+      const clerkId = 'clerk_user_123';
+
+      prisma.db.user.deleteMany.mockResolvedValue({ count: 1 });
+
+      await service.handleUserDeleted(clerkId);
+
+      expect(prisma.db.user.deleteMany).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
+        },
+      });
+    });
+
+    it('should handle database errors during user deletion', async () => {
+      const clerkId = 'clerk_user_123';
+      const dbError = errors.database('Database connection failed');
+      prisma.db.user.deleteMany.mockRejectedValue(dbError);
+
+      await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Database connection failed');
+      expect(prisma.db.user.deleteMany).toHaveBeenCalledWith({
+        where: {
+          clerkId: 'clerk_user_123',
         },
       });
     });

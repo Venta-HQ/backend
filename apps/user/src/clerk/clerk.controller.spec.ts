@@ -1,29 +1,28 @@
-import { 
-  grpcControllerTesting,
-  createMockGrpcCall,
-  createMockGrpcResponse
-} from '../../../../test/helpers';
 import { vi } from 'vitest';
 import { ClerkController } from './clerk.controller';
 import { ClerkService } from './clerk.service';
 
-// Set up proto mocks
-grpcControllerTesting.createTest(ClerkController, '@app/proto/user', [
-  'ClerkUserData',
-  'ClerkUserResponse'
-]);
+// Mock the proto imports to avoid module resolution issues
+vi.mock('@app/proto/user', () => ({
+  USER_SERVICE_NAME: 'UserService',
+  ClerkUserData: vi.fn(),
+  ClerkUserResponse: vi.fn()
+}));
 
 describe('ClerkController', () => {
   let controller: ClerkController;
   let mockClerkService: any;
 
   beforeEach(() => {
+    // Create mock ClerkService
     mockClerkService = {
       handleUserCreated: vi.fn(),
       handleUserDeleted: vi.fn(),
       createIntegration: vi.fn(),
       deleteIntegration: vi.fn(),
     };
+
+    // Create controller with mocked service
     controller = new ClerkController(mockClerkService);
   });
 

@@ -1,12 +1,7 @@
-import { 
-  grpcControllerTesting,
-  createGrpcObservable,
-  createGrpcObservableError,
-  createMockRequest
-} from '../../../../test/helpers';
 import { vi } from 'vitest';
 import { VendorController } from './vendor.controller';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes';
+import { mockGrpcClient, grpc, mockRequest } from '../../../../test/helpers/simple';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/vendor', () => ({
@@ -18,12 +13,11 @@ vi.mock('@app/proto/vendor', () => ({
 
 describe('VendorController', () => {
   let controller: VendorController;
-  let mockGrpcClient: any;
+  let grpcClient: any;
 
   beforeEach(() => {
-    const test = grpcControllerTesting.createTest(VendorController);
-    controller = test.controller;
-    mockGrpcClient = test.mockGrpcClient;
+    grpcClient = mockGrpcClient();
+    controller = new VendorController(grpcClient);
   });
 
   afterEach(() => {
@@ -48,31 +42,31 @@ describe('VendorController', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockVendor));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockVendor));
 
       const result = await controller.getVendorById(vendorId);
 
       expect(result).toEqual(mockVendor);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
+      expect(grpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
     });
 
     it('should handle gRPC errors properly', async () => {
       const vendorId = 'vendor_123';
       const mockError = new Error('Vendor not found');
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservableError(mockError));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
 
       await expect(controller.getVendorById(vendorId)).rejects.toThrow(mockError);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
+      expect(grpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
     });
   });
 
   describe('createVendor', () => {
     it('should create vendor successfully', async () => {
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const createVendorData: CreateVendorData = {
         name: 'New Vendor',
         description: 'New vendor description',
@@ -87,12 +81,12 @@ describe('VendorController', () => {
         ...createVendorData,
       };
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockResponse));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
 
-      const result = await controller.createVendor(mockRequest, createVendorData);
+      const result = await controller.createVendor(mockRequestObj, createVendorData);
 
       expect(result).toEqual(mockResponse);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('createVendor', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', {
         ...createVendorData,
         description: createVendorData.description ?? '',
         email: createVendorData.email ?? '',
@@ -105,10 +99,10 @@ describe('VendorController', () => {
     });
 
     it('should handle partial vendor data with defaults', async () => {
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const createVendorData: CreateVendorData = {
         name: 'Partial Vendor',
         // Missing optional fields
@@ -124,12 +118,12 @@ describe('VendorController', () => {
         imageUrl: '',
       };
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockResponse));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
 
-      const result = await controller.createVendor(mockRequest, createVendorData);
+      const result = await controller.createVendor(mockRequestObj, createVendorData);
 
       expect(result).toEqual(mockResponse);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('createVendor', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', {
         ...createVendorData,
         description: '',
         email: '',
@@ -142,29 +136,29 @@ describe('VendorController', () => {
     });
 
     it('should handle gRPC errors during creation', async () => {
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const createVendorData: CreateVendorData = {
         name: 'Error Vendor',
       };
 
       const mockError = new Error('Creation failed');
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservableError(mockError));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
 
-      await expect(controller.createVendor(mockRequest, createVendorData)).rejects.toThrow(mockError);
+      await expect(controller.createVendor(mockRequestObj, createVendorData)).rejects.toThrow(mockError);
     });
   });
 
   describe('updateVendor', () => {
     it('should update vendor successfully', async () => {
       const vendorId = 'vendor_123';
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const updateVendorData: UpdateVendorData = {
         name: 'Updated Vendor',
         description: 'Updated description',
@@ -179,12 +173,12 @@ describe('VendorController', () => {
         success: true,
       };
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockResponse));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
 
-      const result = await controller.updateVendor(vendorId, mockRequest, updateVendorData);
+      const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
 
       expect(result).toEqual(mockResponse);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
         ...updateVendorData,
         description: updateVendorData.description ?? '',
         email: updateVendorData.email ?? '',
@@ -199,10 +193,10 @@ describe('VendorController', () => {
 
     it('should handle partial update data with defaults', async () => {
       const vendorId = 'vendor_123';
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const updateVendorData: UpdateVendorData = {
         name: 'Partially Updated Vendor',
         // Missing optional fields
@@ -213,12 +207,12 @@ describe('VendorController', () => {
         success: true,
       };
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockResponse));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
 
-      const result = await controller.updateVendor(vendorId, mockRequest, updateVendorData);
+      const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
 
       expect(result).toEqual(mockResponse);
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
         ...updateVendorData,
         description: '',
         email: '',
@@ -233,19 +227,19 @@ describe('VendorController', () => {
 
     it('should handle gRPC errors during update', async () => {
       const vendorId = 'vendor_123';
-      const mockRequest = createMockRequest({
+      const mockRequestObj = mockRequest({
         userId: 'user_123',
       });
-      
+
       const updateVendorData: UpdateVendorData = {
         name: 'Error Update Vendor',
       };
 
       const mockError = new Error('Update failed');
 
-      mockGrpcClient.invoke.mockReturnValue(createGrpcObservableError(mockError));
+      grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
 
-      await expect(controller.updateVendor(vendorId, mockRequest, updateVendorData)).rejects.toThrow(mockError);
+      await expect(controller.updateVendor(vendorId, mockRequestObj, updateVendorData)).rejects.toThrow(mockError);
     });
   });
 }); 

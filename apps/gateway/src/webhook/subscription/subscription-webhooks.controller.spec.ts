@@ -1,9 +1,6 @@
-import { 
-  grpcControllerTesting,
-  webhookEvents
-} from '../../../../../test/helpers';
 import { vi } from 'vitest';
 import { SubscriptionWebhooksController } from './subscription-webhooks.controller';
+import { mockGrpcClient, webhooks } from '../../../../../test/helpers/simple';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/user', () => ({
@@ -13,12 +10,11 @@ vi.mock('@app/proto/user', () => ({
 
 describe('SubscriptionWebhooksController', () => {
   let controller: SubscriptionWebhooksController;
-  let mockGrpcClient: any;
+  let grpcClient: any;
 
   beforeEach(() => {
-    const test = grpcControllerTesting.createTest(SubscriptionWebhooksController);
-    controller = test.controller;
-    mockGrpcClient = test.mockGrpcClient;
+    grpcClient = mockGrpcClient();
+    controller = new SubscriptionWebhooksController(grpcClient);
   });
 
   afterEach(() => {
@@ -27,7 +23,7 @@ describe('SubscriptionWebhooksController', () => {
 
   describe('handleSubscriptionCreated', () => {
     it('should handle initial purchase event successfully', async () => {
-      const mockWebhookEvent = webhookEvents.revenueCat.initialPurchase({
+      const mockWebhookEvent = webhooks.revenueCat.initialPurchase({
         id: 'event_123',
         product_id: 'premium_monthly',
         transaction_id: 'txn_456',
@@ -43,11 +39,11 @@ describe('SubscriptionWebhooksController', () => {
         }),
       };
 
-      mockGrpcClient.invoke.mockReturnValue(mockObservable);
+      grpcClient.invoke.mockReturnValue(mockObservable);
 
       await controller.handleSubscriptionCreated(mockWebhookEvent);
 
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
         clerkUserId: 'clerk_user_123',
         data: {
           eventId: 'event_123',
@@ -59,7 +55,7 @@ describe('SubscriptionWebhooksController', () => {
     });
 
     it('should handle unhandled event types', async () => {
-      const mockWebhookEvent = webhookEvents.revenueCat.renewal({
+      const mockWebhookEvent = webhooks.revenueCat.renewal({
         id: 'event_123',
         product_id: 'premium_monthly',
         transaction_id: 'txn_456',
@@ -70,11 +66,11 @@ describe('SubscriptionWebhooksController', () => {
 
       await controller.handleSubscriptionCreated(mockWebhookEvent);
 
-      expect(mockGrpcClient.invoke).not.toHaveBeenCalled();
+      expect(grpcClient.invoke).not.toHaveBeenCalled();
     });
 
     it('should handle gRPC observable errors', async () => {
-      const mockWebhookEvent = webhookEvents.revenueCat.initialPurchase({
+      const mockWebhookEvent = webhooks.revenueCat.initialPurchase({
         id: 'event_123',
         product_id: 'premium_monthly',
         transaction_id: 'txn_456',
@@ -91,11 +87,11 @@ describe('SubscriptionWebhooksController', () => {
         }),
       };
 
-      mockGrpcClient.invoke.mockReturnValue(mockObservable);
+      grpcClient.invoke.mockReturnValue(mockObservable);
 
       await controller.handleSubscriptionCreated(mockWebhookEvent);
 
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
         clerkUserId: 'clerk_user_123',
         data: {
           eventId: 'event_123',
@@ -107,7 +103,7 @@ describe('SubscriptionWebhooksController', () => {
     });
 
     it('should handle missing clerkUserId in subscriber attributes', async () => {
-      const mockWebhookEvent = webhookEvents.revenueCat.initialPurchase({
+      const mockWebhookEvent = webhooks.revenueCat.initialPurchase({
         id: 'event_123',
         product_id: 'premium_monthly',
         transaction_id: 'txn_456',
@@ -123,11 +119,11 @@ describe('SubscriptionWebhooksController', () => {
         }),
       };
 
-      mockGrpcClient.invoke.mockReturnValue(mockObservable);
+      grpcClient.invoke.mockReturnValue(mockObservable);
 
       await controller.handleSubscriptionCreated(mockWebhookEvent);
 
-      expect(mockGrpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
+      expect(grpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
         clerkUserId: undefined,
         data: {
           eventId: 'event_123',
@@ -139,7 +135,7 @@ describe('SubscriptionWebhooksController', () => {
     });
 
     it('should handle missing subscriber attributes', async () => {
-      const mockWebhookEvent = webhookEvents.revenueCat.initialPurchase({
+      const mockWebhookEvent = webhooks.revenueCat.initialPurchase({
         id: 'event_123',
         product_id: 'premium_monthly',
         transaction_id: 'txn_456',
@@ -159,7 +155,7 @@ describe('SubscriptionWebhooksController', () => {
       ];
 
       for (const productId of productTypes) {
-        const mockWebhookEvent = webhookEvents.revenueCat.initialPurchase({
+        const mockWebhookEvent = webhooks.revenueCat.initialPurchase({
           id: `event_${productId}`,
           product_id: productId,
           transaction_id: `txn_${productId}`,
@@ -175,11 +171,11 @@ describe('SubscriptionWebhooksController', () => {
           }),
         };
 
-        mockGrpcClient.invoke.mockReturnValue(mockObservable);
+        grpcClient.invoke.mockReturnValue(mockObservable);
 
         await controller.handleSubscriptionCreated(mockWebhookEvent);
 
-        expect(mockGrpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
+        expect(grpcClient.invoke).toHaveBeenCalledWith('handleSubscriptionCreated', {
           clerkUserId: 'clerk_user_123',
           data: {
             eventId: `event_${productId}`,
@@ -193,13 +189,13 @@ describe('SubscriptionWebhooksController', () => {
 
     it('should handle multiple events in sequence', async () => {
       const events = [
-        webhookEvents.revenueCat.initialPurchase({
+        webhooks.revenueCat.initialPurchase({
           id: 'event_1',
           product_id: 'premium_monthly',
           transaction_id: 'txn_1',
           subscriber_attributes: { clerkUserId: 'user_1' },
         }),
-        webhookEvents.revenueCat.initialPurchase({
+        webhooks.revenueCat.initialPurchase({
           id: 'event_2',
           product_id: 'premium_yearly',
           transaction_id: 'txn_2',
@@ -215,13 +211,13 @@ describe('SubscriptionWebhooksController', () => {
           }),
         };
 
-        mockGrpcClient.invoke.mockReturnValue(mockObservable);
+        grpcClient.invoke.mockReturnValue(mockObservable);
 
         await controller.handleSubscriptionCreated(event);
       }
 
-      expect(mockGrpcClient.invoke).toHaveBeenCalledTimes(2);
-      expect(mockGrpcClient.invoke).toHaveBeenNthCalledWith(1, 'handleSubscriptionCreated', {
+      expect(grpcClient.invoke).toHaveBeenCalledTimes(2);
+      expect(grpcClient.invoke).toHaveBeenNthCalledWith(1, 'handleSubscriptionCreated', {
         clerkUserId: 'user_1',
         data: {
           eventId: 'event_1',
@@ -230,7 +226,7 @@ describe('SubscriptionWebhooksController', () => {
         },
         providerId: 'premium_monthly',
       });
-      expect(mockGrpcClient.invoke).toHaveBeenNthCalledWith(2, 'handleSubscriptionCreated', {
+      expect(grpcClient.invoke).toHaveBeenNthCalledWith(2, 'handleSubscriptionCreated', {
         clerkUserId: 'user_2',
         data: {
           eventId: 'event_2',
