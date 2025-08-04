@@ -1,11 +1,11 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService } from '@app/nest/modules';
 import {
 	GrpcVendorCreateDataSchema,
 	GrpcVendorLookupDataSchema,
 	GrpcVendorUpdateDataSchema,
 } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import {
+	Vendor,
 	VENDOR_SERVICE_NAME,
 	VendorCreateData,
 	VendorCreateResponse,
@@ -15,7 +15,7 @@ import {
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { Controller, Inject, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
 
@@ -23,29 +23,40 @@ import { VendorService } from './vendor.service';
 export class VendorController {
 	private readonly logger = new Logger(VendorController.name);
 
-	constructor(
-		private readonly vendorService: VendorService,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
-	) {}
+	constructor(private readonly vendorService: VendorService) {}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorLookupDataSchema))
-	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
-		if (!data.id) {
-			this.logger.error(`No ID provided`);
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'id' });
+	async lookupVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
+		try {
+			const vendor = await this.vendorService.getVendorById(data.id);
+			if (!vendor) {
+				return { vendor: undefined };
+			}
+
+			// Convert Prisma vendor to proto Vendor type
+			const protoVendor: Vendor = {
+				id: vendor.id,
+				lat: vendor.lat || 0,
+				long: vendor.long || 0,
+				name: vendor.name,
+				description: vendor.description || '',
+				phone: vendor.phone || '',
+				email: vendor.email || '',
+				website: vendor.website || '',
+				open: vendor.open,
+				primaryImage: vendor.primaryImage || '',
+				createdAt: vendor.createdAt,
+				updatedAt: vendor.updatedAt,
+			};
+
+			return { vendor: protoVendor };
+		} catch (e) {
+			this.logger.error(`Error looking up vendor with id`, {
+				id: data.id,
+			});
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'lookup vendor' });
 		}
-
-		const result = await this.vendorService.getVendorById(data.id);
-
-		if (!result) {
-			this.logger.error(`Vendor with ID ${data.id} not found`);
-			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.id });
-		}
-
-		return {
-			vendor: result,
-		};
 	}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
@@ -53,21 +64,12 @@ export class VendorController {
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
 			const id = await this.vendorService.createVendor(data);
-			
-			// Publish vendor created event
-			await this.eventsService.publishEvent('vendor.created', {
-				vendorId: id,
-				userId: data.userId,
-				data: data,
-				timestamp: new Date().toISOString(),
-			});
-
 			return { id };
 		} catch (e) {
 			this.logger.error(`Error creating vendor with data`, {
 				data,
 			});
-			throw AppError.internal('Could not create vendor', { entity: 'Vendor', originalError: e });
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'create vendor' });
 		}
 	}
 
@@ -75,31 +77,13 @@ export class VendorController {
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {
-			const { id, userId, ...vendorUpdates } = data;
-			await this.vendorService.updateVendor(id, userId, vendorUpdates);
-			
-			// Publish vendor updated event
-			await this.eventsService.publishEvent('vendor.updated', {
-				vendorId: id,
-				userId: userId,
-				updates: vendorUpdates,
-				timestamp: new Date().toISOString(),
-			});
-
-			return {
-				message: 'Updated vendor',
-				success: true,
-			};
+			await this.vendorService.updateVendor(data.id, data.userId, data);
+			return { message: 'Vendor updated successfully', success: true };
 		} catch (e) {
 			this.logger.error(`Error updating vendor with data`, {
 				data,
 			});
-
-			if (e instanceof AppError) {
-				throw e;
-			}
-
-			throw AppError.internal('Could not update vendor', { entity: 'Vendor', originalError: e });
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor' });
 		}
 	}
 }

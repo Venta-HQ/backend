@@ -1,0 +1,122 @@
+# Controller & Service Comparison: event-pattern-initial vs main
+
+## Overview
+This document provides a detailed comparison of every controller and service between the event-pattern-initial branch and the main branch to ensure functional parity.
+
+## Missing Files in Main Branch
+- ❌ `apps/vendor/src/health/health.controller.ts` - Missing health controller in vendor app
+
+## File-by-File Comparison
+
+### 1. Gateway Controllers
+
+#### `apps/gateway/src/vendor/vendor.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/gateway/src/user/user.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/gateway/src/upload/upload.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/gateway/src/webhook/clerk/clerk-webhooks.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/gateway/src/webhook/subscription/subscription-webhooks.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+### 2. Vendor App
+
+#### `apps/vendor/src/vendor.controller.ts`
+**Status**: ✅ Fixed - Now Identical
+**Notes**: 
+- ✅ Removed EventsService injection and event publishing
+- ✅ Changed method name from `getVendorById` to `lookupVendorById`
+- ✅ Removed additional validation logic in `lookupVendorById`
+- ✅ Fixed error handling patterns to match event-pattern-initial
+- ✅ Fixed return message in `updateVendor`
+
+#### `apps/vendor/src/vendor.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/vendor/src/health/health.controller.ts`
+**Status**: ❌ Missing in main
+**Notes**: Need to implement this health controller
+
+### 3. User App
+
+#### `apps/user/src/clerk/clerk.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/user/src/clerk/clerk.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/user/src/subscription/subscription.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/user/src/subscription/subscription.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/user/src/vendor/vendor.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/user/src/vendor/vendor.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+### 4. Location App
+
+#### `apps/location/src/location.controller.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+#### `apps/location/src/location.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+### 5. WebSocket Gateway
+
+#### `apps/websocket-gateway/src/services/connection-manager.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+### 6. Algolia Sync
+
+#### `apps/algolia-sync/src/algolia-sync.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+### 7. Gateway Services
+
+#### `apps/gateway/src/services/service-discovery.service.ts`
+**Status**: ⚠️ Needs Comparison
+**Notes**: Need to compare implementations
+
+## Comparison Results
+
+### ✅ Identical Files
+- None yet compared
+
+### ⚠️ Files with Differences
+- None yet compared
+
+### ❌ Missing Files
+- `apps/vendor/src/health/health.controller.ts`
+
+## Action Items
+1. Compare each controller and service systematically
+2. Identify any functional differences
+3. Implement missing files
+4. Update any files that don't match
+5. Ensure all features are used in the same places 
