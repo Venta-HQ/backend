@@ -1,11 +1,15 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { IEventsService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		@Inject('EventsService') private eventsService: IEventsService,
+	) {}
 	private readonly logger = new Logger(VendorService.name);
 
 	async getVendorById(id: string) {
@@ -30,6 +34,7 @@ export class VendorService {
 			},
 		});
 
+		await this.emitVendorEvent('vendor.created', vendor);
 		return vendor.id;
 	}
 
@@ -44,16 +49,50 @@ export class VendorService {
 
 		const { imageUrl, ...updateData } = data;
 
-		await this.prisma.db.vendor.update({
+		const vendor = await this.prisma.db.vendor.update({
 			data: {
 				...updateData,
-				...(imageUrl
-					? {
-							primaryImage: imageUrl,
-						}
-					: {}),
+				...(imageUrl ? { primaryImage: imageUrl } : {}),
 			},
 			where: { id, owner: { id: userId } },
 		});
+
+		await this.emitVendorEvent('vendor.updated', vendor);
+	}
+
+	async deleteVendor(id: string, userId: string) {
+		const vendor = await this.prisma.db.vendor.findFirst({
+			where: { id, owner: { id: userId } },
+		});
+		if (!vendor) {
+			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
+		}
+		await this.prisma.db.vendor.delete({
+			where: { id },
+		});
+		await this.emitVendorEvent('vendor.deleted', vendor);
+	}
+
+	private async emitVendorEvent(
+		type: 'vendor.created' | 'vendor.updated' | 'vendor.deleted',
+		vendor: Record<string, unknown>,
+	) {
+		// Standardize key order
+		const payload = {
+			createdAt: vendor.createdAt,
+			description: vendor.description,
+			email: vendor.email,
+			id: vendor.id,
+			lat: vendor.lat,
+			long: vendor.long,
+			name: vendor.name,
+			open: vendor.open,
+			phone: vendor.phone,
+			primaryImage: vendor.primaryImage,
+			updatedAt: vendor.updatedAt,
+			website: vendor.website,
+		};
+
+		await this.eventsService.publishEvent(type, payload);
 	}
 }
