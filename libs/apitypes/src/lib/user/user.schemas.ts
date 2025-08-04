@@ -1,16 +1,5 @@
 import { z } from 'zod';
 
-// HTTP API schemas
-export const CreateUserSchema = z.object({
-	email: z.string().email(),
-	name: z.string(),
-});
-
-export const UpdateUserSchema = z.object({
-	email: z.string().email().optional(),
-	name: z.string().optional(),
-});
-
 // gRPC schemas for user service
 export const GrpcUserVendorDataSchema = z.object({
 	userId: z.string(),

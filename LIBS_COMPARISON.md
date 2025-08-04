@@ -33,10 +33,10 @@ This document provides a detailed comparison of every library between the event-
 - ✅ Subscription types are identical
 
 #### `libs/apitypes/src/lib/user/`
-**Status**: ❌ Has Differences
+**Status**: ✅ Fixed - Now Identical
 **Notes**: 
-- Main branch has additional HTTP API schemas (CreateUserSchema, UpdateUserSchema)
-- Event-pattern-initial only has gRPC schemas
+- ✅ Removed unused HTTP API schemas (CreateUserSchema, UpdateUserSchema)
+- ✅ Now matches event-pattern-initial with only gRPC schemas
 
 #### `libs/apitypes/src/lib/vendor/`
 **Status**: ✅ Fixed - Now Identical
@@ -71,11 +71,10 @@ This document provides a detailed comparison of every library between the event-
 - ✅ Event-pattern-initial has separate libraries for each module
 
 #### `libs/nest/pipes/`
-**Status**: ✅ Identical (Main Branch Has Additional Pipes)
+**Status**: ✅ Fixed - Now Identical
 **Notes**: 
-- ✅ Schema validator pipe is identical
-- ✅ Main branch has additional gRPC and WebSocket specific pipes
-- ✅ Event-pattern-initial only has the base schema validator pipe
+- ✅ Removed unused gRPC and WebSocket specific pipes
+- ✅ Now matches event-pattern-initial with only the base schema validator pipe
 
 ### 3. Proto Library (`libs/proto/`)
 
