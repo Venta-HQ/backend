@@ -1,23 +1,25 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { AuthGuard } from '@app/nest/guards';
 import { UploadService } from '@app/nest/modules';
-import { Controller, Logger, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, UploadedFile } from '@nestjs/common';
+
+interface UploadedFile {
+	buffer: Buffer;
+	originalname: string;
+	mimetype: string;
+	size: number;
+}
 
 @Controller()
 export class UploadController {
-	private readonly logger = new Logger(UploadController.name);
-
 	constructor(private uploadService: UploadService) {}
 
 	@Post('image')
-	@UseGuards(AuthGuard)
-	@UseInterceptors(FileInterceptor('file'))
-	uploadImage(@UploadedFile() file: Express.Multer.File) {
+	async uploadImage(@UploadedFile() file: UploadedFile) {
 		try {
 			return this.uploadService.uploadImage(file);
 		} catch (e) {
-			throw AppError.validation(ErrorCodes.INVALID_INPUT, { message: e.message });
+			const err = e as Error;
+			throw AppError.validation(ErrorCodes.INVALID_INPUT, { message: err.message });
 		}
 	}
 }

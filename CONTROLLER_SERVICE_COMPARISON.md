@@ -28,8 +28,14 @@ This document provides a detailed comparison of every controller and service bet
 - Main branch has different import path for GrpcInstance
 
 #### `apps/gateway/src/upload/upload.controller.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ❌ Has Major Differences
+**Notes**: 
+- Main branch has Logger injection that event-pattern-initial doesn't have
+- Main branch has AuthGuard that event-pattern-initial doesn't have
+- Main branch has FileInterceptor that event-pattern-initial doesn't have
+- Main branch has different import paths for AppError and UploadService
+- Main branch has different file type: Express.Multer.File vs custom UploadedFile interface
+- Main branch has different error handling: `e.message` vs `err.message`
 
 #### `apps/gateway/src/webhook/clerk/clerk-webhooks.controller.ts`
 **Status**: ⚠️ Needs Comparison
