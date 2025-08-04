@@ -1,17 +1,17 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext } from '@nestjs/common';
-import { WsRateLimitGuard } from './ws-rate-limit.guard';
-import { WsRateLimitGuards, createWsRateLimitGuard } from './ws-rate-limit.guard.factory';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WsError } from '@app/nest/errors';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { ExecutionContext } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
+import { WsRateLimitGuard } from './ws-rate-limit.guard';
+import { createWsRateLimitGuard, WsRateLimitGuards } from './ws-rate-limit.guard.factory';
 
 // Mock Redis
 const mockRedis = {
-	incr: vi.fn(),
+	del: vi.fn(),
 	expire: vi.fn(),
 	get: vi.fn(),
+	incr: vi.fn(),
 	ttl: vi.fn(),
-	del: vi.fn(),
 };
 
 describe('WsRateLimitGuard', () => {
@@ -38,7 +38,7 @@ describe('WsRateLimitGuard', () => {
 		}).compile();
 
 		guard = module.get<WsRateLimitGuard>(WsRateLimitGuard);
-		
+
 		// Ensure the guard has access to the mocked Redis
 		(guard as any).redis = mockRedis;
 	});
@@ -323,15 +323,15 @@ describe('WsRateLimitGuard', () => {
 		it('should create standard guard with correct configuration', () => {
 			const StandardGuard = WsRateLimitGuards.standard;
 			const standardGuard = new StandardGuard(mockRedis);
-			
+
 			expect(standardGuard).toBeInstanceOf(WsRateLimitGuard);
 		});
 
 		it('should create lenient guard with correct configuration', () => {
 			const LenientGuard = WsRateLimitGuards.lenient;
 			const lenientGuard = new LenientGuard(mockRedis);
-			
+
 			expect(lenientGuard).toBeInstanceOf(WsRateLimitGuard);
 		});
 	});
-}); 
+});

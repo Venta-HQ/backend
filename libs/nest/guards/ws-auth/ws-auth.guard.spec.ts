@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { WsError } from '@app/nest/errors';
 import { ExecutionContext } from '@nestjs/common';
-import { WsAuthGuard } from './ws-auth.guard';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ClerkService } from '../../modules/clerk';
 import { PrismaService } from '../../modules/prisma';
-import { WsError } from '@app/nest/errors';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { WsAuthGuard } from './ws-auth.guard';
 
 // Mock Redis
 const mockRedis = {
@@ -50,7 +50,7 @@ describe('WsAuthGuard', () => {
 		}).compile();
 
 		guard = module.get<WsAuthGuard>(WsAuthGuard);
-		
+
 		// Ensure the guard has access to the mocked services
 		(guard as any).clerkService = mockClerkService;
 		(guard as any).prisma = mockPrismaService;
@@ -64,13 +64,13 @@ describe('WsAuthGuard', () => {
 	describe('canActivate', () => {
 		it('should allow access with valid token from handshake auth', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					auth: {
 						token: 'valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -95,13 +95,13 @@ describe('WsAuthGuard', () => {
 
 		it('should allow access with valid token from query parameters', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					query: {
 						token: 'valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -126,13 +126,13 @@ describe('WsAuthGuard', () => {
 
 		it('should allow access with valid token from headers', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					headers: {
 						authorization: 'Bearer valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -157,13 +157,13 @@ describe('WsAuthGuard', () => {
 
 		it('should fetch user from database when not cached', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					auth: {
 						token: 'valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -192,19 +192,14 @@ describe('WsAuthGuard', () => {
 				select: { id: true },
 				where: { clerkId: 'clerk-user-id' },
 			});
-			expect(mockRedis.set).toHaveBeenCalledWith(
-				'user:clerk-user-id',
-				'internal-user-id',
-				'EX',
-				3600,
-			);
+			expect(mockRedis.set).toHaveBeenCalledWith('user:clerk-user-id', 'internal-user-id', 'EX', 3600);
 		});
 
 		it('should throw WsError when no token provided', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -219,13 +214,13 @@ describe('WsAuthGuard', () => {
 
 		it('should throw WsError when token is invalid', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					auth: {
 						token: 'invalid-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -242,13 +237,13 @@ describe('WsAuthGuard', () => {
 
 		it('should throw WsError when user not found in database', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					auth: {
 						token: 'valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -270,13 +265,13 @@ describe('WsAuthGuard', () => {
 
 		it('should handle Redis errors gracefully', async () => {
 			const mockClient = {
+				clerkId: undefined,
 				handshake: {
 					auth: {
 						token: 'valid-jwt-token',
 					},
 				},
 				userId: undefined,
-				clerkId: undefined,
 			};
 
 			const mockContext = {
@@ -345,4 +340,4 @@ describe('WsAuthGuard', () => {
 			expect(result).toBeNull();
 		});
 	});
-}); 
+});

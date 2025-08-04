@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { GrpcLogger } from '@app/nest/modules';
-import { ConfigService } from '@nestjs/config';
 import { LOCATION_PACKAGE_NAME } from '@app/proto/location';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { LocationModule } from './location.module';

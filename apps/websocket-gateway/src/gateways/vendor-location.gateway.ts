@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/apitypes';
+import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
@@ -17,14 +18,13 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
-import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 import { ConnectionHealthService } from '../services/connection-health.service';
+import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 
 // Extend Socket interface to include vendor properties
 interface AuthenticatedVendorSocket extends Socket {
-	vendorId?: string;
 	clerkId?: string;
+	vendorId?: string;
 }
 
 @Injectable()
@@ -64,7 +64,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 
 	async handleDisconnect(client: AuthenticatedVendorSocket) {
 		this.logger.log(`Vendor client disconnected: ${client.id}`);
-		
+
 		// Record disconnection health metrics
 		await this.connectionHealth.recordDisconnection(client.id);
 		await this.connectionManager.handleDisconnect(client.id);
@@ -80,9 +80,9 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		const vendorId = socket.vendorId;
 		if (!vendorId) {
 			this.logger.error('No vendor ID found for authenticated socket');
-			socket.emit('error', { 
+			socket.emit('error', {
 				code: 'UNAUTHORIZED',
-				message: 'Vendor not authenticated' 
+				message: 'Vendor not authenticated',
 			});
 			return;
 		}

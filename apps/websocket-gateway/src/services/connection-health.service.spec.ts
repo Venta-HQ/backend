@@ -1,21 +1,21 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConnectionHealthService, ConnectionMetrics } from './connection-health.service';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock Redis
 const mockRedis = {
-	hset: vi.fn(),
-	expire: vi.fn(),
-	incr: vi.fn(),
-	hgetall: vi.fn(),
+	decr: vi.fn(),
 	del: vi.fn(),
+	expire: vi.fn(),
 	get: vi.fn(),
-	ttl: vi.fn(),
+	hgetall: vi.fn(),
+	hset: vi.fn(),
+	incr: vi.fn(),
 	keys: vi.fn(),
 	smembers: vi.fn(),
+	ttl: vi.fn(),
 	zadd: vi.fn(),
 	zrem: vi.fn(),
-	decr: vi.fn(),
 };
 
 // Mock EventsService
@@ -43,7 +43,7 @@ describe('ConnectionHealthService', () => {
 		}).compile();
 
 		service = module.get<ConnectionHealthService>(ConnectionHealthService);
-		
+
 		// Ensure the service has access to the mocked dependencies
 		(service as any).redis = mockRedis;
 		(service as any).eventsService = mockEventsService;
@@ -66,12 +66,12 @@ describe('ConnectionHealthService', () => {
 			await service.recordConnection(socketId, userId);
 
 			expect(mockRedis.hset).toHaveBeenCalledWith(`connection:${socketId}`, {
-				socketId,
-				userId,
-				vendorId: '',
-				type: 'user',
 				connectedAt: expect.any(Number),
 				lastActivity: expect.any(Number),
+				socketId,
+				type: 'user',
+				userId,
+				vendorId: '',
 			});
 			expect(mockRedis.expire).toHaveBeenCalledWith(`connection:${socketId}`, 86400);
 			expect(mockRedis.incr).toHaveBeenCalledWith('metrics:connections:user:total');
@@ -79,10 +79,10 @@ describe('ConnectionHealthService', () => {
 			expect(mockRedis.incr).toHaveBeenCalledWith('metrics:connections:total');
 			expect(mockEventsService.publishEvent).toHaveBeenCalledWith('websocket.connection', {
 				socketId,
+				timestamp: expect.any(String),
+				type: 'user',
 				userId,
 				vendorId: undefined,
-				type: 'user',
-				timestamp: expect.any(String),
 			});
 		});
 
@@ -98,12 +98,12 @@ describe('ConnectionHealthService', () => {
 			await service.recordConnection(socketId, undefined, vendorId);
 
 			expect(mockRedis.hset).toHaveBeenCalledWith(`connection:${socketId}`, {
-				socketId,
-				userId: '',
-				vendorId,
-				type: 'vendor',
 				connectedAt: expect.any(Number),
 				lastActivity: expect.any(Number),
+				socketId,
+				type: 'vendor',
+				userId: '',
+				vendorId,
 			});
 			expect(mockRedis.incr).toHaveBeenCalledWith('metrics:connections:vendor:total');
 		});
@@ -122,11 +122,11 @@ describe('ConnectionHealthService', () => {
 		it('should record user disconnection successfully', async () => {
 			const socketId = 'socket-123';
 			const connectionData = {
+				connectedAt: Date.now() - 60000, // 1 minute ago
 				socketId,
+				type: 'user',
 				userId: 'user-456',
 				vendorId: '',
-				type: 'user',
-				connectedAt: Date.now() - 60000, // 1 minute ago
 			};
 
 			mockRedis.hgetall.mockResolvedValue(connectionData);
@@ -143,12 +143,12 @@ describe('ConnectionHealthService', () => {
 			expect(mockRedis.decr).toHaveBeenCalledWith('metrics:connections:active');
 			expect(mockRedis.del).toHaveBeenCalledWith(`connection:${socketId}`);
 			expect(mockEventsService.publishEvent).toHaveBeenCalledWith('websocket.disconnection', {
+				duration: expect.any(Number),
 				socketId,
+				timestamp: expect.any(String),
+				type: 'user',
 				userId: 'user-456',
 				vendorId: '',
-				type: 'user',
-				duration: expect.any(Number),
-				timestamp: expect.any(String),
 			});
 		});
 
@@ -185,9 +185,9 @@ describe('ConnectionHealthService', () => {
 			expect(mockRedis.incr).toHaveBeenCalledWith('metrics:errors:total');
 			expect(mockRedis.incr).toHaveBeenCalledWith('metrics:errors:last_hour');
 			expect(mockEventsService.publishEvent).toHaveBeenCalledWith('websocket.error', {
-				socketId,
-				error,
 				context: undefined,
+				error,
+				socketId,
 				timestamp: expect.any(String),
 			});
 		});
@@ -203,9 +203,9 @@ describe('ConnectionHealthService', () => {
 			await service.recordError(socketId, error, context);
 
 			expect(mockEventsService.publishEvent).toHaveBeenCalledWith('websocket.error', {
-				socketId,
-				error,
 				context,
+				error,
+				socketId,
 				timestamp: expect.any(String),
 			});
 		});
@@ -238,13 +238,13 @@ describe('ConnectionHealthService', () => {
 			const result = await service.getMetrics();
 
 			expect(result).toEqual({
-				totalConnections: 100,
 				activeConnections: 50,
-				userConnections: 30,
-				vendorConnections: 20,
+				avgConnectionDuration: 27500,
 				disconnectionsLastHour: 10,
 				errorsLastHour: 5,
-				avgConnectionDuration: 27500,
+				totalConnections: 100,
+				userConnections: 30,
+				vendorConnections: 20,
 			});
 		});
 
@@ -254,13 +254,13 @@ describe('ConnectionHealthService', () => {
 			const result = await service.getMetrics();
 
 			expect(result).toEqual({
-				totalConnections: 0,
 				activeConnections: 0,
-				userConnections: 0,
-				vendorConnections: 0,
+				avgConnectionDuration: 0,
 				disconnectionsLastHour: 0,
 				errorsLastHour: 0,
-				avgConnectionDuration: 0,
+				totalConnections: 0,
+				userConnections: 0,
+				vendorConnections: 0,
 			});
 		});
 
@@ -270,13 +270,13 @@ describe('ConnectionHealthService', () => {
 			const result = await service.getMetrics();
 
 			expect(result).toEqual({
-				totalConnections: 0,
 				activeConnections: 0,
-				userConnections: 0,
-				vendorConnections: 0,
+				avgConnectionDuration: 0,
 				disconnectionsLastHour: 0,
 				errorsLastHour: 0,
-				avgConnectionDuration: 0,
+				totalConnections: 0,
+				userConnections: 0,
+				vendorConnections: 0,
 			});
 		});
 	});
@@ -288,9 +288,7 @@ describe('ConnectionHealthService', () => {
 			const connectionData2 = { socketId: 'socket2', type: 'vendor' };
 
 			mockRedis.keys.mockResolvedValue(keys);
-			mockRedis.hgetall
-				.mockResolvedValueOnce(connectionData1)
-				.mockResolvedValueOnce(connectionData2);
+			mockRedis.hgetall.mockResolvedValueOnce(connectionData1).mockResolvedValueOnce(connectionData2);
 
 			const result = await service.getActiveConnections('user');
 
@@ -304,9 +302,7 @@ describe('ConnectionHealthService', () => {
 			const connectionData2 = { socketId: 'socket2', type: 'vendor' };
 
 			mockRedis.keys.mockResolvedValue(keys);
-			mockRedis.hgetall
-				.mockResolvedValueOnce(connectionData1)
-				.mockResolvedValueOnce(connectionData2);
+			mockRedis.hgetall.mockResolvedValueOnce(connectionData1).mockResolvedValueOnce(connectionData2);
 
 			const result = await service.getActiveConnections();
 
@@ -330,9 +326,7 @@ describe('ConnectionHealthService', () => {
 
 			mockRedis.del.mockResolvedValue(1);
 			mockRedis.keys.mockResolvedValue(oldConnections);
-			mockRedis.hgetall
-				.mockResolvedValueOnce(connectionData1)
-				.mockResolvedValueOnce(connectionData2);
+			mockRedis.hgetall.mockResolvedValueOnce(connectionData1).mockResolvedValueOnce(connectionData2);
 
 			await service.cleanupOldMetrics();
 
@@ -342,4 +336,4 @@ describe('ConnectionHealthService', () => {
 			expect(mockRedis.del).not.toHaveBeenCalledWith('connection:socket2'); // Recent connection
 		});
 	});
-}); 
+});

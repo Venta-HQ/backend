@@ -1,23 +1,23 @@
-import { createWsRateLimitGuard, WsRateLimitGuards } from './ws-rate-limit.guard.factory';
+import { describe, expect, it, vi } from 'vitest';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
-import { vi, describe, it, expect } from 'vitest';
+import { createWsRateLimitGuard, WsRateLimitGuards } from './ws-rate-limit.guard.factory';
 
 // Mock Redis
 const mockRedis = {
-	incr: vi.fn(),
+	del: vi.fn(),
 	expire: vi.fn(),
 	get: vi.fn(),
+	incr: vi.fn(),
 	ttl: vi.fn(),
-	del: vi.fn(),
 };
 
 describe('WsRateLimitGuardFactory', () => {
 	describe('createWsRateLimitGuard', () => {
 		it('should create a guard class that extends WsRateLimitGuard', () => {
 			const CustomGuard = createWsRateLimitGuard({
+				keyPrefix: 'custom:',
 				limit: 25,
 				windowMs: 30000,
-				keyPrefix: 'custom:',
 			});
 
 			const guard = new CustomGuard(mockRedis);
@@ -26,9 +26,9 @@ describe('WsRateLimitGuardFactory', () => {
 
 		it('should create guard with custom options', () => {
 			const CustomGuard = createWsRateLimitGuard({
+				keyPrefix: 'test:',
 				limit: 50,
 				windowMs: 120000,
-				keyPrefix: 'test:',
 			});
 
 			const guard = new CustomGuard(mockRedis);
@@ -57,28 +57,28 @@ describe('WsRateLimitGuardFactory', () => {
 		it('should create strict guard correctly', () => {
 			const StrictGuard = WsRateLimitGuards.strict;
 			const guard = new StrictGuard(mockRedis);
-			
+
 			expect(guard).toBeInstanceOf(WsRateLimitGuard);
 		});
 
 		it('should create standard guard correctly', () => {
 			const StandardGuard = WsRateLimitGuards.standard;
 			const guard = new StandardGuard(mockRedis);
-			
+
 			expect(guard).toBeInstanceOf(WsRateLimitGuard);
 		});
 
 		it('should create lenient guard correctly', () => {
 			const LenientGuard = WsRateLimitGuards.lenient;
 			const guard = new LenientGuard(mockRedis);
-			
+
 			expect(guard).toBeInstanceOf(WsRateLimitGuard);
 		});
 
 		it('should create status guard correctly', () => {
 			const StatusGuard = WsRateLimitGuards.status;
 			const guard = new StatusGuard(mockRedis);
-			
+
 			expect(guard).toBeInstanceOf(WsRateLimitGuard);
 		});
 
@@ -136,4 +136,4 @@ describe('WsRateLimitGuardFactory', () => {
 			await expect(guard.canActivate(mockContext as any)).rejects.toThrow();
 		});
 	});
-}); 
+});

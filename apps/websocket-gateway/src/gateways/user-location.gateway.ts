@@ -1,12 +1,14 @@
+import Redis from 'ioredis';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
+import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -17,16 +19,13 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { WsAuthGuard } from '@app/nest/guards';
-import { WsRateLimitGuards } from '@app/nest/guards';
-import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 import { ConnectionHealthService } from '../services/connection-health.service';
-import Redis from 'ioredis';
+import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 
 // Extend Socket interface to include user properties
 interface AuthenticatedSocket extends Socket {
-	userId?: string;
 	clerkId?: string;
+	userId?: string;
 }
 
 @Injectable()
@@ -66,7 +65,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 	async handleDisconnect(client: AuthenticatedSocket) {
 		this.logger.log(`User client disconnected: ${client.id}`);
-		
+
 		// Record disconnection health metrics
 		await this.connectionHealth.recordDisconnection(client.id);
 		await this.connectionManager.handleDisconnect(client.id);
@@ -82,13 +81,13 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		const userId = socket.userId;
 		if (!userId) {
 			this.logger.error('No user ID found for authenticated socket');
-			socket.emit('error', { 
+			socket.emit('error', {
 				code: 'UNAUTHORIZED',
-				message: 'User not authenticated' 
+				message: 'User not authenticated',
 			});
 			return;
 		}
-		
+
 		// Update connection activity
 		await this.connectionHealth.updateActivity(socket.id);
 

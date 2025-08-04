@@ -1,7 +1,15 @@
 import { join } from 'path';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { WsErrorFilter } from '@app/nest/filters';
-import { ConfigModule, EventsModule, HealthModule, LoggerModule, RedisModule, ClerkModule, PrismaModule } from '@app/nest/modules';
+import {
+	ClerkModule,
+	ConfigModule,
+	EventsModule,
+	HealthModule,
+	LoggerModule,
+	PrismaModule,
+	RedisModule,
+} from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -9,9 +17,9 @@ import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';
+import { ConnectionHealthService } from './services/connection-health.service';
 import { UserConnectionManagerService } from './services/user-connection-manager.service';
 import { VendorConnectionManagerService } from './services/vendor-connection-manager.service';
-import { ConnectionHealthService } from './services/connection-health.service';
 
 @Module({
 	imports: [

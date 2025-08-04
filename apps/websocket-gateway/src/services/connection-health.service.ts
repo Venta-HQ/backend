@@ -4,13 +4,13 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface ConnectionMetrics {
-	totalConnections: number;
 	activeConnections: number;
-	userConnections: number;
-	vendorConnections: number;
+	avgConnectionDuration: number;
 	disconnectionsLastHour: number;
 	errorsLastHour: number;
-	avgConnectionDuration: number;
+	totalConnections: number;
+	userConnections: number;
+	vendorConnections: number;
 }
 
 @Injectable()
@@ -33,12 +33,12 @@ export class ConnectionHealthService {
 		try {
 			// Store connection details
 			await this.redis.hset(connectionKey, {
-				socketId,
-				userId: userId || '',
-				vendorId: vendorId || '',
-				type,
 				connectedAt: timestamp,
 				lastActivity: timestamp,
+				socketId,
+				type,
+				userId: userId || '',
+				vendorId: vendorId || '',
 			});
 
 			// Set expiry for connection tracking
@@ -50,7 +50,7 @@ export class ConnectionHealthService {
 			await this.redis.incr('metrics:connections:total');
 
 			// Record connection event
-			await this.recordEvent('connection', { socketId, userId, vendorId, type });
+			await this.recordEvent('connection', { socketId, type, userId, vendorId });
 
 			this.logger.debug(`Connection recorded: ${socketId} (${type})`);
 		} catch (error) {
@@ -78,11 +78,11 @@ export class ConnectionHealthService {
 
 				// Record disconnection event
 				await this.recordEvent('disconnection', {
+					duration,
 					socketId,
+					type,
 					userId: connectionData.userId,
 					vendorId: connectionData.vendorId,
-					type,
-					duration,
 				});
 
 				// Update average connection duration
@@ -108,9 +108,9 @@ export class ConnectionHealthService {
 
 			// Record error event
 			await this.recordEvent('error', {
-				socketId,
-				error,
 				context,
+				error,
+				socketId,
 				timestamp: Date.now(),
 			});
 
@@ -157,28 +157,27 @@ export class ConnectionHealthService {
 				this.redis.get('metrics:avg_duration:vendor'),
 			]);
 
-			const avgConnectionDuration = 
-				(parseInt(avgUserDuration || '0') + parseInt(avgVendorDuration || '0')) / 2;
+			const avgConnectionDuration = (parseInt(avgUserDuration || '0') + parseInt(avgVendorDuration || '0')) / 2;
 
 			return {
-				totalConnections: parseInt(totalConnections || '0'),
 				activeConnections: parseInt(activeConnections || '0'),
-				userConnections: parseInt(userConnections || '0'),
-				vendorConnections: parseInt(vendorConnections || '0'),
+				avgConnectionDuration: Math.round(avgConnectionDuration),
 				disconnectionsLastHour: parseInt(disconnectionsLastHour || '0'),
 				errorsLastHour: parseInt(errorsLastHour || '0'),
-				avgConnectionDuration: Math.round(avgConnectionDuration),
+				totalConnections: parseInt(totalConnections || '0'),
+				userConnections: parseInt(userConnections || '0'),
+				vendorConnections: parseInt(vendorConnections || '0'),
 			};
 		} catch (error) {
 			this.logger.error('Failed to get connection metrics:', error);
 			return {
-				totalConnections: 0,
 				activeConnections: 0,
-				userConnections: 0,
-				vendorConnections: 0,
+				avgConnectionDuration: 0,
 				disconnectionsLastHour: 0,
 				errorsLastHour: 0,
-				avgConnectionDuration: 0,
+				totalConnections: 0,
+				userConnections: 0,
+				vendorConnections: 0,
 			};
 		}
 	}
@@ -220,8 +219,9 @@ export class ConnectionHealthService {
 			for (const key of oldConnections) {
 				const data = await this.redis.hgetall(key);
 				const lastActivity = parseInt(data.lastActivity || '0');
-				
-				if (Date.now() - lastActivity > 86400000) { // 24 hours
+
+				if (Date.now() - lastActivity > 86400000) {
+					// 24 hours
 					await this.redis.del(key);
 				}
 			}
@@ -261,4 +261,4 @@ export class ConnectionHealthService {
 			this.logger.error(`Failed to update average duration for ${type}:`, error);
 		}
 	}
-} 
+}
