@@ -1,11 +1,9 @@
-import Redis from 'ioredis';
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
@@ -36,7 +34,6 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
-		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: UserConnectionManagerService,
 		private readonly connectionHealth: ConnectionHealthService,
 	) {}

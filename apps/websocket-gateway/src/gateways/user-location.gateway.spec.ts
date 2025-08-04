@@ -70,7 +70,7 @@ describe('UserLocationGateway', () => {
 			userId: 'user-123',
 		};
 
-		gateway = new UserLocationGateway(grpcClient, redis, connectionManager, connectionHealth);
+		gateway = new UserLocationGateway(grpcClient, connectionManager, connectionHealth);
 		gateway.server = mockServer;
 		gateway.afterInit(); // Initialize the location service
 	});

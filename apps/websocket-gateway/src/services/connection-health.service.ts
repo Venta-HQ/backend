@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import { IEventsService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 export interface ConnectionMetrics {
 	activeConnections: number;
@@ -19,7 +19,7 @@ export class ConnectionHealthService {
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
-		private readonly eventsService: IEventsService,
+		@Inject('EventsService') private readonly eventsService: IEventsService,
 	) {}
 
 	/**

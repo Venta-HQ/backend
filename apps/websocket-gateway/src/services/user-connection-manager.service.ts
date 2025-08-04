@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { IEventsService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 export interface UserConnectionInfo {
 	connectedAt: Date;
@@ -16,7 +16,7 @@ export class UserConnectionManagerService {
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
-		private readonly eventsService: IEventsService,
+		@Inject('EventsService') private readonly eventsService: IEventsService,
 	) {}
 
 	/**

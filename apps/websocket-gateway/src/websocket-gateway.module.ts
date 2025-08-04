@@ -1,6 +1,13 @@
 import { join } from 'path';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { WsErrorFilter } from '@app/nest/filters';
+import { 
+	WsAuthGuard,
+	WsRateLimitGuardLenient, 
+	WsRateLimitGuardStandard, 
+	WsRateLimitGuardStatus, 
+	WsRateLimitGuardStrict 
+} from '@app/nest/guards';
 import {
 	ClerkModule,
 	ConfigModule,
@@ -61,6 +68,12 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 		ConnectionHealthService,
 		UserLocationGateway,
 		VendorLocationGateway,
+		// Authentication and rate limiting guards
+		WsAuthGuard,
+		WsRateLimitGuardLenient,
+		WsRateLimitGuardStandard,
+		WsRateLimitGuardStatus,
+		WsRateLimitGuardStrict,
 	],
 })
 export class WebsocketGatewayModule {}
