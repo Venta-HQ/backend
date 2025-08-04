@@ -68,8 +68,10 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Added event publishing in `createVendor` and `updateVendor`
 
 #### `apps/vendor/src/health/health.controller.ts`
-**Status**: ❌ Missing in main
-**Notes**: Need to implement this health controller
+**Status**: ✅ Not Needed
+**Notes**: 
+- ✅ File exists in event-pattern-initial but is empty
+- ✅ Main branch doesn't need this file
 
 ### 3. User App
 
@@ -81,14 +83,13 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Removed event publishing from both methods
 
 #### `apps/user/src/clerk/clerk.service.ts`
-**Status**: ❌ Has Major Differences
+**Status**: ✅ Fixed - Now Identical
 **Notes**: 
-- Main branch missing EventsService injection and event publishing
-- Main branch has different import path for PrismaService
-- Main branch has different user creation logic: checks if user exists first
-- Main branch has different integration creation: uses different data structure
-- Main branch has different integration deletion: uses different query structure
-- Main branch missing event publishing in all methods
+- ✅ Added EventsService injection and event publishing
+- ✅ Fixed user creation logic to match event-pattern-initial
+- ✅ Fixed integration creation to use config structure
+- ✅ Fixed integration deletion to use config query structure
+- ✅ Added event publishing in all methods
 
 #### `apps/user/src/subscription/subscription.controller.ts`
 **Status**: ❌ Has Differences
