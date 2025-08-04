@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { HttpError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
@@ -19,15 +19,15 @@ export class AuthGuard implements CanActivate {
 		// Extract token from Authorization header (format: Bearer <token>)
 		const authHeader = request.headers['authorization'];
 
-						if (!authHeader) {
-					throw new HttpError('UNAUTHORIZED');
-				}
+								if (!authHeader) {
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
+		}
 
 		const token = authHeader?.split(' ')[1];
 
-						if (!token) {
-					throw new HttpError('UNAUTHORIZED');
-				}
+		if (!token) {
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
+		}
 
 		try {
 			// Use Clerk to verify the session token
@@ -46,14 +46,14 @@ export class AuthGuard implements CanActivate {
 					},
 				});
 
-												if (!internalUser) {
-									throw new HttpError('UNAUTHORIZED');
-								}
+																if (!internalUser) {
+					throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
+				}
+
+				internalUserId = internalUser.id;
 
 				// Cache the result
 				await this.redis.set(`user:${tokenContents.sub}`, internalUserId, 'EX', 3600); // 3600 = 1hr
-
-				internalUserId = internalUser.id;
 			}
 
 			// Attach the Clerk user info to the request for further use
@@ -61,7 +61,7 @@ export class AuthGuard implements CanActivate {
 
 			return true; // Allow access
 		} catch (error) {
-			throw new HttpError('UNAUTHORIZED');
+			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 	}
 }
