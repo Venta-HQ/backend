@@ -37,16 +37,16 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 				try {
 					switch (event.type) {
 						case 'vendor.created':
-							await this.handleVendorCreated(event.data);
+							await this.handleVendorCreated(event.data as Record<string, unknown>);
 							break;
 						case 'vendor.updated':
-							await this.handleVendorUpdated(event.data);
+							await this.handleVendorUpdated(event.data as Record<string, unknown>);
 							break;
 						case 'vendor.deleted':
-							await this.handleVendorDeleted(event.data);
+							await this.handleVendorDeleted(event.data as Record<string, unknown>);
 							break;
 						case 'vendor.location.updated':
-							await this.handleVendorLocationUpdated(event.data);
+							await this.handleVendorLocationUpdated(event.data as LocationUpdateData);
 							break;
 						default:
 							this.logger.debug(`Ignoring event type: ${event.type}`);
@@ -72,7 +72,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 									lat: vendor.lat,
 									lng: vendor.long,
 								},
-							}
+							} as any
 						: {}),
 				}),
 			`Creating vendor in Algolia: ${vendor.id}`,
@@ -91,7 +91,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 									lat: vendor.lat,
 									lng: vendor.long,
 								},
-							}
+							} as any
 						: {}),
 				}),
 			`Updating vendor in Algolia: ${vendor.id}`,
@@ -115,7 +115,7 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 						lat: locationData.location.lat,
 						lng: locationData.location.long,
 					},
-				}),
+				} as any),
 			`Updating vendor location in Algolia: ${locationData.entityId}`,
 			{ logger: this.logger },
 		);

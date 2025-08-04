@@ -1,11 +1,10 @@
 import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService } from '@app/nest/modules/events';
-import { PrismaService } from '@app/nest/modules/prisma';
+import { PrismaService, IEventsService } from '@app/nest/modules';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -15,7 +14,7 @@ export class LocationService {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
-		private readonly eventsService: IEventsService,
+		@Inject('EventsService') private readonly eventsService: IEventsService,
 	) {}
 
 	/**
