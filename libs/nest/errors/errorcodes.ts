@@ -36,6 +36,8 @@ export const ErrorCodes = {
 	WS_AUTHENTICATION_FAILED: 'WebSocket authentication failed',
 	WS_CONNECTION_FAILED: 'WebSocket connection failed',
 	WS_INVALID_MESSAGE_FORMAT: 'Invalid WebSocket message format',
+	WS_RATE_LIMIT_EXCEEDED: 'WebSocket rate limit exceeded',
+	WS_CONNECTION_TIMEOUT: 'WebSocket connection timeout',
 } as const;
 
 export type ErrorCode = keyof typeof ErrorCodes;

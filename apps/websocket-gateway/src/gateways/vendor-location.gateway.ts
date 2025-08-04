@@ -5,7 +5,7 @@ import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
@@ -17,10 +17,19 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
+import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
+import { ConnectionHealthService } from '../services/connection-health.service';
+
+// Extend Socket interface to include vendor properties
+interface AuthenticatedVendorSocket extends Socket {
+	vendorId?: string;
+	clerkId?: string;
+}
 
 @Injectable()
 @WebSocketGateway({ namespace: '/vendor' })
+@UseGuards(WsAuthGuard) // Require authentication for all vendor connections
 export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(VendorLocationGateway.name);
 	private locationService!: LocationServiceClient;
@@ -29,6 +38,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: VendorConnectionManagerService,
+		private readonly connectionHealth: ConnectionHealthService,
 	) {}
 
 	afterInit() {
@@ -37,10 +47,13 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 
 	@WebSocketServer() server!: Server;
 
-	async handleConnection(client: Socket) {
+	async handleConnection(client: AuthenticatedVendorSocket) {
 		this.logger.log(`Vendor client connected: ${client.id}`);
 
-		// Handle vendor registration
+		// Record connection health metrics
+		await this.connectionHealth.recordConnection(client.id, undefined, client.vendorId);
+
+		// Handle vendor registration (now redundant since auth guard handles it)
 		client.on('register-vendor', async (data) => {
 			if (data.vendorId) {
 				await this.connectionManager.registerVendor(data.vendorId, client.id);
@@ -49,21 +62,33 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		});
 	}
 
-	async handleDisconnect(client: Socket) {
+	async handleDisconnect(client: AuthenticatedVendorSocket) {
 		this.logger.log(`Vendor client disconnected: ${client.id}`);
+		
+		// Record disconnection health metrics
+		await this.connectionHealth.recordDisconnection(client.id);
 		await this.connectionManager.handleDisconnect(client.id);
 	}
 
 	@SubscribeMessage('updateVendorLocation')
+	@UseGuards(WsRateLimitGuards.lenient) // 30 location updates per minute for vendors
 	async updateVendorLocation(
 		@MessageBody(new SchemaValidatorPipe(VendorLocationUpdateDataSchema)) data: VendorLocationUpdateData,
-		@ConnectedSocket() socket: Socket,
+		@ConnectedSocket() socket: AuthenticatedVendorSocket,
 	) {
-		const vendorId = await this.connectionManager.getSocketVendorId(socket.id);
+		// Vendor ID is guaranteed to be available from WsAuthGuard
+		const vendorId = socket.vendorId;
 		if (!vendorId) {
-			this.logger.error('No vendor ID found for socket');
+			this.logger.error('No vendor ID found for authenticated socket');
+			socket.emit('error', { 
+				code: 'UNAUTHORIZED',
+				message: 'Vendor not authenticated' 
+			});
 			return;
 		}
+
+		// Update connection activity
+		await this.connectionHealth.updateActivity(socket.id);
 
 		try {
 			// Store vendor location in database via gRPC service

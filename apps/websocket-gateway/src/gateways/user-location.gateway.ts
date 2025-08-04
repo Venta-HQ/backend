@@ -3,8 +3,10 @@ import { Server, Socket } from 'socket.io';
 import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { retryOperation } from '@app/utils';
+import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -15,17 +17,30 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
+import { WsAuthGuard } from '@app/nest/guards';
+import { WsRateLimitGuards } from '@app/nest/guards';
 import { UserConnectionManagerService } from '../services/user-connection-manager.service';
+import { ConnectionHealthService } from '../services/connection-health.service';
+import Redis from 'ioredis';
+
+// Extend Socket interface to include user properties
+interface AuthenticatedSocket extends Socket {
+	userId?: string;
+	clerkId?: string;
+}
 
 @Injectable()
 @WebSocketGateway({ namespace: '/user' })
+@UseGuards(WsAuthGuard) // Require authentication for all user connections
 export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(UserLocationGateway.name);
 	private locationService!: LocationServiceClient;
 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
+		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: UserConnectionManagerService,
+		private readonly connectionHealth: ConnectionHealthService,
 	) {}
 
 	afterInit() {
@@ -34,10 +49,13 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 	@WebSocketServer() server!: Server;
 
-	async handleConnection(client: Socket) {
+	async handleConnection(client: AuthenticatedSocket) {
 		this.logger.log(`User client connected: ${client.id}`);
 
-		// Handle user registration
+		// Record connection health metrics
+		await this.connectionHealth.recordConnection(client.id, client.userId);
+
+		// Handle user registration (now redundant since auth guard handles it)
 		client.on('register-user', async (data) => {
 			if (data.userId) {
 				await this.connectionManager.registerUser(data.userId, client.id);
@@ -46,21 +64,33 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		});
 	}
 
-	async handleDisconnect(client: Socket) {
+	async handleDisconnect(client: AuthenticatedSocket) {
 		this.logger.log(`User client disconnected: ${client.id}`);
+		
+		// Record disconnection health metrics
+		await this.connectionHealth.recordDisconnection(client.id);
 		await this.connectionManager.handleDisconnect(client.id);
 	}
 
 	@SubscribeMessage('updateUserLocation')
+	@UseGuards(WsRateLimitGuards.standard) // 15 location updates per minute
 	async updateUserLocation(
 		@MessageBody(new SchemaValidatorPipe(UpdateUserLocationDataSchema)) data: UpdateUserLocationData,
-		@ConnectedSocket() socket: Socket,
+		@ConnectedSocket() socket: AuthenticatedSocket,
 	) {
-		const userId = await this.connectionManager.getSocketUserId(socket.id);
+		// User ID is guaranteed to be available from WsAuthGuard
+		const userId = socket.userId;
 		if (!userId) {
-			this.logger.error('No user ID found for socket');
+			this.logger.error('No user ID found for authenticated socket');
+			socket.emit('error', { 
+				code: 'UNAUTHORIZED',
+				message: 'User not authenticated' 
+			});
 			return;
 		}
+		
+		// Update connection activity
+		await this.connectionHealth.updateActivity(socket.id);
 
 		const { neLocation, swLocation } = data;
 
