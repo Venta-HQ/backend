@@ -9,7 +9,7 @@ import {
 
 export interface HealthControllerOptions {
 	additionalChecks?: () => Promise<Record<string, any>>;
-	serviceName: string;
+	appName: string;
 }
 
 @Controller('health')
@@ -24,7 +24,7 @@ export class HealthController {
 		private microservice: MicroserviceHealthIndicator,
 		@Inject('HEALTH_OPTIONS') options: HealthControllerOptions,
 	) {
-		this.serviceName = options.serviceName;
+		this.serviceName = options.appName;
 		this.additionalChecks = options.additionalChecks;
 	}
 

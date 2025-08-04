@@ -1,41 +1,32 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import {
+	BootstrapModule,
 	ClerkModule,
-	ConfigModule,
-	EventsModule,
-	HealthModule,
-	LoggerModule,
-	PrismaModule,
-	PrometheusModule,
-	RedisModule,
 } from '@app/nest/modules';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { modules, routes } from './router';
 
 @Module({
 	imports: [
-		ConfigModule,
-		ErrorHandlingModule,
-		EventsModule,
-		HealthModule.forRoot({
-			serviceName: 'gateway-service',
+		BootstrapModule.forRoot({
+			appName: 'gateway',
+			protocol: 'http',
+			additionalModules: [
+				ClerkModule.register(),
+				ThrottlerModule.forRoot([
+					{
+						limit: 100,
+						ttl: 60000,
+					},
+				]),
+				...modules,
+				RouterModule.register(routes),
+			],
 		}),
-		LoggerModule.register({ appName: 'gateway', protocol: 'http' }),
-		RedisModule,
-		PrometheusModule.register({ appName: 'gateway' }),
-		ClerkModule.register(),
-		PrismaModule.register(),
-		ThrottlerModule.forRoot([
-			{
-				limit: 100,
-				ttl: 60000,
-			},
-		]),
-		...modules,
-		RouterModule.register(routes),
 	],
 	providers: [
 		AuthGuard,

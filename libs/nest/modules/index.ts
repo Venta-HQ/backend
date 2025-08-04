@@ -1,3 +1,4 @@
+export * from './bootstrap';
 export * from './config';
 export * from './algolia';
 export * from './events';

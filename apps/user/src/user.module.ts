@@ -1,5 +1,4 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
-import { ConfigModule, EventsModule, HealthModule, LoggerModule, PrismaModule, PrometheusModule } from '@app/nest/modules';
+import { BootstrapModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
@@ -11,15 +10,10 @@ import { VendorService } from './vendor/vendor.service';
 @Module({
 	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [
-		ConfigModule,
-		ErrorHandlingModule,
-		EventsModule,
-		HealthModule.forRoot({
-			serviceName: 'user-service',
+		BootstrapModule.forRoot({
+			appName: 'User Microservice',
+			protocol: 'grpc',
 		}),
-		LoggerModule.register({ appName: 'User Microservice', protocol: 'grpc' }),
-		PrometheusModule.register({ appName: 'user' }),
-		PrismaModule.register(),
 	],
 	providers: [ClerkService, SubscriptionService, VendorService],
 })

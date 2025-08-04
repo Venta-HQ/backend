@@ -4,7 +4,7 @@ import { HealthController } from './health.controller';
 
 export interface HealthModuleOptions {
 	additionalChecks?: () => Promise<Record<string, any>>;
-	serviceName: string;
+	appName: string;
 }
 
 @Module({})

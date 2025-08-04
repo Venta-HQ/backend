@@ -9,13 +9,8 @@ import {
 	WsRateLimitGuardStrict,
 } from '@app/nest/guards';
 import {
+	BootstrapModule,
 	ClerkModule,
-	ConfigModule,
-	EventsModule,
-	HealthModule,
-	LoggerModule,
-	PrismaModule,
-	PrometheusModule,
 	PrometheusService,
 	RedisModule,
 } from '@app/nest/modules';
@@ -32,32 +27,29 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 
 @Module({
 	imports: [
-		ConfigModule,
-		ErrorHandlingModule,
-		RedisModule,
-		EventsModule,
-		HealthModule.forRoot({
-			serviceName: 'websocket-gateway-service',
-		}),
-		LoggerModule.register({ appName: 'Websocket Gateway Microservice', protocol: 'http' }),
-		ClerkModule.register(),
-		PrismaModule.register(),
-		PrometheusModule.register({ appName: 'websocket-gateway' }),
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					imports: [ConfigModule],
-					inject: [ConfigService],
-					name: LOCATION_SERVICE_NAME,
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							package: LOCATION_PACKAGE_NAME,
-							protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-							url: configService.get('LOCATION_SERVICE_ADDRESS'),
+		BootstrapModule.forRoot({
+			appName: 'Websocket Gateway Microservice',
+			protocol: 'http',
+			additionalModules: [
+				RedisModule,
+				ClerkModule.register(),
+				ClientsModule.registerAsync({
+					clients: [
+						{
+							imports: [BootstrapModule],
+							inject: [ConfigService],
+							name: LOCATION_SERVICE_NAME,
+							useFactory: (configService: ConfigService) => ({
+								options: {
+									package: LOCATION_PACKAGE_NAME,
+									protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+									url: configService.get('LOCATION_SERVICE_ADDRESS'),
+								},
+								transport: Transport.GRPC,
+							}),
 						},
-						transport: Transport.GRPC,
-					}),
-				},
+					],
+				}),
 			],
 		}),
 	],

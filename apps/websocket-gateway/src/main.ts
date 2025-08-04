@@ -1,14 +1,11 @@
-import { Logger } from '@app/nest/modules';
-import { ConfigService } from '@nestjs/config';
-import { NestFactory } from '@nestjs/core';
+import { BootstrapService } from '@app/nest/modules';
 import { WebsocketGatewayModule } from './websocket-gateway.module';
 
 async function bootstrap() {
-	const app = await NestFactory.create(WebsocketGatewayModule);
-	const configService = app.get(ConfigService);
-
-	app.useLogger(app.get(Logger));
-	await app.listen(configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT', 5004), '0.0.0.0');
+	await BootstrapService.bootstrapHttp({
+		module: WebsocketGatewayModule,
+		port: 'WEBSOCKET_GATEWAY_SERVICE_PORT',
+	});
 }
 
 bootstrap();
