@@ -96,8 +96,11 @@ This document provides a detailed comparison of every library between the event-
 ### 5. Event-Pattern-Initial Specific Libraries
 
 #### `libs/auth/` - Event-Pattern-Initial Only
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare with main branch auth implementation
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has Logger injection in ClerkService
+- Main branch uses AppError instead of generic Error in ClerkService
+- Event-pattern-initial has more comprehensive auth library with additional services
 
 #### `libs/config/` - Event-Pattern-Initial Only
 **Status**: ⚠️ Needs Comparison
