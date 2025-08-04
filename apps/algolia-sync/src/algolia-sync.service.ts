@@ -1,6 +1,5 @@
 import { LocationUpdateData } from '@app/apitypes';
-import { AlgoliaService } from '@app/nest/modules/algolia';
-import { EventStream, IEventsService } from '@app/nest/modules/events';
+import { AlgoliaService, EventStream, IEventsService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 

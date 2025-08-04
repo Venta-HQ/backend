@@ -16,6 +16,7 @@ export class HealthModule {
 			imports: [TerminusModule],
 			module: HealthModule,
 			providers: [
+				HealthController,
 				{
 					provide: 'HEALTH_OPTIONS',
 					useValue: options,

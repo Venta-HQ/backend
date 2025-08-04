@@ -5,68 +5,69 @@
 // source: location.proto
 
 /* eslint-disable */
-import { Observable } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'location';
+export const protobufPackage = "location";
 
-export interface Empty {}
+export interface Empty {
+}
 
 export interface VendorLocationRequest {
-	swLocation: Location | undefined;
-	neLocation: Location | undefined;
+  swLocation: Location | undefined;
+  neLocation: Location | undefined;
 }
 
 export interface Vendor {
-	id: string;
-	location: Location | undefined;
+  id: string;
+  location: Location | undefined;
 }
 
 export interface VendorLocationResponse {
-	vendors: Vendor[];
+  vendors: Vendor[];
 }
 
 export interface Location {
-	long: number;
-	lat: number;
+  long: number;
+  lat: number;
 }
 
 export interface LocationUpdate {
-	location: Location | undefined;
-	entityId: string;
+  location: Location | undefined;
+  entityId: string;
 }
 
-export const LOCATION_PACKAGE_NAME = 'location';
+export const LOCATION_PACKAGE_NAME = "location";
 
 export interface LocationServiceClient {
-	updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Observable<Empty>;
+  updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Observable<Empty>;
 
-	vendorLocations(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
+  vendorLocations(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
 }
 
 export interface LocationServiceController {
-	updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
+  updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
-	vendorLocations(
-		request: VendorLocationRequest,
-		metadata?: Metadata,
-	): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
+  vendorLocations(
+    request: VendorLocationRequest,
+    metadata?: Metadata,
+  ): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
 }
 
 export function LocationServiceControllerMethods() {
-	return function (constructor: Function) {
-		const grpcMethods: string[] = ['updateVendorLocation', 'vendorLocations'];
-		for (const method of grpcMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcMethod('LocationService', method)(constructor.prototype[method], method, descriptor);
-		}
-		const grpcStreamMethods: string[] = [];
-		for (const method of grpcStreamMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcStreamMethod('LocationService', method)(constructor.prototype[method], method, descriptor);
-		}
-	};
+  return function (constructor: Function) {
+    const grpcMethods: string[] = ["updateVendorLocation", "vendorLocations"];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("LocationService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("LocationService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
 }
 
-export const LOCATION_SERVICE_NAME = 'LocationService';
+export const LOCATION_SERVICE_NAME = "LocationService";

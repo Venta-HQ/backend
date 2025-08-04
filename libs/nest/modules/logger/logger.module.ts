@@ -5,6 +5,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
+import { GrpcLogger } from './grpc-logger.service';
 import { Logger } from './logger.service';
 import { RequestContextService } from './request-context.service';
 
@@ -20,7 +21,10 @@ export class LoggerModule {
 		const protocol = typeof options === 'string' ? 'auto' : options.protocol || 'auto';
 
 		return {
-			exports: [Logger], // Always export Logger as the unified logger
+			exports: [
+				Logger, // Always export Logger as the unified logger
+				...(protocol === 'grpc' || protocol === 'auto' ? [GrpcLogger] : []),
+			],
 			global: true,
 			imports: [
 				PinoLoggerModule.forRootAsync({
@@ -120,6 +124,7 @@ export class LoggerModule {
 								provide: APP_INTERCEPTOR,
 								useClass: GrpcRequestIdInterceptor,
 							},
+							GrpcLogger,
 						]
 					: []),
 				// Always provide Logger as the unified logger
