@@ -13,6 +13,7 @@ This module provides a centralized way to collect and expose Prometheus metrics 
 - **Application Metrics**: Automatic uptime, version, and memory tracking
 - **Metrics Factory**: Helper utilities for common metric patterns
 - **Automatic Exposure**: `/metrics` endpoint for Prometheus scraping
+- **Request Metrics Interceptor**: Automatic tracking of HTTP, gRPC, and WebSocket requests
 
 ## Usage
 
@@ -27,6 +28,15 @@ import { PrometheusModule } from '@app/nest/modules/prometheus';
 })
 export class AppModule {}
 ```
+
+### Automatic Request Metrics
+
+The `PrometheusModule` automatically includes request metrics tracking for all HTTP, gRPC, and WebSocket requests. Simply import the module and you'll get these metrics:
+
+- `requests_total`: Total request count by protocol, method, path, and status code
+- `request_duration_seconds`: Request duration histogram by protocol, method, and path
+- `requests_in_progress`: Current in-progress requests by protocol and method
+- `request_failures_total`: Total failures by protocol, method, path, and error type
 
 ### Defining App-Specific Metrics
 
@@ -191,6 +201,95 @@ describe('MyService', () => {
     await prometheusService.resetMetrics();
   });
 });
+```
+
+## Request Metrics Interceptor
+
+The `MetricsInterceptor` automatically tracks all requests across HTTP, gRPC, and WebSocket protocols. It provides comprehensive metrics for monitoring application performance and health.
+
+### Metrics Provided
+
+- **`requests_total`**: Counter tracking total requests by protocol, method, path, and status code
+- **`request_duration_seconds`**: Histogram tracking request duration by protocol, method, and path
+- **`requests_in_progress`**: Gauge tracking currently in-progress requests by protocol and method
+- **`request_failures_total`**: Counter tracking failures by protocol, method, path, and error type
+
+### Protocol Support
+
+#### HTTP Requests
+- Extracts method (GET, POST, etc.) and normalized path
+- Tracks status codes (200, 404, 500, etc.)
+- Normalizes API paths (e.g., `/api/users/123?filter=active` → `/api/users/123`)
+
+#### gRPC Requests
+- Extracts service and method names
+- Tracks success/failure status
+- Provides service.method path format
+
+#### WebSocket Messages
+- Extracts event type from message data
+- Falls back to 'message' for generic messages
+- Tracks connection and message processing
+
+### Usage
+
+#### Automatic Integration
+The `PrometheusModule` automatically includes the metrics interceptor, so no additional configuration is needed:
+
+```typescript
+import { PrometheusModule } from '@app/nest/modules/prometheus';
+
+@Module({
+  imports: [
+    PrometheusModule,
+    // ... other imports
+  ],
+})
+export class AppModule {}
+```
+
+#### Manual Registration (if needed)
+If you need to customize the interceptor or use it separately:
+
+```typescript
+import { MetricsInterceptor } from '@app/nest/modules/prometheus';
+
+@Module({
+  imports: [PrometheusModule],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+  ],
+})
+export class AppModule {}
+```
+
+### Example Metrics Output
+
+```
+# HELP requests_total Total number of requests
+# TYPE requests_total counter
+requests_total{protocol="http",method="GET",path="/api/users",status_code="200"} 150
+requests_total{protocol="http",method="POST",path="/api/users",status_code="201"} 25
+requests_total{protocol="grpc",method="getUser",path="UserService.getUser",status_code="200"} 75
+requests_total{protocol="websocket",method="location_update",path="websocket",status_code="200"} 300
+
+# HELP request_duration_seconds Duration of requests
+# TYPE request_duration_seconds histogram
+request_duration_seconds_bucket{protocol="http",method="GET",path="/api/users",le="0.1"} 120
+request_duration_seconds_bucket{protocol="http",method="GET",path="/api/users",le="0.5"} 145
+request_duration_seconds_bucket{protocol="http",method="GET",path="/api/users",le="1"} 150
+
+# HELP requests_in_progress Number of requests currently in progress
+# TYPE requests_in_progress gauge
+requests_in_progress{protocol="http",method="GET"} 5
+requests_in_progress{protocol="grpc",method="getUser"} 2
+
+# HELP request_failures_total Total number of request failures
+# TYPE request_failures_total counter
+request_failures_total{protocol="http",method="POST",path="/api/users",error_type="ValidationError"} 3
 ```
 
 ## Instrumenting an App with Metrics

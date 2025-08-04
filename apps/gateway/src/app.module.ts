@@ -7,6 +7,7 @@ import {
 	HealthModule,
 	LoggerModule,
 	PrismaModule,
+	PrometheusModule,
 	RedisModule,
 } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
@@ -24,6 +25,7 @@ import { modules, routes } from './router';
 		}),
 		LoggerModule.register({ appName: 'gateway', protocol: 'http' }),
 		RedisModule,
+		PrometheusModule.register({ appName: 'gateway' }),
 		ClerkModule.register(),
 		PrismaModule.register(),
 		ThrottlerModule.forRoot([

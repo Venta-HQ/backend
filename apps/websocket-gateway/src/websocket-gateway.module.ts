@@ -42,7 +42,7 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 		LoggerModule.register({ appName: 'Websocket Gateway Microservice', protocol: 'http' }),
 		ClerkModule.register(),
 		PrismaModule.register(),
-		PrometheusModule,
+		PrometheusModule.register({ appName: 'websocket-gateway' }),
 		ClientsModule.registerAsync({
 			clients: [
 				{
