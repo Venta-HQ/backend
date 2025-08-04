@@ -18,8 +18,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
+import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 
 // Extend Socket interface to include vendor properties
 interface AuthenticatedVendorSocket extends Socket {
@@ -51,7 +51,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		this.logger.log(`Vendor client connected: ${client.id}`);
 
 		// Record connection metrics
-		this.metrics.vendor_websocket_connections_total.inc({ type: 'vendor', status: 'connected' });
+		this.metrics.vendor_websocket_connections_total.inc({ status: 'connected', type: 'vendor' });
 		this.metrics.vendor_websocket_connections_active.inc({ type: 'vendor' });
 
 		// Handle vendor registration (now redundant since auth guard handles it)
@@ -67,7 +67,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		this.logger.log(`Vendor client disconnected: ${client.id}`);
 
 		// Record disconnection metrics
-		this.metrics.vendor_websocket_disconnections_total.inc({ type: 'vendor', reason: 'disconnect' });
+		this.metrics.vendor_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'vendor' });
 		this.metrics.vendor_websocket_connections_active.dec({ type: 'vendor' });
 		await this.connectionManager.handleDisconnect(client.id);
 	}
@@ -90,7 +90,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		}
 
 		// Record location update metrics
-		this.metrics.location_updates_total.inc({ type: 'vendor', status: 'success' });
+		this.metrics.location_updates_total.inc({ status: 'success', type: 'vendor' });
 
 		try {
 			// Store vendor location in database via gRPC service

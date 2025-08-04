@@ -46,7 +46,7 @@ describe('MetricsFactory', () => {
 
 		it('should have correct buckets for histogram', () => {
 			const metrics = MetricsFactory.websocketMetrics();
-			const histogram = metrics.find(m => m.type === 'histogram');
+			const histogram = metrics.find((m) => m.type === 'histogram');
 
 			expect(histogram?.buckets).toEqual([1, 5, 15, 30, 60, 300, 600, 1800, 3600]);
 		});
@@ -223,4 +223,4 @@ describe('MetricsFactory', () => {
 			expect(metric.labelNames).toEqual(['label1']);
 		});
 	});
-}); 
+});

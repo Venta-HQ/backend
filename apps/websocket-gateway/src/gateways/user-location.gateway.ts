@@ -16,8 +16,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
+import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 
 // Extend Socket interface to include user properties
 interface AuthenticatedSocket extends Socket {
@@ -48,7 +48,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		this.logger.log(`User client connected: ${client.id}`);
 
 		// Record connection metrics
-		this.metrics.user_websocket_connections_total.inc({ type: 'user', status: 'connected' });
+		this.metrics.user_websocket_connections_total.inc({ status: 'connected', type: 'user' });
 		this.metrics.user_websocket_connections_active.inc({ type: 'user' });
 
 		// Handle user registration (now redundant since auth guard handles it)
@@ -64,7 +64,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		this.logger.log(`User client disconnected: ${client.id}`);
 
 		// Record disconnection metrics
-		this.metrics.user_websocket_disconnections_total.inc({ type: 'user', reason: 'disconnect' });
+		this.metrics.user_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'user' });
 		this.metrics.user_websocket_connections_active.dec({ type: 'user' });
 		await this.connectionManager.handleDisconnect(client.id);
 	}
@@ -87,7 +87,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		}
 
 		// Record location update metrics
-		this.metrics.location_updates_total.inc({ type: 'user', status: 'success' });
+		this.metrics.location_updates_total.inc({ status: 'success', type: 'user' });
 
 		const { neLocation, swLocation } = data;
 

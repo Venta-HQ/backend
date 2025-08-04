@@ -1,6 +1,6 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrometheusService } from './prometheus.service';
-import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock prom-client to avoid initialization issues in tests
 vi.mock('prom-client', () => ({
@@ -9,9 +9,9 @@ vi.mock('prom-client', () => ({
 		...config,
 	})),
 	Gauge: vi.fn().mockImplementation((config) => ({
-		set: vi.fn(),
-		inc: vi.fn(),
 		dec: vi.fn(),
+		inc: vi.fn(),
+		set: vi.fn(),
 		...config,
 	})),
 	Histogram: vi.fn().mockImplementation((config) => ({
@@ -19,8 +19,8 @@ vi.mock('prom-client', () => ({
 		...config,
 	})),
 	Registry: vi.fn().mockImplementation(() => ({
-		metrics: vi.fn().mockResolvedValue('# HELP test_counter Test counter\n# TYPE test_counter counter\ntest_counter 0'),
 		clear: vi.fn().mockResolvedValue(undefined),
+		metrics: vi.fn().mockResolvedValue('# HELP test_counter Test counter\n# TYPE test_counter counter\ntest_counter 0'),
 	})),
 }));
 
@@ -50,10 +50,10 @@ describe('PrometheusService', () => {
 		it('should register counter metrics', () => {
 			const metrics = service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'test_counter',
 					help: 'Test counter',
 					labelNames: ['label1', 'label2'],
+					name: 'test_counter',
+					type: 'counter',
 				},
 			]);
 
@@ -64,10 +64,10 @@ describe('PrometheusService', () => {
 		it('should register gauge metrics', () => {
 			const metrics = service.registerMetrics([
 				{
-					type: 'gauge',
-					name: 'test_gauge',
 					help: 'Test gauge',
 					labelNames: ['label1'],
+					name: 'test_gauge',
+					type: 'gauge',
 				},
 			]);
 
@@ -78,11 +78,11 @@ describe('PrometheusService', () => {
 		it('should register histogram metrics', () => {
 			const metrics = service.registerMetrics([
 				{
-					type: 'histogram',
-					name: 'test_histogram',
+					buckets: [0.1, 0.5, 1, 2, 5],
 					help: 'Test histogram',
 					labelNames: ['label1'],
-					buckets: [0.1, 0.5, 1, 2, 5],
+					name: 'test_histogram',
+					type: 'histogram',
 				},
 			]);
 
@@ -93,18 +93,18 @@ describe('PrometheusService', () => {
 		it('should throw error for duplicate metric names', () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'duplicate_metric',
 					help: 'First metric',
+					name: 'duplicate_metric',
+					type: 'counter',
 				},
 			]);
 
 			expect(() => {
 				service.registerMetrics([
 					{
-						type: 'counter',
-						name: 'duplicate_metric',
 						help: 'Second metric',
+						name: 'duplicate_metric',
+						type: 'counter',
 					},
 				]);
 			}).toThrow('Metric duplicate_metric is already registered');
@@ -114,9 +114,9 @@ describe('PrometheusService', () => {
 			expect(() => {
 				service.registerMetrics([
 					{
-						type: 'unknown' as any,
-						name: 'test_metric',
 						help: 'Test metric',
+						name: 'test_metric',
+						type: 'unknown' as any,
 					},
 				]);
 			}).toThrow('Unknown metric type: unknown');
@@ -127,9 +127,9 @@ describe('PrometheusService', () => {
 		it('should return registered metric', () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'test_metric',
 					help: 'Test metric',
+					name: 'test_metric',
+					type: 'counter',
 				},
 			]);
 
@@ -147,14 +147,14 @@ describe('PrometheusService', () => {
 		it('should return all registered metrics', () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'metric1',
 					help: 'Metric 1',
+					name: 'metric1',
+					type: 'counter',
 				},
 				{
-					type: 'gauge',
-					name: 'metric2',
 					help: 'Metric 2',
+					name: 'metric2',
+					type: 'gauge',
 				},
 			]);
 
@@ -169,9 +169,9 @@ describe('PrometheusService', () => {
 		it('should return metrics in Prometheus format', async () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'test_counter',
 					help: 'Test counter',
+					name: 'test_counter',
+					type: 'counter',
 				},
 			]);
 
@@ -186,9 +186,9 @@ describe('PrometheusService', () => {
 		it('should clear all registered metrics', async () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'test_metric',
 					help: 'Test metric',
+					name: 'test_metric',
+					type: 'counter',
 				},
 			]);
 
@@ -205,9 +205,9 @@ describe('PrometheusService', () => {
 		it('should return true for existing metric', () => {
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'test_metric',
 					help: 'Test metric',
+					name: 'test_metric',
+					type: 'counter',
 				},
 			]);
 
@@ -225,14 +225,14 @@ describe('PrometheusService', () => {
 
 			service.registerMetrics([
 				{
-					type: 'counter',
-					name: 'metric1',
 					help: 'Metric 1',
+					name: 'metric1',
+					type: 'counter',
 				},
 				{
-					type: 'gauge',
-					name: 'metric2',
 					help: 'Metric 2',
+					name: 'metric2',
+					type: 'gauge',
 				},
 			]);
 
@@ -253,4 +253,4 @@ describe('PrometheusService', () => {
 			expect(service.application.memoryUsage).toBeDefined();
 		});
 	});
-}); 
+});

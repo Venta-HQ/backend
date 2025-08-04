@@ -14,4 +14,4 @@ export class PrometheusController {
 	async getMetrics(): Promise<string> {
 		return await this.prometheusService.getMetrics();
 	}
-} 
+}

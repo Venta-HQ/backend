@@ -1,6 +1,5 @@
-import { PrometheusService } from '@app/nest/modules/prometheus';
-import { createWebSocketMetrics, WebSocketGatewayMetrics } from './metrics.provider';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createWebSocketMetrics } from './metrics.provider';
 
 describe('WebSocket Metrics Provider', () => {
 	let mockPrometheusService: any;
@@ -14,19 +13,19 @@ describe('WebSocket Metrics Provider', () => {
 	describe('createWebSocketMetrics', () => {
 		it('should register all required metrics', () => {
 			const mockMetrics = {
-				user_websocket_connections_total: {},
-				user_websocket_connections_active: {},
-				user_websocket_connection_duration_seconds: {},
-				user_websocket_errors_total: {},
-				user_websocket_disconnections_total: {},
-				vendor_websocket_connections_total: {},
-				vendor_websocket_connections_active: {},
-				vendor_websocket_connection_duration_seconds: {},
-				vendor_websocket_errors_total: {},
-				vendor_websocket_disconnections_total: {},
-				location_updates_total: {},
-				location_update_duration_seconds: {},
 				active_location_tracking: {},
+				location_update_duration_seconds: {},
+				location_updates_total: {},
+				user_websocket_connection_duration_seconds: {},
+				user_websocket_connections_active: {},
+				user_websocket_connections_total: {},
+				user_websocket_disconnections_total: {},
+				user_websocket_errors_total: {},
+				vendor_websocket_connection_duration_seconds: {},
+				vendor_websocket_connections_active: {},
+				vendor_websocket_connections_total: {},
+				vendor_websocket_disconnections_total: {},
+				vendor_websocket_errors_total: {},
 			};
 
 			mockPrometheusService.registerMetrics.mockReturnValue(mockMetrics);
@@ -51,10 +50,10 @@ describe('WebSocket Metrics Provider', () => {
 					expect.objectContaining({ name: 'location_updates_total' }),
 					expect.objectContaining({ name: 'location_update_duration_seconds' }),
 					expect.objectContaining({ name: 'active_location_tracking' }),
-				])
+				]),
 			);
 
-			expect(result).toBe(mockMetrics);
+			expect(result).toStrictEqual(mockMetrics);
 		});
 
 		it('should register correct number of metrics', () => {
@@ -74,7 +73,7 @@ describe('WebSocket Metrics Provider', () => {
 			createWebSocketMetrics(mockPrometheusService);
 
 			const registeredMetrics = mockPrometheusService.registerMetrics.mock.calls[0][0];
-			const userConnectionsTotal = registeredMetrics.find(m => m.name === 'user_websocket_connections_total');
+			const userConnectionsTotal = registeredMetrics.find((m) => m.name === 'user_websocket_connections_total');
 
 			expect(userConnectionsTotal).toBeDefined();
 			expect(userConnectionsTotal?.type).toBe('counter');
@@ -88,7 +87,7 @@ describe('WebSocket Metrics Provider', () => {
 			createWebSocketMetrics(mockPrometheusService);
 
 			const registeredMetrics = mockPrometheusService.registerMetrics.mock.calls[0][0];
-			const vendorConnectionsActive = registeredMetrics.find(m => m.name === 'vendor_websocket_connections_active');
+			const vendorConnectionsActive = registeredMetrics.find((m) => m.name === 'vendor_websocket_connections_active');
 
 			expect(vendorConnectionsActive).toBeDefined();
 			expect(vendorConnectionsActive?.type).toBe('gauge');
@@ -102,11 +101,11 @@ describe('WebSocket Metrics Provider', () => {
 			createWebSocketMetrics(mockPrometheusService);
 
 			const registeredMetrics = mockPrometheusService.registerMetrics.mock.calls[0][0];
-			const locationUpdatesTotal = registeredMetrics.find(m => m.name === 'location_updates_total');
+			const locationUpdatesTotal = registeredMetrics.find((m) => m.name === 'location_updates_total');
 
 			expect(locationUpdatesTotal).toBeDefined();
 			expect(locationUpdatesTotal?.type).toBe('counter');
 			expect(locationUpdatesTotal?.labelNames).toEqual(['type', 'status']);
 		});
 	});
-}); 
+});

@@ -7,35 +7,35 @@ export class MetricsFactory {
 	static websocketMetrics(prefix: string = 'websocket'): MetricConfig[] {
 		return [
 			{
-				type: 'counter',
-				name: `${prefix}_connections_total`,
 				help: 'Total number of websocket connections',
 				labelNames: ['type', 'status'],
+				name: `${prefix}_connections_total`,
+				type: 'counter',
 			},
 			{
-				type: 'gauge',
-				name: `${prefix}_connections_active`,
 				help: 'Number of currently active websocket connections',
 				labelNames: ['type'],
+				name: `${prefix}_connections_active`,
+				type: 'gauge',
 			},
 			{
-				type: 'histogram',
-				name: `${prefix}_connection_duration_seconds`,
+				buckets: [1, 5, 15, 30, 60, 300, 600, 1800, 3600], // 1s to 1h
 				help: 'Duration of websocket connections',
 				labelNames: ['type'],
-				buckets: [1, 5, 15, 30, 60, 300, 600, 1800, 3600], // 1s to 1h
+				name: `${prefix}_connection_duration_seconds`,
+				type: 'histogram',
 			},
 			{
-				type: 'counter',
-				name: `${prefix}_errors_total`,
 				help: 'Total number of websocket errors',
 				labelNames: ['type', 'error_code'],
+				name: `${prefix}_errors_total`,
+				type: 'counter',
 			},
 			{
-				type: 'counter',
-				name: `${prefix}_disconnections_total`,
 				help: 'Total number of websocket disconnections',
 				labelNames: ['type', 'reason'],
+				name: `${prefix}_disconnections_total`,
+				type: 'counter',
 			},
 		];
 	}
@@ -46,23 +46,23 @@ export class MetricsFactory {
 	static httpMetrics(prefix: string = 'http'): MetricConfig[] {
 		return [
 			{
-				type: 'counter',
-				name: `${prefix}_requests_total`,
 				help: 'Total number of HTTP requests',
 				labelNames: ['method', 'path', 'status_code'],
+				name: `${prefix}_requests_total`,
+				type: 'counter',
 			},
 			{
-				type: 'histogram',
-				name: `${prefix}_request_duration_seconds`,
+				buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
 				help: 'Duration of HTTP requests',
 				labelNames: ['method', 'path'],
-				buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60],
+				name: `${prefix}_request_duration_seconds`,
+				type: 'histogram',
 			},
 			{
-				type: 'gauge',
-				name: `${prefix}_requests_in_progress`,
 				help: 'Number of HTTP requests currently in progress',
 				labelNames: ['method'],
+				name: `${prefix}_requests_in_progress`,
+				type: 'gauge',
 			},
 		];
 	}
@@ -73,22 +73,22 @@ export class MetricsFactory {
 	static databaseMetrics(prefix: string = 'database'): MetricConfig[] {
 		return [
 			{
-				type: 'counter',
-				name: `${prefix}_queries_total`,
 				help: 'Total number of database queries',
 				labelNames: ['operation', 'table'],
+				name: `${prefix}_queries_total`,
+				type: 'counter',
 			},
 			{
-				type: 'histogram',
-				name: `${prefix}_query_duration_seconds`,
+				buckets: [0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10],
 				help: 'Duration of database queries',
 				labelNames: ['operation', 'table'],
-				buckets: [0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10],
+				name: `${prefix}_query_duration_seconds`,
+				type: 'histogram',
 			},
 			{
-				type: 'gauge',
-				name: `${prefix}_connections_active`,
 				help: 'Number of active database connections',
+				name: `${prefix}_connections_active`,
+				type: 'gauge',
 			},
 		];
 	}
@@ -99,23 +99,23 @@ export class MetricsFactory {
 	static grpcMetrics(prefix: string = 'grpc'): MetricConfig[] {
 		return [
 			{
-				type: 'counter',
-				name: `${prefix}_requests_total`,
 				help: 'Total number of gRPC requests',
 				labelNames: ['service', 'method', 'status'],
+				name: `${prefix}_requests_total`,
+				type: 'counter',
 			},
 			{
-				type: 'histogram',
-				name: `${prefix}_request_duration_seconds`,
+				buckets: [0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10],
 				help: 'Duration of gRPC requests',
 				labelNames: ['service', 'method'],
-				buckets: [0.001, 0.01, 0.1, 0.5, 1, 2, 5, 10],
+				name: `${prefix}_request_duration_seconds`,
+				type: 'histogram',
 			},
 			{
-				type: 'gauge',
-				name: `${prefix}_requests_in_progress`,
 				help: 'Number of gRPC requests currently in progress',
 				labelNames: ['service'],
+				name: `${prefix}_requests_in_progress`,
+				type: 'gauge',
 			},
 		];
 	}
@@ -125,10 +125,10 @@ export class MetricsFactory {
 	 */
 	static counter(name: string, help: string, labelNames?: string[]): MetricConfig {
 		return {
-			type: 'counter',
-			name,
 			help,
 			labelNames,
+			name,
+			type: 'counter',
 		};
 	}
 
@@ -137,10 +137,10 @@ export class MetricsFactory {
 	 */
 	static gauge(name: string, help: string, labelNames?: string[]): MetricConfig {
 		return {
-			type: 'gauge',
-			name,
 			help,
 			labelNames,
+			name,
+			type: 'gauge',
 		};
 	}
 
@@ -149,11 +149,11 @@ export class MetricsFactory {
 	 */
 	static histogram(name: string, help: string, buckets: number[], labelNames?: string[]): MetricConfig {
 		return {
-			type: 'histogram',
-			name,
+			buckets,
 			help,
 			labelNames,
-			buckets,
+			name,
+			type: 'histogram',
 		};
 	}
-} 
+}

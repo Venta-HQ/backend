@@ -1,3 +1,4 @@
+import { Test, TestingModule } from '@nestjs/testing';
 import { vi } from 'vitest';
 
 /**
@@ -128,6 +129,123 @@ export function mockRequest(overrides: any = {}) {
 		userId: 'user_123',
 		xhr: false,
 		...overrides,
+	};
+}
+
+// ============================================================================
+// WEBSOCKET HELPERS
+// ============================================================================
+
+export interface MockDependencies {
+	[key: string]: any;
+}
+
+export function createMockDependencies(overrides: MockDependencies = {}): MockDependencies {
+	const defaults = {
+		// Common service mocks
+		grpcClient: {
+			getService: vi.fn(),
+			invoke: vi.fn(),
+		},
+		connectionManager: {
+			addUserToVendorRoom: vi.fn(),
+			getUserVendorRooms: vi.fn(),
+			handleDisconnect: vi.fn(),
+			registerUser: vi.fn(),
+			registerVendor: vi.fn(),
+			removeUserFromVendorRoom: vi.fn(),
+		},
+		redis: {
+			del: vi.fn(),
+			geopos: vi.fn(),
+			geosearch: vi.fn(),
+			get: vi.fn(),
+			set: vi.fn(),
+			zadd: vi.fn(),
+			zrem: vi.fn(),
+		},
+		clerkService: {
+			getUser: vi.fn(),
+			getVendor: vi.fn(),
+		},
+		// Common metrics mocks
+		metrics: {
+			inc: vi.fn(),
+			dec: vi.fn(),
+			observe: vi.fn(),
+			set: vi.fn(),
+		},
+	};
+
+	return { ...defaults, ...overrides };
+}
+
+export function createTestModule(
+	providers: any[],
+	imports: any[] = [],
+	additionalProviders: any[] = []
+): Promise<TestingModule> {
+	return Test.createTestingModule({
+		imports,
+		providers: [...providers, ...additionalProviders],
+	}).compile();
+}
+
+export function createMockSocket(overrides: any = {}) {
+	const eventHandlers: Record<string, Function> = {};
+	
+	return {
+		clerkId: 'clerk-123',
+		emit: vi.fn(),
+		id: 'socket-123',
+		join: vi.fn(),
+		leave: vi.fn(),
+		on: vi.fn((event: string, handler: Function) => {
+			eventHandlers[event] = handler;
+		}),
+		userId: 'user-123',
+		vendorId: 'vendor-123',
+		// Helper method to trigger events with correct context
+		triggerEvent: function(event: string, data: any, context?: any) {
+			const handler = eventHandlers[event];
+			if (handler) {
+				// Call the handler with the provided context (gateway instance)
+				return handler.call(context || this, data);
+			}
+		},
+		// Support for vendor gateway's to() method
+		to: vi.fn((room: string) => ({
+			emit: vi.fn(),
+		})),
+		...overrides,
+	};
+}
+
+export function createMockServer() {
+	return {
+		emit: vi.fn(),
+	};
+}
+
+export function createMockMetrics(metricNames: string[] = []) {
+	const metrics: any = {};
+	
+	metricNames.forEach(name => {
+		metrics[name] = {
+			inc: vi.fn(),
+			dec: vi.fn(),
+			observe: vi.fn(),
+			set: vi.fn(),
+		};
+	});
+	
+	return metrics;
+}
+
+export function createMockProvider(token: string, mockValue: any) {
+	return {
+		provide: token,
+		useValue: mockValue,
 	};
 }
 

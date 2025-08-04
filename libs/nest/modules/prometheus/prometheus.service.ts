@@ -1,11 +1,11 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Counter, Gauge, Histogram, Registry } from 'prom-client';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 
 export interface MetricDefinition {
-	name: string;
+	buckets?: number[];
 	help: string;
 	labelNames?: string[];
-	buckets?: number[];
+	name: string;
 }
 
 export interface CounterDefinition extends MetricDefinition {
@@ -17,8 +17,8 @@ export interface GaugeDefinition extends MetricDefinition {
 }
 
 export interface HistogramDefinition extends MetricDefinition {
-	type: 'histogram';
 	buckets: number[];
+	type: 'histogram';
 }
 
 export type MetricConfig = CounterDefinition | GaugeDefinition | HistogramDefinition;
@@ -34,21 +34,21 @@ export class PrometheusService implements OnModuleInit {
 
 	// Application metrics (common across all apps)
 	public readonly application = {
+		memoryUsage: new Gauge({
+			help: 'Application memory usage in bytes',
+			labelNames: ['type'], // heap, rss, external
+			name: 'application_memory_usage_bytes',
+			registers: [this.registry],
+		}),
 		uptime: new Gauge({
-			name: 'application_uptime_seconds',
 			help: 'Application uptime in seconds',
+			name: 'application_uptime_seconds',
 			registers: [this.registry],
 		}),
 		version: new Gauge({
-			name: 'application_version_info',
 			help: 'Application version information',
 			labelNames: ['version', 'commit', 'environment'],
-			registers: [this.registry],
-		}),
-		memoryUsage: new Gauge({
-			name: 'application_memory_usage_bytes',
-			help: 'Application memory usage in bytes',
-			labelNames: ['type'], // heap, rss, external
+			name: 'application_version_info',
 			registers: [this.registry],
 		}),
 	};
@@ -57,9 +57,9 @@ export class PrometheusService implements OnModuleInit {
 		// Set initial application version
 		this.application.version.set(
 			{
-				version: process.env.npm_package_version || 'unknown',
 				commit: process.env.GIT_COMMIT || 'unknown',
 				environment: process.env.NODE_ENV || 'development',
+				version: process.env.npm_package_version || 'unknown',
 			},
 			1,
 		);
@@ -85,28 +85,28 @@ export class PrometheusService implements OnModuleInit {
 			switch (metric.type) {
 				case 'counter':
 					prometheusMetric = new Counter({
-						name: metric.name,
 						help: metric.help,
 						labelNames: metric.labelNames,
+						name: metric.name,
 						registers: [this.registry],
 					});
 					break;
 
 				case 'gauge':
 					prometheusMetric = new Gauge({
-						name: metric.name,
 						help: metric.help,
 						labelNames: metric.labelNames,
+						name: metric.name,
 						registers: [this.registry],
 					});
 					break;
 
 				case 'histogram':
 					prometheusMetric = new Histogram({
-						name: metric.name,
+						buckets: metric.buckets,
 						help: metric.help,
 						labelNames: metric.labelNames,
-						buckets: metric.buckets,
+						name: metric.name,
 						registers: [this.registry],
 					});
 					break;
@@ -185,4 +185,4 @@ export class PrometheusService implements OnModuleInit {
 			this.application.memoryUsage.set({ type: 'external' }, memUsage.external);
 		}, 5000);
 	}
-} 
+}

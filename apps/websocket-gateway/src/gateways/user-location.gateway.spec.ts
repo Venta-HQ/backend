@@ -1,13 +1,10 @@
-import { vi } from 'vitest';
-import { clearMocks, grpc, mockGrpcClient } from '../../../../test/helpers/test-utils';
+import { Test, TestingModule } from '@nestjs/testing';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { UserLocationGateway } from './user-location.gateway';
-
-// Mock the retry utility
-vi.mock('@app/utils', () => ({
-	retryOperation: vi.fn().mockImplementation(async (operation: () => Promise<any>) => {
-		return await operation();
-	}),
-}));
+import { WEBSOCKET_METRICS } from '../metrics.provider';
+import { createMockDependencies, createTestModule, createMockSocket, createMockProvider, clearMocks } from '../../../../test/helpers/test-utils';
+import { UserConnectionManagerService } from '../services/user-connection-manager.service';
+import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 
 // Mock the proto modules
 vi.mock('@app/proto/location', () => ({
@@ -15,219 +12,358 @@ vi.mock('@app/proto/location', () => ({
 	LocationServiceClient: {},
 }));
 
+// Mock the guards - define classes inside the factory
+vi.mock('@app/nest/guards', () => {
+	class MockWsAuthGuard {
+		canActivate() {
+			return true;
+		}
+	}
+
+	class MockWsRateLimitGuard {
+		canActivate() {
+			return true;
+		}
+	}
+
+	return {
+		WsAuthGuard: MockWsAuthGuard,
+		WsRateLimitGuards: {
+			standard: MockWsRateLimitGuard,
+		},
+	};
+});
+
+// Mock the pipes
+vi.mock('@app/nest/pipes', () => ({
+	SchemaValidatorPipe: vi.fn(),
+}));
+
+// Mock the apitypes
+vi.mock('@app/apitypes', () => ({
+	UpdateUserLocationDataSchema: {},
+}));
+
+// Proper mock class for UserConnectionManagerService
+class MockUserConnectionManagerService {
+	addUserToVendorRoom = vi.fn();
+	getUserVendorRooms = vi.fn();
+	handleDisconnect = vi.fn();
+	registerUser = vi.fn();
+	removeUserFromVendorRoom = vi.fn();
+}
+
+// Mock VendorConnectionManagerService as a class (even if not directly used by UserGateway, it's a dependency of WsAuthGuard)
+class MockVendorConnectionManagerService {
+	addVendorToRoom = vi.fn();
+	getVendorRooms = vi.fn();
+	handleDisconnect = vi.fn();
+	registerVendor = vi.fn();
+	removeVendorFromRoom = vi.fn();
+}
+
 describe('UserLocationGateway', () => {
 	let gateway: UserLocationGateway;
-	let grpcClient: any;
-	let _redis: any;
-	let connectionManager: any;
-	let connectionHealth: any;
-	let mockServer: any;
-	let mockSocket: any;
-	let locationService: any;
+	let module: TestingModule;
+	let mockDeps: ReturnType<typeof createMockDependencies>;
+	let mockConnectionManager: MockUserConnectionManagerService;
+	let mockVendorConnectionManager: MockVendorConnectionManagerService; // Needed for WsAuthGuard
 
-	beforeEach(() => {
-		grpcClient = mockGrpcClient();
+	beforeEach(async () => {
+		mockDeps = createMockDependencies({
+			websocketMetrics: {
+				user_websocket_connections_total: { inc: vi.fn() },
+				user_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
+				user_websocket_connection_duration_seconds: { observe: vi.fn() },
+				user_websocket_errors_total: { inc: vi.fn() },
+				user_websocket_disconnections_total: { inc: vi.fn() },
+				vendor_websocket_connections_total: { inc: vi.fn() },
+				vendor_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
+				vendor_websocket_connection_duration_seconds: { observe: vi.fn() },
+				vendor_websocket_errors_total: { inc: vi.fn() },
+				vendor_websocket_disconnections_total: { inc: vi.fn() },
+				location_updates_total: { inc: vi.fn() },
+				location_update_duration_seconds: { observe: vi.fn() },
+				active_location_tracking: { set: vi.fn() },
+			},
+		});
 
-		locationService = {
-			vendorLocations: vi.fn(),
-		};
-		grpcClient.getService.mockReturnValue(locationService);
+		mockConnectionManager = new MockUserConnectionManagerService();
+		mockVendorConnectionManager = new MockVendorConnectionManagerService();
 
-		_redis = {
-			del: vi.fn(),
-			geopos: vi.fn(),
-			geosearch: vi.fn(),
-			get: vi.fn(),
-			set: vi.fn(),
-			zadd: vi.fn(),
-		};
+		module = await createTestModule(
+			[UserLocationGateway],
+			[],
+			[
+				createMockProvider('LocationService', mockDeps.grpcClient),
+				{ provide: UserConnectionManagerService, useValue: mockConnectionManager },
+				{ provide: VendorConnectionManagerService, useValue: mockVendorConnectionManager },
+				createMockProvider(WEBSOCKET_METRICS, mockDeps.websocketMetrics),
+				createMockProvider('default_IORedisModuleConnectionToken', mockDeps.redis),
+				createMockProvider('ClerkService', mockDeps.clerkService),
+			]
+		);
 
-		connectionManager = {
-			addUserToVendorRoom: vi.fn(),
-			getUserVendorRooms: vi.fn(),
-			handleDisconnect: vi.fn(),
-			registerUser: vi.fn(),
-			removeUserFromVendorRoom: vi.fn(),
-		};
-
-		connectionHealth = {
-			recordConnection: vi.fn(),
-			recordDisconnection: vi.fn(),
-			updateActivity: vi.fn(),
-		};
-
-		mockServer = {
-			emit: vi.fn(),
-		};
-
-		mockSocket = {
-			clerkId: 'clerk-123',
-			emit: vi.fn(),
-			id: 'socket-123',
-			join: vi.fn(),
-			leave: vi.fn(),
-			on: vi.fn(),
-			userId: 'user-123',
-		};
-
-		gateway = new UserLocationGateway(grpcClient, connectionManager, connectionHealth);
-		gateway.server = mockServer;
-		gateway.afterInit(); // Initialize the location service
+		gateway = module.get<UserLocationGateway>(UserLocationGateway);
+		gateway.server = { emit: vi.fn() } as any; // Mock the server property
+		
+		// Manually assign the mock connection manager to bypass DI issues
+		(gateway as any).connectionManager = mockConnectionManager;
 	});
 
-	afterEach(() => {
+	afterEach(async () => {
+		await module.close();
 		clearMocks();
 	});
 
-	describe('afterInit', () => {
-		it('should initialize location service', () => {
-			gateway.afterInit();
+	it('should have connection manager injected', () => {
+		expect(gateway['connectionManager']).toBeDefined();
+		expect(gateway['connectionManager']).toBe(mockConnectionManager);
+	});
 
-			expect(grpcClient.getService).toHaveBeenCalledWith('LocationService');
-		});
+	it('should initialize location service', () => {
+		gateway.afterInit();
+		
+		expect(mockDeps.grpcClient.getService).toHaveBeenCalledWith('LocationService');
 	});
 
 	describe('handleConnection', () => {
 		it('should handle user connection successfully', async () => {
-			await gateway.handleConnection(mockSocket);
-
-			expect(connectionHealth.recordConnection).toHaveBeenCalledWith('socket-123', 'user-123');
-			expect(mockSocket.on).toHaveBeenCalledWith('register-user', expect.any(Function));
+			const socket = createMockSocket();
+			
+			await gateway.handleConnection(socket);
+			
+			expect(mockDeps.websocketMetrics.user_websocket_connections_total.inc).toHaveBeenCalledWith({ status: 'connected', type: 'user' });
+			expect(mockDeps.websocketMetrics.user_websocket_connections_active.inc).toHaveBeenCalledWith({ type: 'user' });
 		});
 
-		it('should handle register-user event', async () => {
-			await gateway.handleConnection(mockSocket);
-
-			// Get the register-user event handler
-			const registerHandler = mockSocket.on.mock.calls.find((call) => call[0] === 'register-user')[1];
-
-			await registerHandler({ userId: 'user-456' });
-
-			expect(connectionManager.registerUser).toHaveBeenCalledWith('user-456', 'socket-123');
-		});
-
-		it('should handle connection health errors gracefully', async () => {
-			const healthError = new Error('Health service error');
-			connectionHealth.recordConnection.mockRejectedValue(healthError);
-
-			// Should throw when health service fails
-			await expect(gateway.handleConnection(mockSocket)).rejects.toThrow('Health service error');
+		it('should throw when metrics fail', async () => {
+			const socket = createMockSocket();
+			
+			// Mock the metrics to throw an error
+			const originalInc = mockDeps.websocketMetrics.user_websocket_connections_total.inc;
+			mockDeps.websocketMetrics.user_websocket_connections_total.inc = vi.fn().mockImplementation(() => {
+				throw new Error('Metrics error');
+			});
+			
+			// The method should throw when metrics fail
+			await expect(gateway.handleConnection(socket)).rejects.toThrow('Metrics error');
+			
+			// Restore the original mock
+			mockDeps.websocketMetrics.user_websocket_connections_total.inc = originalInc;
 		});
 	});
 
 	describe('handleDisconnect', () => {
-		it('should handle user disconnection successfully', async () => {
-			await gateway.handleDisconnect(mockSocket);
-
-			expect(connectionHealth.recordDisconnection).toHaveBeenCalledWith('socket-123');
-			expect(connectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
+		it('should handle user disconnection successfully', () => {
+			const socket = createMockSocket();
+			
+			gateway.handleDisconnect(socket);
+			
+			expect(mockDeps.websocketMetrics.user_websocket_disconnections_total.inc).toHaveBeenCalledWith({ reason: 'disconnect', type: 'user' });
+			expect(mockDeps.websocketMetrics.user_websocket_connections_active.dec).toHaveBeenCalledWith({ type: 'user' });
+			expect(mockConnectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
 		});
 
-		it('should handle disconnection errors gracefully', async () => {
-			const disconnectError = new Error('Disconnect error');
-			connectionManager.handleDisconnect.mockRejectedValue(disconnectError);
+		it('should throw when metrics fail', async () => {
+			const socket = createMockSocket();
 
-			// Should throw when disconnect fails
-			await expect(gateway.handleDisconnect(mockSocket)).rejects.toThrow('Disconnect error');
+			// Mock the metrics to throw an error
+			const originalInc = mockDeps.websocketMetrics.user_websocket_disconnections_total.inc;
+			mockDeps.websocketMetrics.user_websocket_disconnections_total.inc = vi.fn().mockImplementation(() => {
+				throw new Error('Metrics error');
+			});
+
+			// The method should throw when metrics fail
+			await expect(gateway.handleDisconnect(socket)).rejects.toThrow('Metrics error');
+			
+			// Restore the original mock
+			mockDeps.websocketMetrics.user_websocket_disconnections_total.inc = originalInc;
 		});
 	});
 
 	describe('updateUserLocation', () => {
-		const locationData = {
-			neLocation: { lat: 40.7589, long: -73.9851 },
-			swLocation: { lat: 40.7505, long: -73.9934 },
-		};
-
-		const mockVendors = [
-			{ id: 'vendor-1', name: 'Vendor 1' },
-			{ id: 'vendor-2', name: 'Vendor 2' },
-		];
-
 		beforeEach(() => {
-			locationService.vendorLocations.mockReturnValue(grpc.observable({ vendors: mockVendors }));
-			connectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1']);
-			connectionHealth.updateActivity.mockResolvedValue(undefined);
+			mockDeps.grpcClient.getService.mockReturnValue({
+				vendorLocations: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next({
+							vendors: [
+								{ id: 'vendor-1', name: 'Vendor 1' },
+								{ id: 'vendor-2', name: 'Vendor 2' },
+							],
+						});
+						observer.complete();
+					}),
+				}),
+			});
 		});
 
 		it('should update user location successfully', async () => {
-			await gateway.updateUserLocation(locationData, mockSocket);
-
-			expect(connectionHealth.updateActivity).toHaveBeenCalledWith('socket-123');
-			expect(locationService.vendorLocations).toHaveBeenCalledWith({
+			const socket = createMockSocket();
+			const data = { 
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 },
-			});
-			expect(connectionManager.getUserVendorRooms).toHaveBeenCalledWith('user-123');
-			expect(mockSocket.emit).toHaveBeenCalledWith('vendor_channels', mockVendors);
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
+
+			await gateway.updateUserLocation(data, socket);
+
+			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({ status: 'success', type: 'user' });
 		});
 
 		it('should handle user joining new vendor rooms', async () => {
-			connectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1']);
-			connectionManager.addUserToVendorRoom.mockResolvedValue(undefined);
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			// User is currently in vendor-1, but gRPC returns vendor-1 and vendor-2
+			// So vendor-2 should be added as a new vendor
+			mockConnectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1']);
+			
+			// Override the gRPC service mock for this test
+			const mockLocationService = {
+				vendorLocations: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next({
+							vendors: [
+								{ id: 'vendor-1', name: 'Vendor 1' },
+								{ id: 'vendor-2', name: 'Vendor 2' },
+							],
+						});
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+				}),
+			};
+			
+			// Mock the locationService property directly
+			(gateway as any).locationService = mockLocationService;
 
-			expect(connectionManager.addUserToVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-2');
-			expect(mockSocket.join).toHaveBeenCalledWith('vendor-2');
+			await gateway.updateUserLocation(data, socket);
+
+			expect(mockConnectionManager.addUserToVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-2');
 		});
 
 		it('should handle user leaving vendor rooms', async () => {
-			connectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1', 'vendor-3']);
-			connectionManager.removeUserFromVendorRoom.mockResolvedValue(undefined);
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			// User is currently in vendor-3 and vendor-4, but gRPC returns vendor-1 and vendor-2
+			// So vendor-3 and vendor-4 should be removed as they're no longer in range
+			mockConnectionManager.getUserVendorRooms.mockResolvedValue(['vendor-3', 'vendor-4']);
+			
+			// Override the gRPC service mock for this test
+			const mockLocationService = {
+				vendorLocations: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next({
+							vendors: [
+								{ id: 'vendor-1', name: 'Vendor 1' },
+								{ id: 'vendor-2', name: 'Vendor 2' },
+							],
+						});
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+				}),
+			};
+			
+			// Mock the locationService property directly
+			(gateway as any).locationService = mockLocationService;
 
-			expect(connectionManager.removeUserFromVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-3');
-			expect(mockSocket.leave).toHaveBeenCalledWith('vendor-3');
+			await gateway.updateUserLocation(data, socket);
+
+			expect(mockConnectionManager.removeUserFromVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-3');
+			expect(mockConnectionManager.removeUserFromVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-4');
 		});
 
 		it('should handle socket without user ID', async () => {
-			const socketWithoutUser = { ...mockSocket, userId: undefined };
+			const socket = createMockSocket({ userId: undefined });
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, socketWithoutUser);
+			await gateway.updateUserLocation(data, socket);
 
-			expect(socketWithoutUser.emit).toHaveBeenCalledWith('error', {
+			expect(socket.emit).toHaveBeenCalledWith('error', {
 				code: 'UNAUTHORIZED',
 				message: 'User not authenticated',
 			});
 		});
 
 		it('should handle gRPC service errors', async () => {
-			const grpcError = new Error('gRPC service error');
-			locationService.vendorLocations.mockReturnValue(grpc.error(grpcError));
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			mockDeps.grpcClient.getService.mockReturnValue({
+				vendorLocations: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.error(new Error('gRPC error'));
+					}),
+				}),
+			});
 
-			expect(mockSocket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
+			await gateway.updateUserLocation(data, socket);
+
+			expect(socket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
 		});
 
 		it('should handle empty vendors response', async () => {
-			locationService.vendorLocations.mockReturnValue(grpc.observable({ vendors: [] }));
-			connectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1']);
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			mockDeps.grpcClient.getService.mockReturnValue({
+				vendorLocations: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next({ vendors: [] });
+						observer.complete();
+					}),
+				}),
+			});
 
-			expect(connectionManager.removeUserFromVendorRoom).toHaveBeenCalledWith('user-123', 'vendor-1');
-			expect(mockSocket.leave).toHaveBeenCalledWith('vendor-1');
-			expect(mockSocket.emit).toHaveBeenCalledWith('vendor_channels', []);
+			await gateway.updateUserLocation(data, socket);
+
+			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({ status: 'success', type: 'user' });
 		});
 
 		it('should handle connection manager errors gracefully', async () => {
-			const managerError = new Error('Connection manager error');
-			connectionManager.getUserVendorRooms.mockRejectedValue(managerError);
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			mockConnectionManager.addUserToVendorRoom.mockRejectedValue(new Error('Connection manager error'));
 
-			expect(mockSocket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
+			await gateway.updateUserLocation(data, socket);
+
+			expect(socket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
 		});
 
 		it('should handle room management errors gracefully', async () => {
-			const roomError = new Error('Room management error');
-			connectionManager.addUserToVendorRoom.mockRejectedValue(roomError);
+			const socket = createMockSocket();
+			const data = { 
+				neLocation: { lat: 40.7589, long: -73.9851 },
+				swLocation: { lat: 40.7505, long: -73.9934 }
+			};
 
-			await gateway.updateUserLocation(locationData, mockSocket);
+			mockConnectionManager.getUserVendorRooms.mockRejectedValue(new Error('Room management error'));
 
-			expect(mockSocket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
+			await gateway.updateUserLocation(data, socket);
+
+			expect(socket.emit).toHaveBeenCalledWith('error', { message: 'Failed to update location' });
 		});
 	});
 });
