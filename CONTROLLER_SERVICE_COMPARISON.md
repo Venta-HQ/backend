@@ -42,8 +42,12 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Fixed return message in `updateVendor`
 
 #### `apps/vendor/src/vendor.service.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ✅ Fixed - Now Identical
+**Notes**: 
+- ✅ Added EventsService injection and event publishing
+- ✅ Added `deleteVendor` method
+- ✅ Added `emitVendorEvent` private method
+- ✅ Added event publishing in `createVendor` and `updateVendor`
 
 #### `apps/vendor/src/health/health.controller.ts`
 **Status**: ❌ Missing in main
