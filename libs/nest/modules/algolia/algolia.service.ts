@@ -1,6 +1,15 @@
 import { algoliasearch, BatchResponse, SearchClient, UpdatedAtWithObjectIdResponse } from 'algoliasearch';
 import { Injectable, Logger } from '@nestjs/common';
 
+// Define proper types for Algolia operations
+export interface AlgoliaObject {
+	[key: string]: string | number | boolean | Date | null | undefined;
+}
+
+export interface AlgoliaUpdateAttributes {
+	[key: string]: string | number | boolean | Date | null | undefined;
+}
+
 @Injectable()
 export class AlgoliaService {
 	private client: SearchClient;
@@ -10,7 +19,7 @@ export class AlgoliaService {
 		this.client = algoliasearch(applicationId, apiKey);
 	}
 
-	async createObject(indexName: string, body: any): Promise<UpdatedAtWithObjectIdResponse> {
+	async createObject(indexName: string, body: AlgoliaObject): Promise<UpdatedAtWithObjectIdResponse> {
 		return await this.client.saveObject({
 			body,
 			indexName,
@@ -20,7 +29,7 @@ export class AlgoliaService {
 	async updateObject(
 		indexName: string,
 		entityId: string,
-		attributesToUpdate: any,
+		attributesToUpdate: AlgoliaUpdateAttributes,
 	): Promise<UpdatedAtWithObjectIdResponse | null> {
 		const { hits } = await this.client.searchSingleIndex({
 			indexName: 'vendor',

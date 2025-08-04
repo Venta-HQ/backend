@@ -3,6 +3,16 @@ import { AlgoliaService } from '@app/nest/modules/algolia';
 import { retryOperation } from '@app/utils';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
+interface LocationData {
+	lat: number;
+	long: number;
+}
+
+interface VendorLocationUpdateData {
+	vendorId: string;
+	location: LocationData;
+}
+
 @Injectable()
 export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
@@ -107,13 +117,13 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		);
 	}
 
-	private async handleVendorLocationUpdated(locationData: Record<string, unknown>) {
+	private async handleVendorLocationUpdated(locationData: VendorLocationUpdateData) {
 		await retryOperation(
 			() =>
-				this.algoliaService.updateObject('vendor', locationData.vendorId as string, {
+				this.algoliaService.updateObject('vendor', locationData.vendorId, {
 					_geoloc: {
-						lat: (locationData.location as any).lat,
-						lng: (locationData.location as any).long,
+						lat: locationData.location.lat,
+						lng: locationData.location.long,
 					},
 				}),
 			`Updating vendor location in Algolia: ${locationData.vendorId}`,

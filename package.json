@@ -15,7 +15,6 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
@@ -36,7 +35,6 @@
     "@prisma/client": "6.13.0",
     "@prisma/extension-pulse": "^1.2.0",
     "algoliasearch": "^5.0.0",
-    "backend": "link:",
     "buffer-to-stream": "^1.0.0",
     "cloudinary": "^2.5.0",
     "ioredis": "^5.4.1",

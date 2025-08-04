@@ -91,7 +91,6 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			// Note: Database update skipped until migration is run
 			await this.prisma.db.user.update({
 				data: {
 					lat: data.location.lat,

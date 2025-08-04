@@ -1,20 +1,13 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { UploadService } from '@app/nest/modules';
-import { Controller, Post, UploadedFile } from '@nestjs/common';
-
-interface UploadedFile {
-	buffer: Buffer;
-	originalname: string;
-	mimetype: string;
-	size: number;
-}
+import { UploadService, UploadedFile } from '@app/nest/modules';
+import { Controller, Post, UploadedFile as NestUploadedFile } from '@nestjs/common';
 
 @Controller()
 export class UploadController {
 	constructor(private uploadService: UploadService) {}
 
 	@Post('image')
-	async uploadImage(@UploadedFile() file: any) {
+	async uploadImage(@NestUploadedFile() file: UploadedFile) {
 		try {
 			return this.uploadService.uploadImage(file);
 		} catch (e) {

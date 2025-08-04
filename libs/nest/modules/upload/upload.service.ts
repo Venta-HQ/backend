@@ -4,6 +4,14 @@ import { Injectable } from '@nestjs/common';
 // Use require for untyped module
 const toStream = require('buffer-to-stream');
 
+// Define proper type for uploaded file
+export interface UploadedFile {
+	buffer: Buffer;
+	originalname: string;
+	mimetype: string;
+	size: number;
+}
+
 @Injectable()
 export class UploadService {
 	constructor(apiKey: string, apiSecret: string, cloudName: string) {
@@ -14,7 +22,7 @@ export class UploadService {
 		});
 	}
 
-	async uploadImage(file: any): Promise<UploadApiResponse | UploadApiErrorResponse> {
+	async uploadImage(file: UploadedFile): Promise<UploadApiResponse | UploadApiErrorResponse> {
 		return new Promise((resolve, reject) => {
 			const upload = cloudinary.uploader.upload_stream((error, result) => {
 				if (error) return reject(error);

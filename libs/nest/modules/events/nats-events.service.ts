@@ -1,4 +1,3 @@
-// Note: Requires installing 'nats' package: npm install nats
 import { connect, NatsConnection, StringCodec, Subscription } from 'nats';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
