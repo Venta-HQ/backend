@@ -4,16 +4,15 @@ import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
-export interface ConnectionInfo {
-	userId?: string;
-	vendorId?: string;
+export interface UserConnectionInfo {
+	userId: string;
 	socketId: string;
 	connectedAt: Date;
 }
 
 @Injectable()
-export class ConnectionManagerService {
-	private readonly logger = new Logger(ConnectionManagerService.name);
+export class UserConnectionManagerService {
+	private readonly logger = new Logger(UserConnectionManagerService.name);
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
@@ -33,7 +32,7 @@ export class ConnectionManagerService {
 					await this.redis.set(`user:${userId}:socketId`, socketId);
 					await this.redis.set(`socket:${socketId}:userId`, userId);
 					await this.redis.set(
-						`connection:${socketId}`,
+						`user_connection:${socketId}`,
 						JSON.stringify({
 							userId,
 							socketId,
@@ -60,66 +59,20 @@ export class ConnectionManagerService {
 	}
 
 	/**
-	 * Register a vendor connection for location updates
-	 * @param vendorId Vendor ID
-	 * @param socketId Socket ID
-	 */
-	async registerVendor(vendorId: string, socketId: string): Promise<void> {
-		try {
-			// Store vendor -> socket mapping with retry
-			await retryOperation(
-				async () => {
-					await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
-					await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
-					await this.redis.set(
-						`connection:${socketId}`,
-						JSON.stringify({
-							vendorId,
-							socketId,
-							connectedAt: new Date().toISOString(),
-						}),
-					);
-				},
-				'Register vendor connection in Redis',
-				{ logger: this.logger },
-			);
-
-			// Emit connection event
-			await this.eventsService.publishEvent('websocket.vendor.connected', {
-				vendorId,
-				socketId,
-				timestamp: new Date().toISOString(),
-			});
-
-			this.logger.log(`Vendor ${vendorId} connected with socket ${socketId}`);
-		} catch (error) {
-			this.logger.error(`Failed to register vendor ${vendorId}:`, error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Handle socket disconnection
+	 * Handle user disconnection
 	 * @param socketId Socket ID
 	 */
 	async handleDisconnect(socketId: string): Promise<void> {
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				this.logger.warn(`No connection info found for socket ${socketId}`);
+				this.logger.warn(`No user connection info found for socket ${socketId}`);
 				return;
 			}
 
-			if (connectionInfo.userId) {
-				await this.handleUserDisconnect(connectionInfo.userId, socketId);
-			} else if (connectionInfo.vendorId) {
-				await this.handleVendorDisconnect(connectionInfo.vendorId, socketId);
-			}
-
-			// Clean up connection info
-			await this.redis.del(`connection:${socketId}`);
+			await this.handleUserDisconnect(connectionInfo.userId, socketId);
 		} catch (error) {
-			this.logger.error(`Failed to handle disconnect for socket ${socketId}:`, error);
+			this.logger.error(`Failed to handle user disconnect for socket ${socketId}:`, error);
 			throw error;
 		}
 	}
@@ -140,6 +93,7 @@ export class ConnectionManagerService {
 		await this.redis.del(`user:${userId}:socketId`);
 		await this.redis.del(`socket:${socketId}:userId`);
 		await this.redis.del(`user:${userId}:rooms`);
+		await this.redis.del(`user_connection:${socketId}`);
 
 		// Emit disconnection event
 		await this.eventsService.publishEvent('websocket.user.disconnected', {
@@ -149,39 +103,6 @@ export class ConnectionManagerService {
 		});
 
 		this.logger.log(`User ${userId} disconnected from socket ${socketId}`);
-	}
-
-	/**
-	 * Handle vendor disconnection
-	 * @param vendorId Vendor ID
-	 * @param socketId Socket ID
-	 */
-	private async handleVendorDisconnect(vendorId: string, socketId: string): Promise<void> {
-		// Get all users in vendor's room
-		const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
-
-		// Remove vendor from geolocation store
-		await this.redis.zrem('vendor_locations', vendorId);
-
-		// Clean up vendor mappings
-		await this.redis.del(`vendor:${vendorId}:socketId`);
-		await this.redis.del(`socket:${socketId}:vendorId`);
-		await this.redis.del(`room:${vendorId}:users`);
-
-		// Remove vendor from all users' room lists
-		for (const userId of usersInRoom) {
-			await this.redis.srem(`user:${userId}:rooms`, vendorId);
-		}
-
-		// Emit disconnection event
-		await this.eventsService.publishEvent('websocket.vendor.disconnected', {
-			vendorId,
-			socketId,
-			affectedUsers: usersInRoom,
-			timestamp: new Date().toISOString(),
-		});
-
-		this.logger.log(`Vendor ${vendorId} disconnected from socket ${socketId}, affecting ${usersInRoom.length} users`);
 	}
 
 	/**
@@ -216,21 +137,12 @@ export class ConnectionManagerService {
 	}
 
 	/**
-	 * Get all users in a vendor room
-	 * @param vendorId Vendor ID
-	 * @returns Array of user IDs
-	 */
-	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
-		return await this.redis.smembers(`room:${vendorId}:users`);
-	}
-
-	/**
-	 * Get connection info for a socket
+	 * Get connection info for a user socket
 	 * @param socketId Socket ID
 	 * @returns Connection info or null
 	 */
-	async getConnectionInfo(socketId: string): Promise<ConnectionInfo | null> {
-		const connectionData = await this.redis.get(`connection:${socketId}`);
+	async getConnectionInfo(socketId: string): Promise<UserConnectionInfo | null> {
+		const connectionData = await this.redis.get(`user_connection:${socketId}`);
 		if (!connectionData) {
 			return null;
 		}
@@ -247,29 +159,11 @@ export class ConnectionManagerService {
 	}
 
 	/**
-	 * Get socket ID for a vendor
-	 * @param vendorId Vendor ID
-	 * @returns Socket ID or null
-	 */
-	async getVendorSocketId(vendorId: string): Promise<string | null> {
-		return await this.redis.get(`vendor:${vendorId}:socketId`);
-	}
-
-	/**
 	 * Get user ID for a socket
 	 * @param socketId Socket ID
 	 * @returns User ID or null
 	 */
 	async getSocketUserId(socketId: string): Promise<string | null> {
 		return await this.redis.get(`socket:${socketId}:userId`);
-	}
-
-	/**
-	 * Get vendor ID for a socket
-	 * @param socketId Socket ID
-	 * @returns Vendor ID or null
-	 */
-	async getSocketVendorId(socketId: string): Promise<string | null> {
-		return await this.redis.get(`socket:${socketId}:vendorId`);
 	}
 } 

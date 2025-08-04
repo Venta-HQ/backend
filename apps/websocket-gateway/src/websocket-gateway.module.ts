@@ -9,7 +9,8 @@ import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';
-import { ConnectionManagerService } from './services/connection-manager.service';
+import { UserConnectionManagerService } from './services/user-connection-manager.service';
+import { VendorConnectionManagerService } from './services/vendor-connection-manager.service';
 
 @Module({
 	imports: [
@@ -44,7 +45,8 @@ import { ConnectionManagerService } from './services/connection-manager.service'
 			provide: APP_FILTER,
 			useClass: WsErrorFilter,
 		},
-		ConnectionManagerService,
+		UserConnectionManagerService,
+		VendorConnectionManagerService,
 		UserLocationGateway,
 		VendorLocationGateway,
 	],

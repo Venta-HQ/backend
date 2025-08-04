@@ -17,7 +17,7 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { ConnectionManagerService } from '../services/connection-manager.service';
+import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
 
 @Injectable()
 @WebSocketGateway({ namespace: '/vendor' })
@@ -28,7 +28,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
 		@InjectRedis() private readonly redis: Redis,
-		private readonly connectionManager: ConnectionManagerService,
+		private readonly connectionManager: VendorConnectionManagerService,
 	) {}
 
 	afterInit() {

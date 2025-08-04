@@ -15,7 +15,7 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { ConnectionManagerService } from '../services/connection-manager.service';
+import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 
 @Injectable()
 @WebSocketGateway({ namespace: '/user' })
@@ -25,7 +25,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
-		private readonly connectionManager: ConnectionManagerService,
+		private readonly connectionManager: UserConnectionManagerService,
 	) {}
 
 	afterInit() {
