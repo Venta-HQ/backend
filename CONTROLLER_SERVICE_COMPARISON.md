@@ -134,8 +134,14 @@ This document provides a detailed comparison of every controller and service bet
 ### 5. WebSocket Gateway
 
 #### `apps/websocket-gateway/src/services/connection-manager.service.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ✅ Fixed - Now Identical
+**Notes**: 
+- ✅ Fixed import path for IEventsService (kept main branch path)
+- ✅ Fixed error handling to match event-pattern-initial
+- ✅ Fixed Redis key names to use 'rooms' instead of 'room'
+- ✅ Fixed method documentation and structure
+- ✅ Fixed event payload structure to use 'affectedUsers'
+- ✅ Fixed logging messages and error handling patterns
 
 ### 6. Algolia Sync
 
