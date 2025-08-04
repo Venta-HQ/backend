@@ -1,73 +1,167 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Venta Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A microservices-based backend system built with NestJS, providing a scalable and maintainable architecture for the Venta platform.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+Venta Backend is a distributed system consisting of multiple microservices that work together to provide a comprehensive backend solution. The system follows modern architectural patterns including event-driven communication, gRPC for inter-service communication, and a unified API gateway.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Architecture
 
-## Installation
+### Services
 
-```bash
-$ pnpm install
-```
+- **Gateway**: Main API entry point with authentication and request routing
+- **User Service**: User management, authentication, and profile handling
+- **Vendor Service**: Vendor management and business logic
+- **Location Service**: Real-time location tracking and geospatial operations
+- **WebSocket Gateway**: Real-time communication and live updates
+- **Algolia Sync**: Search index synchronization and optimization
 
-## Running the app
+### Libraries
 
-```bash
-# development
-$ pnpm run start
+- **API Types**: Centralized type definitions and validation schemas
+- **NestJS Shared**: Reusable NestJS modules, guards, and utilities
+- **Protocol Buffers**: gRPC service definitions and generated code
+- **Utilities**: Common utility functions and helper methods
 
-# watch mode
-$ pnpm run start:dev
+## Quick Start
 
-# production mode
-$ pnpm run start:prod
-```
+### Prerequisites
 
-## Test
+- Node.js (v18 or higher)
+- pnpm package manager
+- Docker and Docker Compose
+- PostgreSQL database
+- Redis cache
+- NATS message broker
+
+### Installation
 
 ```bash
-# unit tests
-$ pnpm run test
+# Install dependencies
+pnpm install
 
-# e2e tests
-$ pnpm run test:e2e
+# Generate Prisma client
+pnpm run prisma:generate
 
-# test coverage
-$ pnpm run test:cov
+# Build protocol buffers
+pnpm run build-proto
+
+# Build the project
+pnpm run build
 ```
 
-## Support
+### Development
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+```bash
+# Start all services with Docker Compose
+docker-compose up -d
 
-## Stay in touch
+# Run tests
+pnpm run test:run
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# Run tests with coverage
+pnpm run test:coverage
+
+# Lint code
+pnpm run lint
+
+# Format code
+pnpm run format
+```
+
+### Running Individual Services
+
+```bash
+# Start specific service
+pnpm run start:dev gateway
+pnpm run start:dev user
+pnpm run start:dev vendor
+pnpm run start:dev location
+pnpm run start:dev websocket-gateway
+pnpm run start:dev algolia-sync
+```
+
+## Environment Configuration
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+# Database
+DATABASE_URL="postgresql://user:password@localhost:5432/venta"
+
+# Redis
+REDIS_PASSWORD="your-redis-password"
+
+# Services
+GATEWAY_SERVICE_PORT=5002
+USER_SERVICE_ADDRESS=localhost:5000
+VENDOR_SERVICE_ADDRESS=localhost:5005
+LOCATION_SERVICE_ADDRESS=localhost:5001
+WEBSOCKET_GATEWAY_SERVICE_PORT=5004
+ALGOLIA_SYNC_SERVICE_PORT=5006
+
+# External Services
+CLERK_SECRET_KEY="your-clerk-secret"
+ALGOLIA_APP_ID="your-algolia-app-id"
+ALGOLIA_API_KEY="your-algolia-api-key"
+CLOUDINARY_CLOUD_NAME="your-cloudinary-name"
+CLOUDINARY_API_KEY="your-cloudinary-key"
+CLOUDINARY_API_SECRET="your-cloudinary-secret"
+```
+
+## Development Workflow
+
+1. **Feature Development**: Create feature branches from `main`
+2. **Testing**: Write tests for new functionality
+3. **Code Quality**: Ensure code passes linting and formatting
+4. **Documentation**: Update relevant README files
+5. **Review**: Submit pull requests for code review
+
+## Testing
+
+The project uses Vitest for testing with comprehensive coverage:
+
+```bash
+# Run all tests
+pnpm run test:run
+
+# Run tests in watch mode
+pnpm run test
+
+# Run tests with UI
+pnpm run test:ui
+
+# Generate coverage report
+pnpm run test:coverage
+```
+
+## Deployment
+
+The system is containerized using Docker and can be deployed using Docker Compose or Kubernetes.
+
+### Docker Deployment
+
+```bash
+# Build all services
+docker-compose build
+
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Submit a pull request
 
 ## License
 
-Nest is [MIT licensed](LICENSE).
+This project is proprietary and confidential.
