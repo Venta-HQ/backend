@@ -27,7 +27,7 @@ This document outlines the functional differences between the event-pattern-init
 - ✅ `libs/nest/modules/config/index.ts`
 
 ### 2. Service Discovery & Circuit Breakers
-**Status**: ✅ Implemented
+**Status**: ✅ Fully Implemented
 **Impact**: High - Affects resilience and monitoring
 
 **event-pattern-initial has:**
@@ -36,6 +36,7 @@ This document outlines the functional differences between the event-pattern-init
 - Continuous health monitoring
 - Dynamic service registration from environment variables
 - Fallback mechanisms for service failures
+- **ALL gateway controllers use service discovery**
 
 **main branch now has:**
 - ✅ ServiceDiscoveryService with automatic service discovery
@@ -43,10 +44,12 @@ This document outlines the functional differences between the event-pattern-init
 - ✅ Continuous health monitoring
 - ✅ Dynamic service registration from environment variables
 - ✅ Fallback mechanisms for service failures
+- ✅ **ALL gateway controllers use service discovery**
 
 **Files implemented:**
 - ✅ `apps/gateway/src/services/service-discovery.service.ts`
 - ✅ Circuit breaker integration in gateway app
+- ✅ Service discovery usage in all gateway controllers
 
 ### 3. Rate Limiting
 **Status**: ✅ Implemented
