@@ -14,7 +14,7 @@ export class UploadController {
 	constructor(private uploadService: UploadService) {}
 
 	@Post('image')
-	async uploadImage(@UploadedFile() file: UploadedFile) {
+	async uploadImage(@UploadedFile() file: any) {
 		try {
 			return this.uploadService.uploadImage(file);
 		} catch (e) {
