@@ -1,18 +1,16 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { CreateVendorSchema, UpdateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
+import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { AuthGuard } from '@app/nest/guards';
-import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { AuthGuard } from '@app/auth';
+import { GrpcInstance } from '@app/grpc';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
-import { Body, Controller, Get, Inject, Logger, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
+import { SchemaValidatorPipe } from '@app/validation';
+import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 import { ServiceDiscoveryService } from '../services/service-discovery.service';
 
 @Controller()
 export class VendorController {
-	private readonly logger = new Logger(VendorController.name);
-
 	constructor(
 		@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>,
 		private readonly serviceDiscovery: ServiceDiscoveryService,
@@ -36,7 +34,7 @@ export class VendorController {
 	@Post()
 	@UseGuards(AuthGuard)
 	@UsePipes(new SchemaValidatorPipe(CreateVendorSchema))
-	async createVendor(@Body() data: CreateVendorData, @Req() req: AuthedRequest) {
+	async createVendor(@Req() req: AuthedRequest, @Body() data: CreateVendorData) {
 		return await this.serviceDiscovery.executeRequest('vendor-service', () =>
 			firstValueFrom(
 				this.client
@@ -62,11 +60,7 @@ export class VendorController {
 
 	@Put('/:id')
 	@UseGuards(AuthGuard)
-	async updateVendor(
-		@Param('id') id: string,
-		@Body(new SchemaValidatorPipe(UpdateVendorSchema)) data: UpdateVendorData,
-		@Req() req: AuthedRequest,
-	) {
+	async updateVendor(@Param('id') id: string, @Req() req: AuthedRequest, @Body() data: UpdateVendorData) {
 		return await this.serviceDiscovery.executeRequest('vendor-service', () =>
 			firstValueFrom(
 				this.client
