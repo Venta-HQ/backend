@@ -110,8 +110,10 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Fixed error handling to use ErrorCodes.USER_NOT_FOUND
 
 #### `apps/user/src/vendor/vendor.service.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ✅ Fixed - Now Identical
+**Notes**: 
+- ✅ Fixed import path for PrismaService to match event-pattern-initial
+- ✅ Removed Logger injection
 
 ### 4. Location App
 
