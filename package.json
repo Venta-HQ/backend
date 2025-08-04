@@ -64,7 +64,7 @@
     "jsonwebtoken": "^9.0.2",
     "nats": "^2.29.3",
     "nestjs-pino": "^4.1.0",
-    "opossum": "^9.0.0",
+
     "pino-http": "^10.2.0",
     "pino-loki": "^2.3.0",
     "pino-pretty": "^11.2.2",

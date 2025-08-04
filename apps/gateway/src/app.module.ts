@@ -5,7 +5,7 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { modules, routes } from './router';
-import { ServiceDiscoveryService } from './services/service-discovery.service';
+
 
 @Module({
 	imports: [
@@ -30,7 +30,7 @@ import { ServiceDiscoveryService } from './services/service-discovery.service';
 	],
 	providers: [
 		AuthGuard,
-		ServiceDiscoveryService,
+
 		{
 			provide: APP_GUARD,
 			useClass: ThrottlerGuard,
