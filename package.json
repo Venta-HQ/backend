@@ -15,7 +15,13 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:ui": "vitest --ui",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+
+
+    "load:gateway": "node test/load/gateway-load-test.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f"
   },
   "dependencies": {
     "@clerk/backend": "^1.13.2",

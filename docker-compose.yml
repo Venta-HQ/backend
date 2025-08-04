@@ -1,10 +1,62 @@
-version: '3'
+version: '3.8'
 
 name: venta-services
 networks:
   venta:
 
 services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: venta
+      POSTGRES_USER: venta
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-venta123}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - venta
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U venta"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Message Broker
+  nats:
+    image: nats:2.9-alpine
+    ports:
+      - '4222:4222'
+      - '8222:8222'
+    command: -js -m 8222
+    networks:
+      - venta
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Cache
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81}
+    volumes:
+      - cache:/data
+    networks:
+      - venta
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Monitoring - Loki
   loki:
     image: grafana/loki:2.9.2
     ports:
@@ -12,7 +64,13 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - venta
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3100/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Monitoring - Grafana
   grafana:
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
@@ -42,17 +100,17 @@ services:
       - '3001:3000'
     networks:
       - venta
+    depends_on:
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  cache:
-    image: redis:6.2-alpine
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD:-eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81}
-    volumes:
-      - cache:/data
-    networks:
-      - venta
 volumes:
+  postgres_data:
+    driver: local
   cache:
     driver: local
