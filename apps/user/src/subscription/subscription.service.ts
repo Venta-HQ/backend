@@ -1,6 +1,6 @@
-import { PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/database';
 import { Injectable, Logger } from '@nestjs/common';
-import { IntegrationType, SubscriptionStatus } from '@prisma/client';
+import { IntegrationType, Prisma, SubscriptionStatus } from '@prisma/client';
 
 @Injectable()
 export class SubscriptionService {
@@ -35,7 +35,15 @@ export class SubscriptionService {
 		});
 	}
 
-	async createIntegration({ clerkUserId, data, providerId }: { clerkUserId: string; data?: any; providerId?: string }) {
+	async createIntegration({
+		clerkUserId,
+		data,
+		providerId,
+	}: {
+		clerkUserId: string;
+		data?: Prisma.InputJsonValue;
+		providerId?: string;
+	}) {
 		this.logger.log('Creating integration record for subscription', {
 			clerkUserId: clerkUserId,
 			providerId: providerId,
@@ -43,8 +51,7 @@ export class SubscriptionService {
 		});
 		await this.prisma.db.integration.create({
 			data: {
-				data,
-				providerId,
+				config: { data, providerId },
 				type: IntegrationType.RevenueCat,
 				user: {
 					connect: {
