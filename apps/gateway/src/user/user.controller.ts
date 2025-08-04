@@ -1,15 +1,13 @@
 import { catchError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { AuthGuard } from '@app/nest/guards';
-import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
+import { AuthGuard } from '@app/auth';
+import { GrpcInstance } from '@app/grpc';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
-import { Controller, Get, Inject, Logger, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 import { ServiceDiscoveryService } from '../services/service-discovery.service';
 
 @Controller()
 export class UserController {
-	private readonly logger = new Logger(UserController.name);
-
 	constructor(
 		@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>,
 		private readonly serviceDiscovery: ServiceDiscoveryService,
