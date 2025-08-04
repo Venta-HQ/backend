@@ -3,7 +3,7 @@ import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { ClerkService } from '../../modules/clerk/clerk.service';
+import { ClerkService } from '../../modules/clerk';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

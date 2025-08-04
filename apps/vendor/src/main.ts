@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { GrpcErrorFilter } from '@app/nest/filters';
 import { GrpcLogger } from '@app/nest/modules';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -10,11 +9,10 @@ async function bootstrap() {
 		options: {
 			package: 'vendor',
 			protoPath: join(__dirname, `../proto/src/definitions/vendor.proto`),
-			url: 'localhost:5005',
+			url: process.env.VENDOR_SERVICE_ADDRESS || 'localhost:5005',
 		},
 		transport: Transport.GRPC,
 	});
-	app.useGlobalFilters(new GrpcErrorFilter());
 	app.useLogger(app.get(GrpcLogger));
 
 	await app.listen();

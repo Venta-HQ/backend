@@ -32,6 +32,9 @@ export const configSchema = z.object({
 	USER_SERVICE_PORT: z.string().or(z.number()),
 
 	// Service URLs (for local development)
+	USER_SERVICE_ADDRESS: z.string(),
+	VENDOR_SERVICE_ADDRESS: z.string(),
+	LOCATION_SERVICE_ADDRESS: z.string(),
 	USER_SERVICE_URL: z.string(),
 	VENDOR_SERVICE_PORT: z.string().or(z.number()),
 	VENDOR_SERVICE_URL: z.string(),
