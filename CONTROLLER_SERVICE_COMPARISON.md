@@ -56,8 +56,11 @@ This document provides a detailed comparison of every controller and service bet
 ### 3. User App
 
 #### `apps/user/src/clerk/clerk.controller.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ✅ Fixed - Now Identical
+**Notes**: 
+- ✅ Removed EventsService injection and event publishing
+- ✅ Fixed condition check to match event-pattern-initial: `if (userData && userData.id)`
+- ✅ Removed event publishing from both methods
 
 #### `apps/user/src/clerk/clerk.service.ts`
 **Status**: ⚠️ Needs Comparison
