@@ -1,0 +1,73 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # WebSocket Gateway Service
+  - job_name: 'websocket-gateway'
+    static_configs:
+      - targets: ['host.docker.internal:3000']  # Adjust port based on your websocket gateway
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Gateway Service (if it has metrics)
+  - job_name: 'gateway'
+    static_configs:
+      - targets: ['host.docker.internal:3001']  # Adjust port based on your gateway service
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # User Service (if it has metrics)
+  - job_name: 'user-service'
+    static_configs:
+      - targets: ['host.docker.internal:3002']  # Adjust port based on your user service
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Vendor Service (if it has metrics)
+  - job_name: 'vendor-service'
+    static_configs:
+      - targets: ['host.docker.internal:3003']  # Adjust port based on your vendor service
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Location Service (if it has metrics)
+  - job_name: 'location-service'
+    static_configs:
+      - targets: ['host.docker.internal:3004']  # Adjust port based on your location service
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Algolia Sync Service (if it has metrics)
+  - job_name: 'algolia-sync'
+    static_configs:
+      - targets: ['host.docker.internal:3005']  # Adjust port based on your algolia sync service
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+# Alerting rules (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           # - alertmanager:9093
+
+# Rule files
+# rule_files:
+#   # - "first_rules.yml"
+#   # - "second_rules.yml" 

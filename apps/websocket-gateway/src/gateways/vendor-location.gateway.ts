@@ -18,8 +18,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { ConnectionHealthService } from '../services/connection-health.service';
 import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
+import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
 
 // Extend Socket interface to include vendor properties
 interface AuthenticatedVendorSocket extends Socket {
@@ -38,7 +38,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: VendorConnectionManagerService,
-		private readonly connectionHealth: ConnectionHealthService,
+		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}
 
 	afterInit() {
@@ -50,8 +50,9 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	async handleConnection(client: AuthenticatedVendorSocket) {
 		this.logger.log(`Vendor client connected: ${client.id}`);
 
-		// Record connection health metrics
-		await this.connectionHealth.recordConnection(client.id, undefined, client.vendorId);
+		// Record connection metrics
+		this.metrics.vendor_websocket_connections_total.inc({ type: 'vendor', status: 'connected' });
+		this.metrics.vendor_websocket_connections_active.inc({ type: 'vendor' });
 
 		// Handle vendor registration (now redundant since auth guard handles it)
 		client.on('register-vendor', async (data) => {
@@ -65,8 +66,9 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	async handleDisconnect(client: AuthenticatedVendorSocket) {
 		this.logger.log(`Vendor client disconnected: ${client.id}`);
 
-		// Record disconnection health metrics
-		await this.connectionHealth.recordDisconnection(client.id);
+		// Record disconnection metrics
+		this.metrics.vendor_websocket_disconnections_total.inc({ type: 'vendor', reason: 'disconnect' });
+		this.metrics.vendor_websocket_connections_active.dec({ type: 'vendor' });
 		await this.connectionManager.handleDisconnect(client.id);
 	}
 
@@ -87,8 +89,8 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			return;
 		}
 
-		// Update connection activity
-		await this.connectionHealth.updateActivity(socket.id);
+		// Record location update metrics
+		this.metrics.location_updates_total.inc({ type: 'vendor', status: 'success' });
 
 		try {
 			// Store vendor location in database via gRPC service

@@ -16,8 +16,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { ConnectionHealthService } from '../services/connection-health.service';
 import { UserConnectionManagerService } from '../services/user-connection-manager.service';
+import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
 
 // Extend Socket interface to include user properties
 interface AuthenticatedSocket extends Socket {
@@ -35,7 +35,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	constructor(
 		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
 		private readonly connectionManager: UserConnectionManagerService,
-		private readonly connectionHealth: ConnectionHealthService,
+		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}
 
 	afterInit() {
@@ -47,8 +47,9 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	async handleConnection(client: AuthenticatedSocket) {
 		this.logger.log(`User client connected: ${client.id}`);
 
-		// Record connection health metrics
-		await this.connectionHealth.recordConnection(client.id, client.userId);
+		// Record connection metrics
+		this.metrics.user_websocket_connections_total.inc({ type: 'user', status: 'connected' });
+		this.metrics.user_websocket_connections_active.inc({ type: 'user' });
 
 		// Handle user registration (now redundant since auth guard handles it)
 		client.on('register-user', async (data) => {
@@ -62,8 +63,9 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	async handleDisconnect(client: AuthenticatedSocket) {
 		this.logger.log(`User client disconnected: ${client.id}`);
 
-		// Record disconnection health metrics
-		await this.connectionHealth.recordDisconnection(client.id);
+		// Record disconnection metrics
+		this.metrics.user_websocket_disconnections_total.inc({ type: 'user', reason: 'disconnect' });
+		this.metrics.user_websocket_connections_active.dec({ type: 'user' });
 		await this.connectionManager.handleDisconnect(client.id);
 	}
 
@@ -84,8 +86,8 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 			return;
 		}
 
-		// Update connection activity
-		await this.connectionHealth.updateActivity(socket.id);
+		// Record location update metrics
+		this.metrics.location_updates_total.inc({ type: 'user', status: 'success' });
 
 		const { neLocation, swLocation } = data;
 

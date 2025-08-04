@@ -38,6 +38,7 @@
     "@nestjs/terminus": "^11.0.0",
     "@nestjs/throttler": "^6.4.0",
     "@nestjs/websockets": "^10.4.1",
+    "prom-client": "^15.1.0",
     "@prisma/client": "6.13.0",
     "@prisma/extension-pulse": "^1.2.0",
     "algoliasearch": "^5.0.0",
