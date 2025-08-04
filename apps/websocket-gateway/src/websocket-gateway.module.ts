@@ -1,7 +1,7 @@
 import { join } from 'path';
-import { WsErrorFilter } from '@app/nest/filters';
-import { EventsModule, HealthModule, LoggerModule, RedisModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
+import { WsErrorFilter } from '@app/nest/filters';
+import { ConfigModule, EventsModule, HealthModule, LoggerModule, RedisModule } from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

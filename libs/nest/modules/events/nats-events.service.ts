@@ -120,8 +120,8 @@ export class NatsEventsService implements IEventsService {
 			});
 
 			const stream: EventStream = {
-				streamName,
 				eventTypes,
+				streamName,
 				subscription,
 			};
 
@@ -186,4 +186,4 @@ export class NatsEventsService implements IEventsService {
 			};
 		}
 	}
-} 
+}

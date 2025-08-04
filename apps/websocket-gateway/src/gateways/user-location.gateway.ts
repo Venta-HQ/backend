@@ -1,8 +1,8 @@
 import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
-import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
 import {
@@ -115,4 +115,4 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 			socket.emit('error', { message: 'Failed to update location' });
 		}
 	}
-} 
+}

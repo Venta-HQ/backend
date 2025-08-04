@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppExceptionFilter } from './app-exception.filter';
 import { AppError, ErrorType } from './app-error';
+import { AppExceptionFilter } from './app-exception.filter';
 
 describe('AppExceptionFilter', () => {
 	let filter: AppExceptionFilter;
@@ -13,15 +13,15 @@ describe('AppExceptionFilter', () => {
 	beforeEach(() => {
 		filter = new AppExceptionFilter();
 		mockResponse = {
-			status: vi.fn().mockReturnThis(),
 			json: vi.fn().mockReturnThis(),
+			status: vi.fn().mockReturnThis(),
 		};
 		mockRequest = {
-			url: '/test',
-			method: 'GET',
 			headers: {
 				'x-request-id': 'test-request-id',
 			},
+			method: 'GET',
+			url: '/test',
 		};
 	});
 
@@ -32,8 +32,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: () => ({
-					getResponse: () => mockResponse,
 					getRequest: () => mockRequest,
+					getResponse: () => mockResponse,
 				}),
 			};
 
@@ -59,8 +59,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('rpc'),
 				switchToRpc: () => ({
-					getData: () => ({}),
 					getContext: () => ({}),
+					getData: () => ({}),
 				}),
 			};
 
@@ -93,10 +93,10 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('ws'),
 				switchToWs: () => ({
-					getData: () => ({}),
 					getClient: () => ({
 						send: vi.fn(),
 					}),
+					getData: () => ({}),
 				}),
 			};
 
@@ -125,8 +125,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: () => ({
-					getResponse: () => mockResponse,
 					getRequest: () => mockRequest,
+					getResponse: () => mockResponse,
 				}),
 			};
 
@@ -158,8 +158,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('rpc'),
 				switchToRpc: () => ({
-					getData: () => ({}),
 					getContext: () => ({}),
+					getData: () => ({}),
 				}),
 			};
 
@@ -184,10 +184,10 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('ws'),
 				switchToWs: () => ({
-					getData: () => ({}),
 					getClient: () => ({
 						send: vi.fn(),
 					}),
+					getData: () => ({}),
 				}),
 			};
 
@@ -216,8 +216,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: () => ({
-					getResponse: () => mockResponse,
 					getRequest: () => mockRequest,
+					getResponse: () => mockResponse,
 				}),
 			};
 
@@ -244,8 +244,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: () => ({
-					getResponse: () => mockResponse,
 					getRequest: () => mockRequest,
+					getResponse: () => mockResponse,
 				}),
 			};
 
@@ -274,8 +274,8 @@ describe('AppExceptionFilter', () => {
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
 				switchToHttp: () => ({
-					getResponse: () => mockResponse,
 					getRequest: () => mockRequest,
+					getResponse: () => mockResponse,
 				}),
 			};
 
@@ -294,4 +294,4 @@ describe('AppExceptionFilter', () => {
 			});
 		});
 	});
-}); 
+});

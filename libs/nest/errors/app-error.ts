@@ -204,4 +204,4 @@ export class AppError extends Error {
 		const code = this.findErrorCode(message);
 		return new AppError(ErrorType.EXTERNAL_SERVICE, code, interpolatedMessage, details);
 	}
-} 
+}

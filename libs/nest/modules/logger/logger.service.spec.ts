@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { Logger } from './logger.service';
 import { PinoLogger } from 'nestjs-pino';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Logger } from './logger.service';
 import { RequestContextService } from './request-context.service';
 
 describe('Logger', () => {
@@ -10,11 +10,11 @@ describe('Logger', () => {
 
 	beforeEach(() => {
 		mockPinoLogger = {
-			info: vi.fn(),
+			debug: vi.fn(),
 			error: vi.fn(),
 			fatal: vi.fn(),
+			info: vi.fn(),
 			warn: vi.fn(),
-			debug: vi.fn(),
 		} as any;
 
 		mockRequestContextService = {
@@ -35,8 +35,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.info).toHaveBeenCalledWith(
 				{
-					key: 'value',
 					context: 'TestContext',
+					key: 'value',
 					requestId: 'req-123',
 				},
 				'Test message',
@@ -53,8 +53,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.info).toHaveBeenCalledWith(
 				{
-					key: 'value',
 					context: 'TestContext',
+					key: 'value',
 				},
 				'Test message',
 			);
@@ -89,8 +89,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.error).toHaveBeenCalledWith(
 				{
-					error: 'details',
 					context: 'ErrorContext',
+					error: 'details',
 					requestId: 'req-123',
 				},
 				'Error message',
@@ -107,8 +107,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.error).toHaveBeenCalledWith(
 				{
-					error: 'details',
 					context: 'ErrorContext',
+					error: 'details',
 				},
 				'Error message',
 			);
@@ -126,8 +126,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.fatal).toHaveBeenCalledWith(
 				{
-					fatal: 'details',
 					context: 'FatalContext',
+					fatal: 'details',
 					requestId: 'req-123',
 				},
 				'Fatal message',
@@ -146,9 +146,9 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.warn).toHaveBeenCalledWith(
 				{
-					warning: 'details',
 					context: 'WarningContext',
 					requestId: 'req-123',
+					warning: 'details',
 				},
 				'Warning message',
 			);
@@ -166,8 +166,8 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.debug).toHaveBeenCalledWith(
 				{
-					debug: 'details',
 					context: 'DebugContext',
+					debug: 'details',
 					requestId: 'req-123',
 				},
 				'Debug message',
@@ -186,9 +186,9 @@ describe('Logger', () => {
 
 			expect(mockPinoLogger.info).toHaveBeenCalledWith(
 				{
-					verbose: 'details',
 					context: 'VerboseContext',
 					requestId: 'req-123',
+					verbose: 'details',
 				},
 				'Verbose message',
 			);
@@ -230,4 +230,4 @@ describe('Logger', () => {
 			);
 		});
 	});
-}); 
+});

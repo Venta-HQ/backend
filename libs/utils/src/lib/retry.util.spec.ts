@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Logger } from '@nestjs/common';
 
 // Mock Logger
 vi.mock('@nestjs/common', () => ({
 	Logger: vi.fn().mockImplementation(() => ({
 		error: vi.fn(),
-		warn: vi.fn(),
 		log: vi.fn(),
+		warn: vi.fn(),
 	})),
 }));
 
@@ -26,7 +26,6 @@ vi.mock('@nestjs/common', () => ({
 
 // Import after mocking
 // import { retryOperation } from './retry.util';
-
 
 describe.skip('retryOperation', () => {
 	let mockLogger: any;
@@ -54,12 +53,13 @@ describe.skip('retryOperation', () => {
 		});
 
 		it.skip('should return result after some failures', async () => {
-			const operation = vi.fn()
+			const operation = vi
+				.fn()
 				.mockRejectedValueOnce(new Error('First failure'))
 				.mockRejectedValueOnce(new Error('Second failure'))
 				.mockResolvedValue('success');
 
-			let attempt = 0;
+			// const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
@@ -78,38 +78,40 @@ describe.skip('retryOperation', () => {
 		it.skip('should throw error after max retries', async () => {
 			const error = new Error('Persistent failure');
 			const operation = vi.fn().mockRejectedValue(error);
-			let attempt = 0;
+			// const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
 			// });
 			// mockRetryOperation.retry.mockReturnValue(false);
 			// mockRetryOperation.mainError.mockReturnValue(error);
-			await expect(retryOperation(operation, 'test operation', { logger: mockLogger })).rejects.toThrow('Persistent failure');
+			await expect(retryOperation(operation, 'test operation', { logger: mockLogger })).rejects.toThrow(
+				'Persistent failure',
+			);
 			expect(operation).toHaveBeenCalledTimes(1);
 		});
 
 		it.skip('should respect custom max retries', async () => {
 			const error = new Error('Persistent failure');
 			const operation = vi.fn().mockRejectedValue(error);
-			let attempt = 0;
+			// const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
 			// });
 			// mockRetryOperation.retry.mockReturnValue(false);
 			// mockRetryOperation.mainError.mockReturnValue(error);
-			await expect(retryOperation(operation, 'test operation', { logger: mockLogger, maxRetries: 2 })).rejects.toThrow('Persistent failure');
+			await expect(retryOperation(operation, 'test operation', { logger: mockLogger, maxRetries: 2 })).rejects.toThrow(
+				'Persistent failure',
+			);
 			expect(operation).toHaveBeenCalledTimes(1);
 		});
 	});
 
 	describe('configuration options', () => {
 		it.skip('should use custom retry delay', async () => {
-			const operation = vi.fn()
-				.mockRejectedValueOnce(new Error('First failure'))
-				.mockResolvedValue('success');
-			let attempt = 0;
+			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
+			// const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
@@ -122,10 +124,8 @@ describe.skip('retryOperation', () => {
 		});
 
 		it.skip('should use custom backoff multiplier', async () => {
-			const operation = vi.fn()
-				.mockRejectedValueOnce(new Error('First failure'))
-				.mockResolvedValue('success');
-			let attempt = 0;
+			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
+			const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
@@ -133,17 +133,15 @@ describe.skip('retryOperation', () => {
 			// mockRetryOperation.retry
 			// 	.mockReturnValueOnce(true)
 			// 	.mockReturnValueOnce(false);
-			await retryOperation(operation, 'test operation', { logger: mockLogger, backoffMultiplier: 3 });
+			await retryOperation(operation, 'test operation', { backoffMultiplier: 3, logger: mockLogger });
 			expect(operation).toHaveBeenCalledTimes(2);
 		});
 	});
 
 	describe('logging behavior', () => {
 		it.skip('should log operation attempts', async () => {
-			const operation = vi.fn()
-				.mockRejectedValueOnce(new Error('First failure'))
-				.mockResolvedValue('success');
-			let attempt = 0;
+			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
+			const attempt = 0;
 			// mockRetryOperation.attempt.mockImplementation(async (cb) => {
 			// 	await Promise.resolve();
 			// 	cb(++attempt);
@@ -205,4 +203,4 @@ describe.skip('retryOperation', () => {
 			await expect(retryOperation(operation, 'test operation', { logger: mockLogger })).rejects.toBe(stringError);
 		});
 	});
-}); 
+});

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import GrpcInstance from './grpc-instance.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Metadata } from '@grpc/grpc-js';
+import GrpcInstance from './grpc-instance.service';
 
 // Mock the retryOperation utility
 vi.mock('@app/utils', () => ({
@@ -19,13 +19,13 @@ describe('GrpcInstance', () => {
 		};
 
 		mockService = {
-			testMethod: vi.fn(),
 			anotherMethod: vi.fn(),
+			testMethod: vi.fn(),
 		};
 
 		mockLogger = {
-			log: vi.fn(),
 			error: vi.fn(),
+			log: vi.fn(),
 		};
 
 		// Create instance with mocked dependencies
@@ -176,4 +176,4 @@ describe('GrpcInstance', () => {
 			expect(metadata.get('requestId')).toEqual([]);
 		});
 	});
-}); 
+});

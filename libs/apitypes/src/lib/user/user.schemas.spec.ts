@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-	GrpcUserVendorDataSchema,
 	GrpcClerkUserDataSchema,
 	GrpcRevenueCatProviderDataSchema,
 	GrpcRevenueCatSubscriptionDataSchema,
+	GrpcUserVendorDataSchema,
 } from './user.schemas';
 
 describe('User Schemas', () => {
@@ -123,12 +123,12 @@ describe('User Schemas', () => {
 		it('should validate valid RevenueCat subscription data with provider data', () => {
 			const validData = {
 				clerkUserId: 'clerk-user-123',
-				providerId: 'provider-456',
 				data: {
 					eventId: 'event-123',
 					productId: 'product-456',
 					transactionId: 'transaction-789',
 				},
+				providerId: 'provider-456',
 			};
 
 			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(validData);
@@ -179,15 +179,15 @@ describe('User Schemas', () => {
 		it('should reject invalid provider data when provided', () => {
 			const invalidData = {
 				clerkUserId: 'clerk-user-123',
-				providerId: 'provider-456',
 				data: {
 					eventId: 'event-123',
 					// missing required fields in data
 				},
+				providerId: 'provider-456',
 			};
 
 			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(invalidData);
 			expect(result.success).toBe(false);
 		});
 	});
-}); 
+});

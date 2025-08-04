@@ -1,9 +1,6 @@
-import {
-	GrpcVendorCreateDataSchema,
-	GrpcVendorLookupDataSchema,
-	GrpcVendorUpdateDataSchema,
-} from '@app/apitypes';
+import { GrpcVendorCreateDataSchema, GrpcVendorLookupDataSchema, GrpcVendorUpdateDataSchema } from '@app/apitypes';
 import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	Vendor,
 	VENDOR_SERVICE_NAME,
@@ -14,7 +11,6 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@app/proto/vendor';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
@@ -36,18 +32,18 @@ export class VendorController {
 
 			// Convert Prisma vendor to proto Vendor type
 			const protoVendor: Vendor = {
+				createdAt: vendor.createdAt,
+				description: vendor.description || '',
+				email: vendor.email || '',
 				id: vendor.id,
 				lat: vendor.lat || 0,
 				long: vendor.long || 0,
 				name: vendor.name,
-				description: vendor.description || '',
-				phone: vendor.phone || '',
-				email: vendor.email || '',
-				website: vendor.website || '',
 				open: vendor.open,
+				phone: vendor.phone || '',
 				primaryImage: vendor.primaryImage || '',
-				createdAt: vendor.createdAt,
 				updatedAt: vendor.updatedAt,
+				website: vendor.website || '',
 			};
 
 			return { vendor: protoVendor };

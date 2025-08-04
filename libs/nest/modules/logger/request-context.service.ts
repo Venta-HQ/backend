@@ -15,4 +15,4 @@ export class RequestContextService {
 	clear(): void {
 		this.context.clear();
 	}
-} 
+}

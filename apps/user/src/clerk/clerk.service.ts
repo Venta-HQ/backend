@@ -1,5 +1,4 @@
-import { PrismaService } from '@app/nest/modules';
-import { IEventsService } from '@app/nest/modules';
+import { IEventsService, PrismaService } from '@app/nest/modules';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 
@@ -23,9 +22,9 @@ export class ClerkService {
 
 		// Emit user created event
 		await this.eventsService.publishEvent('user.created', {
-			userId: user.id,
 			clerkId: user.clerkId,
 			timestamp: new Date().toISOString(),
+			userId: user.id,
 		});
 
 		return user;
@@ -36,8 +35,8 @@ export class ClerkService {
 
 		// Get user before deletion for event
 		const user = await this.prisma.db.user.findFirst({
+			select: { clerkId: true, id: true },
 			where: { clerkId: id },
-			select: { id: true, clerkId: true },
 		});
 
 		await this.prisma.db.user.deleteMany({
@@ -49,9 +48,9 @@ export class ClerkService {
 		// Emit user deleted event if user existed
 		if (user) {
 			await this.eventsService.publishEvent('user.deleted', {
-				userId: user.id,
 				clerkId: user.clerkId,
 				timestamp: new Date().toISOString(),
+				userId: user.id,
 			});
 		}
 	}
@@ -74,10 +73,10 @@ export class ClerkService {
 		// Emit integration created event
 		await this.eventsService.publishEvent('user.integration.created', {
 			integrationId: integration.id,
-			userId,
 			providerId,
-			type: IntegrationType.Clerk,
 			timestamp: new Date().toISOString(),
+			type: IntegrationType.Clerk,
+			userId,
 		});
 	}
 
@@ -89,6 +88,7 @@ export class ClerkService {
 
 		// Get integration before deletion for event
 		const integration = await this.prisma.db.integration.findFirst({
+			select: { id: true, userId: true },
 			where: {
 				config: {
 					equals: providerId,
@@ -96,7 +96,6 @@ export class ClerkService {
 				},
 				type: IntegrationType.Clerk,
 			},
-			select: { id: true, userId: true },
 		});
 
 		await this.prisma.db.integration.deleteMany({
@@ -113,10 +112,10 @@ export class ClerkService {
 		if (integration) {
 			await this.eventsService.publishEvent('user.integration.deleted', {
 				integrationId: integration.id,
-				userId: integration.userId,
 				providerId,
-				type: IntegrationType.Clerk,
 				timestamp: new Date().toISOString(),
+				type: IntegrationType.Clerk,
+				userId: integration.userId,
 			});
 		}
 	}

@@ -38,13 +38,13 @@ export class LoggerModule {
 								pinoHttp: {
 									base: { app: appName },
 									transport: {
-										target: 'pino-pretty',
 										options: {
 											colorize: true,
 											ignore: 'pid,hostname,time,app,context',
 											levelFirst: true,
 											messageFormat: `[${appName}] [{context}]: {msg}`,
 										},
+										target: 'pino-pretty',
 									},
 								},
 							};
@@ -127,4 +127,4 @@ export class LoggerModule {
 			],
 		};
 	}
-} 
+}

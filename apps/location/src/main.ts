@@ -1,5 +1,4 @@
 import { join } from 'path';
-
 import { GrpcLogger } from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME } from '@app/proto/location';
 import { NestFactory } from '@nestjs/core';
@@ -15,7 +14,6 @@ async function bootstrap() {
 		},
 		transport: Transport.GRPC,
 	});
-
 
 	app.useLogger(app.get(GrpcLogger));
 

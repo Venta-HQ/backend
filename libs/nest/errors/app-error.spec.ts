@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
@@ -74,7 +74,7 @@ describe('AppError', () => {
 				'User not found',
 				details,
 				'/api/users/123',
-				'req-123'
+				'req-123',
 			);
 
 			expect(error.type).toBe(ErrorType.NOT_FOUND);
@@ -87,11 +87,7 @@ describe('AppError', () => {
 		});
 
 		it('should create error without details', () => {
-			const error = new AppError(
-				ErrorType.AUTHENTICATION,
-				'UNAUTHORIZED',
-				'Authentication required'
-			);
+			const error = new AppError(ErrorType.AUTHENTICATION, 'UNAUTHORIZED', 'Authentication required');
 
 			expect(error.type).toBe(ErrorType.AUTHENTICATION);
 			expect(error.code).toBe('UNAUTHORIZED');
@@ -143,7 +139,7 @@ describe('AppError', () => {
 		it('should convert to RpcException', () => {
 			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User with ID "{userId}" not found');
 			const grpcException = error.toGrpcException();
-			
+
 			expect(grpcException).toBeInstanceOf(RpcException);
 			expect(grpcException.getError()).toEqual({
 				code: 5, // NOT_FOUND
@@ -163,7 +159,7 @@ describe('AppError', () => {
 			const details = { userId: '123' };
 			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User with ID "123" not found', details);
 			const grpcException = error.toGrpcException();
-			
+
 			expect(grpcException.getError()).toEqual({
 				code: 5, // NOT_FOUND
 				details: JSON.stringify({
@@ -212,4 +208,4 @@ describe('AppError', () => {
 			});
 		});
 	});
-}); 
+});

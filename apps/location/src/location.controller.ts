@@ -1,7 +1,5 @@
-import {
-	GrpcLocationUpdateSchema,
-	GrpcVendorLocationRequestSchema,
-} from '@app/apitypes';
+import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	Empty,
 	LOCATION_SERVICE_NAME,
@@ -9,7 +7,6 @@ import {
 	VendorLocationRequest,
 	VendorLocationResponse,
 } from '@app/proto/location';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { LocationService } from './location.service';

@@ -6,6 +6,9 @@ export const configSchema = z.object({
 	ALGOLIA_APPLICATION_ID: z.string(),
 	ALGOLIA_SYNC_SERVICE_PORT: z.string().or(z.number()),
 	ALGOLIA_SYNC_SERVICE_URL: z.string(),
+
+	// CORS Configuration
+	ALLOWED_ORIGINS: z.string().optional(),
 	CLERK_SECRET_KEY: z.string(),
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),
@@ -14,6 +17,7 @@ export const configSchema = z.object({
 	DATABASE_URL: z.string().url(),
 	GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	GATEWAY_SERVICE_URL: z.string(),
+	LOCATION_SERVICE_ADDRESS: z.string(),
 	LOCATION_SERVICE_PORT: z.string().or(z.number()),
 	LOCATION_SERVICE_URL: z.string(),
 
@@ -28,19 +32,15 @@ export const configSchema = z.object({
 	REDIS_PASSWORD: z.string(),
 	REDIS_URL: z.string().url(),
 
-	// Service Ports (for local development)
-	USER_SERVICE_PORT: z.string().or(z.number()),
-
 	// Service URLs (for local development)
 	USER_SERVICE_ADDRESS: z.string(),
-	VENDOR_SERVICE_ADDRESS: z.string(),
-	LOCATION_SERVICE_ADDRESS: z.string(),
+
+	// Service Ports (for local development)
+	USER_SERVICE_PORT: z.string().or(z.number()),
 	USER_SERVICE_URL: z.string(),
+	VENDOR_SERVICE_ADDRESS: z.string(),
 	VENDOR_SERVICE_PORT: z.string().or(z.number()),
 	VENDOR_SERVICE_URL: z.string(),
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	WEBSOCKET_GATEWAY_SERVICE_URL: z.string(),
-	
-	// CORS Configuration
-	ALLOWED_ORIGINS: z.string().optional(),
-}); 
+});

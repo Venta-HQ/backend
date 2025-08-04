@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AlgoliaService } from './algolia.service';
 import { algoliasearch } from 'algoliasearch';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { AlgoliaService } from './algolia.service';
 
 // Mock algoliasearch
 vi.mock('algoliasearch', () => ({
@@ -15,10 +15,10 @@ describe('AlgoliaService', () => {
 
 	beforeEach(() => {
 		mockClient = {
+			deleteObjects: vi.fn(),
+			partialUpdateObject: vi.fn(),
 			saveObject: vi.fn(),
 			searchSingleIndex: vi.fn(),
-			partialUpdateObject: vi.fn(),
-			deleteObjects: vi.fn(),
 		};
 
 		(algoliasearch as any).mockReturnValue(mockClient);
@@ -69,8 +69,8 @@ describe('AlgoliaService', () => {
 			const mockSearchResponse = {
 				hits: [
 					{
-						objectID: 'test-object-id',
 						id: 'test-entity-id',
+						objectID: 'test-object-id',
 					},
 				],
 			};
@@ -175,8 +175,8 @@ describe('AlgoliaService', () => {
 			const mockSearchResponse = {
 				hits: [
 					{
-						objectID: 'test-object-id',
 						id: 'test-entity-id',
+						objectID: 'test-object-id',
 					},
 				],
 			};
@@ -198,12 +198,12 @@ describe('AlgoliaService', () => {
 			const mockSearchResponse = {
 				hits: [
 					{
-						objectID: 'test-object-id-1',
 						id: 'test-entity-id',
+						objectID: 'test-object-id-1',
 					},
 					{
-						objectID: 'test-object-id-2',
 						id: 'test-entity-id',
+						objectID: 'test-object-id-2',
 					},
 				],
 			};
@@ -281,8 +281,8 @@ describe('AlgoliaService', () => {
 			const mockSearchResponse = {
 				hits: [
 					{
-						objectID: 'test-object-id',
 						id: 'test-entity-id',
+						objectID: 'test-object-id',
 					},
 				],
 			};
@@ -295,4 +295,4 @@ describe('AlgoliaService', () => {
 			await expect(service.deleteObject(indexName, entityId)).rejects.toThrow('Delete failed');
 		});
 	});
-}); 
+});

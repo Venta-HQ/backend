@@ -20,4 +20,4 @@ function validateConfig(config: Record<string, any>) {
 		}),
 	],
 })
-export class ConfigModule {} 
+export class ConfigModule {}

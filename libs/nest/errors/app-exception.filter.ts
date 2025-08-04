@@ -34,7 +34,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 		if (exception instanceof HttpException) {
 			const response = exception.getResponse() as any;
 			const status = exception.getStatus();
-			
+
 			// Check if this HttpException was created from an AppError
 			if (response && response.error && response.error.type && response.error.code) {
 				// This is an HttpException created from an AppError, reconstruct it
@@ -44,21 +44,21 @@ export class AppExceptionFilter implements ExceptionFilter {
 					response.error.message,
 					response.error.details,
 					response.error.path,
-					response.error.requestId
+					response.error.requestId,
 				);
 				// Override the timestamp with the original one
 				Object.defineProperty(appError, 'timestamp', {
+					configurable: false,
 					value: response.error.timestamp,
 					writable: false,
-					configurable: false
 				});
 				return appError;
 			}
-			
+
 			// Determine error type based on status code
 			let errorType: ErrorType;
 			let code: string;
-			
+
 			switch (status) {
 				case 400:
 					errorType = ErrorType.VALIDATION;
@@ -92,16 +92,11 @@ export class AppExceptionFilter implements ExceptionFilter {
 					errorType = ErrorType.INTERNAL;
 					code = 'INTERNAL_ERROR';
 			}
-			
-			return new AppError(
-				errorType,
-				code,
-				response.message || exception.message || 'Internal server error',
-				{
-					originalError: response,
-					statusCode: status,
-				}
-			);
+
+			return new AppError(errorType, code, response.message || exception.message || 'Internal server error', {
+				originalError: response,
+				statusCode: status,
+			});
 		}
 
 		if (exception instanceof RpcException) {
@@ -174,4 +169,4 @@ export class AppExceptionFilter implements ExceptionFilter {
 		// Emit error to WebSocket client
 		client.emit('error', wsError);
 	}
-} 
+}

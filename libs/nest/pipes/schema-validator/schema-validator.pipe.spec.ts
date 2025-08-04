@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ArgumentMetadata } from '@nestjs/common';
-import { ZodError, z } from 'zod';
-import { SchemaValidatorPipe } from './schema-validator.pipe';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z, ZodError } from 'zod';
 import { AppError } from '@app/nest/errors';
-import { ErrorCodes } from '@app/nest/errors';
+import { ArgumentMetadata } from '@nestjs/common';
+import { SchemaValidatorPipe } from './schema-validator.pipe';
 
 describe('SchemaValidatorPipe', () => {
 	let pipe: SchemaValidatorPipe;
@@ -12,24 +11,24 @@ describe('SchemaValidatorPipe', () => {
 
 	beforeEach(() => {
 		testSchema = z.object({
-			name: z.string(),
-			email: z.string().email(),
 			age: z.number().min(18),
+			email: z.string().email(),
+			name: z.string(),
 		});
 		pipe = new SchemaValidatorPipe(testSchema);
 		mockMetadata = {
-			type: 'body',
-			metatype: Object,
 			data: '',
+			metatype: Object,
+			type: 'body',
 		};
 	});
 
 	describe('transform', () => {
 		it('should return validated data when schema is valid', () => {
 			const validData = {
-				name: 'John Doe',
-				email: 'john@example.com',
 				age: 25,
+				email: 'john@example.com',
+				name: 'John Doe',
 			};
 
 			const result = pipe.transform(validData, mockMetadata);
@@ -39,9 +38,9 @@ describe('SchemaValidatorPipe', () => {
 
 		it('should throw AppError when validation fails', () => {
 			const invalidData = {
-				name: 'John Doe',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: 'John Doe',
 			};
 
 			expect(() => pipe.transform(invalidData, mockMetadata)).toThrow(AppError);
@@ -49,9 +48,9 @@ describe('SchemaValidatorPipe', () => {
 
 		it('should include validation errors in thrown error', () => {
 			const invalidData = {
-				name: 'John Doe',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: 'John Doe',
 			};
 
 			try {
@@ -66,9 +65,9 @@ describe('SchemaValidatorPipe', () => {
 
 		it('should format validation errors correctly', () => {
 			const invalidData = {
-				name: 'John Doe',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: 'John Doe',
 			};
 
 			try {
@@ -81,16 +80,16 @@ describe('SchemaValidatorPipe', () => {
 							message: expect.any(String),
 							path: expect.any(String),
 						}),
-					])
+					]),
 				);
 			}
 		});
 
 		it('should set the first error field as the main field', () => {
 			const invalidData = {
-				name: 'John Doe',
-				email: 'invalid-email',
 				age: 15,
+				email: 'invalid-email',
+				name: 'John Doe',
 			};
 
 			try {
@@ -105,16 +104,16 @@ describe('SchemaValidatorPipe', () => {
 		it('should handle nested validation errors', () => {
 			const nestedSchema = z.object({
 				user: z.object({
-					name: z.string(),
 					email: z.string().email(),
+					name: z.string(),
 				}),
 			});
 			const nestedPipe = new SchemaValidatorPipe(nestedSchema);
 
 			const invalidData = {
 				user: {
-					name: 'John',
 					email: 'invalid-email',
+					name: 'John',
 				},
 			};
 
@@ -127,7 +126,7 @@ describe('SchemaValidatorPipe', () => {
 						expect.objectContaining({
 							path: 'user.email',
 						}),
-					])
+					]),
 				);
 			}
 		});
@@ -151,7 +150,7 @@ describe('SchemaValidatorPipe', () => {
 						expect.objectContaining({
 							path: 'emails.1',
 						}),
-					])
+					]),
 				);
 			}
 		});
@@ -187,14 +186,14 @@ describe('SchemaValidatorPipe', () => {
 
 		it('should handle null and undefined values', () => {
 			const nullableSchema = z.object({
-				name: z.string().nullable(),
 				email: z.string().email().optional(),
+				name: z.string().nullable(),
 			});
 			const nullablePipe = new SchemaValidatorPipe(nullableSchema);
 
 			const validData = {
-				name: null,
 				email: undefined,
+				name: null,
 			};
 
 			const result = nullablePipe.transform(validData, mockMetadata);
@@ -204,34 +203,34 @@ describe('SchemaValidatorPipe', () => {
 		it('should handle complex nested schemas', () => {
 			const complexSchema = z.object({
 				user: z.object({
+					preferences: z.array(z.string()),
 					profile: z.object({
-						personal: z.object({
-							firstName: z.string(),
-							lastName: z.string(),
-						}),
 						contact: z.object({
 							email: z.string().email(),
 							phone: z.string().optional(),
 						}),
+						personal: z.object({
+							firstName: z.string(),
+							lastName: z.string(),
+						}),
 					}),
-					preferences: z.array(z.string()),
 				}),
 			});
 			const complexPipe = new SchemaValidatorPipe(complexSchema);
 
 			const validData = {
 				user: {
+					preferences: ['dark-mode', 'notifications'],
 					profile: {
-						personal: {
-							firstName: 'John',
-							lastName: 'Doe',
-						},
 						contact: {
 							email: 'john@example.com',
 							phone: '+1234567890',
 						},
+						personal: {
+							firstName: 'John',
+							lastName: 'Doe',
+						},
 					},
-					preferences: ['dark-mode', 'notifications'],
 				},
 			};
 
@@ -239,4 +238,4 @@ describe('SchemaValidatorPipe', () => {
 			expect(result).toEqual(validData);
 		});
 	});
-}); 
+});

@@ -6,8 +6,8 @@ import { AlgoliaSyncModule } from './algolia-sync.module';
 async function bootstrap() {
 	const app = await NestFactory.create(AlgoliaSyncModule);
 	const configService = app.get(ConfigService);
-	const logger = app.get(Logger);
+
+	app.useLogger(app.get(Logger));
 	await app.listen(configService.get('ALGOLIA_SYNC_SERVICE_PORT', 5006));
-	logger.log(`Algolia sync service is running on port ${configService.get('ALGOLIA_SYNC_SERVICE_PORT', 5006)}`, 'Bootstrap', {});
 }
-bootstrap(); 
+bootstrap();

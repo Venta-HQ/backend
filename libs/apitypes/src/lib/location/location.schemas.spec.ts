@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-	VendorLocationUpdateDataSchema,
-	UpdateUserLocationDataSchema,
 	GrpcLocationSchema,
 	GrpcLocationUpdateSchema,
 	GrpcVendorLocationRequestSchema,
+	UpdateUserLocationDataSchema,
+	VendorLocationUpdateDataSchema,
 } from './location.schemas';
 
 describe('Location Schemas', () => {
@@ -12,7 +12,7 @@ describe('Location Schemas', () => {
 		it('should validate valid vendor location update data', () => {
 			const validData = {
 				lat: 40.7128,
-				long: -74.0060,
+				long: -74.006,
 				vendorId: 'vendor-123',
 			};
 
@@ -23,7 +23,7 @@ describe('Location Schemas', () => {
 		it('should reject invalid latitude types', () => {
 			const invalidData = {
 				lat: 'invalid', // Should be number
-				long: -74.0060,
+				long: -74.006,
 				vendorId: 'vendor-123',
 			};
 
@@ -44,7 +44,7 @@ describe('Location Schemas', () => {
 		it('should reject non-string vendorId', () => {
 			const invalidData = {
 				lat: 40.7128,
-				long: -74.0060,
+				long: -74.006,
 				vendorId: 123, // Should be string
 			};
 
@@ -58,11 +58,11 @@ describe('Location Schemas', () => {
 			const validData = {
 				neLocation: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				swLocation: {
 					lat: 40.7028,
-					long: -74.0160,
+					long: -74.016,
 				},
 				userId: 'user-123',
 			};
@@ -75,11 +75,11 @@ describe('Location Schemas', () => {
 			const validData = {
 				neLocation: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				swLocation: {
 					lat: 40.7028,
-					long: -74.0160,
+					long: -74.016,
 				},
 				// userId is optional
 			};
@@ -92,11 +92,11 @@ describe('Location Schemas', () => {
 			const invalidData = {
 				neLocation: {
 					lat: 'invalid', // Should be number
-					long: -74.0060,
+					long: -74.006,
 				},
 				swLocation: {
 					lat: 40.7028,
-					long: -74.0160,
+					long: -74.016,
 				},
 			};
 
@@ -112,7 +112,7 @@ describe('Location Schemas', () => {
 				},
 				swLocation: {
 					lat: 40.7028,
-					long: -74.0160,
+					long: -74.016,
 				},
 			};
 
@@ -125,7 +125,7 @@ describe('Location Schemas', () => {
 		it('should validate valid gRPC location data', () => {
 			const validData = {
 				lat: 40.7128,
-				long: -74.0060,
+				long: -74.006,
 			};
 
 			const result = GrpcLocationSchema.safeParse(validData);
@@ -135,7 +135,7 @@ describe('Location Schemas', () => {
 		it('should reject invalid coordinate types', () => {
 			const invalidData = {
 				lat: '40.7128', // Should be number
-				long: -74.0060,
+				long: -74.006,
 			};
 
 			const result = GrpcLocationSchema.safeParse(invalidData);
@@ -149,7 +149,7 @@ describe('Location Schemas', () => {
 				entityId: 'entity-123',
 				location: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 			};
 
@@ -171,7 +171,7 @@ describe('Location Schemas', () => {
 			const invalidData = {
 				location: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				// missing entityId
 			};
@@ -186,11 +186,11 @@ describe('Location Schemas', () => {
 			const validData = {
 				neLocation: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				swLocation: {
 					lat: 40.7028,
-					long: -74.0160,
+					long: -74.016,
 				},
 			};
 
@@ -211,7 +211,7 @@ describe('Location Schemas', () => {
 			const validData = {
 				neLocation: {
 					lat: 40.7128,
-					long: -74.0060,
+					long: -74.006,
 				},
 				// swLocation is optional
 			};
@@ -220,4 +220,4 @@ describe('Location Schemas', () => {
 			expect(result.success).toBe(true);
 		});
 	});
-}); 
+});

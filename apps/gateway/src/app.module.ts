@@ -1,6 +1,14 @@
-import { AuthGuard } from '@app/nest/guards';
-import { ClerkModule, EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
+import { AuthGuard } from '@app/nest/guards';
+import {
+	ClerkModule,
+	ConfigModule,
+	EventsModule,
+	HealthModule,
+	LoggerModule,
+	PrismaModule,
+	RedisModule,
+} from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -20,8 +28,8 @@ import { modules, routes } from './router';
 		PrismaModule.register(),
 		ThrottlerModule.forRoot([
 			{
-				ttl: 60000,
 				limit: 100,
+				ttl: 60000,
 			},
 		]),
 		...modules,

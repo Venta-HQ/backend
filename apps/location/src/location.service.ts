@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
-import { PrismaService } from '@app/nest/modules/prisma';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { IEventsService } from '@app/nest/modules/events';
+import { PrismaService } from '@app/nest/modules/prisma';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -51,12 +51,12 @@ export class LocationService {
 
 			// Publish location update event
 			await this.eventsService.publishEvent('vendor.location.updated', {
-				vendorId: data.entityId,
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
 				timestamp: new Date().toISOString(),
+				vendorId: data.entityId,
 			});
 
 			this.logger.log(`Updated vendor location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
@@ -103,12 +103,12 @@ export class LocationService {
 
 			// Publish user location update event
 			await this.eventsService.publishEvent('user.location.updated', {
-				userId: data.entityId,
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
 				timestamp: new Date().toISOString(),
+				userId: data.entityId,
 			});
 
 			this.logger.log(`Updated user location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
@@ -164,8 +164,8 @@ export class LocationService {
 			// Emit location.search.performed event
 			await this.eventsService.publishEvent('location.search.performed', {
 				boundingBox: {
-					sw: swLocation,
 					ne: neLocation,
+					sw: swLocation,
 				},
 				resultCount: vendors.length,
 				timestamp: new Date().toISOString(),
@@ -225,4 +225,4 @@ export class LocationService {
 			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'remove vendor location' });
 		}
 	}
-} 
+}

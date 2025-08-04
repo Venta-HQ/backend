@@ -1,6 +1,6 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { UploadService, UploadedFile } from '@app/nest/modules';
-import { Controller, Post, UploadedFile as NestUploadedFile } from '@nestjs/common';
+import { UploadedFile, UploadService } from '@app/nest/modules';
+import { Controller, UploadedFile as NestUploadedFile, Post } from '@nestjs/common';
 
 @Controller()
 export class UploadController {

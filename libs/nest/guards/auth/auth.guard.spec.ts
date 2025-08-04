@@ -1,9 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
-import { AuthGuard } from './auth.guard';
 import { AppError } from '../../errors/app-error';
-import { ClerkService } from '../../modules/clerk/clerk.service';
-import { PrismaService } from '../../modules/prisma/prisma.service';
+import { AuthGuard } from './auth.guard';
 
 describe('AuthGuard', () => {
 	let guard: AuthGuard;
@@ -78,7 +76,6 @@ describe('AuthGuard', () => {
 		});
 
 		it('should return true when valid token is provided and user exists in cache', async () => {
-			const mockUser = { id: '1', clerkId: 'clerk-user-123', email: 'test@example.com' };
 			const token = 'valid-token';
 
 			const mockGetRequest = vi.fn().mockReturnValue({
@@ -127,12 +124,7 @@ describe('AuthGuard', () => {
 				select: { id: true },
 				where: { clerkId: 'clerk-user-123' },
 			});
-			expect(mockRedis.set).toHaveBeenCalledWith(
-				`user:clerk-user-123`,
-				'internal-user-456',
-				'EX',
-				3600
-			);
+			expect(mockRedis.set).toHaveBeenCalledWith(`user:clerk-user-123`, 'internal-user-456', 'EX', 3600);
 		});
 
 		it('should throw error when user is not found in database', async () => {
@@ -212,4 +204,4 @@ describe('AuthGuard', () => {
 			await expect(guard.canActivate(mockExecutionContext)).rejects.toThrow(AppError);
 		});
 	});
-}); 
+});

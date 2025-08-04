@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ClerkService } from './clerk.service';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { verifyToken } from '@clerk/clerk-sdk-node';
+import { ClerkService } from './clerk.service';
 
 // Mock the clerk-sdk-node module
 vi.mock('@clerk/clerk-sdk-node', () => ({
@@ -20,10 +20,10 @@ describe('ClerkService', () => {
 		it('should verify token successfully', async () => {
 			const mockToken = 'valid-token';
 			const mockVerifiedToken = {
-				sub: 'user-123',
 				email: 'test@example.com',
-				iat: 1234567890,
 				exp: 1234567890 + 3600,
+				iat: 1234567890,
+				sub: 'user-123',
 			};
 
 			(verifyToken as any).mockResolvedValue(mockVerifiedToken);
@@ -137,4 +137,4 @@ describe('ClerkService', () => {
 			}).not.toThrow();
 		});
 	});
-}); 
+});

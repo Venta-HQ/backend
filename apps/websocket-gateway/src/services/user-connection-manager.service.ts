@@ -5,9 +5,9 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface UserConnectionInfo {
-	userId: string;
-	socketId: string;
 	connectedAt: Date;
+	socketId: string;
+	userId: string;
 }
 
 @Injectable()
@@ -34,9 +34,9 @@ export class UserConnectionManagerService {
 					await this.redis.set(
 						`user_connection:${socketId}`,
 						JSON.stringify({
-							userId,
-							socketId,
 							connectedAt: new Date().toISOString(),
+							socketId,
+							userId,
 						}),
 					);
 				},
@@ -46,9 +46,9 @@ export class UserConnectionManagerService {
 
 			// Emit connection event
 			await this.eventsService.publishEvent('websocket.user.connected', {
-				userId,
 				socketId,
 				timestamp: new Date().toISOString(),
+				userId,
 			});
 
 			this.logger.log(`User ${userId} connected with socket ${socketId}`);
@@ -97,9 +97,9 @@ export class UserConnectionManagerService {
 
 		// Emit disconnection event
 		await this.eventsService.publishEvent('websocket.user.disconnected', {
-			userId,
 			socketId,
 			timestamp: new Date().toISOString(),
+			userId,
 		});
 
 		this.logger.log(`User ${userId} disconnected from socket ${socketId}`);
@@ -166,4 +166,4 @@ export class UserConnectionManagerService {
 	async getSocketUserId(socketId: string): Promise<string | null> {
 		return await this.redis.get(`socket:${socketId}:userId`);
 	}
-} 
+}

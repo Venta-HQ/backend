@@ -7,9 +7,7 @@ import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 
 @Controller()
 export class UserController {
-	constructor(
-		@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>,
-	) {}
+	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
 
 	@Get('/vendors')
 	@UseGuards(AuthGuard)

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { RequestContextService } from './request-context.service';
 
 describe('RequestContextService', () => {
@@ -60,9 +60,9 @@ describe('RequestContextService', () => {
 		it('should remove all stored values', () => {
 			service.set('key1', 'value1');
 			service.set('key2', 'value2');
-			
+
 			service.clear();
-			
+
 			expect(service.get('key1')).toBeUndefined();
 			expect(service.get('key2')).toBeUndefined();
 		});
@@ -71,7 +71,7 @@ describe('RequestContextService', () => {
 			service.set('key1', 'value1');
 			service.clear();
 			service.set('key2', 'value2');
-			
+
 			expect(service.get('key1')).toBeUndefined();
 			expect(service.get('key2')).toBe('value2');
 		});
@@ -89,4 +89,4 @@ describe('RequestContextService', () => {
 			expect(service2.get('key')).toBe('value2');
 		});
 	});
-}); 
+});

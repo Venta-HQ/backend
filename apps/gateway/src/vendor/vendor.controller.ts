@@ -1,16 +1,14 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { AuthedRequest, CreateVendorSchema, CreateVendorData, UpdateVendorData } from '@app/apitypes';
+import { AuthedRequest, CreateVendorData, CreateVendorSchema, UpdateVendorData } from '@app/apitypes';
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
-import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 
 @Controller()
 export class VendorController {
-	constructor(
-		@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>,
-	) {}
+	constructor(@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>) {}
 
 	@Get('/:id')
 	@UseGuards(AuthGuard)
@@ -33,13 +31,13 @@ export class VendorController {
 			this.client
 				.invoke('createVendor', {
 					...data,
-					userId: req.userId,
-					name: data.name ?? '',
 					description: data.description ?? '',
 					email: data.email ?? '',
-					phone: data.phone ?? '',
-					website: data.website ?? '',
 					imageUrl: data.imageUrl ?? '',
+					name: data.name ?? '',
+					phone: data.phone ?? '',
+					userId: req.userId,
+					website: data.website ?? '',
 				})
 				.pipe(
 					catchError((error: Error) => {
@@ -57,14 +55,14 @@ export class VendorController {
 			this.client
 				.invoke('updateVendor', {
 					...data,
-					id,
-					userId: req.userId,
-					name: data.name ?? '',
 					description: data.description ?? '',
 					email: data.email ?? '',
-					phone: data.phone ?? '',
-					website: data.website ?? '',
+					id,
 					imageUrl: data.imageUrl ?? '',
+					name: data.name ?? '',
+					phone: data.phone ?? '',
+					userId: req.userId,
+					website: data.website ?? '',
 				})
 				.pipe(
 					catchError((error: Error) => {

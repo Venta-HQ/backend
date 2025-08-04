@@ -19,10 +19,10 @@ export async function retryOperation<T>(
 	const backoffMultiplier = options.backoffMultiplier ?? 2;
 
 	const operation_retry = retry.operation({
-		retries: maxRetries,
 		factor: backoffMultiplier,
-		minTimeout: retryDelay,
 		maxTimeout: retryDelay * Math.pow(backoffMultiplier, maxRetries),
+		minTimeout: retryDelay,
+		retries: maxRetries,
 	});
 
 	return new Promise((resolve, reject) => {
@@ -40,4 +40,4 @@ export async function retryOperation<T>(
 			}
 		});
 	});
-} 
+}

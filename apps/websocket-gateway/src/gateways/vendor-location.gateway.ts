@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/apitypes';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -76,11 +76,11 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 					},
 				})
 				.subscribe({
-					next: () => {
-						this.logger.debug(`Vendor ${vendorId} location updated in database`);
-					},
 					error: (error) => {
 						this.logger.error(`Failed to update vendor ${vendorId} location in database:`, error);
+					},
+					next: () => {
+						this.logger.debug(`Vendor ${vendorId} location updated in database`);
 					},
 				});
 
@@ -108,4 +108,4 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			socket.emit('error', { message: 'Failed to update location' });
 		}
 	}
-} 
+}

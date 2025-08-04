@@ -1,22 +1,22 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
 	CreateVendorSchema,
-	UpdateVendorSchema,
 	GrpcVendorCreateDataSchema,
-	GrpcVendorUpdateDataSchema,
 	GrpcVendorLookupDataSchema,
+	GrpcVendorUpdateDataSchema,
+	UpdateVendorSchema,
 } from './vendor.schemas';
 
 describe('Vendor Schemas', () => {
 	describe('CreateVendorSchema', () => {
 		it('should validate valid vendor creation data', () => {
 			const validData = {
-				name: 'Test Vendor',
 				description: 'A test vendor',
 				email: 'test@vendor.com',
+				imageUrl: 'https://testvendor.com/image.jpg',
+				name: 'Test Vendor',
 				phone: '+1234567890',
 				website: 'https://testvendor.com',
-				imageUrl: 'https://testvendor.com/image.jpg',
 			};
 
 			const result = CreateVendorSchema.safeParse(validData);
@@ -35,12 +35,12 @@ describe('Vendor Schemas', () => {
 
 		it('should validate data with null optional fields', () => {
 			const validData = {
-				name: 'Test Vendor',
 				description: null,
 				email: null,
+				imageUrl: null,
+				name: 'Test Vendor',
 				phone: null,
 				website: null,
-				imageUrl: null,
 			};
 
 			const result = CreateVendorSchema.safeParse(validData);
@@ -60,8 +60,8 @@ describe('Vendor Schemas', () => {
 
 		it('should reject non-string name', () => {
 			const invalidData = {
-				name: 123, // Should be string
 				description: 'A test vendor',
+				name: 123, // Should be string
 			};
 
 			const result = CreateVendorSchema.safeParse(invalidData);
@@ -72,12 +72,12 @@ describe('Vendor Schemas', () => {
 	describe('UpdateVendorSchema', () => {
 		it('should validate valid vendor update data', () => {
 			const validData = {
-				name: 'Updated Vendor',
 				description: 'An updated vendor',
 				email: 'updated@vendor.com',
+				imageUrl: 'https://updatedvendor.com/image.jpg',
+				name: 'Updated Vendor',
 				phone: '+1234567890',
 				website: 'https://updatedvendor.com',
-				imageUrl: 'https://updatedvendor.com/image.jpg',
 			};
 
 			const result = UpdateVendorSchema.safeParse(validData);
@@ -86,8 +86,8 @@ describe('Vendor Schemas', () => {
 
 		it('should validate data with only some fields', () => {
 			const validData = {
-				name: 'Updated Vendor',
 				email: 'updated@vendor.com',
+				name: 'Updated Vendor',
 				// Other fields are optional
 			};
 
@@ -104,12 +104,12 @@ describe('Vendor Schemas', () => {
 
 		it('should validate data with null values', () => {
 			const validData = {
-				name: 'Updated Vendor',
 				description: null,
 				email: null,
+				imageUrl: null,
+				name: 'Updated Vendor',
 				phone: null,
 				website: null,
-				imageUrl: null,
 			};
 
 			const result = UpdateVendorSchema.safeParse(validData);
@@ -120,13 +120,13 @@ describe('Vendor Schemas', () => {
 	describe('GrpcVendorCreateDataSchema', () => {
 		it('should validate valid gRPC vendor creation data', () => {
 			const validData = {
-				name: 'Test Vendor',
 				description: 'A test vendor',
 				email: 'test@vendor.com',
-				phone: '+1234567890',
-				website: 'https://testvendor.com',
 				imageUrl: 'https://testvendor.com/image.jpg',
+				name: 'Test Vendor',
+				phone: '+1234567890',
 				userId: 'user-123',
+				website: 'https://testvendor.com',
 			};
 
 			const result = GrpcVendorCreateDataSchema.safeParse(validData);
@@ -135,8 +135,8 @@ describe('Vendor Schemas', () => {
 
 		it('should reject missing required fields', () => {
 			const invalidData = {
-				name: 'Test Vendor',
 				description: 'A test vendor',
+				name: 'Test Vendor',
 				// missing other required fields
 			};
 
@@ -146,13 +146,13 @@ describe('Vendor Schemas', () => {
 
 		it('should reject non-string userId', () => {
 			const invalidData = {
-				name: 'Test Vendor',
 				description: 'A test vendor',
 				email: 'test@vendor.com',
-				phone: '+1234567890',
-				website: 'https://testvendor.com',
 				imageUrl: 'https://testvendor.com/image.jpg',
+				name: 'Test Vendor',
+				phone: '+1234567890',
 				userId: 123, // Should be string
+				website: 'https://testvendor.com',
 			};
 
 			const result = GrpcVendorCreateDataSchema.safeParse(invalidData);
@@ -163,14 +163,14 @@ describe('Vendor Schemas', () => {
 	describe('GrpcVendorUpdateDataSchema', () => {
 		it('should validate valid gRPC vendor update data', () => {
 			const validData = {
-				id: 'vendor-123',
-				name: 'Updated Vendor',
 				description: 'An updated vendor',
 				email: 'updated@vendor.com',
-				phone: '+1234567890',
-				website: 'https://updatedvendor.com',
+				id: 'vendor-123',
 				imageUrl: 'https://updatedvendor.com/image.jpg',
+				name: 'Updated Vendor',
+				phone: '+1234567890',
 				userId: 'user-123',
+				website: 'https://updatedvendor.com',
 			};
 
 			const result = GrpcVendorUpdateDataSchema.safeParse(validData);
@@ -179,13 +179,13 @@ describe('Vendor Schemas', () => {
 
 		it('should reject missing required id field', () => {
 			const invalidData = {
-				name: 'Updated Vendor',
 				description: 'An updated vendor',
 				email: 'updated@vendor.com',
-				phone: '+1234567890',
-				website: 'https://updatedvendor.com',
 				imageUrl: 'https://updatedvendor.com/image.jpg',
+				name: 'Updated Vendor',
+				phone: '+1234567890',
 				userId: 'user-123',
+				website: 'https://updatedvendor.com',
 				// missing id
 			};
 
@@ -195,14 +195,14 @@ describe('Vendor Schemas', () => {
 
 		it('should reject non-string id', () => {
 			const invalidData = {
-				id: 123, // Should be string
-				name: 'Updated Vendor',
 				description: 'An updated vendor',
 				email: 'updated@vendor.com',
-				phone: '+1234567890',
-				website: 'https://updatedvendor.com',
+				id: 123, // Should be string
 				imageUrl: 'https://updatedvendor.com/image.jpg',
+				name: 'Updated Vendor',
+				phone: '+1234567890',
 				userId: 'user-123',
+				website: 'https://updatedvendor.com',
 			};
 
 			const result = GrpcVendorUpdateDataSchema.safeParse(invalidData);
@@ -238,4 +238,4 @@ describe('Vendor Schemas', () => {
 			expect(result.success).toBe(false);
 		});
 	});
-}); 
+});

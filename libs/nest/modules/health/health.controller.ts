@@ -8,8 +8,8 @@ import {
 } from '@nestjs/terminus';
 
 export interface HealthControllerOptions {
-	serviceName: string;
 	additionalChecks?: () => Promise<Record<string, any>>;
+	serviceName: string;
 }
 
 @Controller('health')
@@ -55,9 +55,9 @@ export class HealthController {
 			() => this.memory.checkHeap('memory_heap', 200 * 1024 * 1024),
 			() => this.memory.checkRSS('memory_rss', 3000 * 1024 * 1024),
 			() => this.disk.checkStorage('disk', { path: '/', thresholdPercent: 0.9 }),
-			() => this.microservice.pingCheck('database', { transport: 5432, timeout: 5000 }),
-			() => this.microservice.pingCheck('redis', { transport: 6379, timeout: 5000 }),
-			() => this.microservice.pingCheck('nats', { transport: 4222, timeout: 5000 }),
+			() => this.microservice.pingCheck('database', { timeout: 5000, transport: 5432 }),
+			() => this.microservice.pingCheck('redis', { timeout: 5000, transport: 6379 }),
+			() => this.microservice.pingCheck('nats', { timeout: 5000, transport: 4222 }),
 		];
 
 		const healthResult = await this.health.check(healthChecks);
@@ -82,4 +82,4 @@ export class HealthController {
 			...customData,
 		};
 	}
-} 
+}

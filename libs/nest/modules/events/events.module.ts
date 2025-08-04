@@ -7,4 +7,4 @@ import { NatsEventsService } from './nats-events.service';
 	imports: [ConfigModule],
 	providers: [{ provide: 'EventsService', useClass: NatsEventsService }],
 })
-export class EventsModule {} 
+export class EventsModule {}

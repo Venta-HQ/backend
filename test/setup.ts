@@ -1,6 +1,6 @@
 import 'reflect-metadata';
-import { config } from 'dotenv';
 import { resolve } from 'path';
+import { config } from 'dotenv';
 import { vi } from 'vitest';
 
 // Load test environment variables
@@ -14,4 +14,4 @@ beforeEach(() => {
 // Clean up after each test
 afterEach(() => {
 	vi.clearAllMocks();
-}); 
+});

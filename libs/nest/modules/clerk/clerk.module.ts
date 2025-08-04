@@ -1,6 +1,5 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { ClerkService } from './clerk.service';
 
 @Module({})

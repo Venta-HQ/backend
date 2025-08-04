@@ -1,14 +1,12 @@
+import toStream from 'buffer-to-stream';
 import { v2 as cloudinary, UploadApiErrorResponse, UploadApiResponse } from 'cloudinary';
 import { Injectable } from '@nestjs/common';
-
-// Use require for untyped module
-const toStream = require('buffer-to-stream');
 
 // Define proper type for uploaded file
 export interface UploadedFile {
 	buffer: Buffer;
-	originalname: string;
 	mimetype: string;
+	originalname: string;
 	size: number;
 }
 

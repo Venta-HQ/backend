@@ -1,8 +1,4 @@
-import {
-	RevenueCatHandledEventTypes,
-	RevenueCatInitialPurchaseEventData,
-	RevenueCatWebhookEvent,
-} from '@app/apitypes';
+import { RevenueCatHandledEventTypes, RevenueCatInitialPurchaseEventData, RevenueCatWebhookEvent } from '@app/apitypes';
 import { GrpcInstance } from '@app/nest/modules';
 import { RevenueCatSubscriptionData, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
@@ -21,12 +17,12 @@ export class SubscriptionWebhooksController {
 			case RevenueCatHandledEventTypes.INITIAL_PURCHASE:
 				payload = {
 					clerkUserId: body.event.subscriber_attributes.clerkUserId,
-					providerId: body.event.product_id,
 					data: {
-						transactionId: body.event.transaction_id,
 						eventId: body.event.id,
 						productId: body.event.product_id,
+						transactionId: body.event.transaction_id,
 					},
+					providerId: body.event.product_id,
 				};
 				break;
 			default:

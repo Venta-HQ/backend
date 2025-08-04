@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { 
-	UpdateUserLocationDataSchema, 
-	VendorLocationUpdateDataSchema,
+import {
 	LocationDataSchema,
-	LocationUpdateDataSchema
+	LocationUpdateDataSchema,
+	UpdateUserLocationDataSchema,
+	VendorLocationUpdateDataSchema,
 } from './location.schemas';
 
 export type VendorLocationUpdateData = z.infer<typeof VendorLocationUpdateDataSchema>;

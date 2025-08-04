@@ -1,6 +1,6 @@
+import { LocationUpdateData } from '@app/apitypes';
 import { AlgoliaService } from '@app/nest/modules/algolia';
-import { IEventsService, EventStream } from '@app/nest/modules/events';
-import { LocationData, LocationUpdateData } from '@app/apitypes';
+import { EventStream, IEventsService } from '@app/nest/modules/events';
 import { retryOperation } from '@app/utils';
 import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 
@@ -30,9 +30,9 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		// Create a dedicated stream for vendor events
 		this.vendorEventStream = await this.eventsService.subscribeToStream(
 			{
-				streamName: 'algolia-sync-vendor-events',
 				eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted', 'vendor.location.updated'],
 				groupName: 'algolia-sync',
+				streamName: 'algolia-sync-vendor-events',
 			},
 			async (event) => {
 				try {
@@ -121,4 +121,4 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 			{ logger: this.logger },
 		);
 	}
-} 
+}

@@ -11,4 +11,4 @@ import { AppExceptionFilter } from './app-exception.filter';
 		},
 	],
 })
-export class ErrorHandlingModule {} 
+export class ErrorHandlingModule {}

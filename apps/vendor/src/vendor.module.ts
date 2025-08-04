@@ -1,5 +1,5 @@
-import { EventsModule, HealthModule, LoggerModule, PrismaModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
+import { ConfigModule, EventsModule, HealthModule, LoggerModule, PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';

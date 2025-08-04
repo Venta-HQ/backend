@@ -104,4 +104,4 @@ export class Logger implements LoggerService {
 			message,
 		);
 	}
-} 
+}

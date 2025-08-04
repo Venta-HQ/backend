@@ -2,30 +2,30 @@ import { Subscription } from 'nats';
 
 export interface EventMessage<T = unknown> {
 	data: T;
+	messageId?: string;
 	timestamp: string;
 	type: string;
-	messageId?: string;
 }
 
 export interface EventStream {
-	streamName: string;
 	eventTypes: string[];
+	streamName: string;
 	subscription: Subscription;
 }
 
 export interface StreamSubscriptionOptions {
-	streamName?: string;
+	ackPolicy?: 'explicit' | 'all' | 'none';
 	eventTypes?: string[];
 	groupName?: string;
-	ackPolicy?: 'explicit' | 'all' | 'none';
+	streamName?: string;
 }
 
 export interface IEventsService {
+	getActiveStreams(): EventStream[];
 	healthCheck(): Promise<{ connected: boolean; status: string }>;
 	publishEvent<T>(eventType: string, data: T, options?: Partial<EventMessage<T>>): Promise<void>;
 	subscribeToEventType(eventType: string, callback: (event: EventMessage) => void): Promise<Subscription>;
 	subscribeToEvents(callback: (event: EventMessage) => void): Promise<void>;
 	subscribeToStream(options: StreamSubscriptionOptions, callback: (event: EventMessage) => void): Promise<EventStream>;
 	unsubscribeFromStream(stream: EventStream): Promise<void>;
-	getActiveStreams(): EventStream[];
-} 
+}

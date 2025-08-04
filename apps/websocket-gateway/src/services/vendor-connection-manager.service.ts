@@ -5,9 +5,9 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface VendorConnectionInfo {
-	vendorId: string;
-	socketId: string;
 	connectedAt: Date;
+	socketId: string;
+	vendorId: string;
 }
 
 @Injectable()
@@ -34,9 +34,9 @@ export class VendorConnectionManagerService {
 					await this.redis.set(
 						`vendor_connection:${socketId}`,
 						JSON.stringify({
-							vendorId,
-							socketId,
 							connectedAt: new Date().toISOString(),
+							socketId,
+							vendorId,
 						}),
 					);
 				},
@@ -46,9 +46,9 @@ export class VendorConnectionManagerService {
 
 			// Emit connection event
 			await this.eventsService.publishEvent('websocket.vendor.connected', {
-				vendorId,
 				socketId,
 				timestamp: new Date().toISOString(),
+				vendorId,
 			});
 
 			this.logger.log(`Vendor ${vendorId} connected with socket ${socketId}`);
@@ -102,10 +102,10 @@ export class VendorConnectionManagerService {
 
 		// Emit disconnection event
 		await this.eventsService.publishEvent('websocket.vendor.disconnected', {
-			vendorId,
-			socketId,
 			affectedUsers: usersInRoom,
+			socketId,
 			timestamp: new Date().toISOString(),
+			vendorId,
 		});
 
 		this.logger.log(`Vendor ${vendorId} disconnected from socket ${socketId}, affecting ${usersInRoom.length} users`);
@@ -150,4 +150,4 @@ export class VendorConnectionManagerService {
 	async getSocketVendorId(socketId: string): Promise<string | null> {
 		return await this.redis.get(`socket:${socketId}:vendorId`);
 	}
-} 
+}
