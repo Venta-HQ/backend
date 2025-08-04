@@ -18,7 +18,7 @@ Use `BootstrapModule.forRoot()` to configure common modules:
   imports: [
     BootstrapModule.forRoot({
       appName: 'my-service',
-      protocol: 'http',
+      protocol: 'http', // or 'grpc' or 'websocket'
       additionalModules: [MyCustomModule],
       additionalProviders: [MyCustomProvider],
     }),
@@ -26,7 +26,6 @@ Use `BootstrapModule.forRoot()` to configure common modules:
   ],
 })
 export class AppModule {}
-```
 
 ### BootstrapService
 
@@ -60,4 +59,5 @@ async function bootstrap() {
 - Standardizes common configuration patterns
 - Makes it easier to maintain consistent setup across services
 - Provides type-safe configuration options
-- Simplified interface with unified naming conventions 
+- Simplified interface with unified naming conventions
+- Supports HTTP, gRPC, and WebSocket protocols 

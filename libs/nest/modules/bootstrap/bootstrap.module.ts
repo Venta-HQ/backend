@@ -26,10 +26,10 @@ export class BootstrapModule {
 			appName: options.appName,
 			additionalChecks: options.healthChecks,
 		}),
-			LoggerModule.register({ 
-				appName: options.appName, 
-				protocol: options.protocol 
-			}),
+					LoggerModule.register({ 
+			appName: options.appName, 
+			protocol: options.protocol === 'websocket' ? 'http' : options.protocol 
+		}),
 			PrometheusModule.register({ appName: options.appName }),
 			PrismaModule.register(),
 		];

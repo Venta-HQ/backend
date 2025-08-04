@@ -43,8 +43,7 @@ export class BootstrapService {
 			app.enableCors(corsOptions);
 		}
 
-		// Configure logger
-		app.useLogger(app.get(Logger));
+		// Logger is configured by the LoggerModule, no need to set it here
 
 		// Get port and host
 		const port = options.port ? configService.get(options.port) : 3000;
@@ -63,8 +62,7 @@ export class BootstrapService {
 			transport: Transport.GRPC,
 		});
 
-		// Configure logger
-		app.useLogger(app.get(Logger));
+		// Logger is configured by the LoggerModule, no need to set it here
 
 		return { app };
 	}
