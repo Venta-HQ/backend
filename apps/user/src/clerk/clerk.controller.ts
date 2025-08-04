@@ -1,4 +1,4 @@
-import { GrpcClerkUserDataSchema } from '@app/apitypes/lib/user/user.schemas';
+import { GrpcClerkUserDataSchema } from '@app/apitypes';
 import { ClerkUserData, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Controller, Logger, UsePipes } from '@nestjs/common';

@@ -1,6 +1,6 @@
-import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes/lib/user/user.schemas';
+import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes';
 import { RevenueCatSubscriptionData, SubscriptionCreatedResponse, USER_SERVICE_NAME } from '@app/proto/user';
-import { SchemaValidatorPipe } from '@app/validation';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { SubscriptionService } from './subscription.service';

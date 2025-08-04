@@ -2,7 +2,7 @@ import {
 	GrpcVendorCreateDataSchema,
 	GrpcVendorLookupDataSchema,
 	GrpcVendorUpdateDataSchema,
-} from '@app/apitypes/lib/vendor/vendor.schemas';
+} from '@app/apitypes';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import {
 	Vendor,

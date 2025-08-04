@@ -1,7 +1,7 @@
 import {
 	GrpcLocationUpdateSchema,
 	GrpcVendorLocationRequestSchema,
-} from '@app/apitypes/lib/location/location.schemas';
+} from '@app/apitypes';
 import {
 	Empty,
 	LOCATION_SERVICE_NAME,

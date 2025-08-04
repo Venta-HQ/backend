@@ -1,23 +1,18 @@
-import { AsyncLocalStorage } from 'async_hooks';
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class RequestContextService {
-	private asyncLocalStorage = new AsyncLocalStorage<Map<string, any>>();
+	private readonly context = new Map<string, any>();
 
-	set(key: string, value: any) {
-		const store = this.asyncLocalStorage.getStore();
-		if (store) {
-			store.set(key, value);
-		}
+	set(key: string, value: any): void {
+		this.context.set(key, value);
 	}
 
-	get(key: string) {
-		const store = this.asyncLocalStorage.getStore();
-		return store ? store.get(key) : undefined;
+	get(key: string): any {
+		return this.context.get(key);
 	}
 
-	run(callback: (...args: any[]) => any) {
-		this.asyncLocalStorage.run(new Map(), callback);
+	clear(): void {
+		this.context.clear();
 	}
-}
+} 

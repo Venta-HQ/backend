@@ -1,4 +1,4 @@
-import { GrpcInstance } from '@app/grpc';
+import { GrpcInstance } from '@app/nest/modules';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';

@@ -1,7 +1,7 @@
 import { catchError } from 'rxjs';
-import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { AuthGuard } from '@app/auth';
-import { GrpcInstance } from '@app/grpc';
+import { AuthedRequest } from '@app/apitypes';
+import { AuthGuard } from '@app/nest/guards';
+import { GrpcInstance } from '@app/nest/modules';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 import { ServiceDiscoveryService } from '../services/service-discovery.service';

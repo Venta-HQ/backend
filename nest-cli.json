@@ -101,13 +101,13 @@
         "tsConfigPath": "apps/location/tsconfig.app.json"
       }
     },
-    "dbchange": {
+    "algolia-sync": {
       "type": "application",
-      "root": "apps/dbchange",
+      "root": "apps/algolia-sync",
       "entryFile": "src/main",
       "sourceRoot": "./",
       "compilerOptions": {
-        "tsConfigPath": "apps/dbchange/tsconfig.app.json"
+        "tsConfigPath": "apps/algolia-sync/tsconfig.app.json"
       }
     },
     "websocket-gateway": {

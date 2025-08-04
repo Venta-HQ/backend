@@ -1,6 +1,6 @@
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { tap } from 'rxjs/operators';
 import { RequestContextService } from './request-context.service';
 
 @Injectable()
@@ -9,28 +9,20 @@ export class GrpcRequestIdInterceptor implements NestInterceptor {
 
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 		const grpcContext = context.switchToRpc();
+		const data = grpcContext.getData();
 		const metadata = grpcContext.getContext();
 
-		// Extract or generate the requestId
-		const requestId = metadata.get('requestid');
+		// Extract request ID from metadata if available
+		const requestId = metadata?.get('requestId')?.[0];
+		if (requestId) {
+			this.requestContextService.set('requestId', requestId);
+		}
 
-		return new Observable((observer) => {
-			this.requestContextService.run(() => {
-				// Set the requestId in the AsyncLocalStorage
-				this.requestContextService.set('requestId', requestId[0] ?? 'no-request-id');
-
-				next.handle().subscribe({
-					complete: () => {
-						observer.complete(); // Complete the observable stream
-					},
-					error: (err) => {
-						observer.error(new RpcException(err)); // Handle error properly
-					},
-					next: (value) => {
-						observer.next(value); // Propagate the response
-					},
-				});
-			});
-		});
+		return next.handle().pipe(
+			tap(() => {
+				// Clear the context after the request is complete
+				this.requestContextService.clear();
+			}),
+		);
 	}
-}
+} 

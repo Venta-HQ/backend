@@ -1,11 +1,9 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { AuthedRequest } from '@app/apitypes/lib/helpers';
-import { CreateVendorSchema } from '@app/apitypes/lib/vendor/vendor.schemas';
-import { CreateVendorData, UpdateVendorData } from '@app/apitypes/lib/vendor/vendor.types';
-import { AuthGuard } from '@app/auth';
-import { GrpcInstance } from '@app/grpc';
+import { AuthedRequest, CreateVendorSchema, CreateVendorData, UpdateVendorData } from '@app/apitypes';
+import { AuthGuard } from '@app/nest/guards';
+import { GrpcInstance } from '@app/nest/modules';
 import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
-import { SchemaValidatorPipe } from '@app/validation';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 import { ServiceDiscoveryService } from '../services/service-discovery.service';
 
