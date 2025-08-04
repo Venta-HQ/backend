@@ -7,7 +7,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { LocationWebsocketGateway } from './gateways/location.gateway';
+import { UserLocationGateway } from './gateways/user-location.gateway';
+import { VendorLocationGateway } from './gateways/vendor-location.gateway';
 import { ConnectionManagerService } from './services/connection-manager.service';
 
 @Module({
@@ -44,7 +45,8 @@ import { ConnectionManagerService } from './services/connection-manager.service'
 			useClass: WsErrorFilter,
 		},
 		ConnectionManagerService,
-		LocationWebsocketGateway,
+		UserLocationGateway,
+		VendorLocationGateway,
 	],
 })
 export class WebsocketGatewayModule {}

@@ -1,5 +1,6 @@
 import Redis from 'ioredis';
 import { IEventsService } from '@app/nest/modules';
+import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -26,16 +27,22 @@ export class ConnectionManagerService {
 	 */
 	async registerUser(userId: string, socketId: string): Promise<void> {
 		try {
-			// Store user -> socket mapping
-			await this.redis.set(`user:${userId}:socketId`, socketId);
-			await this.redis.set(`socket:${socketId}:userId`, userId);
-			await this.redis.set(
-				`connection:${socketId}`,
-				JSON.stringify({
-					userId,
-					socketId,
-					connectedAt: new Date().toISOString(),
-				}),
+			// Store user -> socket mapping with retry
+			await retryOperation(
+				async () => {
+					await this.redis.set(`user:${userId}:socketId`, socketId);
+					await this.redis.set(`socket:${socketId}:userId`, userId);
+					await this.redis.set(
+						`connection:${socketId}`,
+						JSON.stringify({
+							userId,
+							socketId,
+							connectedAt: new Date().toISOString(),
+						}),
+					);
+				},
+				'Register user connection in Redis',
+				{ logger: this.logger },
 			);
 
 			// Emit connection event
@@ -59,16 +66,22 @@ export class ConnectionManagerService {
 	 */
 	async registerVendor(vendorId: string, socketId: string): Promise<void> {
 		try {
-			// Store vendor -> socket mapping
-			await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
-			await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
-			await this.redis.set(
-				`connection:${socketId}`,
-				JSON.stringify({
-					vendorId,
-					socketId,
-					connectedAt: new Date().toISOString(),
-				}),
+			// Store vendor -> socket mapping with retry
+			await retryOperation(
+				async () => {
+					await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
+					await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
+					await this.redis.set(
+						`connection:${socketId}`,
+						JSON.stringify({
+							vendorId,
+							socketId,
+							connectedAt: new Date().toISOString(),
+						}),
+					);
+				},
+				'Register vendor connection in Redis',
+				{ logger: this.logger },
 			);
 
 			// Emit connection event

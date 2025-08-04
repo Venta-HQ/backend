@@ -3,6 +3,7 @@ import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { LocationController } from './location.controller';
+import { LocationService } from './location.service';
 
 @Module({
 	controllers: [LocationController],
@@ -17,6 +18,6 @@ import { LocationController } from './location.controller';
 		LoggerModule.register({ appName: 'Location Microservice', protocol: 'grpc' }),
 		PrismaModule.register(),
 	],
-	providers: [],
+	providers: [LocationService],
 })
 export class LocationModule {}
