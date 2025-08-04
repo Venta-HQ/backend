@@ -6,7 +6,6 @@ import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { modules, routes } from './router';
 
-
 @Module({
 	imports: [
 		ConfigModule,
@@ -30,7 +29,6 @@ import { modules, routes } from './router';
 	],
 	providers: [
 		AuthGuard,
-
 		{
 			provide: APP_GUARD,
 			useClass: ThrottlerGuard,

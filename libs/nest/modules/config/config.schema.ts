@@ -40,4 +40,7 @@ export const configSchema = z.object({
 	VENDOR_SERVICE_URL: z.string(),
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	WEBSOCKET_GATEWAY_SERVICE_URL: z.string(),
+	
+	// CORS Configuration
+	ALLOWED_ORIGINS: z.string().optional(),
 }); 

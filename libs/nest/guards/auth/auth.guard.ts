@@ -2,11 +2,13 @@ import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { ClerkService } from '../../modules/clerk';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+	private readonly logger = new Logger(AuthGuard.name);
+
 	constructor(
 		private readonly clerkService: ClerkService,
 		private prisma: PrismaService,
@@ -19,13 +21,15 @@ export class AuthGuard implements CanActivate {
 		// Extract token from Authorization header (format: Bearer <token>)
 		const authHeader = request.headers['authorization'];
 
-								if (!authHeader) {
+		if (!authHeader) {
+			this.logger.debug('No authorization header provided');
 			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 
 		const token = authHeader?.split(' ')[1];
 
 		if (!token) {
+			this.logger.debug('No token found in authorization header');
 			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 
@@ -46,7 +50,8 @@ export class AuthGuard implements CanActivate {
 					},
 				});
 
-																if (!internalUser) {
+				if (!internalUser) {
+					this.logger.warn(`User not found in database for clerk ID: ${tokenContents.sub}`);
 					throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 				}
 
@@ -61,6 +66,12 @@ export class AuthGuard implements CanActivate {
 
 			return true; // Allow access
 		} catch (error) {
+			// Log the specific error for debugging but don't expose it to the client
+			if (error instanceof Error) {
+				this.logger.error(`Authentication failed: ${error.message}`, error.stack);
+			} else {
+				this.logger.error('Authentication failed with unknown error', error);
+			}
 			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}
 	}
