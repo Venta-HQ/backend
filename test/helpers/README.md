@@ -6,9 +6,9 @@ This directory contains a simplified, unified test helper system that provides e
 
 ```
 test/helpers/
-├── simple.ts             # Everything you need in one file
-├── SIMPLE.md             # Simple helper documentation
-├── COMPLEXITY_COMPARISON.md  # Comparison with old system
+├── test-utils.ts         # Everything you need in one file
+├── TEST_UTILS.md         # Test utilities documentation
+├── MIGRATION_GUIDE.md    # Migration guide from old system
 └── README.md             # This file
 ```
 
@@ -24,7 +24,7 @@ import {
   webhooks,
   grpc,
   clearMocks 
-} from '../../test/helpers/simple';
+} from '../../test/helpers/test-utils';
 
 describe('MyService', () => {
   let service: MyService;
@@ -95,7 +95,7 @@ describe('MyService', () => {
 
 ### Testing a Service
 ```typescript
-import { mockPrisma, data, errors, clearMocks } from '../../test/helpers/simple';
+import { mockPrisma, data, errors, clearMocks } from '../../test/helpers/test-utils';
 
 describe('UserService', () => {
   let service: UserService;
@@ -129,7 +129,7 @@ describe('UserService', () => {
 
 ### Testing a gRPC Controller
 ```typescript
-import { mockGrpcClient, grpc, mockRequest, clearMocks } from '../../test/helpers/simple';
+import { mockGrpcClient, grpc, mockRequest, clearMocks } from '../../test/helpers/test-utils';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -165,7 +165,7 @@ describe('UserController', () => {
 
 ### Testing a Webhook Controller
 ```typescript
-import { mockGrpcClient, webhooks, clearMocks } from '../../test/helpers/simple';
+import { mockGrpcClient, webhooks, clearMocks } from '../../test/helpers/test-utils';
 
 describe('ClerkWebhooksController', () => {
   let controller: ClerkWebhooksController;
@@ -190,7 +190,7 @@ describe('ClerkWebhooksController', () => {
 });
 ```
 
-## 🎯 Why Simple?
+## 🎯 Why Test Utils?
 
 - **One file** - Everything you need in one place
 - **No complex abstractions** - Just simple functions that work
@@ -198,4 +198,4 @@ describe('ClerkWebhooksController', () => {
 - **Fast to use** - Minimal setup required
 - **Maintainable** - Less code to maintain
 
-For more details, see `SIMPLE.md` and `COMPLEXITY_COMPARISON.md`.
+For more details, see `TEST_UTILS.md` and `MIGRATION_GUIDE.md`.

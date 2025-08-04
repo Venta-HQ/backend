@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { SubscriptionWebhooksController } from './subscription-webhooks.controller';
-import { mockGrpcClient, webhooks } from '../../../../../test/helpers/simple';
+import { mockGrpcClient, webhooks } from '../../../../../test/helpers/test-utils';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/user', () => ({

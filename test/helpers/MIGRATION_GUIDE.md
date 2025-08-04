@@ -1,4 +1,4 @@
-# Testing Infrastructure Complexity Comparison
+# Migration Guide: Old Complex System vs Test Utils
 
 ## 🔴 Current (Over-Engineered) Approach
 
@@ -78,19 +78,19 @@ describe('MyService', () => {
 5. **gRPC Complexity** - 160+ lines for simple mocking
 6. **Learning Curve** - Developers need to understand multiple abstractions
 
-## 🟢 Simplified Approach
+## 🟢 Test Utils Approach
 
 ### Folder Structure
 ```
 test/helpers/
-├── simple.ts             # Everything in one file
-└── SIMPLE.md             # Simple documentation
+├── test-utils.ts         # Everything in one file
+└── TEST_UTILS.md         # Test utilities documentation
 ```
 
 ### Developer Experience
 ```typescript
 // One import, everything you need
-import { mockPrisma, mockEvents, data, errors, clearMocks } from '../../test/helpers/simple';
+import { mockPrisma, mockEvents, data, errors, clearMocks } from '../../test/helpers/test-utils';
 
 // Simple, straightforward setup
 describe('MyService', () => {

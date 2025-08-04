@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { UserController } from './user.controller';
-import { mockGrpcClient, grpc, mockRequest } from '../../../../test/helpers/simple';
+import { mockGrpcClient, grpc, mockRequest } from '../../../../test/helpers/test-utils';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/user', () => ({

@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 import { VendorController } from './vendor.controller';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes';
-import { mockGrpcClient, grpc, mockRequest } from '../../../../test/helpers/simple';
+import { mockGrpcClient, grpc, mockRequest } from '../../../../test/helpers/test-utils';
 
 // Mock the proto imports to avoid module resolution issues
 vi.mock('@app/proto/vendor', () => ({

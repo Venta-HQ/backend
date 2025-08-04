@@ -4,7 +4,7 @@ import {
   data,
   errors,
   clearMocks 
-} from '../../../../test/helpers/simple';
+} from '../../../../test/helpers/test-utils';
 
 describe('VendorService', () => {
   let service: VendorService;

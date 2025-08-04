@@ -1,11 +1,11 @@
-# Simple Testing Guide
+# Test Utilities Guide
 
-This is the **simplified** testing approach. Everything you need in one place.
+This is the **unified** testing approach. Everything you need in one place.
 
 ## 🚀 Quick Start
 
 ```typescript
-import { mockPrisma, mockEvents, data, errors, clearMocks } from '../../test/helpers/simple';
+import { mockPrisma, mockEvents, data, errors, clearMocks } from '../../test/helpers/test-utils';
 
 describe('MyService', () => {
   let service: MyService;
@@ -105,7 +105,7 @@ mockProto('@app/proto/user', {
 
 ## ✅ Benefits
 
-1. **One Import** - Everything from `test/helpers/simple`
+1. **One Import** - Everything from `test/helpers/test-utils`
 2. **No Navigation** - All helpers in one file
 3. **Simple Functions** - No complex abstractions
 4. **Clear Patterns** - Consistent across all tests
@@ -120,7 +120,7 @@ If you have existing tests using the complex helpers:
 import { createMockPrismaService, sampleData } from '../../test/helpers';
 
 // New
-import { mockPrisma, data } from '../../test/helpers/simple';
+import { mockPrisma, data } from '../../test/helpers/test-utils';
 
 // Old
 const mockPrisma = createMockPrismaService();

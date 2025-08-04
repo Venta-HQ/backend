@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { UploadController } from './upload.controller';
-import { errors } from '../../../../test/helpers/simple';
+import { errors } from '../../../../test/helpers/test-utils';
 
 describe('UploadController', () => {
   let controller: UploadController;
