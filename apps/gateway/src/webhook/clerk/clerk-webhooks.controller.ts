@@ -1,4 +1,4 @@
-import GrpcInstance from 'libs/nest/modules/grpc-instance/grpc-instance.service';
+import { GrpcInstance } from '@app/grpc';
 import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
@@ -14,15 +14,22 @@ export class ClerkWebhooksController {
 		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`);
 		switch (event.type) {
 			case 'user.created':
-				return this.client.invoke('handleClerkUserCreated', {
-					id: event.data.id,
-				});
+				if (event.data?.id) {
+					return this.client.invoke('handleClerkUserCreated', {
+						id: event.data.id,
+					});
+				}
+				break;
 			case 'user.deleted':
-				return this.client.invoke('handleClerkUserDeleted', {
-					id: event.data.id,
-				});
+				if (event.data?.id) {
+					return this.client.invoke('handleClerkUserDeleted', {
+						id: event.data.id,
+					});
+				}
+				break;
 			default:
 				this.logger.warn('Unhandled Event Type');
 		}
+		return { success: true };
 	}
 }
