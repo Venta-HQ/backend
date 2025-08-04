@@ -1,8 +1,7 @@
 import { GrpcClerkUserDataSchema } from '@app/apitypes/lib/user/user.schemas';
 import { ClerkUserData, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
-import { IEventsService } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { Controller, Inject, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { ClerkService } from './clerk.service';
 
@@ -10,27 +9,17 @@ import { ClerkService } from './clerk.service';
 export class ClerkController {
 	private readonly logger = new Logger(ClerkController.name);
 
-	constructor(
-		private readonly clerkService: ClerkService,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
-	) {}
+	constructor(private readonly clerkService: ClerkService) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
 	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
 		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
 		const userData = await this.clerkService.handleUserCreated(data.id);
-		if (userData.id) {
+		if (userData && userData.id) {
 			await this.clerkService.createIntegration({
 				providerId: userData.clerkId,
 				userId: userData.id,
-			});
-
-			// Publish user created event
-			await this.eventsService.publishEvent('user.created', {
-				userId: userData.id,
-				clerkId: userData.clerkId,
-				timestamp: new Date().toISOString(),
 			});
 		}
 		return { message: 'Success' };
@@ -44,13 +33,6 @@ export class ClerkController {
 		await this.clerkService.deleteIntegration({
 			providerId: data.id,
 		});
-
-		// Publish user deleted event
-		await this.eventsService.publishEvent('user.deleted', {
-			clerkId: data.id,
-			timestamp: new Date().toISOString(),
-		});
-
 		return { message: 'Success' };
 	}
 }
