@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError } from './app-error';
+import { AppError, ErrorType } from './app-error';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -33,10 +33,75 @@ export class AppExceptionFilter implements ExceptionFilter {
 		// If it's a NestJS exception, convert it
 		if (exception instanceof HttpException) {
 			const response = exception.getResponse() as any;
-			return AppError.internal(response.message || exception.message, {
-				originalError: response,
-				statusCode: exception.getStatus(),
-			});
+			const status = exception.getStatus();
+			
+			// Check if this HttpException was created from an AppError
+			if (response && response.error && response.error.type && response.error.code) {
+				// This is an HttpException created from an AppError, reconstruct it
+				const appError = new AppError(
+					response.error.type as ErrorType,
+					response.error.code,
+					response.error.message,
+					response.error.details,
+					response.error.path,
+					response.error.requestId
+				);
+				// Override the timestamp with the original one
+				Object.defineProperty(appError, 'timestamp', {
+					value: response.error.timestamp,
+					writable: false,
+					configurable: false
+				});
+				return appError;
+			}
+			
+			// Determine error type based on status code
+			let errorType: ErrorType;
+			let code: string;
+			
+			switch (status) {
+				case 400:
+					errorType = ErrorType.VALIDATION;
+					code = 'VALIDATION_ERROR';
+					break;
+				case 401:
+					errorType = ErrorType.AUTHENTICATION;
+					code = 'UNAUTHORIZED';
+					break;
+				case 403:
+					errorType = ErrorType.AUTHORIZATION;
+					code = 'FORBIDDEN';
+					break;
+				case 404:
+					errorType = ErrorType.NOT_FOUND;
+					code = 'NOT_FOUND';
+					break;
+				case 409:
+					errorType = ErrorType.CONFLICT;
+					code = 'CONFLICT';
+					break;
+				case 429:
+					errorType = ErrorType.RATE_LIMIT;
+					code = 'RATE_LIMIT';
+					break;
+				case 502:
+					errorType = ErrorType.EXTERNAL_SERVICE;
+					code = 'EXTERNAL_SERVICE_ERROR';
+					break;
+				default:
+					errorType = ErrorType.INTERNAL;
+					code = 'INTERNAL_ERROR';
+			}
+			
+			return new AppError(
+				errorType,
+				code,
+				response.message || exception.message || 'Internal server error',
+				{
+					originalError: response,
+					statusCode: status,
+				}
+			);
 		}
 
 		if (exception instanceof RpcException) {

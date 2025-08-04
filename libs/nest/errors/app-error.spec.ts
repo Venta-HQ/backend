@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { HttpException } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { WsException } from '@nestjs/websockets';
 import { AppError, ErrorType } from './app-error';
 import { ErrorCodes } from './errorcodes';
 
@@ -6,78 +9,59 @@ describe('AppError', () => {
 	describe('static factory methods', () => {
 		it('should create authentication error', () => {
 			const error = AppError.authentication(ErrorCodes.UNAUTHORIZED);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.AUTHENTICATION);
-			expect(error.message).toBe(ErrorCodes.UNAUTHORIZED);
-			expect(error.statusCode).toBe(401);
+			expect(error.code).toBe('UNAUTHORIZED');
+			expect(error.message).toBe('Authentication required');
 		});
 
 		it('should create authorization error', () => {
 			const error = AppError.authorization(ErrorCodes.INSUFFICIENT_PERMISSIONS);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.AUTHORIZATION);
-			expect(error.message).toBe(ErrorCodes.INSUFFICIENT_PERMISSIONS);
-			expect(error.statusCode).toBe(403);
+			expect(error.code).toBe('INSUFFICIENT_PERMISSIONS');
+			expect(error.message).toBe('Insufficient permissions to perform this action');
 		});
 
 		it('should create validation error', () => {
-			const details = { field: 'email' };
+			const details = { field: 'email', value: 'invalid' };
 			const error = AppError.validation(ErrorCodes.VALIDATION_ERROR, details);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.VALIDATION);
-			expect(error.message).toBe(ErrorCodes.VALIDATION_ERROR);
-			expect(error.statusCode).toBe(400);
-			expect(error.details).toEqual(details);
+			expect(error.code).toBe('VALIDATION_ERROR');
+			expect(error.message).toBe('Validation failed for email');
 		});
 
 		it('should create not found error', () => {
 			const error = AppError.notFound(ErrorCodes.USER_NOT_FOUND);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.NOT_FOUND);
-			expect(error.message).toBe(ErrorCodes.USER_NOT_FOUND);
-			expect(error.statusCode).toBe(404);
+			expect(error.code).toBe('USER_NOT_FOUND');
+			expect(error.message).toBe('User with ID "{userId}" not found');
 		});
 
 		it('should create conflict error', () => {
 			const error = AppError.conflict(ErrorCodes.USER_ALREADY_EXISTS);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.CONFLICT);
-			expect(error.message).toBe(ErrorCodes.USER_ALREADY_EXISTS);
-			expect(error.statusCode).toBe(409);
+			expect(error.code).toBe('USER_ALREADY_EXISTS');
+			expect(error.message).toBe('User already exists');
 		});
 
 		it('should create rate limit error', () => {
-			const error = AppError.rateLimit(ErrorCodes.RATE_LIMIT_EXCEEDED);
-			
-			expect(error).toBeInstanceOf(AppError);
+			const error = AppError.rateLimit(ErrorCodes.TOO_MANY_REQUESTS);
 			expect(error.type).toBe(ErrorType.RATE_LIMIT);
-			expect(error.message).toBe(ErrorCodes.RATE_LIMIT_EXCEEDED);
-			expect(error.statusCode).toBe(429);
+			expect(error.code).toBe('TOO_MANY_REQUESTS');
+			expect(error.message).toBe('Too many requests');
 		});
 
 		it('should create external service error', () => {
 			const error = AppError.externalService(ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE);
-			
-			expect(error).toBeInstanceOf(AppError);
 			expect(error.type).toBe(ErrorType.EXTERNAL_SERVICE);
-			expect(error.message).toBe(ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE);
-			expect(error.statusCode).toBe(503);
+			expect(error.code).toBe('EXTERNAL_SERVICE_UNAVAILABLE');
+			expect(error.message).toBe('External service "{service}" is unavailable');
 		});
 
 		it('should create internal error', () => {
-			const details = { operation: 'database_query' };
-			const error = AppError.internal(ErrorCodes.INTERNAL_SERVER_ERROR, details);
-			
-			expect(error).toBeInstanceOf(AppError);
+			const error = AppError.internal(ErrorCodes.INTERNAL_SERVER_ERROR);
 			expect(error.type).toBe(ErrorType.INTERNAL);
-			expect(error.message).toBe(ErrorCodes.INTERNAL_SERVER_ERROR);
-			expect(error.statusCode).toBe(500);
-			expect(error.details).toEqual(details);
+			expect(error.code).toBe('INTERNAL_SERVER_ERROR');
+			expect(error.message).toBe('Internal server error');
 		});
 	});
 
@@ -86,107 +70,145 @@ describe('AppError', () => {
 			const details = { userId: '123' };
 			const error = new AppError(
 				ErrorType.NOT_FOUND,
-				ErrorCodes.USER_NOT_FOUND,
-				404,
-				details
+				'USER_NOT_FOUND',
+				'User not found',
+				details,
+				'/api/users/123',
+				'req-123'
 			);
-			
+
 			expect(error.type).toBe(ErrorType.NOT_FOUND);
-			expect(error.message).toBe(ErrorCodes.USER_NOT_FOUND);
-			expect(error.statusCode).toBe(404);
+			expect(error.code).toBe('USER_NOT_FOUND');
+			expect(error.message).toBe('User not found');
 			expect(error.details).toEqual(details);
+			expect(error.path).toBe('/api/users/123');
+			expect(error.requestId).toBe('req-123');
+			expect(error.timestamp).toBeDefined();
 		});
 
 		it('should create error without details', () => {
 			const error = new AppError(
 				ErrorType.AUTHENTICATION,
-				ErrorCodes.UNAUTHORIZED,
-				401
+				'UNAUTHORIZED',
+				'Authentication required'
 			);
-			
+
 			expect(error.type).toBe(ErrorType.AUTHENTICATION);
-			expect(error.message).toBe(ErrorCodes.UNAUTHORIZED);
-			expect(error.statusCode).toBe(401);
+			expect(error.code).toBe('UNAUTHORIZED');
+			expect(error.message).toBe('Authentication required');
 			expect(error.details).toBeUndefined();
 		});
 	});
 
 	describe('toHttpException', () => {
 		it('should convert to HttpException', () => {
-			const error = AppError.notFound(ErrorCodes.USER_NOT_FOUND);
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found');
 			const httpException = error.toHttpException();
-			
+
+			expect(httpException).toBeInstanceOf(HttpException);
 			expect(httpException.getStatus()).toBe(404);
 			expect(httpException.getResponse()).toEqual({
-				code: ErrorCodes.USER_NOT_FOUND,
-				message: ErrorCodes.USER_NOT_FOUND,
-				statusCode: 404,
-				timestamp: expect.any(String),
+				error: {
+					code: 'USER_NOT_FOUND',
+					details: undefined,
+					message: 'User not found',
+					path: undefined,
+					requestId: undefined,
+					timestamp: error.timestamp,
+					type: 'NOT_FOUND',
+				},
 			});
 		});
 
 		it('should include details in response', () => {
-			const details = { field: 'email' };
-			const error = AppError.validation(ErrorCodes.VALIDATION_ERROR, details);
+			const details = { userId: '123' };
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found', details);
 			const httpException = error.toHttpException();
-			
+
 			expect(httpException.getResponse()).toEqual({
-				code: ErrorCodes.VALIDATION_ERROR,
-				message: ErrorCodes.VALIDATION_ERROR,
-				statusCode: 400,
-				timestamp: expect.any(String),
-				details,
+				error: {
+					code: 'USER_NOT_FOUND',
+					details,
+					message: 'User not found',
+					path: undefined,
+					requestId: undefined,
+					timestamp: error.timestamp,
+					type: 'NOT_FOUND',
+				},
 			});
 		});
 	});
 
 	describe('toGrpcException', () => {
 		it('should convert to RpcException', () => {
-			const error = AppError.notFound(ErrorCodes.USER_NOT_FOUND);
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User with ID "{userId}" not found');
 			const grpcException = error.toGrpcException();
 			
+			expect(grpcException).toBeInstanceOf(RpcException);
 			expect(grpcException.getError()).toEqual({
 				code: 5, // NOT_FOUND
-				message: ErrorCodes.USER_NOT_FOUND,
-				details: ErrorCodes.USER_NOT_FOUND,
+				details: JSON.stringify({
+					code: 'USER_NOT_FOUND',
+					details: undefined,
+					path: undefined,
+					requestId: undefined,
+					timestamp: error.timestamp,
+					type: 'NOT_FOUND',
+				}),
+				message: 'User with ID "{userId}" not found',
 			});
 		});
 
 		it('should include details in gRPC error', () => {
 			const details = { userId: '123' };
-			const error = AppError.notFound(ErrorCodes.USER_NOT_FOUND, details);
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User with ID "123" not found', details);
 			const grpcException = error.toGrpcException();
 			
 			expect(grpcException.getError()).toEqual({
 				code: 5, // NOT_FOUND
-				message: ErrorCodes.USER_NOT_FOUND,
-				details: JSON.stringify({ ...details, message: ErrorCodes.USER_NOT_FOUND }),
+				details: JSON.stringify({
+					code: 'USER_NOT_FOUND',
+					details,
+					path: undefined,
+					requestId: undefined,
+					timestamp: error.timestamp,
+					type: 'NOT_FOUND',
+				}),
+				message: 'User with ID "123" not found',
 			});
 		});
 	});
 
 	describe('toWsException', () => {
 		it('should convert to WsException', () => {
-			const error = AppError.authentication(ErrorCodes.UNAUTHORIZED);
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found');
 			const wsException = error.toWsException();
-			
+
+			expect(wsException).toBeInstanceOf(WsException);
 			expect(wsException.getError()).toEqual({
-				code: ErrorCodes.UNAUTHORIZED,
-				message: ErrorCodes.UNAUTHORIZED,
-				statusCode: 401,
+				code: 'USER_NOT_FOUND',
+				details: undefined,
+				message: 'User not found',
+				path: undefined,
+				requestId: undefined,
+				timestamp: error.timestamp,
+				type: 'NOT_FOUND',
 			});
 		});
 
 		it('should include details in WebSocket error', () => {
-			const details = { token: 'expired' };
-			const error = AppError.authentication(ErrorCodes.TOKEN_EXPIRED, details);
+			const details = { userId: '123' };
+			const error = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found', details);
 			const wsException = error.toWsException();
-			
+
 			expect(wsException.getError()).toEqual({
-				code: ErrorCodes.TOKEN_EXPIRED,
-				message: ErrorCodes.TOKEN_EXPIRED,
-				statusCode: 401,
+				code: 'USER_NOT_FOUND',
 				details,
+				message: 'User not found',
+				path: undefined,
+				requestId: undefined,
+				timestamp: error.timestamp,
+				type: 'NOT_FOUND',
 			});
 		});
 	});
