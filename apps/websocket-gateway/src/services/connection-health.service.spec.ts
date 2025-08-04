@@ -36,7 +36,7 @@ describe('ConnectionHealthService', () => {
 					useValue: mockRedis,
 				},
 				{
-					provide: 'IEventsService',
+					provide: 'EventsService',
 					useValue: mockEventsService,
 				},
 			],

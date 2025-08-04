@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService, IEventsService } from '@app/nest/modules';
+import { IEventsService, PrismaService } from '@app/nest/modules';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';

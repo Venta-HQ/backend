@@ -18,7 +18,7 @@ vi.mock('@app/proto/location', () => ({
 describe('UserLocationGateway', () => {
 	let gateway: UserLocationGateway;
 	let grpcClient: any;
-	let redis: any;
+	let _redis: any;
 	let connectionManager: any;
 	let connectionHealth: any;
 	let mockServer: any;
@@ -33,7 +33,7 @@ describe('UserLocationGateway', () => {
 		};
 		grpcClient.getService.mockReturnValue(locationService);
 
-		redis = {
+		_redis = {
 			del: vi.fn(),
 			geopos: vi.fn(),
 			geosearch: vi.fn(),

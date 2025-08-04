@@ -3,7 +3,7 @@ import { WsError } from '@app/nest/errors';
 import { ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
-import { createWsRateLimitGuard, WsRateLimitGuards } from './ws-rate-limit.guard.factory';
+import { WsRateLimitGuards } from './ws-rate-limit.guard.factory';
 
 // Mock Redis
 const mockRedis = {
@@ -303,16 +303,6 @@ describe('WsRateLimitGuard', () => {
 	});
 
 	describe('Factory Guards', () => {
-		it('should create strict guard with correct limits', () => {
-			const StrictGuard = createWsRateLimitGuard({
-				limit: 5,
-				windowMs: 60000,
-			});
-
-			const strictGuard = new StrictGuard(mockRedis);
-			expect(strictGuard).toBeInstanceOf(WsRateLimitGuard);
-		});
-
 		it('should have pre-configured guards available', () => {
 			expect(WsRateLimitGuards.strict).toBeDefined();
 			expect(WsRateLimitGuards.standard).toBeDefined();

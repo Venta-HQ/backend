@@ -3,19 +3,19 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
+	exports: [BaseRedisModule],
 	imports: [
 		BaseRedisModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
 			useFactory: (configService: ConfigService) => ({
-				type: 'single',
-				url: configService.get('REDIS_URL'),
+				maxRetriesPerRequest: 3,
 				password: configService.get('REDIS_PASSWORD'),
 				retryDelayOnFailover: 100,
-				maxRetriesPerRequest: 3,
+				type: 'single',
+				url: configService.get('REDIS_URL'),
 			}),
 		}),
 	],
-	exports: [BaseRedisModule],
 })
 export class RedisModule {}

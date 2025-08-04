@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
-import { createWsRateLimitGuard, WsRateLimitGuards } from './ws-rate-limit.guard.factory';
+import { WsRateLimitGuards } from './ws-rate-limit.guard.factory';
 
 // Mock Redis
 const mockRedis = {
@@ -12,40 +12,6 @@ const mockRedis = {
 };
 
 describe('WsRateLimitGuardFactory', () => {
-	describe('createWsRateLimitGuard', () => {
-		it('should create a guard class that extends WsRateLimitGuard', () => {
-			const CustomGuard = createWsRateLimitGuard({
-				keyPrefix: 'custom:',
-				limit: 25,
-				windowMs: 30000,
-			});
-
-			const guard = new CustomGuard(mockRedis);
-			expect(guard).toBeInstanceOf(WsRateLimitGuard);
-		});
-
-		it('should create guard with custom options', () => {
-			const CustomGuard = createWsRateLimitGuard({
-				keyPrefix: 'test:',
-				limit: 50,
-				windowMs: 120000,
-			});
-
-			const guard = new CustomGuard(mockRedis);
-			expect(guard).toBeDefined();
-		});
-
-		it('should create guard with default options', () => {
-			const CustomGuard = createWsRateLimitGuard({
-				limit: 10,
-				windowMs: 60000,
-			});
-
-			const guard = new CustomGuard(mockRedis);
-			expect(guard).toBeDefined();
-		});
-	});
-
 	describe('WsRateLimitGuards', () => {
 		it('should have all pre-configured guards available', () => {
 			expect(WsRateLimitGuards.strict).toBeDefined();

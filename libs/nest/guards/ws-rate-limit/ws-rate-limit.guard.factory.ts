@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { WsRateLimitGuard, WsRateLimitOptions } from './ws-rate-limit.guard';
+import { Injectable } from '@nestjs/common';
+import { WsRateLimitGuard } from './ws-rate-limit.guard';
 
 /**
  * Injectable rate limiting guards with pre-configured options

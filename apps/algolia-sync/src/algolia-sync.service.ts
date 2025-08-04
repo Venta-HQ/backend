@@ -67,12 +67,12 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 				this.algoliaService.createObject('vendor', {
 					...vendor,
 					...(vendor.lat && vendor.long
-						? {
+						? ({
 								_geoloc: {
 									lat: vendor.lat,
 									lng: vendor.long,
 								},
-							} as any
+							} as any)
 						: {}),
 				}),
 			`Creating vendor in Algolia: ${vendor.id}`,
@@ -86,12 +86,12 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 				this.algoliaService.updateObject('vendor', vendor.id as string, {
 					...vendor,
 					...(vendor.lat && vendor.long
-						? {
+						? ({
 								_geoloc: {
 									lat: vendor.lat,
 									lng: vendor.long,
 								},
-							} as any
+							} as any)
 						: {}),
 				}),
 			`Updating vendor in Algolia: ${vendor.id}`,

@@ -1,12 +1,12 @@
 import { join } from 'path';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { WsErrorFilter } from '@app/nest/filters';
-import { 
+import {
 	WsAuthGuard,
-	WsRateLimitGuardLenient, 
-	WsRateLimitGuardStandard, 
-	WsRateLimitGuardStatus, 
-	WsRateLimitGuardStrict 
+	WsRateLimitGuardLenient,
+	WsRateLimitGuardStandard,
+	WsRateLimitGuardStatus,
+	WsRateLimitGuardStrict,
 } from '@app/nest/guards';
 import {
 	ClerkModule,
