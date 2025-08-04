@@ -21,8 +21,11 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Removed UpdateVendorSchema import
 
 #### `apps/gateway/src/user/user.controller.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has Logger injection that event-pattern-initial doesn't have
+- Main branch has different import paths for AuthGuard and GrpcInstance
+- Main branch has different import path for GrpcInstance
 
 #### `apps/gateway/src/upload/upload.controller.ts`
 **Status**: ⚠️ Needs Comparison
