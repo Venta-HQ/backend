@@ -143,8 +143,10 @@ This document provides a detailed comparison of every library between the event-
 - ✅ Redis module is identical
 
 #### `libs/search/` - Event-Pattern-Initial Only
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare with main branch search implementation
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has different return type handling in updateObject method
+- Main branch returns undefined instead of null when no hits found
 
 #### `libs/upload/` - Event-Pattern-Initial Only
 **Status**: ❌ Has Differences
