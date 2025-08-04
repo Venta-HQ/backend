@@ -192,7 +192,7 @@ export function createTestModule(
 }
 
 export function createMockSocket(overrides: any = {}) {
-	const eventHandlers: Record<string, Function> = {};
+	const eventHandlers: Record<string, (...args: any[]) => any> = {};
 
 	return {
 		clerkId: 'clerk-123',
@@ -200,11 +200,11 @@ export function createMockSocket(overrides: any = {}) {
 		id: 'socket-123',
 		join: vi.fn(),
 		leave: vi.fn(),
-		on: vi.fn((event: string, handler: Function) => {
+		on: vi.fn((event: string, handler: (...args: any[]) => any) => {
 			eventHandlers[event] = handler;
 		}),
 		// Support for vendor gateway's to() method
-		to: vi.fn((room: string) => ({
+		to: vi.fn((_room: string) => ({
 			emit: vi.fn(),
 		})),
 		// Helper method to trigger events with correct context

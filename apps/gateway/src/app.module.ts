@@ -1,4 +1,3 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
 import { AuthGuard } from '@app/nest/guards';
 import { BootstrapModule, ClerkModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';

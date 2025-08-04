@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule } from '@nestjs/testing';
 import {
 	clearMocks,
 	createMockDependencies,
@@ -16,7 +16,7 @@ import { VendorLocationGateway } from './vendor-location.gateway';
 vi.mock('@app/utils', () => ({
 	retryOperation: vi
 		.fn()
-		.mockImplementation(async (operation: () => Promise<any>, description: string, options?: any) => {
+		.mockImplementation(async (operation: () => Promise<any>, _description: string, _options?: any) => {
 			// Execute the operation directly
 			return await operation();
 		}),

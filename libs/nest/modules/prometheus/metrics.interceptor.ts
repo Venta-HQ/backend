@@ -151,8 +151,6 @@ export class MetricsInterceptor implements NestInterceptor {
 				};
 
 			case 'rpc':
-				const rpcContext = context.switchToRpc();
-				const rpcData = rpcContext.getData();
 				// For gRPC, we can extract method info from the context
 				const methodName = context.getHandler()?.name || 'unknown';
 				const className = context.getClass()?.name || 'UnknownService';
@@ -164,7 +162,6 @@ export class MetricsInterceptor implements NestInterceptor {
 
 			case 'ws':
 				const wsContext = context.switchToWs();
-				const client = wsContext.getClient();
 				const wsData = wsContext.getData();
 				return {
 					method: wsData?.event || 'message',
@@ -241,8 +238,8 @@ export class MetricsInterceptor implements NestInterceptor {
 					service: serviceName,
 				});
 			}
-		} catch (error) {
-			this.logger.warn('Failed to record request metrics', error);
+		} catch (metricsError) {
+			this.logger.warn('Failed to record request metrics', metricsError);
 		}
 
 		try {
@@ -252,8 +249,8 @@ export class MetricsInterceptor implements NestInterceptor {
 				protocol: requestInfo.protocol,
 				service: serviceName,
 			});
-		} catch (error) {
-			this.logger.warn('Failed to decrement in-progress requests', error);
+		} catch (decrementError) {
+			this.logger.warn('Failed to decrement in-progress requests', decrementError);
 		}
 	}
 }

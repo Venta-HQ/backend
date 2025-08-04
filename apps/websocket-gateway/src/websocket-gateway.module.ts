@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { ErrorHandlingModule } from '@app/nest/errors';
 import { WsErrorFilter } from '@app/nest/filters';
 import {
 	WsAuthGuard,
