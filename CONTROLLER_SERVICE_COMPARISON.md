@@ -78,8 +78,11 @@ This document provides a detailed comparison of every controller and service bet
 **Notes**: Need to compare implementations
 
 #### `apps/user/src/vendor/vendor.controller.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has Logger injection that event-pattern-initial doesn't have
+- Main branch has different error handling: `ErrorCodes.RESOURCE_NOT_FOUND` vs `ErrorCodes.USER_NOT_FOUND`
+- Main branch has different error message structure
 
 #### `apps/user/src/vendor/vendor.service.ts`
 **Status**: ⚠️ Needs Comparison
