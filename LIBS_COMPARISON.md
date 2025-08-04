@@ -33,8 +33,10 @@ This document provides a detailed comparison of every library between the event-
 - ✅ Subscription types are identical
 
 #### `libs/apitypes/src/lib/user/`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare user schemas and types
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has additional HTTP API schemas (CreateUserSchema, UpdateUserSchema)
+- Event-pattern-initial only has gRPC schemas
 
 #### `libs/apitypes/src/lib/vendor/`
 **Status**: ✅ Fixed - Now Identical
