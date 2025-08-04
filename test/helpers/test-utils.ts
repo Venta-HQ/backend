@@ -32,6 +32,7 @@ export function mockPrisma() {
         findMany: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        count: vi.fn(),
       },
       integration: {
         create: vi.fn(),
@@ -61,6 +62,8 @@ export function mockEvents() {
     publishEvent: vi.fn(),
     subscribe: vi.fn(),
     unsubscribe: vi.fn(),
+    subscribeToStream: vi.fn(),
+    unsubscribeFromStream: vi.fn(),
   };
 }
 
@@ -70,6 +73,7 @@ export function mockEvents() {
 export function mockGrpcClient() {
   return {
     invoke: vi.fn(),
+    getService: vi.fn(),
   };
 }
 
@@ -267,16 +271,14 @@ export const grpc = {
   }),
 
   observable: (value: any) => ({
-    pipe: vi.fn().mockReturnValue({
-      subscribe: vi.fn().mockImplementation((observer) => {
-        if (value instanceof Error) {
-          observer.error(value);
-        } else {
-          observer.next(value);
-          observer.complete();
-        }
-        return { unsubscribe: vi.fn() };
-      }),
+    subscribe: vi.fn().mockImplementation((observer) => {
+      if (value instanceof Error) {
+        observer.error(value);
+      } else {
+        observer.next(value);
+        observer.complete();
+      }
+      return { unsubscribe: vi.fn() };
     }),
   }),
 };
@@ -290,6 +292,15 @@ export const grpc = {
  */
 export function clearMocks() {
   vi.clearAllMocks();
+}
+
+/**
+ * Mock retry utility to avoid timeouts in tests
+ */
+export function mockRetry() {
+  return vi.fn().mockImplementation(async (operation: () => Promise<any>) => {
+    return await operation();
+  });
 }
 
 // ============================================================================
