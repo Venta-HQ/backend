@@ -1,11 +1,12 @@
-import { EventsModule, HealthModule, LoggerModule, AlgoliaModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, AlgoliaModule, ConfigModule } from '@app/nest/modules';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { AlgoliaSyncService } from './algolia-sync.service';
 
 @Module({
 	imports: [
-		ConfigModule.forRoot(),
+		ConfigModule,
+		ErrorHandlingModule,
 		LoggerModule.register({ appName: 'Algolia Sync Service', protocol: 'http' }),
 		EventsModule,
 		AlgoliaModule.register(),

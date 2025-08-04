@@ -17,10 +17,9 @@ export class ClerkModule {
 					provide: ClerkService,
 					useFactory: (configService: ConfigService) => {
 						if (!configService.get('CLERK_SECRET_KEY')) {
-							throw AppError.internal('CLERK_SECRET_KEY required');
+							throw new Error('CLERK_SECRET_KEY required');
 						}
-
-						return new ClerkService(configService.get('CLERK_SECRET_KEY') ?? '');
+						return new ClerkService(configService.get('CLERK_SECRET_KEY'));
 					},
 				},
 			],

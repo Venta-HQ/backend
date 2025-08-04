@@ -1,10 +1,10 @@
 import { join } from 'path';
 import { WsErrorFilter } from '@app/nest/filters';
-import { EventsModule, HealthModule, LoggerModule, RedisModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, RedisModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserLocationGateway } from './gateways/user-location.gateway';
@@ -13,7 +13,7 @@ import { ConnectionManagerService } from './services/connection-manager.service'
 
 @Module({
 	imports: [
-		ConfigModule.forRoot(),
+		ConfigModule,
 		ErrorHandlingModule,
 		RedisModule,
 		EventsModule,

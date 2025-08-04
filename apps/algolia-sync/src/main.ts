@@ -1,4 +1,4 @@
-import { Logger } from '@app/nest/modules/logger';
+import { Logger } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AlgoliaSyncModule } from './algolia-sync.module';

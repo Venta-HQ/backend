@@ -22,8 +22,8 @@ export class AlgoliaModule {
 						}
 
 						return new AlgoliaService(
-							configService.get('ALGOLIA_APPLICATION_ID') ?? '',
-							configService.get('ALGOLIA_API_KEY') ?? '',
+							configService.get('ALGOLIA_APPLICATION_ID'),
+							configService.get('ALGOLIA_API_KEY'),
 						);
 					},
 				},

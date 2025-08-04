@@ -1,4 +1,4 @@
-import { Logger } from 'nestjs-pino';
+import { Logger } from '@app/nest/modules';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 

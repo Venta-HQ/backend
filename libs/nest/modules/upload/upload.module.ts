@@ -26,9 +26,9 @@ export class UploadModule {
 						}
 
 						return new UploadService(
-							configService.get('CLOUDINARY_API_KEY') ?? '',
-							configService.get('CLOUDINARY_API_SECRET') ?? '',
-							configService.get('CLOUDINARY_CLOUD_NAME') ?? '',
+							configService.get('CLOUDINARY_API_KEY'),
+							configService.get('CLOUDINARY_API_SECRET'),
+							configService.get('CLOUDINARY_CLOUD_NAME'),
 						);
 					},
 				},

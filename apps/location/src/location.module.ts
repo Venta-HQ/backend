@@ -1,14 +1,13 @@
-import { EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
 
 @Module({
 	controllers: [LocationController],
 	imports: [
-		ConfigModule.forRoot(),
+		ConfigModule,
 		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({

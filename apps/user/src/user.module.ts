@@ -1,7 +1,6 @@
-import { EventsModule, HealthModule, LoggerModule, PrismaModule } from '@app/nest/modules';
+import { EventsModule, HealthModule, LoggerModule, PrismaModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
 import { SubscriptionController } from './subscription/subscription.controller';
@@ -12,7 +11,7 @@ import { VendorService } from './vendor/vendor.service';
 @Module({
 	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [
-		ConfigModule.forRoot(),
+		ConfigModule,
 		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({
