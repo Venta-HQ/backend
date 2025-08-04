@@ -49,8 +49,17 @@ export class AlgoliaService {
 			return null;
 		}
 
+		// Convert attributes to Algolia-compatible format
+		const algoliaAttributes: Record<string, string> = {};
+		for (const [key, value] of Object.entries(attributesToUpdate)) {
+			if (value !== null && value !== undefined) {
+				// Convert non-string values to strings for Algolia
+				algoliaAttributes[key] = typeof value === 'string' ? value : String(value);
+			}
+		}
+
 		return await this.client.partialUpdateObject({
-			attributesToUpdate,
+			attributesToUpdate: algoliaAttributes,
 			createIfNotExists: false,
 			indexName,
 			objectID: hits[0].objectID,
