@@ -87,8 +87,14 @@ This document provides a detailed comparison of every controller and service bet
 - ✅ Removed event publishing from both methods
 
 #### `apps/user/src/clerk/clerk.service.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ❌ Has Major Differences
+**Notes**: 
+- Main branch missing EventsService injection and event publishing
+- Main branch has different import path for PrismaService
+- Main branch has different user creation logic: checks if user exists first
+- Main branch has different integration creation: uses different data structure
+- Main branch has different integration deletion: uses different query structure
+- Main branch missing event publishing in all methods
 
 #### `apps/user/src/subscription/subscription.controller.ts`
 **Status**: ❌ Has Differences
