@@ -51,7 +51,8 @@ export class SubscriptionService {
 		});
 		await this.prisma.db.integration.create({
 			data: {
-				config: { data, providerId },
+				data: data as any,
+				providerId: providerId,
 				type: IntegrationType.RevenueCat,
 				user: {
 					connect: {

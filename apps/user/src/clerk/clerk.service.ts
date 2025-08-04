@@ -64,7 +64,8 @@ export class ClerkService {
 
 		const integration = await this.prisma.db.integration.create({
 			data: {
-				config: { data: data || null, providerId: providerId || null },
+				data: (data as any) || null,
+				providerId: providerId || null,
 				type: IntegrationType.Clerk,
 				userId: userId,
 			},
@@ -90,20 +91,14 @@ export class ClerkService {
 		const integration = await this.prisma.db.integration.findFirst({
 			select: { id: true, userId: true },
 			where: {
-				config: {
-					equals: providerId,
-					path: ['providerId'],
-				},
+				providerId: providerId,
 				type: IntegrationType.Clerk,
 			},
 		});
 
 		await this.prisma.db.integration.deleteMany({
 			where: {
-				config: {
-					equals: providerId,
-					path: ['providerId'],
-				},
+				providerId: providerId,
 				type: IntegrationType.Clerk,
 			},
 		});

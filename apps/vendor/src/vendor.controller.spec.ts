@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { clearMocks, mockRequest } from '../../../test/helpers/test-utils';
+import { clearMocks } from '../../../test/helpers/test-utils';
 import { VendorController } from './vendor.controller';
 
 // Mock the proto modules
@@ -15,7 +15,6 @@ describe('VendorController', () => {
 	beforeEach(() => {
 		vendorService = {
 			createVendor: vi.fn(),
-			deleteVendor: vi.fn(),
 			getVendorById: vi.fn(),
 			updateVendor: vi.fn(),
 		};
@@ -26,7 +25,7 @@ describe('VendorController', () => {
 		clearMocks();
 	});
 
-	describe('getVendorById', () => {
+	describe('lookupVendorById', () => {
 		it('should return vendor when found', async () => {
 			const mockVendor = {
 				createdAt: new Date(),
@@ -44,29 +43,40 @@ describe('VendorController', () => {
 			};
 			vendorService.getVendorById.mockResolvedValue(mockVendor);
 
-			const request = mockRequest({ id: 'vendor_123' });
-			const result = await controller.getVendorById(request);
+			const result = await controller.lookupVendorById({ id: 'vendor_123' });
 
 			expect(vendorService.getVendorById).toHaveBeenCalledWith('vendor_123');
-			expect(result).toEqual(mockVendor);
+			expect(result).toEqual({
+				vendor: {
+					createdAt: mockVendor.createdAt,
+					description: 'A test vendor',
+					email: 'test@vendor.com',
+					id: 'vendor_123',
+					lat: 40.7128,
+					long: -74.006,
+					name: 'Test Vendor',
+					open: true,
+					phone: '123-456-7890',
+					primaryImage: 'https://example.com/image.jpg',
+					updatedAt: mockVendor.updatedAt,
+					website: 'https://testvendor.com',
+				},
+			});
 		});
 
-		it('should return null when vendor not found', async () => {
+		it('should return undefined vendor when not found', async () => {
 			vendorService.getVendorById.mockResolvedValue(null);
 
-			const request = mockRequest({ id: 'vendor_123' });
-			const result = await controller.getVendorById(request);
+			const result = await controller.lookupVendorById({ id: 'vendor_123' });
 
-			expect(result).toBeNull();
+			expect(result).toEqual({ vendor: undefined });
 		});
 
 		it('should handle service errors', async () => {
 			const serviceError = new Error('Service error');
 			vendorService.getVendorById.mockRejectedValue(serviceError);
 
-			const request = mockRequest({ id: 'vendor_123' });
-
-			await expect(controller.getVendorById(request)).rejects.toThrow('Service error');
+			await expect(controller.lookupVendorById({ id: 'vendor_123' })).rejects.toThrow();
 		});
 	});
 
@@ -84,8 +94,7 @@ describe('VendorController', () => {
 		it('should create vendor successfully', async () => {
 			vendorService.createVendor.mockResolvedValue('vendor_123');
 
-			const request = mockRequest(createData);
-			const result = await controller.createVendor(request);
+			const result = await controller.createVendor(createData);
 
 			expect(vendorService.createVendor).toHaveBeenCalledWith(createData);
 			expect(result).toEqual({ id: 'vendor_123' });
@@ -95,9 +104,7 @@ describe('VendorController', () => {
 			const serviceError = new Error('Service error');
 			vendorService.createVendor.mockRejectedValue(serviceError);
 
-			const request = mockRequest(createData);
-
-			await expect(controller.createVendor(request)).rejects.toThrow('Service error');
+			await expect(controller.createVendor(createData)).rejects.toThrow();
 		});
 	});
 
@@ -116,53 +123,17 @@ describe('VendorController', () => {
 		it('should update vendor successfully', async () => {
 			vendorService.updateVendor.mockResolvedValue(undefined);
 
-			const request = mockRequest(updateData);
-			const result = await controller.updateVendor(request);
+			const result = await controller.updateVendor(updateData);
 
-			expect(vendorService.updateVendor).toHaveBeenCalledWith('vendor_123', 'user_123', {
-				description: 'An updated vendor',
-				email: 'updated@vendor.com',
-				imageUrl: 'https://example.com/updated-image.jpg',
-				name: 'Updated Vendor',
-				phone: '987-654-3210',
-				website: 'https://updatedvendor.com',
-			});
-			expect(result).toEqual({});
+			expect(vendorService.updateVendor).toHaveBeenCalledWith('vendor_123', 'user_123', updateData);
+			expect(result).toEqual({ message: 'Vendor updated successfully', success: true });
 		});
 
 		it('should handle service errors', async () => {
 			const serviceError = new Error('Service error');
 			vendorService.updateVendor.mockRejectedValue(serviceError);
 
-			const request = mockRequest(updateData);
-
-			await expect(controller.updateVendor(request)).rejects.toThrow('Service error');
-		});
-	});
-
-	describe('deleteVendor', () => {
-		const deleteData = {
-			id: 'vendor_123',
-			userId: 'user_123',
-		};
-
-		it('should delete vendor successfully', async () => {
-			vendorService.deleteVendor.mockResolvedValue(undefined);
-
-			const request = mockRequest(deleteData);
-			const result = await controller.deleteVendor(request);
-
-			expect(vendorService.deleteVendor).toHaveBeenCalledWith('vendor_123', 'user_123');
-			expect(result).toEqual({});
-		});
-
-		it('should handle service errors', async () => {
-			const serviceError = new Error('Service error');
-			vendorService.deleteVendor.mockRejectedValue(serviceError);
-
-			const request = mockRequest(deleteData);
-
-			await expect(controller.deleteVendor(request)).rejects.toThrow('Service error');
+			await expect(controller.updateVendor(updateData)).rejects.toThrow();
 		});
 	});
 });

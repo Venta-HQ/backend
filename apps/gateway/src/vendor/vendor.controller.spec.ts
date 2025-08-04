@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes';
-import { grpc, mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
+import { mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
 import { VendorController } from './vendor.controller';
 
 // Mock the proto imports to avoid module resolution issues
@@ -42,7 +42,21 @@ describe('VendorController', () => {
 				website: 'https://example.com',
 			};
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockVendor));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next(mockVendor);
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockResolvedValue(mockVendor),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next(mockVendor);
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			const result = await controller.getVendorById(vendorId);
 
@@ -54,7 +68,19 @@ describe('VendorController', () => {
 			const vendorId = 'vendor_123';
 			const mockError = new Error('Vendor not found');
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.error(mockError);
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockRejectedValue(mockError),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.error(mockError);
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			await expect(controller.getVendorById(vendorId)).rejects.toThrow(mockError);
 			expect(grpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
@@ -81,7 +107,21 @@ describe('VendorController', () => {
 				...createVendorData,
 			};
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next(mockResponse);
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockResolvedValue(mockResponse),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next(mockResponse);
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			const result = await controller.createVendor(mockRequestObj, createVendorData);
 
@@ -118,7 +158,21 @@ describe('VendorController', () => {
 				website: '',
 			};
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next(mockResponse);
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockResolvedValue(mockResponse),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next(mockResponse);
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			const result = await controller.createVendor(mockRequestObj, createVendorData);
 
@@ -146,7 +200,19 @@ describe('VendorController', () => {
 
 			const mockError = new Error('Creation failed');
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.error(mockError);
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockRejectedValue(mockError),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.error(mockError);
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			await expect(controller.createVendor(mockRequestObj, createVendorData)).rejects.toThrow(mockError);
 		});
@@ -173,7 +239,21 @@ describe('VendorController', () => {
 				success: true,
 			};
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next(mockResponse);
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockResolvedValue(mockResponse),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next(mockResponse);
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
 
@@ -207,7 +287,21 @@ describe('VendorController', () => {
 				success: true,
 			};
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockResponse));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.next(mockResponse);
+						observer.complete();
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockResolvedValue(mockResponse),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next(mockResponse);
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
 
@@ -237,7 +331,19 @@ describe('VendorController', () => {
 
 			const mockError = new Error('Update failed');
 
-			grpcClient.invoke.mockReturnValue(grpc.observable(mockError));
+			grpcClient.invoke.mockReturnValue({
+				pipe: vi.fn().mockReturnValue({
+					subscribe: vi.fn().mockImplementation((observer) => {
+						observer.error(mockError);
+						return { unsubscribe: vi.fn() };
+					}),
+					toPromise: vi.fn().mockRejectedValue(mockError),
+				}),
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.error(mockError);
+					return { unsubscribe: vi.fn() };
+				}),
+			});
 
 			await expect(controller.updateVendor(vendorId, mockRequestObj, updateVendorData)).rejects.toThrow(mockError);
 		});

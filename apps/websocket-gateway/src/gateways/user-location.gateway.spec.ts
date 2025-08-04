@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { clearMocks, mockGrpcClient } from '../../../../test/helpers/test-utils';
+import { clearMocks, grpc, mockGrpcClient } from '../../../../test/helpers/test-utils';
 import { UserLocationGateway } from './user-location.gateway';
 
 // Mock the retry utility

@@ -130,7 +130,8 @@ describe('ClerkService', () => {
 
 			expect(prisma.db.integration.create).toHaveBeenCalledWith({
 				data: {
-					config: { data: null, providerId: 'clerk_user_123' },
+					data: null,
+					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
 					userId: 'user_123',
 				},
@@ -148,7 +149,8 @@ describe('ClerkService', () => {
 			await expect(service.createIntegration(integrationData)).rejects.toThrow('Database connection failed');
 			expect(prisma.db.integration.create).toHaveBeenCalledWith({
 				data: {
-					config: { data: null, providerId: 'clerk_user_123' },
+					data: null,
+					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
 					userId: 'user_123',
 				},
@@ -168,10 +170,7 @@ describe('ClerkService', () => {
 
 			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith({
 				where: {
-					config: {
-						equals: 'clerk_user_123',
-						path: ['providerId'],
-					},
+					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
 				},
 			});
@@ -187,10 +186,7 @@ describe('ClerkService', () => {
 			await expect(service.deleteIntegration(integrationData)).rejects.toThrow('Database connection failed');
 			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith({
 				where: {
-					config: {
-						equals: 'clerk_user_123',
-						path: ['providerId'],
-					},
+					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
 				},
 			});
@@ -207,10 +203,7 @@ describe('ClerkService', () => {
 
 			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith({
 				where: {
-					config: {
-						equals: 'non_existent_integration',
-						path: ['providerId'],
-					},
+					providerId: 'non_existent_integration',
 					type: IntegrationType.Clerk,
 				},
 			});

@@ -38,10 +38,8 @@ describe('SubscriptionService', () => {
 
 			expect(prisma.db.integration.create).toHaveBeenCalledWith({
 				data: {
-					config: {
-						data: integrationData.data,
-						providerId: integrationData.providerId,
-					},
+					data: integrationData.data,
+					providerId: integrationData.providerId,
 					type: 'RevenueCat',
 					user: {
 						connect: {
@@ -69,10 +67,8 @@ describe('SubscriptionService', () => {
 			await expect(service.createIntegration(integrationData)).rejects.toThrow('Database connection failed');
 			expect(prisma.db.integration.create).toHaveBeenCalledWith({
 				data: {
-					config: {
-						data: integrationData.data,
-						providerId: integrationData.providerId,
-					},
+					data: integrationData.data,
+					providerId: integrationData.providerId,
 					type: 'RevenueCat',
 					user: {
 						connect: {

@@ -73,7 +73,21 @@ export function mockEvents() {
 export function mockGrpcClient() {
 	return {
 		getService: vi.fn(),
-		invoke: vi.fn(),
+		invoke: vi.fn().mockReturnValue({
+			pipe: vi.fn().mockReturnValue({
+				subscribe: vi.fn().mockImplementation((observer) => {
+					observer.next({});
+					observer.complete();
+					return { unsubscribe: vi.fn() };
+				}),
+				toPromise: vi.fn().mockResolvedValue({}),
+			}),
+			subscribe: vi.fn().mockImplementation((observer) => {
+				observer.next({});
+				observer.complete();
+				return { unsubscribe: vi.fn() };
+			}),
+		}),
 	};
 }
 
