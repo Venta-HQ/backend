@@ -1,300 +1,201 @@
 # Test Helpers
 
-This directory contains reusable test utilities and helpers organized by functionality.
+This directory contains a simplified, unified test helper system that provides everything you need for testing in one place.
 
 ## 📁 Structure
 
 ```
 test/helpers/
-├── index.ts              # Main export file
-├── mocks/                # Mock factories and interfaces
-│   ├── index.ts
-│   ├── interfaces.ts     # Mock service interfaces
-│   └── factories.ts      # Mock factory functions
-├── setup/                # Test setup utilities
-│   ├── index.ts
-│   ├── context.ts        # Context mocks (HTTP, gRPC, WebSocket)
-│   ├── environment.ts    # Environment setup
-│   ├── assertions.ts     # Common assertions
-│   ├── generators.ts     # Data generators
-│   └── nest-testing.ts   # NestJS testing utilities
-├── grpc/                 # gRPC-specific utilities
-│   ├── index.ts
-│   ├── mocks.ts          # gRPC mock utilities
-│   └── data-types.ts     # gRPC data types
-├── data/                 # Test data utilities
-│   ├── index.ts
-│   ├── sample-data.ts    # Sample data factories
-│   └── errors.ts         # Error factories
-└── utilities.ts          # Common utilities
+├── simple.ts             # Everything you need in one file
+├── SIMPLE.md             # Simple helper documentation
+├── COMPLEXITY_COMPARISON.md  # Comparison with old system
+└── README.md             # This file
 ```
 
 ## 🚀 Quick Start
 
-### Unit Testing (Recommended for most cases)
-
 ```typescript
 import { 
-  createMockPrismaService, 
-  createMockEventsService, 
-  sampleData,
-  setupGrpcMocks 
-} from '../../test/helpers';
-
-// Set up gRPC mocks
-setupGrpcMocks();
+  mockPrisma, 
+  mockEvents, 
+  mockGrpcClient,
+  data,
+  errors,
+  webhooks,
+  grpc,
+  clearMocks 
+} from '../../test/helpers/simple';
 
 describe('MyService', () => {
   let service: MyService;
-  let mockPrisma: any;
-  let mockEvents: any;
+  let prisma: any;
 
   beforeEach(() => {
-    mockPrisma = createMockPrismaService();
-    mockEvents = createMockEventsService();
-    service = new MyService(mockPrisma, mockEvents);
+    prisma = mockPrisma();
+    service = new MyService(prisma);
+  });
+
+  afterEach(() => {
+    clearMocks();
   });
 
   it('should create a user', async () => {
-    const userData = sampleData.user({ clerkId: 'test_user' });
-    mockPrisma.db.user.create.mockResolvedValue(userData);
+    const userData = data.user({ clerkId: 'test_user' });
+    prisma.db.user.create.mockResolvedValue(userData);
 
     const result = await service.createUser('test_user');
     expect(result).toEqual(userData);
   });
 });
 ```
-
-### Integration Testing (For complex DI scenarios)
-
-```typescript
-import { 
-  nestTesting,
-  createMockPrismaService,
-  sampleData 
-} from '../../test/helpers';
-
-describe('MyService Integration', () => {
-  let module: TestingModule;
-  let service: MyService;
-
-  beforeEach(async () => {
-    const mockPrisma = createMockPrismaService();
-    
-    const { module: testModule, service: testService } = await nestTesting.createServiceTest(
-      MyService,
-      {
-        PrismaService: mockPrisma,
-        EventsService: createMockEventsService(),
-      }
-    );
-    
-    module = testModule;
-    service = testService;
-  });
-
-  afterEach(async () => {
-    await module.close();
-  });
-
-  it('should work with full DI container', async () => {
-    // Test with actual dependency injection
-  });
-});
-```
-
-## 🎯 When to Use Each Approach
-
-### Use Direct Instantiation (Unit Tests) ✅
-- **Services** - Testing business logic
-- **Controllers** - Testing request/response handling
-- **Simple Components** - Few dependencies
-- **Fast Feedback** - During development
-- **Isolation** - Testing one component at a time
-
-### Use NestJS Testing (Integration Tests) 🔄
-- **Guards** - Need ExecutionContext
-- **Interceptors** - Need request/response objects
-- **Complex DI** - Custom providers, factories
-- **Module Integration** - Testing how modules work together
-- **End-to-End** - Testing complete workflows
 
 ## 📦 Available Helpers
 
-### Mocks (`mocks/`)
-- `createMockPrismaService()` - Mock PrismaService
-- `createMockEventsService()` - Mock EventsService
-- `createMockRedisService()` - Mock RedisService
-- `createMockClerkService()` - Mock ClerkService
+### Mock Factories
+- `mockPrisma()` - Mock Prisma service with all database methods
+- `mockEvents()` - Mock Events service
+- `mockGrpcClient()` - Mock gRPC client
+- `mockRequest(overrides?)` - Mock HTTP request
 
-### Setup (`setup/`)
-- `createMockExecutionContext()` - Mock ExecutionContext
-- `createMockRequest()` / `createMockResponse()` - HTTP mocks
-- `createMockWebSocketClient()` - WebSocket mocks
-- `testEnv.setup()` / `testEnv.cleanup()` - Environment setup
-- `assertions.*` - Common assertions
-- `generators.*` - Data generators
-- `nestTesting.*` - NestJS testing utilities
+### Sample Data
+- `data.user(overrides?)` - User data factory
+- `data.vendor(overrides?)` - Vendor data factory
+- `data.integration(overrides?)` - Integration data factory
 
-### gRPC (`grpc/`)
-- `setupGrpcMocks()` - Set up gRPC mocks
-- `createMockGrpcCall()` - Mock gRPC call
-- `grpcDataTypes.*` - gRPC data types
-- `createGrpcControllerTest()` - Create gRPC controller test setup
-- `createGrpcObservable()` / `createGrpcObservableError()` - Mock gRPC observables
-- `setupProtoMocks()` - Set up proto import mocks
-- `grpcControllerTesting.*` - Common gRPC controller test patterns
+### Error Factories
+- `errors.database(message?)` - Database error
+- `errors.validation(message?)` - Validation error
+- `errors.notFound(message?)` - Not found error
+- `errors.unauthorized(message?)` - Unauthorized error
 
-### Data (`data/`)
-- `sampleData.*` - Sample data factories
-- `errors.*` - Error factories
-- `webhookEvents.*` - Webhook event factories
-- `createClerkWebhookEvent()` - Create Clerk webhook events
-- `createRevenueCatWebhookEvent()` - Create RevenueCat webhook events
+### Webhook Events
+- `webhooks.clerk.userCreated(overrides?)` - Clerk user created event
+- `webhooks.clerk.userDeleted(overrides?)` - Clerk user deleted event
+- `webhooks.clerk.userUpdated(overrides?)` - Clerk user updated event
+- `webhooks.revenueCat.initialPurchase(overrides?)` - RevenueCat initial purchase
+- `webhooks.revenueCat.renewal(overrides?)` - RevenueCat renewal
 
-### Utilities (`utilities.ts`)
-- `clearAllMocks()` - Clear all mocks
-- `resetAllMocks()` - Reset all mocks
-- `timing.*` - Timing utilities
+### gRPC Helpers
+- `grpc.success(value)` - Successful gRPC response
+- `grpc.error(error)` - Error gRPC response
+- `grpc.observable(value)` - gRPC observable (handles errors automatically)
+
+### Utilities
+- `clearMocks()` - Clear all mocks between tests
 
 ## 🎯 Best Practices
 
-1. **Use factory functions** instead of manual mock creation
-2. **Use sample data** with overrides for consistent test data
-3. **Clear mocks** between tests with `clearAllMocks()`
-4. **Use descriptive test names** that explain the behavior
-5. **Import from the main index** for convenience
-6. **Choose the right approach** - Unit tests for isolation, Integration tests for DI
+1. **Import from simple.ts** - Everything you need is in one place
+2. **Use factory functions** - `data.user()` instead of manual object creation
+3. **Clear mocks** - Use `clearMocks()` in `afterEach`
+4. **Use overrides** - `data.user({ clerkId: 'custom' })` for specific test data
+5. **Keep tests simple** - Focus on behavior, not setup
 
 ## 📝 Examples
 
-### Testing a Service (Unit Test)
+### Testing a Service
 ```typescript
-import { 
-  createMockPrismaService, 
-  createMockEventsService, 
-  sampleData,
-  errors 
-} from '../../test/helpers';
+import { mockPrisma, data, errors, clearMocks } from '../../test/helpers/simple';
 
 describe('UserService', () => {
   let service: UserService;
-  let mockPrisma: any;
-  let mockEvents: any;
+  let prisma: any;
 
   beforeEach(() => {
-    mockPrisma = createMockPrismaService();
-    mockEvents = createMockEventsService();
-    service = new UserService(mockPrisma, mockEvents);
+    prisma = mockPrisma();
+    service = new UserService(prisma);
   });
 
-  it('should create user and emit event', async () => {
-    const userData = sampleData.user({ clerkId: 'test_user' });
-    mockPrisma.db.user.create.mockResolvedValue(userData);
+  afterEach(() => {
+    clearMocks();
+  });
+
+  it('should create user successfully', async () => {
+    const userData = data.user({ clerkId: 'test_user' });
+    prisma.db.user.create.mockResolvedValue(userData);
 
     const result = await service.createUser('test_user');
     expect(result).toEqual(userData);
   });
-});
-```
 
-### Testing a Guard (Integration Test)
-```typescript
-import { 
-  nestTesting,
-  createMockClerkService,
-  createMockPrismaService,
-  createMockExecutionContext 
-} from '../../test/helpers';
+  it('should handle database errors', async () => {
+    const dbError = errors.database('Connection failed');
+    prisma.db.user.create.mockRejectedValue(dbError);
 
-describe('AuthGuard', () => {
-  let guard: AuthGuard;
-  let module: TestingModule;
-
-  beforeEach(async () => {
-    const { module: testModule, guard: testGuard } = await nestTesting.createGuardTest(
-      AuthGuard,
-      {
-        ClerkService: createMockClerkService(),
-        PrismaService: createMockPrismaService(),
-      }
-    );
-    
-    module = testModule;
-    guard = testGuard;
-  });
-
-  afterEach(async () => {
-    await module.close();
-  });
-
-  it('should allow access with valid token', async () => {
-    const context = createMockExecutionContext({
-      switchToHttp: () => ({ 
-        getRequest: () => ({ headers: { authorization: 'Bearer valid_token' } })
-      })
-    });
-
-    const result = await guard.canActivate(context);
-    expect(result).toBe(true);
+    await expect(service.createUser('test_user')).rejects.toThrow('Connection failed');
   });
 });
 ```
 
-### Testing a gRPC Controller (Unit Test)
+### Testing a gRPC Controller
 ```typescript
-import { 
-  grpcControllerTesting,
-  createGrpcObservable,
-  setupProtoMocks 
-} from '../../test/helpers';
-
-// Set up proto mocks
-setupProtoMocks('@app/proto/user', ['UserVendorData', 'UserVendorsResponse']);
+import { mockGrpcClient, grpc, mockRequest, clearMocks } from '../../test/helpers/simple';
 
 describe('UserController', () => {
   let controller: UserController;
-  let mockGrpcClient: any;
+  let grpcClient: any;
 
   beforeEach(() => {
-    const test = grpcControllerTesting.createTest(UserController, '@app/proto/user');
-    controller = test.controller;
-    mockGrpcClient = test.mockGrpcClient;
+    grpcClient = mockGrpcClient();
+    controller = new UserController(grpcClient);
+  });
+
+  afterEach(() => {
+    clearMocks();
   });
 
   it('should return user vendors successfully', async () => {
     const mockResponse = { vendors: [] };
-    mockGrpcClient.invoke.mockReturnValue(createGrpcObservable(mockResponse));
+    grpcClient.invoke.mockReturnValue(grpc.success(mockResponse));
 
-    const result = await controller.getUserVendors(mockRequest);
+    const request = mockRequest({ userId: 'user_123' });
+    const result = await controller.getUserVendors(request);
     expect(result).toEqual(mockResponse);
+  });
+
+  it('should handle gRPC errors', async () => {
+    const mockError = new Error('gRPC error');
+    grpcClient.invoke.mockReturnValue(grpc.error(mockError));
+
+    const request = mockRequest({ userId: 'user_123' });
+    await expect(controller.getUserVendors(request)).rejects.toThrow('gRPC error');
   });
 });
 ```
 
-### Testing a Webhook Controller (Unit Test)
+### Testing a Webhook Controller
 ```typescript
-import { 
-  webhookEvents,
-  grpcControllerTesting 
-} from '../../test/helpers';
+import { mockGrpcClient, webhooks, clearMocks } from '../../test/helpers/simple';
 
 describe('ClerkWebhooksController', () => {
   let controller: ClerkWebhooksController;
-  let mockGrpcClient: any;
+  let grpcClient: any;
 
   beforeEach(() => {
-    const test = grpcControllerTesting.createTest(ClerkWebhooksController);
-    controller = test.controller;
-    mockGrpcClient = test.mockGrpcClient;
+    grpcClient = mockGrpcClient();
+    controller = new ClerkWebhooksController(grpcClient);
+  });
+
+  afterEach(() => {
+    clearMocks();
   });
 
   it('should handle user.created event', async () => {
-    const mockEvent = webhookEvents.clerk.userCreated({ id: 'test_user' });
-    mockGrpcClient.invoke.mockResolvedValue({ success: true });
+    const mockEvent = webhooks.clerk.userCreated({ id: 'test_user' });
+    grpcClient.invoke.mockResolvedValue({ success: true });
 
     const result = await controller.handleClerkEvent(mockEvent);
     expect(result).toEqual({ success: true });
   });
 });
 ```
+
+## 🎯 Why Simple?
+
+- **One file** - Everything you need in one place
+- **No complex abstractions** - Just simple functions that work
+- **Easy to understand** - Clear, predictable API
+- **Fast to use** - Minimal setup required
+- **Maintainable** - Less code to maintain
+
+For more details, see `SIMPLE.md` and `COMPLEXITY_COMPARISON.md`.
