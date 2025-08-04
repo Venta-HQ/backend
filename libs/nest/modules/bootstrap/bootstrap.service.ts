@@ -1,28 +1,28 @@
+import { join } from 'path';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
-import { join } from 'path';
 
 export interface HttpBootstrapOptions {
-	module: any;
-	port?: string;
-	host?: string;
-	enableCors?: boolean;
 	corsOptions?: {
 		allowedHeaders?: string[];
 		credentials?: boolean;
 		methods?: string[];
 		origin?: string | string[];
 	};
+	enableCors?: boolean;
+	host?: string;
+	module: any;
+	port?: string;
 }
 
 export interface GrpcBootstrapOptions {
+	defaultUrl?: string;
 	module: any;
 	package: string;
 	protoPath: string;
 	urlEnvVar: string;
-	defaultUrl?: string;
 }
 
 export class BootstrapService {
@@ -49,7 +49,7 @@ export class BootstrapService {
 		const port = options.port ? configService.get(options.port) : 3000;
 		const host = options.host || '0.0.0.0';
 
-		return { app, port, host };
+		return { app, host, port };
 	}
 
 	static async createGrpcApp(options: GrpcBootstrapOptions) {
@@ -68,20 +68,20 @@ export class BootstrapService {
 	}
 
 	static async bootstrapHttp(options: HttpBootstrapOptions) {
-		const { app, port, host } = await this.createHttpApp(options);
-		
+		const { app, host, port } = await this.createHttpApp(options);
+
 		this.logger.log(`Starting HTTP server on ${host}:${port}`);
 		await app.listen(port, host);
-		
+
 		return app;
 	}
 
 	static async bootstrapGrpc(options: GrpcBootstrapOptions) {
 		const { app } = await this.createGrpcApp(options);
-		
+
 		this.logger.log(`Starting gRPC server`);
 		await app.listen();
-		
+
 		return app;
 	}
-} 
+}

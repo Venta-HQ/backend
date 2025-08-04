@@ -7,9 +7,9 @@ import { LocationService } from './location.service';
 	controllers: [LocationController],
 	imports: [
 		BootstrapModule.forRoot({
+			additionalModules: [RedisModule],
 			appName: 'Location Microservice',
 			protocol: 'grpc',
-			additionalModules: [RedisModule],
 		}),
 	],
 	providers: [LocationService],

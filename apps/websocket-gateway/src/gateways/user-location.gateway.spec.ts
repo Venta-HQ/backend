@@ -1,10 +1,16 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { UserLocationGateway } from './user-location.gateway';
+import {
+	clearMocks,
+	createMockDependencies,
+	createMockProvider,
+	createMockSocket,
+	createTestModule,
+} from '../../../../test/helpers/test-utils';
 import { WEBSOCKET_METRICS } from '../metrics.provider';
-import { createMockDependencies, createTestModule, createMockSocket, createMockProvider, clearMocks } from '../../../../test/helpers/test-utils';
 import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
+import { UserLocationGateway } from './user-location.gateway';
 
 // Mock the proto modules
 vi.mock('@app/proto/location', () => ({
@@ -72,19 +78,19 @@ describe('UserLocationGateway', () => {
 	beforeEach(async () => {
 		mockDeps = createMockDependencies({
 			websocketMetrics: {
-				user_websocket_connections_total: { inc: vi.fn() },
-				user_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
-				user_websocket_connection_duration_seconds: { observe: vi.fn() },
-				user_websocket_errors_total: { inc: vi.fn() },
-				user_websocket_disconnections_total: { inc: vi.fn() },
-				vendor_websocket_connections_total: { inc: vi.fn() },
-				vendor_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
-				vendor_websocket_connection_duration_seconds: { observe: vi.fn() },
-				vendor_websocket_errors_total: { inc: vi.fn() },
-				vendor_websocket_disconnections_total: { inc: vi.fn() },
-				location_updates_total: { inc: vi.fn() },
-				location_update_duration_seconds: { observe: vi.fn() },
 				active_location_tracking: { set: vi.fn() },
+				location_update_duration_seconds: { observe: vi.fn() },
+				location_updates_total: { inc: vi.fn() },
+				user_websocket_connection_duration_seconds: { observe: vi.fn() },
+				user_websocket_connections_active: { dec: vi.fn(), inc: vi.fn() },
+				user_websocket_connections_total: { inc: vi.fn() },
+				user_websocket_disconnections_total: { inc: vi.fn() },
+				user_websocket_errors_total: { inc: vi.fn() },
+				vendor_websocket_connection_duration_seconds: { observe: vi.fn() },
+				vendor_websocket_connections_active: { dec: vi.fn(), inc: vi.fn() },
+				vendor_websocket_connections_total: { inc: vi.fn() },
+				vendor_websocket_disconnections_total: { inc: vi.fn() },
+				vendor_websocket_errors_total: { inc: vi.fn() },
 			},
 		});
 
@@ -101,12 +107,12 @@ describe('UserLocationGateway', () => {
 				createMockProvider(WEBSOCKET_METRICS, mockDeps.websocketMetrics),
 				createMockProvider('default_IORedisModuleConnectionToken', mockDeps.redis),
 				createMockProvider('ClerkService', mockDeps.clerkService),
-			]
+			],
 		);
 
 		gateway = module.get<UserLocationGateway>(UserLocationGateway);
 		gateway.server = { emit: vi.fn() } as any; // Mock the server property
-		
+
 		// Manually assign the mock connection manager to bypass DI issues
 		(gateway as any).connectionManager = mockConnectionManager;
 	});
@@ -123,32 +129,35 @@ describe('UserLocationGateway', () => {
 
 	it('should initialize location service', () => {
 		gateway.afterInit();
-		
+
 		expect(mockDeps.grpcClient.getService).toHaveBeenCalledWith('LocationService');
 	});
 
 	describe('handleConnection', () => {
 		it('should handle user connection successfully', async () => {
 			const socket = createMockSocket();
-			
+
 			await gateway.handleConnection(socket);
-			
-			expect(mockDeps.websocketMetrics.user_websocket_connections_total.inc).toHaveBeenCalledWith({ status: 'connected', type: 'user' });
+
+			expect(mockDeps.websocketMetrics.user_websocket_connections_total.inc).toHaveBeenCalledWith({
+				status: 'connected',
+				type: 'user',
+			});
 			expect(mockDeps.websocketMetrics.user_websocket_connections_active.inc).toHaveBeenCalledWith({ type: 'user' });
 		});
 
 		it('should throw when metrics fail', async () => {
 			const socket = createMockSocket();
-			
+
 			// Mock the metrics to throw an error
 			const originalInc = mockDeps.websocketMetrics.user_websocket_connections_total.inc;
 			mockDeps.websocketMetrics.user_websocket_connections_total.inc = vi.fn().mockImplementation(() => {
 				throw new Error('Metrics error');
 			});
-			
+
 			// The method should throw when metrics fail
 			await expect(gateway.handleConnection(socket)).rejects.toThrow('Metrics error');
-			
+
 			// Restore the original mock
 			mockDeps.websocketMetrics.user_websocket_connections_total.inc = originalInc;
 		});
@@ -157,10 +166,13 @@ describe('UserLocationGateway', () => {
 	describe('handleDisconnect', () => {
 		it('should handle user disconnection successfully', () => {
 			const socket = createMockSocket();
-			
+
 			gateway.handleDisconnect(socket);
-			
-			expect(mockDeps.websocketMetrics.user_websocket_disconnections_total.inc).toHaveBeenCalledWith({ reason: 'disconnect', type: 'user' });
+
+			expect(mockDeps.websocketMetrics.user_websocket_disconnections_total.inc).toHaveBeenCalledWith({
+				reason: 'disconnect',
+				type: 'user',
+			});
 			expect(mockDeps.websocketMetrics.user_websocket_connections_active.dec).toHaveBeenCalledWith({ type: 'user' });
 			expect(mockConnectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
 		});
@@ -176,7 +188,7 @@ describe('UserLocationGateway', () => {
 
 			// The method should throw when metrics fail
 			await expect(gateway.handleDisconnect(socket)).rejects.toThrow('Metrics error');
-			
+
 			// Restore the original mock
 			mockDeps.websocketMetrics.user_websocket_disconnections_total.inc = originalInc;
 		});
@@ -201,27 +213,30 @@ describe('UserLocationGateway', () => {
 
 		it('should update user location successfully', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			await gateway.updateUserLocation(data, socket);
 
-			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({ status: 'success', type: 'user' });
+			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({
+				status: 'success',
+				type: 'user',
+			});
 		});
 
 		it('should handle user joining new vendor rooms', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			// User is currently in vendor-1, but gRPC returns vendor-1 and vendor-2
 			// So vendor-2 should be added as a new vendor
 			mockConnectionManager.getUserVendorRooms.mockResolvedValue(['vendor-1']);
-			
+
 			// Override the gRPC service mock for this test
 			const mockLocationService = {
 				vendorLocations: vi.fn().mockReturnValue({
@@ -237,7 +252,7 @@ describe('UserLocationGateway', () => {
 					}),
 				}),
 			};
-			
+
 			// Mock the locationService property directly
 			(gateway as any).locationService = mockLocationService;
 
@@ -248,15 +263,15 @@ describe('UserLocationGateway', () => {
 
 		it('should handle user leaving vendor rooms', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			// User is currently in vendor-3 and vendor-4, but gRPC returns vendor-1 and vendor-2
 			// So vendor-3 and vendor-4 should be removed as they're no longer in range
 			mockConnectionManager.getUserVendorRooms.mockResolvedValue(['vendor-3', 'vendor-4']);
-			
+
 			// Override the gRPC service mock for this test
 			const mockLocationService = {
 				vendorLocations: vi.fn().mockReturnValue({
@@ -272,7 +287,7 @@ describe('UserLocationGateway', () => {
 					}),
 				}),
 			};
-			
+
 			// Mock the locationService property directly
 			(gateway as any).locationService = mockLocationService;
 
@@ -284,9 +299,9 @@ describe('UserLocationGateway', () => {
 
 		it('should handle socket without user ID', async () => {
 			const socket = createMockSocket({ userId: undefined });
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			await gateway.updateUserLocation(data, socket);
@@ -299,9 +314,9 @@ describe('UserLocationGateway', () => {
 
 		it('should handle gRPC service errors', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			mockDeps.grpcClient.getService.mockReturnValue({
@@ -319,9 +334,9 @@ describe('UserLocationGateway', () => {
 
 		it('should handle empty vendors response', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			mockDeps.grpcClient.getService.mockReturnValue({
@@ -335,14 +350,17 @@ describe('UserLocationGateway', () => {
 
 			await gateway.updateUserLocation(data, socket);
 
-			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({ status: 'success', type: 'user' });
+			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({
+				status: 'success',
+				type: 'user',
+			});
 		});
 
 		it('should handle connection manager errors gracefully', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			mockConnectionManager.addUserToVendorRoom.mockRejectedValue(new Error('Connection manager error'));
@@ -354,9 +372,9 @@ describe('UserLocationGateway', () => {
 
 		it('should handle room management errors gracefully', async () => {
 			const socket = createMockSocket();
-			const data = { 
+			const data = {
 				neLocation: { lat: 40.7589, long: -73.9851 },
-				swLocation: { lat: 40.7505, long: -73.9934 }
+				swLocation: { lat: 40.7505, long: -73.9934 },
 			};
 
 			mockConnectionManager.getUserVendorRooms.mockRejectedValue(new Error('Room management error'));

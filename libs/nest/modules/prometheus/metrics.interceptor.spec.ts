@@ -1,10 +1,9 @@
+import { firstValueFrom, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
+import { CallHandler, ExecutionContext } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ExecutionContext, CallHandler } from '@nestjs/common';
-import { of, throwError } from 'rxjs';
-import { firstValueFrom } from 'rxjs';
 import { MetricsInterceptor } from './metrics.interceptor';
 import { PrometheusService } from './prometheus.service';
-import { vi } from 'vitest';
 
 describe('MetricsInterceptor', () => {
 	let interceptor: MetricsInterceptor;
@@ -13,27 +12,27 @@ describe('MetricsInterceptor', () => {
 
 	beforeEach(async () => {
 		mockMetrics = {
-			requests_total: {
-				inc: vi.fn(),
-			},
 			request_duration_seconds: {
 				observe: vi.fn(),
 			},
-			requests_in_progress: {
-				inc: vi.fn(),
-				dec: vi.fn(),
-			},
 			request_failures_total: {
+				inc: vi.fn(),
+			},
+			requests_in_progress: {
+				dec: vi.fn(),
+				inc: vi.fn(),
+			},
+			requests_total: {
 				inc: vi.fn(),
 			},
 		};
 
 		const mockPrometheusService = {
-			registerMetrics: vi.fn().mockReturnValue(mockMetrics),
-			hasMetric: vi.fn().mockReturnValue(false),
 			getMetric: vi.fn().mockImplementation((name: string) => {
 				return mockMetrics[name] || undefined;
 			}),
+			hasMetric: vi.fn().mockReturnValue(false),
+			registerMetrics: vi.fn().mockReturnValue(mockMetrics),
 		};
 
 		const module: TestingModule = await Test.createTestingModule({
@@ -78,16 +77,16 @@ describe('MetricsInterceptor', () => {
 			.mockReturnValueOnce(1500); // end time
 
 		const result = await firstValueFrom(interceptor.intercept(mockContext, mockCallHandler));
-		
+
 		expect(result).toBe('success');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 	});
 
 	it('should handle gRPC requests correctly', async () => {
 		const mockContext = {
-			getType: vi.fn().mockReturnValue('rpc'),
-			getHandler: vi.fn().mockReturnValue({ name: 'getUser' }),
 			getClass: vi.fn().mockReturnValue({ name: 'UserService' }),
+			getHandler: vi.fn().mockReturnValue({ name: 'getUser' }),
+			getType: vi.fn().mockReturnValue('rpc'),
 			switchToRpc: vi.fn().mockReturnValue({
 				getData: vi.fn().mockReturnValue({ userId: '123' }),
 			}),
@@ -102,7 +101,7 @@ describe('MetricsInterceptor', () => {
 			.mockReturnValueOnce(1100); // end time
 
 		const result = await firstValueFrom(interceptor.intercept(mockContext, mockCallHandler));
-		
+
 		expect(result).toBe('user data');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 	});
@@ -125,7 +124,7 @@ describe('MetricsInterceptor', () => {
 			.mockReturnValueOnce(1050); // end time
 
 		const result = await firstValueFrom(interceptor.intercept(mockContext, mockCallHandler));
-		
+
 		expect(result).toBe('processed');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 	});
@@ -175,7 +174,7 @@ describe('MetricsInterceptor', () => {
 		} as CallHandler;
 
 		const result = await firstValueFrom(interceptor.intercept(mockContext, mockCallHandler));
-		
+
 		expect(result).toBe('success');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 	});
@@ -197,9 +196,9 @@ describe('MetricsInterceptor', () => {
 		} as CallHandler;
 
 		const result = await firstValueFrom(interceptor.intercept(mockContext, mockCallHandler));
-		
+
 		expect(result).toBe('success');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 		// The interceptor should work even if metrics fail to initialize
 	});
-}); 
+});

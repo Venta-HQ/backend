@@ -1,14 +1,14 @@
 import { Observable } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor, Logger, Inject, Optional } from '@nestjs/common';
-import { PrometheusService } from './prometheus.service';
+import { catchError, tap } from 'rxjs/operators';
+import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor, Optional } from '@nestjs/common';
 import { PrometheusOptions } from './prometheus.module';
+import { PrometheusService } from './prometheus.service';
 
 export interface RequestMetrics {
-	requests_total: any;
 	request_duration_seconds: any;
-	requests_in_progress: any;
 	request_failures_total: any;
+	requests_in_progress: any;
+	requests_total: any;
 }
 
 @Injectable()
@@ -47,10 +47,10 @@ export class MetricsInterceptor implements NestInterceptor {
 			// Check if metrics are already registered to avoid duplicates
 			if (this.prometheusService.hasMetric('requests_total')) {
 				this.metrics = {
-					requests_total: this.prometheusService.getMetric('requests_total'),
 					request_duration_seconds: this.prometheusService.getMetric('request_duration_seconds'),
-					requests_in_progress: this.prometheusService.getMetric('requests_in_progress'),
 					request_failures_total: this.prometheusService.getMetric('request_failures_total'),
+					requests_in_progress: this.prometheusService.getMetric('requests_in_progress'),
+					requests_total: this.prometheusService.getMetric('requests_total'),
 				};
 			} else {
 				// Register metrics for this interceptor
@@ -83,10 +83,10 @@ export class MetricsInterceptor implements NestInterceptor {
 				]);
 
 				this.metrics = {
-					requests_total: registeredMetrics.requests_total,
 					request_duration_seconds: registeredMetrics.request_duration_seconds,
-					requests_in_progress: registeredMetrics.requests_in_progress,
 					request_failures_total: registeredMetrics.request_failures_total,
+					requests_in_progress: registeredMetrics.requests_in_progress,
+					requests_total: registeredMetrics.requests_total,
 				};
 			}
 
@@ -112,9 +112,9 @@ export class MetricsInterceptor implements NestInterceptor {
 		try {
 			// Increment in-progress requests
 			this.metrics.requests_in_progress.inc({
-				service: this.getServiceName(),
-				protocol: requestInfo.protocol,
 				method: requestInfo.method,
+				protocol: requestInfo.protocol,
+				service: this.getServiceName(),
 			});
 		} catch (error) {
 			this.logger.warn('Failed to increment in-progress requests', error);
@@ -134,9 +134,9 @@ export class MetricsInterceptor implements NestInterceptor {
 	}
 
 	private extractRequestInfo(context: ExecutionContext): {
-		protocol: string;
 		method: string;
 		path: string;
+		protocol: string;
 	} {
 		const contextType = context.getType();
 
@@ -145,9 +145,9 @@ export class MetricsInterceptor implements NestInterceptor {
 				const httpContext = context.switchToHttp();
 				const request = httpContext.getRequest();
 				return {
-					protocol: 'http',
 					method: request.method,
 					path: this.normalizePath(request.url),
+					protocol: 'http',
 				};
 
 			case 'rpc':
@@ -157,9 +157,9 @@ export class MetricsInterceptor implements NestInterceptor {
 				const methodName = context.getHandler()?.name || 'unknown';
 				const className = context.getClass()?.name || 'UnknownService';
 				return {
-					protocol: 'grpc',
 					method: methodName,
 					path: `${className}.${methodName}`,
+					protocol: 'grpc',
 				};
 
 			case 'ws':
@@ -167,16 +167,16 @@ export class MetricsInterceptor implements NestInterceptor {
 				const client = wsContext.getClient();
 				const wsData = wsContext.getData();
 				return {
-					protocol: 'websocket',
 					method: wsData?.event || 'message',
 					path: 'websocket',
+					protocol: 'websocket',
 				};
 
 			default:
 				return {
-					protocol: 'unknown',
 					method: 'unknown',
 					path: 'unknown',
+					protocol: 'unknown',
 				};
 		}
 	}
@@ -184,19 +184,19 @@ export class MetricsInterceptor implements NestInterceptor {
 	private normalizePath(path: string): string {
 		// Remove query parameters
 		const cleanPath = path.split('?')[0];
-		
+
 		// Normalize common patterns
 		if (cleanPath.includes('/api/')) {
 			// Extract the API path after /api/
 			const apiPath = cleanPath.split('/api/')[1];
 			return `/api/${apiPath}`;
 		}
-		
+
 		return cleanPath;
 	}
 
 	private recordRequest(
-		requestInfo: { protocol: string; method: string; path: string },
+		requestInfo: { method: string; path: string; protocol: string },
 		startTime: number,
 		status: 'success' | 'failure',
 		error?: any,
@@ -212,20 +212,20 @@ export class MetricsInterceptor implements NestInterceptor {
 		try {
 			// Record request count
 			this.metrics.requests_total.inc({
-				service: serviceName,
-				protocol: requestInfo.protocol,
 				method: requestInfo.method,
 				path: requestInfo.path,
+				protocol: requestInfo.protocol,
+				service: serviceName,
 				status_code: statusCode,
 			});
 
 			// Record request duration
 			this.metrics.request_duration_seconds.observe(
 				{
-					service: serviceName,
-					protocol: requestInfo.protocol,
 					method: requestInfo.method,
 					path: requestInfo.path,
+					protocol: requestInfo.protocol,
+					service: serviceName,
 				},
 				durationSeconds,
 			);
@@ -234,11 +234,11 @@ export class MetricsInterceptor implements NestInterceptor {
 			if (status === 'failure') {
 				const errorType = error?.constructor?.name || 'UnknownError';
 				this.metrics.request_failures_total.inc({
-					service: serviceName,
-					protocol: requestInfo.protocol,
+					error_type: errorType,
 					method: requestInfo.method,
 					path: requestInfo.path,
-					error_type: errorType,
+					protocol: requestInfo.protocol,
+					service: serviceName,
 				});
 			}
 		} catch (error) {
@@ -248,12 +248,12 @@ export class MetricsInterceptor implements NestInterceptor {
 		try {
 			// Decrement in-progress requests
 			this.metrics.requests_in_progress.dec({
-				service: serviceName,
-				protocol: requestInfo.protocol,
 				method: requestInfo.method,
+				protocol: requestInfo.protocol,
+				service: serviceName,
 			});
 		} catch (error) {
 			this.logger.warn('Failed to decrement in-progress requests', error);
 		}
 	}
-} 
+}

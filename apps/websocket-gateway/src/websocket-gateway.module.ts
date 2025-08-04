@@ -8,12 +8,7 @@ import {
 	WsRateLimitGuardStatus,
 	WsRateLimitGuardStrict,
 } from '@app/nest/guards';
-import {
-	BootstrapModule,
-	ClerkModule,
-	PrometheusService,
-	RedisModule,
-} from '@app/nest/modules';
+import { BootstrapModule, ClerkModule, PrometheusService, RedisModule } from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -28,8 +23,6 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 @Module({
 	imports: [
 		BootstrapModule.forRoot({
-			appName: 'Websocket Gateway Microservice',
-			protocol: 'http',
 			additionalModules: [
 				RedisModule,
 				ClerkModule.register(),
@@ -51,6 +44,8 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 					],
 				}),
 			],
+			appName: 'Websocket Gateway Microservice',
+			protocol: 'http',
 		}),
 	],
 	providers: [

@@ -1,8 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { MetricsInterceptor } from './metrics.interceptor';
 import { PrometheusController } from './prometheus.controller';
 import { PrometheusService } from './prometheus.service';
-import { MetricsInterceptor } from './metrics.interceptor';
 
 export interface PrometheusOptions {
 	appName: string;
@@ -12,9 +12,9 @@ export interface PrometheusOptions {
 export class PrometheusModule {
 	static register(options: PrometheusOptions): DynamicModule {
 		return {
-			module: PrometheusModule,
 			controllers: [PrometheusController],
 			exports: [PrometheusService],
+			module: PrometheusModule,
 			providers: [
 				PrometheusService,
 				{

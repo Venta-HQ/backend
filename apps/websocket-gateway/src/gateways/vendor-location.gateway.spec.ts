@@ -1,17 +1,25 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { VendorLocationGateway } from './vendor-location.gateway';
+import {
+	clearMocks,
+	createMockDependencies,
+	createMockProvider,
+	createMockSocket,
+	createTestModule,
+} from '../../../../test/helpers/test-utils';
 import { WEBSOCKET_METRICS } from '../metrics.provider';
-import { createMockDependencies, createTestModule, createMockSocket, createMockProvider, clearMocks } from '../../../../test/helpers/test-utils';
 import { UserConnectionManagerService } from '../services/user-connection-manager.service';
 import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
+import { VendorLocationGateway } from './vendor-location.gateway';
 
 // Mock the utils module
 vi.mock('@app/utils', () => ({
-	retryOperation: vi.fn().mockImplementation(async (operation: () => Promise<any>, description: string, options?: any) => {
-		// Execute the operation directly
-		return await operation();
-	}),
+	retryOperation: vi
+		.fn()
+		.mockImplementation(async (operation: () => Promise<any>, description: string, options?: any) => {
+			// Execute the operation directly
+			return await operation();
+		}),
 }));
 
 // Mock the proto modules
@@ -80,19 +88,19 @@ describe('VendorLocationGateway', () => {
 	beforeEach(async () => {
 		mockDeps = createMockDependencies({
 			websocketMetrics: {
-				vendor_websocket_connections_total: { inc: vi.fn() },
-				vendor_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
-				vendor_websocket_connection_duration_seconds: { observe: vi.fn() },
-				vendor_websocket_errors_total: { inc: vi.fn() },
-				vendor_websocket_disconnections_total: { inc: vi.fn() },
-				user_websocket_connections_total: { inc: vi.fn() },
-				user_websocket_connections_active: { inc: vi.fn(), dec: vi.fn() },
-				user_websocket_connection_duration_seconds: { observe: vi.fn() },
-				user_websocket_errors_total: { inc: vi.fn() },
-				user_websocket_disconnections_total: { inc: vi.fn() },
-				location_updates_total: { inc: vi.fn() },
-				location_update_duration_seconds: { observe: vi.fn() },
 				active_location_tracking: { set: vi.fn() },
+				location_update_duration_seconds: { observe: vi.fn() },
+				location_updates_total: { inc: vi.fn() },
+				user_websocket_connection_duration_seconds: { observe: vi.fn() },
+				user_websocket_connections_active: { dec: vi.fn(), inc: vi.fn() },
+				user_websocket_connections_total: { inc: vi.fn() },
+				user_websocket_disconnections_total: { inc: vi.fn() },
+				user_websocket_errors_total: { inc: vi.fn() },
+				vendor_websocket_connection_duration_seconds: { observe: vi.fn() },
+				vendor_websocket_connections_active: { dec: vi.fn(), inc: vi.fn() },
+				vendor_websocket_connections_total: { inc: vi.fn() },
+				vendor_websocket_disconnections_total: { inc: vi.fn() },
+				vendor_websocket_errors_total: { inc: vi.fn() },
 			},
 		});
 
@@ -109,18 +117,18 @@ describe('VendorLocationGateway', () => {
 				createMockProvider(WEBSOCKET_METRICS, mockDeps.websocketMetrics),
 				createMockProvider('default_IORedisModuleConnectionToken', mockDeps.redis),
 				createMockProvider('ClerkService', mockDeps.clerkService),
-			]
+			],
 		);
 
 		gateway = module.get<VendorLocationGateway>(VendorLocationGateway);
 		gateway.server = { emit: vi.fn() } as any; // Mock the server property
-		
+
 		// Manually assign the mock connection manager to bypass DI issues
 		(gateway as any).connectionManager = mockVendorConnectionManager;
-		
+
 		// Manually assign the Redis mock to ensure it's accessible
 		(gateway as any).redis = mockDeps.redis;
-		
+
 		// Mock the locationService property after afterInit is called
 		(gateway as any).locationService = {
 			updateVendorLocation: vi.fn().mockReturnValue({
@@ -150,32 +158,37 @@ describe('VendorLocationGateway', () => {
 
 	it('should initialize location service', () => {
 		gateway.afterInit();
-		
+
 		expect(mockDeps.grpcClient.getService).toHaveBeenCalledWith('LocationService');
 	});
 
 	describe('handleConnection', () => {
 		it('should handle vendor connection successfully', async () => {
 			const socket = createMockSocket();
-			
+
 			await gateway.handleConnection(socket);
-			
-			expect(mockDeps.websocketMetrics.vendor_websocket_connections_total.inc).toHaveBeenCalledWith({ status: 'connected', type: 'vendor' });
-			expect(mockDeps.websocketMetrics.vendor_websocket_connections_active.inc).toHaveBeenCalledWith({ type: 'vendor' });
+
+			expect(mockDeps.websocketMetrics.vendor_websocket_connections_total.inc).toHaveBeenCalledWith({
+				status: 'connected',
+				type: 'vendor',
+			});
+			expect(mockDeps.websocketMetrics.vendor_websocket_connections_active.inc).toHaveBeenCalledWith({
+				type: 'vendor',
+			});
 		});
 
 		it('should throw when metrics fail', async () => {
 			const socket = createMockSocket();
-			
+
 			// Mock the metrics to throw an error
 			const originalInc = mockDeps.websocketMetrics.vendor_websocket_connections_total.inc;
 			mockDeps.websocketMetrics.vendor_websocket_connections_total.inc = vi.fn().mockImplementation(() => {
 				throw new Error('Metrics error');
 			});
-			
+
 			// The method should throw when metrics fail
 			await expect(gateway.handleConnection(socket)).rejects.toThrow('Metrics error');
-			
+
 			// Restore the original mock
 			mockDeps.websocketMetrics.vendor_websocket_connections_total.inc = originalInc;
 		});
@@ -184,11 +197,16 @@ describe('VendorLocationGateway', () => {
 	describe('handleDisconnect', () => {
 		it('should handle vendor disconnection successfully', () => {
 			const socket = createMockSocket();
-			
+
 			gateway.handleDisconnect(socket);
-			
-			expect(mockDeps.websocketMetrics.vendor_websocket_disconnections_total.inc).toHaveBeenCalledWith({ reason: 'disconnect', type: 'vendor' });
-			expect(mockDeps.websocketMetrics.vendor_websocket_connections_active.dec).toHaveBeenCalledWith({ type: 'vendor' });
+
+			expect(mockDeps.websocketMetrics.vendor_websocket_disconnections_total.inc).toHaveBeenCalledWith({
+				reason: 'disconnect',
+				type: 'vendor',
+			});
+			expect(mockDeps.websocketMetrics.vendor_websocket_connections_active.dec).toHaveBeenCalledWith({
+				type: 'vendor',
+			});
 			expect(mockVendorConnectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
 		});
 
@@ -203,7 +221,7 @@ describe('VendorLocationGateway', () => {
 
 			// The method should throw when metrics fail
 			await expect(gateway.handleDisconnect(socket)).rejects.toThrow('Metrics error');
-			
+
 			// Restore the original mock
 			mockDeps.websocketMetrics.vendor_websocket_disconnections_total.inc = originalInc;
 		});
@@ -225,21 +243,24 @@ describe('VendorLocationGateway', () => {
 
 		it('should update vendor location successfully', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			await gateway.updateVendorLocation(data, socket);
 
-			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({ status: 'success', type: 'vendor' });
+			expect(mockDeps.websocketMetrics.location_updates_total.inc).toHaveBeenCalledWith({
+				status: 'success',
+				type: 'vendor',
+			});
 		});
 
 		it('should call gRPC service to update vendor location', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			await gateway.updateVendorLocation(data, socket);
@@ -255,9 +276,9 @@ describe('VendorLocationGateway', () => {
 
 		it('should update vendor location in Redis', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			// Ensure Redis mock is properly set up
@@ -271,9 +292,9 @@ describe('VendorLocationGateway', () => {
 
 		it('should emit vendor_sync to users tracking this vendor', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			// Mock the gRPC service to not throw errors
@@ -289,11 +310,11 @@ describe('VendorLocationGateway', () => {
 			await gateway.updateVendorLocation(data, socket);
 
 			expect(socket.to).toHaveBeenCalledWith('vendor-123');
-			
+
 			// Check that socket.to was called and get the mock return value
 			const mockToCall = socket.to.mock.calls[0];
 			expect(mockToCall[0]).toBe('vendor-123');
-			
+
 			// Get the mock return value from the first call and check its emit method was called
 			const mockToReturn = socket.to.mock.results[0].value;
 			expect(mockToReturn.emit).toHaveBeenCalledWith('vendor_sync', {
@@ -307,9 +328,9 @@ describe('VendorLocationGateway', () => {
 
 		it('should handle socket without vendor ID', async () => {
 			const socket = createMockSocket({ vendorId: undefined });
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			await gateway.updateVendorLocation(data, socket);
@@ -322,9 +343,9 @@ describe('VendorLocationGateway', () => {
 
 		it('should handle gRPC service errors gracefully', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			// Mock gRPC service to throw an error
@@ -343,9 +364,9 @@ describe('VendorLocationGateway', () => {
 
 		it('should handle Redis errors gracefully', async () => {
 			const socket = createMockSocket();
-			const data = { 
-				lat: 40.7589, 
-				long: -73.9851 
+			const data = {
+				lat: 40.7589,
+				long: -73.9851,
 			};
 
 			mockDeps.redis.zadd.mockRejectedValue(new Error('Redis error'));

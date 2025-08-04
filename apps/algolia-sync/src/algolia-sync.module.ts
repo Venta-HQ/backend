@@ -5,15 +5,15 @@ import { AlgoliaSyncService } from './algolia-sync.service';
 @Module({
 	imports: [
 		BootstrapModule.forRoot({
-			appName: 'Algolia Sync Service',
-			protocol: 'http',
 			additionalModules: [AlgoliaModule.register()],
+			appName: 'Algolia Sync Service',
 			healthChecks: async () => {
 				// Add any algolia-sync specific health checks here
 				return {
 					algoliaSync: 'operational',
 				};
 			},
+			protocol: 'http',
 		}),
 	],
 	providers: [AlgoliaSyncService],
