@@ -16,7 +16,7 @@ This document outlines the minimal, essential improvements needed to make the Ve
 
 ### ⚠️ What Needs Simple Fixes
 - ~~15 linting errors~~ ✅ **FIXED**
-- Inconsistent bootstrap patterns
+- ~~Inconsistent bootstrap patterns~~ ✅ **FIXED**
 - Missing tests for most services
 - Default README (not project-specific)
 
@@ -34,24 +34,45 @@ This document outlines the minimal, essential improvements needed to make the Ve
 
 **Impact**: Better code quality, fewer bugs, cleaner codebase.
 
-### 2. Standardize Bootstrap Patterns
+### 2. Standardize Bootstrap Patterns ✅ **COMPLETED**
 
 **Why**: Consistent startup behavior across services.
 
-**What to do**: Make all services follow the same bootstrap pattern:
+**What was done**: Standardized all service bootstrap patterns:
 
+#### HTTP Services (Gateway, WebSocket Gateway, Algolia Sync)
 ```typescript
-// Standard pattern for all services
+// Standard pattern for HTTP services
 async function bootstrap() {
   const app = await NestFactory.create(ServiceModule);
   const configService = app.get(ConfigService);
   
   app.useLogger(app.get(Logger));
-  await app.listen(configService.get('SERVICE_PORT', defaultPort));
+  await app.listen(configService.get('SERVICE_PORT', defaultPort), '0.0.0.0');
 }
 ```
 
-**Impact**: Easier to debug startup issues.
+#### gRPC Services (User, Vendor, Location)
+```typescript
+// Standard pattern for gRPC services
+async function bootstrap() {
+  const app = await NestFactory.createMicroservice<MicroserviceOptions>(ServiceModule, {
+    options: {
+      package: 'service',
+      protoPath: join(__dirname, `../proto/src/definitions/service.proto`),
+      url: process.env.SERVICE_ADDRESS || 'localhost:port',
+    },
+    transport: Transport.GRPC,
+  });
+  
+  const configService = app.get(ConfigService);
+  app.useLogger(app.get(GrpcLogger));
+  
+  await app.listen();
+}
+```
+
+**Impact**: Easier to debug startup issues, consistent configuration management.
 
 ### 3. Add Missing Tests
 
@@ -80,7 +101,7 @@ async function bootstrap() {
 
 ### Phase 1: Quick Wins ✅ **COMPLETED**
 1. ✅ Fix all linting errors
-2. Standardize bootstrap patterns
+2. ✅ Standardize bootstrap patterns
 3. Update README
 
 ### Phase 2: Testing (2-3 days)
@@ -109,7 +130,7 @@ async function bootstrap() {
 
 No complex patterns, no inheritance, no enhanced loggers, no over-engineering. Just:
 1. ✅ Fix the linting errors
-2. Make startup consistent
+2. ✅ Make startup consistent
 3. Add some tests
 4. Update the README
 

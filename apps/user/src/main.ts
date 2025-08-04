@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { GrpcLogger } from '@app/nest/modules';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { UserModule } from './user.module';
@@ -13,6 +14,8 @@ async function bootstrap() {
 		},
 		transport: Transport.GRPC,
 	});
+	
+	const configService = app.get(ConfigService);
 	app.useLogger(app.get(GrpcLogger));
 
 	await app.listen();
