@@ -1,6 +1,8 @@
+import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes/lib/user/user.schemas';
 import { RevenueCatSubscriptionData, SubscriptionCreatedResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { IEventsService } from '@app/nest/modules';
-import { Controller, Inject, Logger } from '@nestjs/common';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { Controller, Inject, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { SubscriptionService } from './subscription.service';
 
@@ -14,6 +16,7 @@ export class SubscriptionController {
 	) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
+	@UsePipes(new SchemaValidatorPipe(GrpcRevenueCatSubscriptionDataSchema))
 	async handleSubscriptionCreated(data: RevenueCatSubscriptionData): Promise<SubscriptionCreatedResponse> {
 		// Create an Integration record
 		await this.subscriptionService.createIntegration({
