@@ -67,8 +67,11 @@ This document provides a detailed comparison of every controller and service bet
 **Notes**: Need to compare implementations
 
 #### `apps/user/src/subscription/subscription.controller.ts`
-**Status**: ⚠️ Needs Comparison
-**Notes**: Need to compare implementations
+**Status**: ❌ Has Differences
+**Notes**: 
+- Main branch has EventsService injection and event publishing
+- Main branch has different data handling: `data.data` vs `data.data ? JSON.parse(JSON.stringify(data.data)) : undefined`
+- Main branch has event publishing in handleSubscriptionCreated method
 
 #### `apps/user/src/subscription/subscription.service.ts`
 **Status**: ⚠️ Needs Comparison
