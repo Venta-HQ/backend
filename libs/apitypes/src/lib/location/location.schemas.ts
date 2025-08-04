@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+// Generic location data schema
+export const LocationDataSchema = z.object({
+	lat: z.number(),
+	long: z.number(),
+});
+
+// Generic location update data schema
+export const LocationUpdateDataSchema = z.object({
+	entityId: z.string(),
+	location: LocationDataSchema,
+});
+
 export const VendorLocationUpdateDataSchema = z.object({
 	lat: z.number(),
 	long: z.number(),
