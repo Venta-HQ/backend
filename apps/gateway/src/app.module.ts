@@ -1,14 +1,15 @@
 import { AuthGuard } from '@app/nest/guards';
-import { ClerkModule, EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule } from '@app/nest/modules';
+import { ClerkModule, EventsModule, HealthModule, LoggerModule, PrismaModule, RedisModule, ConfigModule } from '@app/nest/modules';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { RouterModule } from '@nestjs/core';
+import { APP_GUARD, RouterModule } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { modules, routes } from './router';
+import { ServiceDiscoveryService } from './services/service-discovery.service';
 
 @Module({
 	imports: [
-		ConfigModule.forRoot(),
+		ConfigModule,
 		ErrorHandlingModule,
 		EventsModule,
 		HealthModule.forRoot({
@@ -18,9 +19,22 @@ import { modules, routes } from './router';
 		RedisModule,
 		ClerkModule.register(),
 		PrismaModule.register(),
+		ThrottlerModule.forRoot([
+			{
+				ttl: 60000,
+				limit: 100,
+			},
+		]),
 		...modules,
 		RouterModule.register(routes),
 	],
-	providers: [AuthGuard],
+	providers: [
+		AuthGuard,
+		ServiceDiscoveryService,
+		{
+			provide: APP_GUARD,
+			useClass: ThrottlerGuard,
+		},
+	],
 })
 export class AppModule {}

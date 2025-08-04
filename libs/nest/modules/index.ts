@@ -1,3 +1,4 @@
+export * from './config';
 export * from './algolia';
 export * from './events';
 export * from './health';
