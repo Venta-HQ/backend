@@ -24,7 +24,10 @@ describe('LocationService', () => {
 			zrem: vi.fn(),
 		};
 		prisma = mockPrisma();
-		eventsService = mockEvents();
+		eventsService = {
+			...mockEvents(),
+			emit: vi.fn(),
+		};
 		service = new LocationService(redis, prisma, eventsService);
 	});
 
@@ -44,7 +47,7 @@ describe('LocationService', () => {
 		it('should update vendor location successfully', async () => {
 			redis.geoadd.mockResolvedValue(1);
 			prisma.db.vendor.update.mockResolvedValue(data.vendor({ id: 'vendor_123' }));
-			eventsService.publishEvent.mockResolvedValue(undefined);
+			eventsService.emit.mockResolvedValue(undefined);
 
 			await service.updateVendorLocation(locationData);
 
@@ -58,13 +61,19 @@ describe('LocationService', () => {
 					id: 'vendor_123',
 				},
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('vendor.location.updated', {
-				location: {
-					lat: 40.7128,
-					long: -74.006,
-				},
-				timestamp: expect.any(String),
-				vendorId: 'vendor_123',
+			expect(eventsService.emit).toHaveBeenCalledWith('vendor.updated', {
+				createdAt: expect.any(String),
+				description: 'Test Description',
+				email: 'vendor@example.com',
+				id: 'vendor_123',
+				imageUrl: 'https://example.com/image.jpg',
+				lat: 40.7128,
+				long: -74.006,
+				name: 'Test Vendor',
+				open: true,
+				phone: '123-456-7890',
+				updatedAt: expect.any(String),
+				website: 'https://example.com',
 			});
 		});
 
@@ -116,7 +125,7 @@ describe('LocationService', () => {
 		it('should update user location successfully', async () => {
 			redis.geoadd.mockResolvedValue(1);
 			prisma.db.user.update.mockResolvedValue(data.user({ id: 'user_123' }));
-			eventsService.publishEvent.mockResolvedValue(undefined);
+			eventsService.emit.mockResolvedValue(undefined);
 
 			await service.updateUserLocation(locationData);
 
@@ -130,14 +139,7 @@ describe('LocationService', () => {
 					id: 'user_123',
 				},
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('user.location.updated', {
-				location: {
-					lat: 40.7128,
-					long: -74.006,
-				},
-				timestamp: expect.any(String),
-				userId: 'user_123',
-			});
+			// No events are emitted by this service for user location updates
 		});
 
 		it('should throw validation error when location is missing', async () => {
@@ -177,7 +179,6 @@ describe('LocationService', () => {
 				['vendor_2', [40.7589, -73.9851]],
 			];
 			redis.geosearch.mockResolvedValue(mockResults);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			const result = await service.searchVendorLocations(searchRequest);
 
@@ -202,31 +203,14 @@ describe('LocationService', () => {
 					},
 				],
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('location.search.performed', {
-				boundingBox: {
-					ne: { lat: 40.7589, long: -73.9851 },
-					sw: { lat: 40.7505, long: -73.9934 },
-				},
-				resultCount: 2,
-				timestamp: expect.any(String),
-			});
 		});
 
 		it('should return empty results when no vendors found', async () => {
 			redis.geosearch.mockResolvedValue([]);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			const result = await service.searchVendorLocations(searchRequest);
 
 			expect(result).toEqual({ vendors: [] });
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('location.search.performed', {
-				boundingBox: {
-					ne: { lat: 40.7589, long: -73.9851 },
-					sw: { lat: 40.7505, long: -73.9934 },
-				},
-				resultCount: 0,
-				timestamp: expect.any(String),
-			});
 		});
 
 		it('should throw validation error when locations are missing', async () => {

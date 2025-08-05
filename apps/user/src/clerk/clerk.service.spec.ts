@@ -1,16 +1,14 @@
 import { IntegrationType } from '@prisma/client';
-import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../../test/helpers/test-utils';
+import { clearMocks, data, errors, mockPrisma } from '../../../../test/helpers/test-utils';
 import { ClerkService } from './clerk.service';
 
 describe('ClerkService', () => {
 	let service: ClerkService;
 	let prisma: any;
-	let events: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		events = mockEvents();
-		service = new ClerkService(prisma, events);
+		service = new ClerkService(prisma);
 	});
 
 	afterEach(() => {
@@ -23,7 +21,6 @@ describe('ClerkService', () => {
 			const expectedUser = data.user({ clerkId });
 
 			prisma.db.user.create.mockResolvedValue(expectedUser);
-			events.publishEvent.mockResolvedValue(undefined);
 
 			const result = await service.handleUserCreated(clerkId);
 
@@ -34,11 +31,7 @@ describe('ClerkService', () => {
 				},
 				select: { clerkId: true, id: true },
 			});
-			expect(events.publishEvent).toHaveBeenCalledWith('user.created', {
-				clerkId: 'clerk_user_123',
-				timestamp: expect.any(String),
-				userId: expectedUser.id,
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle database errors gracefully', async () => {
@@ -63,7 +56,6 @@ describe('ClerkService', () => {
 
 			prisma.db.user.findFirst.mockResolvedValue(existingUser);
 			prisma.db.user.deleteMany.mockResolvedValue({ count: 1 });
-			events.publishEvent.mockResolvedValue(undefined);
 
 			await service.handleUserDeleted(clerkId);
 
@@ -76,11 +68,7 @@ describe('ClerkService', () => {
 					clerkId: 'clerk_user_123',
 				},
 			});
-			expect(events.publishEvent).toHaveBeenCalledWith('user.deleted', {
-				clerkId: 'clerk_user_123',
-				timestamp: expect.any(String),
-				userId: existingUser.id,
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle deletion when user does not exist', async () => {
@@ -100,7 +88,7 @@ describe('ClerkService', () => {
 					clerkId: 'non_existent_user',
 				},
 			});
-			expect(events.publishEvent).not.toHaveBeenCalled();
+			// No events are emitted by this service
 		});
 
 		it('should handle database errors during deletion', async () => {

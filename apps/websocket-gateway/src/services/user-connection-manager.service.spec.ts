@@ -1,4 +1,4 @@
-import { clearMocks, mockEvents } from '../../../../test/helpers/test-utils';
+import { clearMocks } from '../../../../test/helpers/test-utils';
 import { UserConnectionManagerService } from './user-connection-manager.service';
 
 // Mock the retry utility
@@ -11,7 +11,6 @@ vi.mock('@app/utils', () => ({
 describe('UserConnectionManagerService', () => {
 	let service: UserConnectionManagerService;
 	let redis: any;
-	let eventsService: any;
 
 	beforeEach(() => {
 		redis = {
@@ -22,8 +21,7 @@ describe('UserConnectionManagerService', () => {
 			smembers: vi.fn(),
 			srem: vi.fn(),
 		};
-		eventsService = mockEvents();
-		service = new UserConnectionManagerService(redis, eventsService);
+		service = new UserConnectionManagerService(redis);
 	});
 
 	afterEach(() => {
@@ -33,7 +31,6 @@ describe('UserConnectionManagerService', () => {
 	describe('registerUser', () => {
 		it('should register user connection successfully', async () => {
 			redis.set.mockResolvedValue('OK');
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.registerUser('user-123', 'socket-123');
 
@@ -43,11 +40,7 @@ describe('UserConnectionManagerService', () => {
 				'user_connection:socket-123',
 				expect.stringContaining('"socketId":"socket-123"'),
 			);
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('websocket.user.connected', {
-				socketId: 'socket-123',
-				timestamp: expect.any(String),
-				userId: 'user-123',
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle Redis errors', async () => {
@@ -57,13 +50,7 @@ describe('UserConnectionManagerService', () => {
 			await expect(service.registerUser('user-123', 'socket-123')).rejects.toThrow('Redis connection failed');
 		});
 
-		it('should handle event publishing errors', async () => {
-			redis.set.mockResolvedValue('OK');
-			const eventError = new Error('Event publishing failed');
-			eventsService.publishEvent.mockRejectedValue(eventError);
-
-			await expect(service.registerUser('user-123', 'socket-123')).rejects.toThrow('Event publishing failed');
-		});
+		// No events are emitted by this service, so no event publishing errors to test
 	});
 
 	describe('handleDisconnect', () => {
@@ -77,7 +64,6 @@ describe('UserConnectionManagerService', () => {
 			redis.smembers.mockResolvedValue(['vendor-1', 'vendor-2']);
 			redis.srem.mockResolvedValue(1);
 			redis.del.mockResolvedValue(1);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.handleDisconnect('socket-123');
 
@@ -89,11 +75,7 @@ describe('UserConnectionManagerService', () => {
 			expect(redis.del).toHaveBeenCalledWith('socket:socket-123:userId');
 			expect(redis.del).toHaveBeenCalledWith('user:user-123:rooms');
 			expect(redis.del).toHaveBeenCalledWith('user_connection:socket-123');
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('websocket.user.disconnected', {
-				socketId: 'socket-123',
-				timestamp: expect.any(String),
-				userId: 'user-123',
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle disconnection when no connection info found', async () => {
@@ -102,7 +84,7 @@ describe('UserConnectionManagerService', () => {
 			await service.handleDisconnect('socket-123');
 
 			expect(redis.get).toHaveBeenCalledWith('user_connection:socket-123');
-			expect(eventsService.publishEvent).not.toHaveBeenCalled();
+			// No events are emitted by this service
 		});
 
 		it('should handle Redis errors during disconnection', async () => {

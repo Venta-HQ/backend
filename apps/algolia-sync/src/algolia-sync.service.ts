@@ -51,18 +51,19 @@ export class AlgoliaSyncService {
 	}
 
 	private async handleVendorUpdated(vendor: Record<string, unknown>): Promise<void> {
+		const { lat, long, ...justVendor } = vendor;
 		await retryOperation(
 			() =>
 				this.algoliaService.updateObject(
 					'vendor',
 					vendor.id as string,
 					{
-						...vendor,
-						...(vendor.lat && vendor.long
+						...justVendor,
+						...(lat && long
 							? ({
 									_geoloc: {
-										lat: vendor.lat,
-										lng: vendor.long,
+										lat,
+										lng: long,
 									},
 								} as any)
 							: {}),

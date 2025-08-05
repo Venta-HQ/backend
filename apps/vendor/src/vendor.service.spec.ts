@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@app/nest/errors';
 import { clearMocks, data, errors, mockPrisma } from '../../../test/helpers/test-utils';
 import { VendorService } from './vendor.service';
@@ -12,14 +13,14 @@ vi.mock('@app/utils', () => ({
 describe('VendorService', () => {
 	let service: VendorService;
 	let prisma: any;
-	let natsClient: any;
+	let eventService: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		natsClient = {
+		eventService = {
 			emit: vi.fn(),
 		};
-		service = new VendorService(prisma, natsClient);
+		service = new VendorService(prisma, eventService);
 	});
 
 	afterEach(() => {
@@ -67,7 +68,16 @@ describe('VendorService', () => {
 		};
 
 		it('should create vendor successfully', async () => {
-			const mockVendor = data.vendor({ id: 'vendor_123', ...createData });
+			const { imageUrl, ...vendorData } = data.vendor({ id: 'vendor_123' });
+			const mockVendor = {
+				...vendorData,
+				description: createData.description,
+				email: createData.email,
+				name: createData.name,
+				phone: createData.phone,
+				primaryImage: createData.imageUrl,
+				website: createData.website,
+			};
 			prisma.db.vendor.create.mockResolvedValue(mockVendor);
 
 			const result = await service.createVendor(createData);
@@ -87,7 +97,7 @@ describe('VendorService', () => {
 					website: 'https://testvendor.com',
 				},
 			});
-			expect(natsClient.emit).toHaveBeenCalledWith('vendor.created', {
+			expect(eventService.emit).toHaveBeenCalledWith('vendor.created', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,
@@ -106,10 +116,14 @@ describe('VendorService', () => {
 
 		it('should create vendor without imageUrl', async () => {
 			const { imageUrl, ...dataWithoutImage } = createData;
-			const mockVendor = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
+			const { imageUrl: _, ...vendorData } = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
+			const mockVendor = {
+				...vendorData,
+				primaryImage: undefined,
+			};
 			prisma.db.vendor.create.mockResolvedValue(mockVendor);
 
-			const result = await service.createVendor(dataWithoutImage);
+			const result = await service.createVendor({ ...dataWithoutImage, imageUrl: undefined });
 
 			expect(prisma.db.vendor.create).toHaveBeenCalledWith({
 				data: {
@@ -149,7 +163,11 @@ describe('VendorService', () => {
 
 		it('should update vendor successfully', async () => {
 			prisma.db.vendor.count.mockResolvedValue(1);
-			const mockVendor = data.vendor({ id: 'vendor_123', ...updateData });
+			const { imageUrl, ...vendorData } = data.vendor({ id: 'vendor_123', ...updateData });
+			const mockVendor = {
+				...vendorData,
+				primaryImage: updateData.imageUrl, // Map imageUrl to primaryImage for database model
+			};
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
 
 			await service.updateVendor('vendor_123', 'user_123', updateData);
@@ -168,7 +186,7 @@ describe('VendorService', () => {
 				},
 				where: { id: 'vendor_123', owner: { id: 'user_123' } },
 			});
-			expect(natsClient.emit).toHaveBeenCalledWith('vendor.updated', {
+			expect(eventService.emit).toHaveBeenCalledWith('vendor.updated', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,
@@ -187,10 +205,14 @@ describe('VendorService', () => {
 		it('should update vendor without imageUrl', async () => {
 			const { imageUrl, ...dataWithoutImage } = updateData;
 			prisma.db.vendor.count.mockResolvedValue(1);
-			const mockVendor = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
+			const { imageUrl: _, ...vendorData } = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
+			const mockVendor = {
+				...vendorData,
+				primaryImage: undefined,
+			};
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
 
-			await service.updateVendor('vendor_123', 'user_123', dataWithoutImage);
+			await service.updateVendor('vendor_123', 'user_123', { ...dataWithoutImage, imageUrl: undefined });
 
 			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
 				data: {
@@ -229,7 +251,11 @@ describe('VendorService', () => {
 
 	describe('deleteVendor', () => {
 		it('should delete vendor successfully', async () => {
-			const mockVendor = data.vendor({ id: 'vendor_123' });
+			const { imageUrl, ...vendorData } = data.vendor({ id: 'vendor_123' });
+			const mockVendor = {
+				...vendorData,
+				primaryImage: 'https://example.com/image.jpg', // Add primaryImage for database model
+			};
 			prisma.db.vendor.findFirst.mockResolvedValue(mockVendor);
 			prisma.db.vendor.delete.mockResolvedValue(mockVendor);
 
@@ -241,7 +267,7 @@ describe('VendorService', () => {
 			expect(prisma.db.vendor.delete).toHaveBeenCalledWith({
 				where: { id: 'vendor_123' },
 			});
-			expect(natsClient.emit).toHaveBeenCalledWith('vendor.deleted', {
+			expect(eventService.emit).toHaveBeenCalledWith('vendor.deleted', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,

@@ -1,4 +1,4 @@
-import { BaseEvent, VendorEventSubject } from '@app/apitypes';
+import { AvailableEventSubjects, BaseEvent } from '@app/apitypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AlgoliaSyncService } from './algolia-sync.service';
@@ -29,7 +29,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 		this.logger.log(`Handling ${subject} event: ${event.eventId} for vendor: ${event.data.id}`);
 
 		try {
-			await this.algoliaSyncService.processVendorEvent(event, subject as VendorEventSubject);
+			await this.algoliaSyncService.processVendorEvent(event, subject as AvailableEventSubjects);
 		} catch (error) {
 			this.logger.error(`Failed to handle ${subject} event: ${event.eventId} for vendor ${event.data.id}:`, error);
 			throw error;

@@ -1,4 +1,5 @@
-import { clearMocks, data, errors, mockEvents } from '../../../test/helpers/test-utils';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearMocks, data, errors } from '../../../test/helpers/test-utils';
 import { AlgoliaSyncService } from './algolia-sync.service';
 
 // Mock the retry utility
@@ -8,10 +9,20 @@ vi.mock('@app/utils', () => ({
 	}),
 }));
 
+// Helper function to create BaseEvent
+function createBaseEvent(eventData: any, eventId = 'test-event') {
+	return {
+		data: eventData,
+		eventId,
+		source: 'test-service',
+		timestamp: new Date().toISOString(),
+		version: '1.0',
+	};
+}
+
 describe('AlgoliaSyncService', () => {
 	let service: AlgoliaSyncService;
 	let algoliaService: any;
-	let eventsService: any;
 
 	beforeEach(() => {
 		algoliaService = {
@@ -19,64 +30,14 @@ describe('AlgoliaSyncService', () => {
 			deleteObject: vi.fn(),
 			updateObject: vi.fn(),
 		};
-		eventsService = mockEvents();
-		service = new AlgoliaSyncService(algoliaService, eventsService);
+		service = new AlgoliaSyncService(algoliaService);
 	});
 
 	afterEach(() => {
 		clearMocks();
 	});
 
-	describe('onModuleInit', () => {
-		it('should setup event listeners', async () => {
-			const mockStream = { id: 'test-stream' };
-			eventsService.subscribeToStream.mockResolvedValue(mockStream);
-
-			await service.onModuleInit();
-
-			expect(eventsService.subscribeToStream).toHaveBeenCalledWith(
-				{
-					eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted', 'vendor.location.updated'],
-					groupName: 'algolia-sync',
-					streamName: 'algolia-sync-vendor-events',
-				},
-				expect.any(Function),
-			);
-		});
-	});
-
-	describe('onModuleDestroy', () => {
-		it('should unsubscribe from event stream', async () => {
-			const mockStream = { id: 'test-stream' };
-			eventsService.subscribeToStream.mockResolvedValue(mockStream);
-
-			await service.onModuleInit();
-			await service.onModuleDestroy();
-
-			expect(eventsService.unsubscribeFromStream).toHaveBeenCalledWith(mockStream);
-		});
-
-		it('should not unsubscribe if no stream exists', async () => {
-			await service.onModuleDestroy();
-
-			expect(eventsService.unsubscribeFromStream).not.toHaveBeenCalled();
-		});
-	});
-
 	describe('Event Handling', () => {
-		let eventHandler: () => Promise<void>;
-		let mockStream: any;
-
-		beforeEach(async () => {
-			mockStream = { id: 'test-stream' };
-			eventsService.subscribeToStream.mockResolvedValue(mockStream);
-
-			await service.onModuleInit();
-
-			// Capture the event handler function
-			eventHandler = eventsService.subscribeToStream.mock.calls[0][1];
-		});
-
 		describe('vendor.created', () => {
 			it('should handle vendor created event successfully', async () => {
 				const vendorData = data.vendor({
@@ -87,7 +48,7 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.createObject.mockResolvedValue({ objectID: 'vendor_123' });
 
-				await eventHandler({ data: vendorData, type: 'vendor.created' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.created');
 
 				expect(algoliaService.createObject).toHaveBeenCalledWith('vendor', {
 					...vendorData,
@@ -107,7 +68,7 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.createObject.mockResolvedValue({ objectID: 'vendor_123' });
 
-				await eventHandler({ data: vendorData, type: 'vendor.created' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.created');
 
 				expect(algoliaService.createObject).toHaveBeenCalledWith('vendor', vendorData);
 			});
@@ -121,7 +82,7 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.createObject.mockResolvedValue({ objectID: 'vendor_123' });
 
-				await eventHandler({ data: vendorData, type: 'vendor.created' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.created');
 
 				expect(algoliaService.createObject).toHaveBeenCalledWith('vendor', vendorData);
 			});
@@ -131,8 +92,10 @@ describe('AlgoliaSyncService', () => {
 				const algoliaError = errors.database('Algolia service unavailable');
 				algoliaService.createObject.mockRejectedValue(algoliaError);
 
-				// Should not throw error, just log it
-				await expect(eventHandler({ data: vendorData, type: 'vendor.created' })).resolves.not.toThrow();
+				// Should throw error since retryOperation doesn't handle errors gracefully
+				await expect(service.processVendorEvent(createBaseEvent(vendorData), 'vendor.created')).rejects.toThrow(
+					'Algolia service unavailable',
+				);
 			});
 		});
 
@@ -146,14 +109,23 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.updateObject.mockResolvedValue({ objectID: 'vendor_123' });
 
-				await eventHandler({ data: vendorData, type: 'vendor.updated' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.updated');
 
 				expect(algoliaService.updateObject).toHaveBeenCalledWith('vendor', 'vendor_123', {
-					...vendorData,
 					_geoloc: {
 						lat: 40.7128,
 						lng: -74.006,
 					},
+					createdAt: expect.any(String),
+					description: 'Test Description',
+					email: 'vendor@example.com',
+					id: 'vendor_123',
+					imageUrl: 'https://example.com/image.jpg',
+					name: 'Test Vendor',
+					open: true,
+					phone: '123-456-7890',
+					updatedAt: expect.any(String),
+					website: 'https://example.com',
 				});
 			});
 
@@ -166,9 +138,20 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.updateObject.mockResolvedValue({ objectID: 'vendor_123' });
 
-				await eventHandler({ data: vendorData, type: 'vendor.updated' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.updated');
 
-				expect(algoliaService.updateObject).toHaveBeenCalledWith('vendor', 'vendor_123', vendorData);
+				expect(algoliaService.updateObject).toHaveBeenCalledWith('vendor', 'vendor_123', {
+					createdAt: expect.any(String),
+					description: 'Test Description',
+					email: 'vendor@example.com',
+					id: 'vendor_123',
+					imageUrl: 'https://example.com/image.jpg',
+					name: 'Test Vendor',
+					open: true,
+					phone: '123-456-7890',
+					updatedAt: expect.any(String),
+					website: 'https://example.com',
+				});
 			});
 
 			it('should handle algolia service errors gracefully', async () => {
@@ -176,7 +159,9 @@ describe('AlgoliaSyncService', () => {
 				const algoliaError = errors.database('Algolia service unavailable');
 				algoliaService.updateObject.mockRejectedValue(algoliaError);
 
-				await expect(eventHandler({ data: vendorData, type: 'vendor.updated' })).resolves.not.toThrow();
+				await expect(service.processVendorEvent(createBaseEvent(vendorData), 'vendor.updated')).rejects.toThrow(
+					'Algolia service unavailable',
+				);
 			});
 		});
 
@@ -186,7 +171,7 @@ describe('AlgoliaSyncService', () => {
 
 				algoliaService.deleteObject.mockResolvedValue({ deletedAt: new Date() });
 
-				await eventHandler({ data: vendorData, type: 'vendor.deleted' });
+				await service.processVendorEvent(createBaseEvent(vendorData), 'vendor.deleted');
 
 				expect(algoliaService.deleteObject).toHaveBeenCalledWith('vendor', 'vendor_123');
 			});
@@ -196,12 +181,14 @@ describe('AlgoliaSyncService', () => {
 				const algoliaError = errors.database('Algolia service unavailable');
 				algoliaService.deleteObject.mockRejectedValue(algoliaError);
 
-				await expect(eventHandler({ data: vendorData, type: 'vendor.deleted' })).resolves.not.toThrow();
+				await expect(service.processVendorEvent(createBaseEvent(vendorData), 'vendor.deleted')).rejects.toThrow(
+					'Algolia service unavailable',
+				);
 			});
 		});
 
 		describe('vendor.location.updated', () => {
-			it('should handle vendor location updated event successfully', async () => {
+			it('should ignore vendor location updated event (not supported)', async () => {
 				const locationData = {
 					entityId: 'vendor_123',
 					location: {
@@ -210,38 +197,17 @@ describe('AlgoliaSyncService', () => {
 					},
 				};
 
-				algoliaService.updateObject.mockResolvedValue({ objectID: 'vendor_123' });
+				await service.processVendorEvent(createBaseEvent(locationData), 'vendor.location.updated');
 
-				await eventHandler({ data: locationData, type: 'vendor.location.updated' });
-
-				expect(algoliaService.updateObject).toHaveBeenCalledWith('vendor', 'vendor_123', {
-					_geoloc: {
-						lat: 40.7128,
-						lng: -74.006,
-					},
-				});
-			});
-
-			it('should handle algolia service errors gracefully', async () => {
-				const locationData = {
-					entityId: 'vendor_123',
-					location: {
-						lat: 40.7128,
-						long: -74.006,
-					},
-				};
-				const algoliaError = errors.database('Algolia service unavailable');
-				algoliaService.updateObject.mockRejectedValue(algoliaError);
-
-				await expect(eventHandler({ data: locationData, type: 'vendor.location.updated' })).resolves.not.toThrow();
+				expect(algoliaService.updateObject).not.toHaveBeenCalled();
 			});
 		});
 
 		describe('unknown event types', () => {
 			it('should ignore unknown event types', async () => {
-				const unknownEvent = { data: {}, type: 'vendor.unknown' };
+				const vendorData = data.vendor({ id: 'vendor_123' });
 
-				await eventHandler(unknownEvent);
+				await service.processVendorEvent(createBaseEvent(vendorData), 'unknown.event' as any);
 
 				expect(algoliaService.createObject).not.toHaveBeenCalled();
 				expect(algoliaService.updateObject).not.toHaveBeenCalled();
@@ -252,11 +218,12 @@ describe('AlgoliaSyncService', () => {
 		describe('event handler errors', () => {
 			it('should handle errors in event processing gracefully', async () => {
 				const vendorData = data.vendor({ id: 'vendor_123' });
-				const processingError = new Error('Processing failed');
-				algoliaService.createObject.mockRejectedValue(processingError);
+				algoliaService.createObject.mockRejectedValue(new Error('Unexpected error'));
 
-				// Should not throw error, just log it
-				await expect(eventHandler({ data: vendorData, type: 'vendor.created' })).resolves.not.toThrow();
+				// Should throw error since retryOperation doesn't handle errors gracefully
+				await expect(service.processVendorEvent(createBaseEvent(vendorData), 'vendor.created')).rejects.toThrow(
+					'Unexpected error',
+				);
 			});
 		});
 	});

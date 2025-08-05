@@ -108,6 +108,6 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 	 * Get connection status
 	 */
 	isConnected(): boolean {
-		return this.nc && !this.nc.closed();
+		return !!(this.nc && !this.nc.closed());
 	}
 }

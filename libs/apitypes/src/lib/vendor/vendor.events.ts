@@ -22,25 +22,8 @@ export const vendorEventDataSchema = z
 	})
 	.passthrough(); // Allow additional fields (like owner) to pass through
 
-/**
- * Vendor event schemas object
- * Maps subject names to their corresponding schemas
- */
-/**
- * Vendor location update event data schema
- */
-export const vendorLocationEventDataSchema = z.object({
-	location: z.object({
-		lat: z.number(),
-		long: z.number(),
-	}),
-	timestamp: z.date(),
-	vendorId: z.string(),
-});
-
 export const vendorEventSchemas = {
 	'vendor.created': vendorEventDataSchema,
 	'vendor.deleted': vendorEventDataSchema,
-	'vendor.location.updated': vendorLocationEventDataSchema,
 	'vendor.updated': vendorEventDataSchema,
 } as const;

@@ -1,4 +1,4 @@
-import { clearMocks, mockEvents } from '../../../../test/helpers/test-utils';
+import { clearMocks } from '../../../../test/helpers/test-utils';
 import { VendorConnectionManagerService } from './vendor-connection-manager.service';
 
 // Mock the retry utility
@@ -11,7 +11,6 @@ vi.mock('@app/utils', () => ({
 describe('VendorConnectionManagerService', () => {
 	let service: VendorConnectionManagerService;
 	let redis: any;
-	let eventsService: any;
 
 	beforeEach(() => {
 		redis = {
@@ -23,8 +22,7 @@ describe('VendorConnectionManagerService', () => {
 			srem: vi.fn(),
 			zrem: vi.fn(),
 		};
-		eventsService = mockEvents();
-		service = new VendorConnectionManagerService(redis, eventsService);
+		service = new VendorConnectionManagerService(redis);
 	});
 
 	afterEach(() => {
@@ -34,7 +32,6 @@ describe('VendorConnectionManagerService', () => {
 	describe('registerVendor', () => {
 		it('should register vendor connection successfully', async () => {
 			redis.set.mockResolvedValue('OK');
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.registerVendor('vendor-123', 'socket-123');
 
@@ -44,11 +41,7 @@ describe('VendorConnectionManagerService', () => {
 				'vendor_connection:socket-123',
 				expect.stringContaining('"socketId":"socket-123"'),
 			);
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('websocket.vendor.connected', {
-				socketId: 'socket-123',
-				timestamp: expect.any(String),
-				vendorId: 'vendor-123',
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle Redis errors', async () => {
@@ -58,13 +51,7 @@ describe('VendorConnectionManagerService', () => {
 			await expect(service.registerVendor('vendor-123', 'socket-123')).rejects.toThrow('Redis connection failed');
 		});
 
-		it('should handle event publishing errors', async () => {
-			redis.set.mockResolvedValue('OK');
-			const eventError = new Error('Event publishing failed');
-			eventsService.publishEvent.mockRejectedValue(eventError);
-
-			await expect(service.registerVendor('vendor-123', 'socket-123')).rejects.toThrow('Event publishing failed');
-		});
+		// No events are emitted by this service, so no event publishing errors to test
 	});
 
 	describe('handleDisconnect', () => {
@@ -79,7 +66,6 @@ describe('VendorConnectionManagerService', () => {
 			redis.srem.mockResolvedValue(1);
 			redis.del.mockResolvedValue(1);
 			redis.zrem.mockResolvedValue(1);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.handleDisconnect('socket-123');
 
@@ -93,12 +79,7 @@ describe('VendorConnectionManagerService', () => {
 			expect(redis.srem).toHaveBeenCalledWith('user:user-1:rooms', 'vendor-123');
 			expect(redis.srem).toHaveBeenCalledWith('user:user-2:rooms', 'vendor-123');
 			expect(redis.srem).toHaveBeenCalledWith('user:user-3:rooms', 'vendor-123');
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('websocket.vendor.disconnected', {
-				affectedUsers: ['user-1', 'user-2', 'user-3'],
-				socketId: 'socket-123',
-				timestamp: expect.any(String),
-				vendorId: 'vendor-123',
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle disconnection when no connection info found', async () => {
@@ -107,7 +88,7 @@ describe('VendorConnectionManagerService', () => {
 			await service.handleDisconnect('socket-123');
 
 			expect(redis.get).toHaveBeenCalledWith('vendor_connection:socket-123');
-			expect(eventsService.publishEvent).not.toHaveBeenCalled();
+			// No events are emitted by this service
 		});
 
 		it('should handle disconnection when vendor has no users', async () => {
@@ -120,16 +101,10 @@ describe('VendorConnectionManagerService', () => {
 			redis.smembers.mockResolvedValue([]);
 			redis.del.mockResolvedValue(1);
 			redis.zrem.mockResolvedValue(1);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.handleDisconnect('socket-123');
 
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('websocket.vendor.disconnected', {
-				affectedUsers: [],
-				socketId: 'socket-123',
-				timestamp: expect.any(String),
-				vendorId: 'vendor-123',
-			});
+			// No events are emitted by this service
 		});
 
 		it('should handle Redis errors during disconnection', async () => {
