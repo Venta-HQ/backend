@@ -128,10 +128,9 @@ export class BootstrapService {
 
 	static async bootstrapHealthCheck(options: HealthBootstrapOptions) {
 		const app = await NestFactory.create(options.module);
-		const configService = app.get(ConfigService);
 
-		// Get port and host
-		const port = options.port ? configService.get(options.port) : 3000;
+		// Get port and host - use environment variables directly since ConfigService might not be available
+		const port = options.port ? process.env[options.port] || 3000 : 3000;
 		const host = options.host || '0.0.0.0';
 
 		this.logger.log(`Starting health check server on ${host}:${port}`);

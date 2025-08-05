@@ -1,6 +1,6 @@
 import { BootstrapModule, EventsModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
@@ -9,24 +9,27 @@ import { VendorService } from './vendor.service';
 	controllers: [VendorController],
 	imports: [
 		BootstrapModule.forRoot({
+			additionalModules: [
+				ClientsModule.registerAsync({
+					clients: [
+						{
+							imports: [ConfigModule],
+							inject: [ConfigService],
+							name: 'NATS_SERVICE',
+							useFactory: (configService: ConfigService) => ({
+								options: {
+									servers: configService.get('NATS_URL') || 'nats://localhost:4222',
+								},
+								transport: Transport.NATS,
+							}),
+						},
+					],
+				}),
+			],
 			appName: 'Vendor Microservice',
 			protocol: 'grpc',
 		}),
 		EventsModule,
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					inject: [ConfigService],
-					name: 'NATS_SERVICE',
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							servers: configService.get('NATS_URL') || 'nats://localhost:4222',
-						},
-						transport: Transport.NATS,
-					}),
-				},
-			],
-		}),
 	],
 	providers: [VendorService],
 })

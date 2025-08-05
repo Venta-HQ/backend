@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/nest/guards';
-import { BootstrapModule, ClerkModule } from '@app/nest/modules';
+import { BootstrapModule, ClerkModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -10,6 +10,7 @@ import { modules, routes } from './router';
 		BootstrapModule.forRoot({
 			additionalModules: [
 				ClerkModule.register(),
+				RedisModule,
 				ThrottlerModule.forRoot([
 					{
 						limit: 100,

@@ -7,10 +7,10 @@ import {
 	WsRateLimitGuardStatus,
 	WsRateLimitGuardStrict,
 } from '@app/nest/guards';
-import { BootstrapModule, ClerkModule, PrometheusService, RedisModule } from '@app/nest/modules';
-import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME } from '@app/proto/location';
+import { BootstrapModule, ClerkModule, GrpcInstanceModule, PrometheusService, RedisModule } from '@app/nest/modules';
+import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserLocationGateway } from './gateways/user-location.gateway';
@@ -25,22 +25,17 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 			additionalModules: [
 				RedisModule,
 				ClerkModule.register(),
+				GrpcInstanceModule.register<LocationServiceClient>({
+					protoPackage: LOCATION_PACKAGE_NAME,
+					protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+					provide: LOCATION_SERVICE_NAME,
+					serviceName: LOCATION_SERVICE_NAME,
+					urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
+				}),
 				ClientsModule.registerAsync({
 					clients: [
 						{
-							imports: [BootstrapModule],
-							inject: [ConfigService],
-							name: LOCATION_SERVICE_NAME,
-							useFactory: (configService: ConfigService) => ({
-								options: {
-									package: LOCATION_PACKAGE_NAME,
-									protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
-									url: configService.get('LOCATION_SERVICE_ADDRESS'),
-								},
-								transport: Transport.GRPC,
-							}),
-						},
-						{
+							imports: [ConfigModule],
 							inject: [ConfigService],
 							name: 'NATS_SERVICE',
 							useFactory: (configService: ConfigService) => ({

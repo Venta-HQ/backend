@@ -2,12 +2,12 @@ import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
 import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/apitypes';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
+import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -32,17 +32,18 @@ interface AuthenticatedVendorSocket extends Socket {
 @UseGuards(WsAuthGuard) // Require authentication for all vendor connections
 export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(VendorLocationGateway.name);
-	private locationService!: LocationServiceClient;
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
+		@Inject(LOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<LocationServiceClient>,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: VendorConnectionManagerService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}
 
 	afterInit() {
-		this.locationService = this.grpcClient.getService<LocationServiceClient>(LOCATION_SERVICE_NAME);
+		// Gateway initialization complete
+		// Note: GrpcInstance is automatically initialized and ready to use
+		// No manual service initialization needed like with ClientGrpc pattern
 	}
 
 	@WebSocketServer() server!: Server;
@@ -94,22 +95,15 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 
 		try {
 			// Store vendor location in database via gRPC service
-			this.locationService
-				.updateVendorLocation({
+			await this.locationService
+				.invoke('updateVendorLocation', {
 					entityId: vendorId,
 					location: {
 						lat: data.lat,
 						long: data.long,
 					},
 				})
-				.subscribe({
-					error: (error) => {
-						this.logger.error(`Failed to update vendor ${vendorId} location in database:`, error);
-					},
-					next: () => {
-						this.logger.debug(`Vendor ${vendorId} location updated in database`);
-					},
-				});
+				.toPromise();
 
 			// Store vendor location in Redis for geospatial queries
 			await retryOperation(

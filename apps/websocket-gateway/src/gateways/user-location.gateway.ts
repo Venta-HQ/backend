@@ -1,11 +1,10 @@
-import { firstValueFrom } from 'rxjs';
 import { Server, Socket } from 'socket.io';
 import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
+import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
-import { ClientGrpc } from '@nestjs/microservices';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -30,16 +29,17 @@ interface AuthenticatedSocket extends Socket {
 @UseGuards(WsAuthGuard) // Require authentication for all user connections
 export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(UserLocationGateway.name);
-	private locationService!: LocationServiceClient;
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private readonly grpcClient: ClientGrpc,
+		@Inject(LOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<LocationServiceClient>,
 		private readonly connectionManager: UserConnectionManagerService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}
 
 	afterInit() {
-		this.locationService = this.grpcClient.getService<LocationServiceClient>(LOCATION_SERVICE_NAME);
+		// Gateway initialization complete
+		// Note: GrpcInstance is automatically initialized and ready to use
+		// No manual service initialization needed like with ClientGrpc pattern
 	}
 
 	@WebSocketServer() server!: Server;
@@ -93,8 +93,8 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 		try {
 			// Get vendors in the user's current location
-			const { vendors } = await firstValueFrom(
-				this.locationService.vendorLocations({
+			const { vendors } = await this.locationService
+				.invoke('vendorLocations', {
 					neLocation: {
 						lat: neLocation.lat,
 						long: neLocation.long,
@@ -103,8 +103,8 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 						lat: swLocation.lat,
 						long: swLocation.long,
 					},
-				}),
-			);
+				})
+				.toPromise();
 
 			const currentRooms = await this.connectionManager.getUserVendorRooms(userId);
 			const vendorIds = (vendors ?? []).map((vendor) => vendor.id);

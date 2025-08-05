@@ -1,7 +1,5 @@
 import { BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
 import { SubscriptionController } from './subscription/subscription.controller';
@@ -13,23 +11,9 @@ import { VendorService } from './vendor/vendor.service';
 	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [
 		BootstrapModule.forRoot({
+			additionalModules: [NatsQueueModule],
 			appName: 'User Microservice',
 			protocol: 'grpc',
-		}),
-		NatsQueueModule,
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					inject: [ConfigService],
-					name: 'NATS_SERVICE',
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							servers: configService.get('NATS_URL') || 'nats://localhost:4222',
-						},
-						transport: Transport.NATS,
-					}),
-				},
-			],
 		}),
 	],
 	providers: [ClerkService, SubscriptionService, VendorService],
