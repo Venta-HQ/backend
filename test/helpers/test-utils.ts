@@ -454,3 +454,13 @@ export function setupControllerTest(ControllerClass: any, dependencies: Record<s
 	const controller = new ControllerClass(...Object.values(dependencies));
 	return { controller, ...dependencies };
 }
+
+// ============================================================================
+// RE-EXPORTS FROM SPECIALIZED UTILITIES
+// ============================================================================
+
+// Re-export specialized test utilities for convenience
+export * from './service-test-utils';
+export * from './schema-test-utils';
+export * from './grpc-test-utils';
+export * from './websocket-test-utils';

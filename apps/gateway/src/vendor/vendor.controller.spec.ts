@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import { CreateVendorData, UpdateVendorData } from '@app/apitypes';
-import { mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
+import { createGrpcErrorMock, createGrpcSuccessMock, mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
 import { VendorController } from './vendor.controller';
 
 // Mock the proto imports to avoid module resolution issues
@@ -25,38 +25,24 @@ describe('VendorController', () => {
 	});
 
 	describe('getVendorById', () => {
-		it('should return vendor by id successfully', async () => {
-			const vendorId = 'vendor_123';
-			const mockVendor = {
-				createdAt: new Date().toISOString(),
-				description: 'Test Description',
-				email: 'test@example.com',
-				id: vendorId,
-				imageUrl: 'https://example.com/image.jpg',
-				lat: 40.7128,
-				long: -74.006,
-				name: 'Test Vendor',
-				open: true,
-				phone: '123-456-7890',
-				updatedAt: new Date().toISOString(),
-				website: 'https://example.com',
-			};
+		const vendorId = 'vendor_123';
+		const mockVendor = {
+			createdAt: new Date().toISOString(),
+			description: 'Test Description',
+			email: 'test@example.com',
+			id: vendorId,
+			imageUrl: 'https://example.com/image.jpg',
+			lat: 40.7128,
+			long: -74.006,
+			name: 'Test Vendor',
+			open: true,
+			phone: '123-456-7890',
+			updatedAt: new Date().toISOString(),
+			website: 'https://example.com',
+		};
 
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.next(mockVendor);
-						observer.complete();
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockResolvedValue(mockVendor),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.next(mockVendor);
-					observer.complete();
-					return { unsubscribe: vi.fn() };
-				}),
-			});
+		it('should return vendor by id successfully', async () => {
+			grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(mockVendor));
 
 			const result = await controller.getVendorById(vendorId);
 
@@ -65,22 +51,8 @@ describe('VendorController', () => {
 		});
 
 		it('should handle gRPC errors properly', async () => {
-			const vendorId = 'vendor_123';
 			const mockError = new Error('Vendor not found');
-
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.error(mockError);
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockRejectedValue(mockError),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.error(mockError);
-					return { unsubscribe: vi.fn() };
-				}),
-			});
+			grpcClient.invoke.mockReturnValue(createGrpcErrorMock(mockError));
 
 			await expect(controller.getVendorById(vendorId)).rejects.toThrow(mockError);
 			expect(grpcClient.invoke).toHaveBeenCalledWith('getVendorById', { id: vendorId });
@@ -88,67 +60,45 @@ describe('VendorController', () => {
 	});
 
 	describe('createVendor', () => {
+		const mockRequestObj = mockRequest({ userId: 'user_123' });
+		const createVendorData: CreateVendorData = {
+			description: 'New vendor description',
+			email: 'new@example.com',
+			imageUrl: 'https://newvendor.com/image.jpg',
+			name: 'New Vendor',
+			phone: '123-456-7890',
+			website: 'https://newvendor.com',
+		};
+		const mockResponse = {
+			id: 'new_vendor_123',
+			...createVendorData,
+		};
+		const expectedGrpcCall = {
+			...createVendorData,
+			description: createVendorData.description ?? '',
+			email: createVendorData.email ?? '',
+			imageUrl: createVendorData.imageUrl ?? '',
+			name: createVendorData.name ?? '',
+			phone: createVendorData.phone ?? '',
+			userId: 'user_123',
+			website: createVendorData.website ?? '',
+		};
+
 		it('should create vendor successfully', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const createVendorData: CreateVendorData = {
-				description: 'New vendor description',
-				email: 'new@example.com',
-				imageUrl: 'https://newvendor.com/image.jpg',
-				name: 'New Vendor',
-				phone: '123-456-7890',
-				website: 'https://newvendor.com',
-			};
-
-			const mockResponse = {
-				id: 'new_vendor_123',
-				...createVendorData,
-			};
-
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.next(mockResponse);
-						observer.complete();
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockResolvedValue(mockResponse),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.next(mockResponse);
-					observer.complete();
-					return { unsubscribe: vi.fn() };
-				}),
-			});
+			grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(mockResponse));
 
 			const result = await controller.createVendor(mockRequestObj, createVendorData);
 
 			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', {
-				...createVendorData,
-				description: createVendorData.description ?? '',
-				email: createVendorData.email ?? '',
-				imageUrl: createVendorData.imageUrl ?? '',
-				name: createVendorData.name ?? '',
-				phone: createVendorData.phone ?? '',
-				userId: 'user_123',
-				website: createVendorData.website ?? '',
-			});
+			expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', expectedGrpcCall);
 		});
 
 		it('should handle partial vendor data with defaults', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const createVendorData: CreateVendorData = {
+			const partialData: CreateVendorData = {
 				name: 'Partial Vendor',
 				// Missing optional fields
 			};
-
-			const mockResponse = {
+			const partialResponse = {
 				description: '',
 				email: '',
 				id: 'partial_vendor_123',
@@ -157,28 +107,8 @@ describe('VendorController', () => {
 				phone: '',
 				website: '',
 			};
-
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.next(mockResponse);
-						observer.complete();
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockResolvedValue(mockResponse),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.next(mockResponse);
-					observer.complete();
-					return { unsubscribe: vi.fn() };
-				}),
-			});
-
-			const result = await controller.createVendor(mockRequestObj, createVendorData);
-
-			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', {
-				...createVendorData,
+			const expectedPartialCall = {
+				...partialData,
 				description: '',
 				email: '',
 				imageUrl: '',
@@ -186,166 +116,129 @@ describe('VendorController', () => {
 				phone: '',
 				userId: 'user_123',
 				website: '',
-			});
+			};
+
+			grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(partialResponse));
+
+			const result = await controller.createVendor(mockRequestObj, partialData);
+
+			expect(result).toEqual(partialResponse);
+			expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', expectedPartialCall);
 		});
 
 		it('should handle gRPC errors during creation', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const createVendorData: CreateVendorData = {
+			const errorData: CreateVendorData = {
 				name: 'Error Vendor',
 			};
+			const mockError = new Error('Vendor creation failed');
+			const expectedErrorCall = {
+				...errorData,
+				description: '',
+				email: '',
+				imageUrl: '',
+				name: 'Error Vendor',
+				phone: '',
+				userId: 'user_123',
+				website: '',
+			};
 
-			const mockError = new Error('Creation failed');
+			grpcClient.invoke.mockReturnValue(createGrpcErrorMock(mockError));
 
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.error(mockError);
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockRejectedValue(mockError),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.error(mockError);
-					return { unsubscribe: vi.fn() };
-				}),
-			});
-
-			await expect(controller.createVendor(mockRequestObj, createVendorData)).rejects.toThrow(mockError);
+			await expect(controller.createVendor(mockRequestObj, errorData)).rejects.toThrow(mockError);
+			expect(grpcClient.invoke).toHaveBeenCalledWith('createVendor', expectedErrorCall);
 		});
 	});
 
 	describe('updateVendor', () => {
+		const mockRequestObj = mockRequest({ userId: 'user_123' });
+		const updateVendorData: UpdateVendorData = {
+			description: 'Updated vendor description',
+			email: 'updated@example.com',
+			id: 'vendor_123',
+			imageUrl: 'https://updatedvendor.com/image.jpg',
+			name: 'Updated Vendor',
+			phone: '987-654-3210',
+			website: 'https://updatedvendor.com',
+		};
+		const mockResponse = {
+			...updateVendorData,
+			updatedAt: new Date().toISOString(),
+		};
+		const expectedGrpcCall = {
+			...updateVendorData,
+			description: updateVendorData.description ?? '',
+			email: updateVendorData.email ?? '',
+			imageUrl: updateVendorData.imageUrl ?? '',
+			name: updateVendorData.name ?? '',
+			phone: updateVendorData.phone ?? '',
+			userId: 'user_123',
+			website: updateVendorData.website ?? '',
+		};
+
 		it('should update vendor successfully', async () => {
-			const vendorId = 'vendor_123';
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
+			grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(mockResponse));
 
-			const updateVendorData: UpdateVendorData = {
-				description: 'Updated description',
-				email: 'updated@example.com',
-				imageUrl: 'https://updatedvendor.com/image.jpg',
-				name: 'Updated Vendor',
-				phone: '987-654-3210',
-				website: 'https://updatedvendor.com',
-			};
-
-			const mockResponse = {
-				message: 'Vendor updated successfully',
-				success: true,
-			};
-
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.next(mockResponse);
-						observer.complete();
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockResolvedValue(mockResponse),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.next(mockResponse);
-					observer.complete();
-					return { unsubscribe: vi.fn() };
-				}),
-			});
-
-			const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
+			const result = await controller.updateVendor('vendor_123', mockRequestObj, updateVendorData);
 
 			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
-				...updateVendorData,
-				description: updateVendorData.description ?? '',
-				email: updateVendorData.email ?? '',
-				id: vendorId,
-				imageUrl: updateVendorData.imageUrl ?? '',
-				name: updateVendorData.name ?? '',
-				phone: updateVendorData.phone ?? '',
-				userId: 'user_123',
-				website: updateVendorData.website ?? '',
-			});
+			expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', expectedGrpcCall);
 		});
 
 		it('should handle partial update data with defaults', async () => {
-			const vendorId = 'vendor_123';
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const updateVendorData: UpdateVendorData = {
+			const partialData: UpdateVendorData = {
+				id: 'vendor_123',
 				name: 'Partially Updated Vendor',
 				// Missing optional fields
 			};
-
-			const mockResponse = {
-				message: 'Vendor updated successfully',
-				success: true,
-			};
-
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.next(mockResponse);
-						observer.complete();
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockResolvedValue(mockResponse),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.next(mockResponse);
-					observer.complete();
-					return { unsubscribe: vi.fn() };
-				}),
-			});
-
-			const result = await controller.updateVendor(vendorId, mockRequestObj, updateVendorData);
-
-			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', {
-				...updateVendorData,
+			const partialResponse = {
+				...partialData,
 				description: '',
 				email: '',
-				id: vendorId,
+				imageUrl: '',
+				phone: '',
+				updatedAt: new Date().toISOString(),
+				website: '',
+			};
+			const expectedPartialCall = {
+				...partialData,
+				description: '',
+				email: '',
 				imageUrl: '',
 				name: 'Partially Updated Vendor',
 				phone: '',
 				userId: 'user_123',
 				website: '',
-			});
+			};
+
+			grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(partialResponse));
+
+			const result = await controller.updateVendor('vendor_123', mockRequestObj, partialData);
+
+			expect(result).toEqual(partialResponse);
+			expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', expectedPartialCall);
 		});
 
 		it('should handle gRPC errors during update', async () => {
-			const vendorId = 'vendor_123';
-			const mockRequestObj = mockRequest({
+			const errorData: UpdateVendorData = {
+				id: 'vendor_123',
+				name: 'Error Vendor',
+			};
+			const mockError = new Error('Vendor update failed');
+			const expectedErrorCall = {
+				...errorData,
+				description: '',
+				email: '',
+				imageUrl: '',
+				name: 'Error Vendor',
+				phone: '',
 				userId: 'user_123',
-			});
-
-			const updateVendorData: UpdateVendorData = {
-				name: 'Error Update Vendor',
+				website: '',
 			};
 
-			const mockError = new Error('Update failed');
+			grpcClient.invoke.mockReturnValue(createGrpcErrorMock(mockError));
 
-			grpcClient.invoke.mockReturnValue({
-				pipe: vi.fn().mockReturnValue({
-					subscribe: vi.fn().mockImplementation((observer) => {
-						observer.error(mockError);
-						return { unsubscribe: vi.fn() };
-					}),
-					toPromise: vi.fn().mockRejectedValue(mockError),
-				}),
-				subscribe: vi.fn().mockImplementation((observer) => {
-					observer.error(mockError);
-					return { unsubscribe: vi.fn() };
-				}),
-			});
-
-			await expect(controller.updateVendor(vendorId, mockRequestObj, updateVendorData)).rejects.toThrow(mockError);
+			await expect(controller.updateVendor('vendor_123', mockRequestObj, errorData)).rejects.toThrow(mockError);
+			expect(grpcClient.invoke).toHaveBeenCalledWith('updateVendor', expectedErrorCall);
 		});
 	});
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createBasicSchemaTests, createOptionalFieldTests } from '../../../../../test/helpers/schema-test-utils';
 import {
 	GrpcClerkUserDataSchema,
 	GrpcRevenueCatProviderDataSchema,
@@ -8,127 +9,59 @@ import {
 
 describe('User Schemas', () => {
 	describe('GrpcUserVendorDataSchema', () => {
-		it('should validate valid user vendor data', () => {
-			const validData = {
-				userId: 'user-123',
-			};
-
-			const result = GrpcUserVendorDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing userId field', () => {
-			const invalidData = {
-				// missing userId
-			};
-
-			const result = GrpcUserVendorDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string userId', () => {
-			const invalidData = {
-				userId: 123, // Should be string
-			};
-
-			const result = GrpcUserVendorDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcUserVendorDataSchema, ['userId']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 
 		it('should accept empty string userId (no validation)', () => {
-			const validData = {
-				userId: '', // Empty string is valid since schema doesn't validate length
-			};
-
+			const validData = { userId: '' };
 			const result = GrpcUserVendorDataSchema.safeParse(validData);
 			expect(result.success).toBe(true);
 		});
 	});
 
 	describe('GrpcClerkUserDataSchema', () => {
-		it('should validate valid clerk user data', () => {
-			const validData = {
-				id: 'clerk-user-123',
-			};
-
-			const result = GrpcClerkUserDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing id field', () => {
-			const invalidData = {
-				// missing id
-			};
-
-			const result = GrpcClerkUserDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string id', () => {
-			const invalidData = {
-				id: 123, // Should be string
-			};
-
-			const result = GrpcClerkUserDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcClerkUserDataSchema, ['id']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 	});
 
 	describe('GrpcRevenueCatProviderDataSchema', () => {
-		it('should validate valid RevenueCat provider data', () => {
-			const validData = {
-				eventId: 'event-123',
-				productId: 'product-456',
-				transactionId: 'transaction-789',
-			};
-
-			const result = GrpcRevenueCatProviderDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing required fields', () => {
-			const invalidData = {
-				eventId: 'event-123',
-				// missing productId and transactionId
-			};
-
-			const result = GrpcRevenueCatProviderDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string fields', () => {
-			const invalidData = {
-				eventId: 123, // Should be string
-				productId: 'product-456',
-				transactionId: 'transaction-789',
-			};
-
-			const result = GrpcRevenueCatProviderDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcRevenueCatProviderDataSchema, ['eventId', 'productId', 'transactionId']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 
 		it('should accept empty string fields (no validation)', () => {
 			const validData = {
 				eventId: '',
-				productId: 'product-456',
-				transactionId: 'transaction-789',
+				productId: '',
+				transactionId: '',
 			};
-
 			const result = GrpcRevenueCatProviderDataSchema.safeParse(validData);
 			expect(result.success).toBe(true);
 		});
 	});
 
 	describe('GrpcRevenueCatSubscriptionDataSchema', () => {
+		const baseData = {
+			clerkUserId: 'clerk-user-123',
+			providerId: 'provider-456',
+		};
+
 		it('should validate valid RevenueCat subscription data with provider data', () => {
 			const validData = {
-				clerkUserId: 'clerk-user-123',
+				...baseData,
 				data: {
 					eventId: 'event-123',
 					productId: 'product-456',
 					transactionId: 'transaction-789',
 				},
-				providerId: 'provider-456',
 			};
 
 			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(validData);
@@ -136,54 +69,29 @@ describe('User Schemas', () => {
 		});
 
 		it('should validate valid RevenueCat subscription data without provider data', () => {
-			const validData = {
-				clerkUserId: 'clerk-user-123',
-				providerId: 'provider-456',
-				// data is optional
-			};
-
-			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(validData);
+			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(baseData);
 			expect(result.success).toBe(true);
 		});
 
-		it('should reject missing required fields', () => {
-			const invalidData = {
-				clerkUserId: 'clerk-user-123',
-				// missing providerId
-			};
-
-			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		// Test required fields
+		const requiredFieldTests = createBasicSchemaTests(GrpcRevenueCatSubscriptionDataSchema, ['clerkUserId', 'providerId']);
+		requiredFieldTests.forEach(({ name, test }) => {
+			it(name, test);
 		});
 
-		it('should reject non-string clerkUserId', () => {
-			const invalidData = {
-				clerkUserId: 123, // Should be string
-				providerId: 'provider-456',
-			};
-
-			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string providerId', () => {
-			const invalidData = {
-				clerkUserId: 'clerk-user-123',
-				providerId: 456, // Should be string
-			};
-
-			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		// Test optional data field
+		const optionalFieldTests = createOptionalFieldTests(GrpcRevenueCatSubscriptionDataSchema, baseData, ['data']);
+		optionalFieldTests.forEach(({ name, test }) => {
+			it(name, test);
 		});
 
 		it('should reject invalid provider data when provided', () => {
 			const invalidData = {
-				clerkUserId: 'clerk-user-123',
+				...baseData,
 				data: {
 					eventId: 'event-123',
 					// missing required fields in data
 				},
-				providerId: 'provider-456',
 			};
 
 			const result = GrpcRevenueCatSubscriptionDataSchema.safeParse(invalidData);

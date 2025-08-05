@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { createBasicSchemaTests, createOptionalFieldTests } from '../../../../../test/helpers/schema-test-utils';
 import {
 	CreateVendorSchema,
 	GrpcVendorCreateDataSchema,
@@ -9,67 +10,23 @@ import {
 
 describe('Vendor Schemas', () => {
 	describe('CreateVendorSchema', () => {
-		it('should validate valid vendor creation data', () => {
-			const validData = {
-				description: 'A test vendor',
-				email: 'test@vendor.com',
-				imageUrl: 'https://testvendor.com/image.jpg',
-				name: 'Test Vendor',
-				phone: '+1234567890',
-				website: 'https://testvendor.com',
-			};
-
-			const result = CreateVendorSchema.safeParse(validData);
-			expect(result.success).toBe(true);
+		const requiredFields = ['name'];
+		const optionalFields = ['description', 'email', 'imageUrl', 'phone', 'website'];
+		
+		const testCases = createBasicSchemaTests(CreateVendorSchema, requiredFields, optionalFields);
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 
-		it('should validate data with only required fields', () => {
-			const validData = {
-				name: 'Test Vendor',
-				// All other fields are optional
-			};
-
-			const result = CreateVendorSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should validate data with null optional fields', () => {
-			const validData = {
-				description: null,
-				email: null,
-				imageUrl: null,
-				name: 'Test Vendor',
-				phone: null,
-				website: null,
-			};
-
-			const result = CreateVendorSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing required name field', () => {
-			const invalidData = {
-				description: 'A test vendor',
-				email: 'test@vendor.com',
-				// missing name
-			};
-
-			const result = CreateVendorSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string name', () => {
-			const invalidData = {
-				description: 'A test vendor',
-				name: 123, // Should be string
-			};
-
-			const result = CreateVendorSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		// Test optional fields with null values
+		const nullFieldTests = createOptionalFieldTests(CreateVendorSchema, { name: 'Test Vendor' }, optionalFields);
+		nullFieldTests.forEach(({ name, test }) => {
+			it(name, test);
 		});
 	});
 
 	describe('UpdateVendorSchema', () => {
+		// All fields are optional in update schema
 		it('should validate valid vendor update data', () => {
 			const validData = {
 				description: 'An updated vendor',
@@ -88,7 +45,6 @@ describe('Vendor Schemas', () => {
 			const validData = {
 				email: 'updated@vendor.com',
 				name: 'Updated Vendor',
-				// Other fields are optional
 			};
 
 			const result = UpdateVendorSchema.safeParse(validData);
@@ -102,14 +58,14 @@ describe('Vendor Schemas', () => {
 			expect(result.success).toBe(true);
 		});
 
-		it('should validate data with null values', () => {
+		it('should validate data with null values for nullable fields', () => {
 			const validData = {
 				description: null,
 				email: null,
 				imageUrl: null,
-				name: 'Updated Vendor',
 				phone: null,
 				website: null,
+				// name is optional but not nullable
 			};
 
 			const result = UpdateVendorSchema.safeParse(validData);
@@ -118,124 +74,26 @@ describe('Vendor Schemas', () => {
 	});
 
 	describe('GrpcVendorCreateDataSchema', () => {
-		it('should validate valid gRPC vendor creation data', () => {
-			const validData = {
-				description: 'A test vendor',
-				email: 'test@vendor.com',
-				imageUrl: 'https://testvendor.com/image.jpg',
-				name: 'Test Vendor',
-				phone: '+1234567890',
-				userId: 'user-123',
-				website: 'https://testvendor.com',
-			};
-
-			const result = GrpcVendorCreateDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing required fields', () => {
-			const invalidData = {
-				description: 'A test vendor',
-				name: 'Test Vendor',
-				// missing other required fields
-			};
-
-			const result = GrpcVendorCreateDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string userId', () => {
-			const invalidData = {
-				description: 'A test vendor',
-				email: 'test@vendor.com',
-				imageUrl: 'https://testvendor.com/image.jpg',
-				name: 'Test Vendor',
-				phone: '+1234567890',
-				userId: 123, // Should be string
-				website: 'https://testvendor.com',
-			};
-
-			const result = GrpcVendorCreateDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcVendorCreateDataSchema, ['name', 'userId']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 	});
 
 	describe('GrpcVendorUpdateDataSchema', () => {
-		it('should validate valid gRPC vendor update data', () => {
-			const validData = {
-				description: 'An updated vendor',
-				email: 'updated@vendor.com',
-				id: 'vendor-123',
-				imageUrl: 'https://updatedvendor.com/image.jpg',
-				name: 'Updated Vendor',
-				phone: '+1234567890',
-				userId: 'user-123',
-				website: 'https://updatedvendor.com',
-			};
-
-			const result = GrpcVendorUpdateDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing required id field', () => {
-			const invalidData = {
-				description: 'An updated vendor',
-				email: 'updated@vendor.com',
-				imageUrl: 'https://updatedvendor.com/image.jpg',
-				name: 'Updated Vendor',
-				phone: '+1234567890',
-				userId: 'user-123',
-				website: 'https://updatedvendor.com',
-				// missing id
-			};
-
-			const result = GrpcVendorUpdateDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string id', () => {
-			const invalidData = {
-				description: 'An updated vendor',
-				email: 'updated@vendor.com',
-				id: 123, // Should be string
-				imageUrl: 'https://updatedvendor.com/image.jpg',
-				name: 'Updated Vendor',
-				phone: '+1234567890',
-				userId: 'user-123',
-				website: 'https://updatedvendor.com',
-			};
-
-			const result = GrpcVendorUpdateDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcVendorUpdateDataSchema, ['id']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 	});
 
 	describe('GrpcVendorLookupDataSchema', () => {
-		it('should validate valid gRPC vendor lookup data', () => {
-			const validData = {
-				id: 'vendor-123',
-			};
-
-			const result = GrpcVendorLookupDataSchema.safeParse(validData);
-			expect(result.success).toBe(true);
-		});
-
-		it('should reject missing id field', () => {
-			const invalidData = {
-				// missing id
-			};
-
-			const result = GrpcVendorLookupDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
-		});
-
-		it('should reject non-string id', () => {
-			const invalidData = {
-				id: 123, // Should be string
-			};
-
-			const result = GrpcVendorLookupDataSchema.safeParse(invalidData);
-			expect(result.success).toBe(false);
+		const testCases = createBasicSchemaTests(GrpcVendorLookupDataSchema, ['id']);
+		
+		testCases.forEach(({ name, test }) => {
+			it(name, test);
 		});
 	});
 });

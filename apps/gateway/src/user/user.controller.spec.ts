@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { grpc, mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
+import { createGrpcErrorTest, createGrpcSuccessTest, grpc, mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
 import { UserController } from './user.controller';
 
 // Mock the proto imports to avoid module resolution issues
@@ -23,77 +23,71 @@ describe('UserController', () => {
 	});
 
 	describe('getUserVendors', () => {
+		const mockRequestObj = mockRequest({ userId: 'user_123' });
+		const mockResponse = {
+			vendors: [
+				{ id: 'vendor_1', name: 'Test Vendor 1' },
+				{ id: 'vendor_2', name: 'Test Vendor 2' },
+			],
+		};
+		const expectedGrpcCall = { userId: 'user_123' };
+
 		it('should return user vendors successfully', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const mockResponse = {
-				vendors: [
-					{ id: 'vendor_1', name: 'Test Vendor 1' },
-					{ id: 'vendor_2', name: 'Test Vendor 2' },
-				],
-			};
-
-			grpcClient.invoke.mockReturnValue(grpc.success(mockResponse));
-
-			const result = await controller.getUserVendors(mockRequestObj);
-
-			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('getUserVendors', {
-				userId: 'user_123',
-			});
+			const test = createGrpcSuccessTest(
+				controller,
+				'getUserVendors',
+				grpcClient,
+				'getUserVendors',
+				mockRequestObj,
+				mockResponse,
+				expectedGrpcCall
+			);
+			await test();
 		});
 
 		it('should handle gRPC errors properly', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
 			const mockError = new Error('Database error');
-
-			grpcClient.invoke.mockReturnValue(grpc.error(mockError));
-
-			await expect(controller.getUserVendors(mockRequestObj)).rejects.toThrow(mockError);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('getUserVendors', {
-				userId: 'user_123',
-			});
+			const test = createGrpcErrorTest(
+				controller,
+				'getUserVendors',
+				grpcClient,
+				'getUserVendors',
+				mockRequestObj,
+				mockError,
+				expectedGrpcCall
+			);
+			await test();
 		});
 
 		it('should handle empty user vendors response', async () => {
-			const mockRequestObj = mockRequest({
-				userId: 'user_123',
-			});
-
-			const mockResponse = {
-				vendors: [],
-			};
-
-			grpcClient.invoke.mockReturnValue(grpc.success(mockResponse));
-
-			const result = await controller.getUserVendors(mockRequestObj);
-
-			expect(result).toEqual(mockResponse);
-			expect(result.vendors).toHaveLength(0);
+			const emptyResponse = { vendors: [] };
+			const test = createGrpcSuccessTest(
+				controller,
+				'getUserVendors',
+				grpcClient,
+				'getUserVendors',
+				mockRequestObj,
+				emptyResponse,
+				expectedGrpcCall
+			);
+			await test();
 		});
 
 		it('should handle missing userId in request', async () => {
-			const mockRequestObj = mockRequest({
-				userId: undefined,
-			});
-
-			const mockResponse = {
-				vendors: [],
-			};
-
-			grpcClient.invoke.mockReturnValue(grpc.success(mockResponse));
-
-			const result = await controller.getUserVendors(mockRequestObj);
-
-			expect(result).toEqual(mockResponse);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('getUserVendors', {
-				userId: undefined,
-			});
+			const requestWithoutUserId = mockRequest({ userId: undefined });
+			const emptyResponse = { vendors: [] };
+			const expectedCallWithoutUserId = { userId: undefined };
+			
+			const test = createGrpcSuccessTest(
+				controller,
+				'getUserVendors',
+				grpcClient,
+				'getUserVendors',
+				requestWithoutUserId,
+				emptyResponse,
+				expectedCallWithoutUserId
+			);
+			await test();
 		});
 	});
 });
