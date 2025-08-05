@@ -17,8 +17,6 @@ export class ClerkService {
 			select: { clerkId: true, id: true },
 		});
 
-
-
 		return user;
 	}
 
@@ -26,7 +24,7 @@ export class ClerkService {
 		this.logger.log(`Deleting user with clerkId: ${id}`);
 
 		// Get user before deletion for event
-		const user = await this.prisma.db.user.findFirst({
+		await this.prisma.db.user.findFirst({
 			select: { clerkId: true, id: true },
 			where: { clerkId: id },
 		});
@@ -36,8 +34,6 @@ export class ClerkService {
 				clerkId: id,
 			},
 		});
-
-
 	}
 
 	async createIntegration({ data, providerId, userId }: { data?: unknown; providerId?: string; userId: string }) {
@@ -47,7 +43,7 @@ export class ClerkService {
 			userId: userId,
 		});
 
-		const integration = await this.prisma.db.integration.create({
+		await this.prisma.db.integration.create({
 			data: {
 				data: (data as any) || null,
 				providerId: providerId || null,
@@ -55,8 +51,6 @@ export class ClerkService {
 				userId: userId,
 			},
 		});
-
-
 	}
 
 	async deleteIntegration({ providerId }: { providerId: string }) {
@@ -66,7 +60,7 @@ export class ClerkService {
 		});
 
 		// Get integration before deletion for event
-		const integration = await this.prisma.db.integration.findFirst({
+		await this.prisma.db.integration.findFirst({
 			select: { id: true, userId: true },
 			where: {
 				providerId: providerId,
@@ -80,7 +74,5 @@ export class ClerkService {
 				type: IntegrationType.Clerk,
 			},
 		});
-
-
 	}
 }

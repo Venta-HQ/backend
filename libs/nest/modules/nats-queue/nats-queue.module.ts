@@ -3,8 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { NatsQueueService } from './nats-queue.service';
 
 @Module({
+	exports: [NatsQueueService],
 	imports: [ConfigModule],
 	providers: [NatsQueueService],
-	exports: [NatsQueueService],
 })
-export class NatsQueueModule {} 
+export class NatsQueueModule {}

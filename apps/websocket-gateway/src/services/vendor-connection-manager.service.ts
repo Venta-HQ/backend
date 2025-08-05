@@ -40,8 +40,6 @@ export class VendorConnectionManagerService {
 				{ logger: this.logger },
 			);
 
-
-
 			this.logger.log(`Vendor ${vendorId} connected with socket ${socketId}`);
 		} catch (error) {
 			this.logger.error(`Failed to register vendor ${vendorId}:`, error);
@@ -90,8 +88,6 @@ export class VendorConnectionManagerService {
 		for (const userId of usersInRoom) {
 			await this.redis.srem(`user:${userId}:rooms`, vendorId);
 		}
-
-
 
 		this.logger.log(`Vendor ${vendorId} disconnected from socket ${socketId}, affecting ${usersInRoom.length} users`);
 	}

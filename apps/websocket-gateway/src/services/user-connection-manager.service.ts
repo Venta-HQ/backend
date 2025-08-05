@@ -40,8 +40,6 @@ export class UserConnectionManagerService {
 				{ logger: this.logger },
 			);
 
-
-
 			this.logger.log(`User ${userId} connected with socket ${socketId}`);
 		} catch (error) {
 			this.logger.error(`Failed to register user ${userId}:`, error);
@@ -85,8 +83,6 @@ export class UserConnectionManagerService {
 		await this.redis.del(`socket:${socketId}:userId`);
 		await this.redis.del(`user:${userId}:rooms`);
 		await this.redis.del(`user_connection:${socketId}`);
-
-
 
 		this.logger.log(`User ${userId} disconnected from socket ${socketId}`);
 	}

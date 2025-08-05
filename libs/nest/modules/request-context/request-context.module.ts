@@ -7,7 +7,7 @@ import { RequestContextService } from './request-context.service';
  * for request-specific context data like request IDs.
  */
 @Module({
-	providers: [RequestContextService],
 	exports: [RequestContextService],
+	providers: [RequestContextService],
 })
-export class RequestContextModule {} 
+export class RequestContextModule {}

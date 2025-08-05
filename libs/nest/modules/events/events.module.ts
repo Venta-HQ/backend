@@ -5,12 +5,12 @@ import { RequestContextModule } from '../request-context';
 import { EventService } from './typed-event.service';
 
 @Module({
+	exports: [EventService],
 	imports: [
 		ConfigModule,
 		ClientsModule.registerAsync([{ name: 'NATS_SERVICE', useFactory: () => ({ transport: Transport.NATS }) }]),
 		RequestContextModule,
 	],
-	exports: [EventService],
 	providers: [EventService],
 })
 export class EventsModule {}
