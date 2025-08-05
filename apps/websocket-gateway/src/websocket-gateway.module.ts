@@ -1,5 +1,4 @@
 import { join } from 'path';
-import { WsErrorFilter } from '@app/nest/filters';
 import {
 	WsAuthGuard,
 	WsRateLimitGuardLenient,
@@ -11,7 +10,6 @@ import { BootstrapModule, ClerkModule, GrpcInstanceModule, PrometheusService, Re
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';
@@ -53,10 +51,6 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 		}),
 	],
 	providers: [
-		{
-			provide: APP_FILTER,
-			useClass: WsErrorFilter,
-		},
 		{
 			inject: [PrometheusService],
 			provide: WEBSOCKET_METRICS,

@@ -10,14 +10,27 @@ export class ClerkService {
 	async handleUserCreated(id: string) {
 		this.logger.log(`Creating user with clerkId: ${id}`);
 
-		const user = await this.prisma.db.user.create({
-			data: {
+		const userExists = await this.prisma.db.user.count({
+			where: {
 				clerkId: id,
 			},
-			select: { clerkId: true, id: true },
 		});
 
-		return user;
+		if (!userExists) {
+			const user = await this.prisma.db.user.create({
+				data: {
+					clerkId: id,
+				},
+				select: { clerkId: true, id: true },
+			});
+			return user;
+		} else {
+			this.logger.log(`User already exists with clerkId: ${id}`);
+			return await this.prisma.db.user.findFirst({
+				select: { clerkId: true, id: true },
+				where: { clerkId: id },
+			});
+		}
 	}
 
 	async handleUserDeleted(id: string) {
@@ -36,11 +49,19 @@ export class ClerkService {
 		});
 	}
 
-	async createIntegration({ data, providerId, userId }: { data?: unknown; providerId?: string; userId: string }) {
+	async createIntegration({
+		clerkUserId,
+		data,
+		providerId,
+	}: {
+		clerkUserId: string;
+		data?: unknown;
+		providerId?: string;
+	}) {
 		this.logger.log('Creating integration record for clerk account', {
+			clerkUserId: clerkUserId,
 			providerId: providerId,
 			type: IntegrationType.Clerk,
-			userId: userId,
 		});
 
 		await this.prisma.db.integration.create({
@@ -48,7 +69,11 @@ export class ClerkService {
 				data: (data as any) || null,
 				providerId: providerId || null,
 				type: IntegrationType.Clerk,
-				userId: userId,
+				user: {
+					connect: {
+						clerkId: clerkUserId,
+					},
+				},
 			},
 		});
 	}

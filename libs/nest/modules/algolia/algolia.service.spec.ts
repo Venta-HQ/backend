@@ -248,19 +248,12 @@ describe('AlgoliaService', () => {
 				hits: [],
 			};
 
-			const mockDeleteResponse = [];
-
 			mockClient.searchSingleIndex.mockResolvedValue(mockSearchResponse);
-			mockClient.deleteObjects.mockResolvedValue(mockDeleteResponse);
 
 			const result = await service.deleteObject(indexName, entityId);
 
-			expect(mockClient.deleteObjects).toHaveBeenCalledWith({
-				indexName,
-				objectIDs: [],
-			});
-
-			expect(result).toEqual(mockDeleteResponse);
+			expect(mockClient.deleteObjects).not.toHaveBeenCalled();
+			expect(result).toEqual([]);
 		});
 
 		it('should handle search error during delete', async () => {

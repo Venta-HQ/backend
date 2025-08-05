@@ -32,7 +32,7 @@ export class AlgoliaService {
 		attributesToUpdate: AlgoliaUpdateAttributes,
 	): Promise<UpdatedAtWithObjectIdResponse | null> {
 		const { hits } = await this.client.searchSingleIndex({
-			indexName: 'vendor',
+			indexName,
 			searchParams: {
 				query: entityId,
 				restrictSearchableAttributes: ['id'],
@@ -42,8 +42,10 @@ export class AlgoliaService {
 		if (!hits.length) {
 			this.logger.warn('Attempted to update an algolia record that did not exist', {
 				indexName,
+				entityId,
 				searchParams: {
-					filters: entityId,
+					query: entityId,
+					restrictSearchableAttributes: ['id'],
 				},
 			});
 			return null;
@@ -68,12 +70,24 @@ export class AlgoliaService {
 
 	async deleteObject(indexName: string, entityId: string): Promise<BatchResponse[]> {
 		const { hits } = await this.client.searchSingleIndex({
-			indexName: 'vendor',
+			indexName,
 			searchParams: {
 				query: entityId,
 				restrictSearchableAttributes: ['id'],
 			},
 		});
+
+		if (!hits.length) {
+			this.logger.warn('Attempted to delete an algolia record that did not exist', {
+				indexName,
+				entityId,
+				searchParams: {
+					query: entityId,
+					restrictSearchableAttributes: ['id'],
+				},
+			});
+			return [];
+		}
 
 		return await this.client.deleteObjects({
 			indexName,

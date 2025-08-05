@@ -1,343 +1,132 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { WsError } from '@app/nest/errors';
-import { ExecutionContext } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ClerkService } from '../../modules/clerk';
-import { PrismaService } from '../../modules/prisma';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { CanActivate, ExecutionContext } from '@nestjs/common';
+import { WsException } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
+import { vi } from 'vitest';
 import { WsAuthGuard } from './ws-auth.guard';
-
-// Mock Redis
-const mockRedis = {
-	get: vi.fn(),
-	set: vi.fn(),
-};
-
-// Mock ClerkService
-const mockClerkService = {
-	verifyToken: vi.fn(),
-};
-
-// Mock PrismaService
-const mockPrismaService = {
-	db: {
-		user: {
-			findFirst: vi.fn(),
-		},
-	},
-};
 
 describe('WsAuthGuard', () => {
 	let guard: WsAuthGuard;
-	let module: TestingModule;
+	let mockContext: ExecutionContext;
+	let mockSocket: Partial<Socket>;
+	let mockPrisma: any;
 
-	beforeEach(async () => {
-		module = await Test.createTestingModule({
-			providers: [
-				WsAuthGuard,
-				{
-					provide: 'default_IORedisModuleConnectionToken',
-					useValue: mockRedis,
+	beforeEach(() => {
+		mockPrisma = {
+			db: {
+				user: {
+					findFirst: vi.fn(),
 				},
-				{
-					provide: ClerkService,
-					useValue: mockClerkService,
-				},
-				{
-					provide: PrismaService,
-					useValue: mockPrismaService,
-				},
-			],
-		}).compile();
+			},
+		};
+		guard = new WsAuthGuard(mockPrisma);
 
-		guard = module.get<WsAuthGuard>(WsAuthGuard);
+		mockSocket = {
+			id: 'test-socket-id',
+			handshake: {
+				auth: {},
+				query: {},
+				headers: {},
+			},
+		};
 
-		// Ensure the guard has access to the mocked services
-		(guard as any).clerkService = mockClerkService;
-		(guard as any).prisma = mockPrismaService;
-		(guard as any).redis = mockRedis;
-	});
-
-	afterEach(() => {
-		vi.clearAllMocks();
+		mockContext = {
+			switchToWs: () => ({
+				getClient: () => mockSocket,
+			}),
+		} as ExecutionContext;
 	});
 
 	describe('canActivate', () => {
-		it('should allow access with valid token from handshake auth', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					auth: {
-						token: 'valid-jwt-token',
-					},
-				},
-				userId: undefined,
+		it('should allow access with valid token in auth', async () => {
+			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
+
+			mockSocket.handshake = {
+				auth: { token: 'clerk-123' },
+				query: {},
+				headers: {},
 			};
-
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockResolvedValue('internal-user-id');
 
 			const result = await guard.canActivate(mockContext);
 
 			expect(result).toBe(true);
-			expect(mockClient.userId).toBe('internal-user-id');
-			expect(mockClient.clerkId).toBe('clerk-user-id');
+			expect(mockSocket.clerkId).toBe('clerk-123');
+			expect(mockSocket.userId).toBe('user-1');
 		});
 
-		it('should allow access with valid token from query parameters', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					query: {
-						token: 'valid-jwt-token',
-					},
-				},
-				userId: undefined,
+		it('should allow access with valid token in query params', async () => {
+			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
+
+			mockSocket.handshake = {
+				auth: {},
+				query: { token: 'clerk-123' },
+				headers: {},
 			};
-
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockResolvedValue('internal-user-id');
 
 			const result = await guard.canActivate(mockContext);
 
 			expect(result).toBe(true);
-			expect(mockClient.userId).toBe('internal-user-id');
-			expect(mockClient.clerkId).toBe('clerk-user-id');
+			expect(mockSocket.clerkId).toBe('clerk-123');
+			expect(mockSocket.userId).toBe('user-1');
 		});
 
-		it('should allow access with valid token from headers', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					headers: {
-						authorization: 'Bearer valid-jwt-token',
-					},
-				},
-				userId: undefined,
+		it('should allow access with valid token in authorization header', async () => {
+			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
+
+			mockSocket.handshake = {
+				auth: {},
+				query: {},
+				headers: { authorization: 'Bearer clerk-123' },
 			};
-
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockResolvedValue('internal-user-id');
 
 			const result = await guard.canActivate(mockContext);
 
 			expect(result).toBe(true);
-			expect(mockClient.userId).toBe('internal-user-id');
-			expect(mockClient.clerkId).toBe('clerk-user-id');
+			expect(mockSocket.clerkId).toBe('clerk-123');
+			expect(mockSocket.userId).toBe('user-1');
 		});
 
-		it('should fetch user from database when not cached', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					auth: {
-						token: 'valid-jwt-token',
-					},
-				},
-				userId: undefined,
-			};
-
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockResolvedValue(null);
-
-			mockPrismaService.db.user.findFirst.mockResolvedValue({
-				id: 'internal-user-id',
-			});
-
-			const result = await guard.canActivate(mockContext);
-
-			expect(result).toBe(true);
-			expect(mockClient.userId).toBe('internal-user-id');
-			expect(mockClient.clerkId).toBe('clerk-user-id');
-			expect(mockPrismaService.db.user.findFirst).toHaveBeenCalledWith({
-				select: { id: true },
-				where: { clerkId: 'clerk-user-id' },
-			});
-			expect(mockRedis.set).toHaveBeenCalledWith('user:clerk-user-id', 'internal-user-id', 'EX', 3600);
+		it('should throw WsException when no token provided', async () => {
+			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
 
-		it('should throw WsError when no token provided', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {},
-				userId: undefined,
+		it('should throw WsException when token is invalid', async () => {
+			mockPrisma.db.user.findFirst.mockResolvedValue(null);
+
+			mockSocket.handshake = {
+				auth: { token: 'invalid-token' },
+				query: {},
+				headers: {},
 			};
 
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsError);
+			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
 
-		it('should throw WsError when token is invalid', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					auth: {
-						token: 'invalid-token',
-					},
-				},
-				userId: undefined,
+		it('should throw WsException when user not found in database', async () => {
+			mockPrisma.db.user.findFirst.mockResolvedValue(null);
+
+			mockSocket.handshake = {
+				auth: { token: 'clerk-123' },
+				query: {},
+				headers: {},
 			};
 
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockRejectedValue(new Error('Invalid token'));
-
-			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsError);
+			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
 
-		it('should throw WsError when user not found in database', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					auth: {
-						token: 'valid-jwt-token',
-					},
-				},
-				userId: undefined,
+		it('should handle database errors gracefully', async () => {
+			mockPrisma.db.user.findFirst.mockRejectedValue(new Error('Database error'));
+
+			mockSocket.handshake = {
+				auth: { token: 'clerk-123' },
+				query: {},
+				headers: {},
 			};
 
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockResolvedValue(null);
-			mockPrismaService.db.user.findFirst.mockResolvedValue(null);
-
-			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsError);
-		});
-
-		it('should handle Redis errors gracefully', async () => {
-			const mockClient = {
-				clerkId: undefined,
-				handshake: {
-					auth: {
-						token: 'valid-jwt-token',
-					},
-				},
-				userId: undefined,
-			};
-
-			const mockContext = {
-				switchToWs: () => ({
-					getClient: () => mockClient,
-					getData: () => ({}),
-				}),
-			} as ExecutionContext;
-
-			mockClerkService.verifyToken.mockResolvedValue({
-				sub: 'clerk-user-id',
-			});
-
-			mockRedis.get.mockRejectedValue(new Error('Redis error'));
-
-			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsError);
-		});
-	});
-
-	describe('extractToken', () => {
-		it('should extract token from handshake auth', () => {
-			const mockClient = {
-				handshake: {
-					auth: {
-						token: 'test-token',
-					},
-				},
-			};
-
-			const result = (guard as any).extractToken(mockClient);
-			expect(result).toBe('test-token');
-		});
-
-		it('should extract token from query parameters', () => {
-			const mockClient = {
-				handshake: {
-					query: {
-						token: 'test-token',
-					},
-				},
-			};
-
-			const result = (guard as any).extractToken(mockClient);
-			expect(result).toBe('test-token');
-		});
-
-		it('should extract token from authorization header', () => {
-			const mockClient = {
-				handshake: {
-					headers: {
-						authorization: 'Bearer test-token',
-					},
-				},
-			};
-
-			const result = (guard as any).extractToken(mockClient);
-			expect(result).toBe('test-token');
-		});
-
-		it('should return null when no token found', () => {
-			const mockClient = {
-				handshake: {},
-			};
-
-			const result = (guard as any).extractToken(mockClient);
-			expect(result).toBeNull();
+			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
 	});
 });

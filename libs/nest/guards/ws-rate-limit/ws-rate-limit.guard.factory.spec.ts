@@ -74,7 +74,7 @@ describe('WsRateLimitGuardFactory', () => {
 				}),
 			};
 
-			mockRedis.incr.mockResolvedValue(5); // Under limit of 15
+			mockRedis.incr.mockResolvedValue(50); // Under limit of 100
 			mockRedis.expire.mockResolvedValue(1);
 
 			const result = await guard.canActivate(mockContext as any);
@@ -96,7 +96,7 @@ describe('WsRateLimitGuardFactory', () => {
 				}),
 			};
 
-			mockRedis.incr.mockResolvedValue(16); // Over limit of 15
+			mockRedis.incr.mockResolvedValue(101); // Over limit of 100
 			mockRedis.expire.mockResolvedValue(1);
 
 			await expect(guard.canActivate(mockContext as any)).rejects.toThrow();

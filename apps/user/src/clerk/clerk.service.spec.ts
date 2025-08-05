@@ -108,7 +108,7 @@ describe('ClerkService', () => {
 		it('should create integration successfully', async () => {
 			const integrationData = {
 				providerId: 'clerk_user_123',
-				userId: 'user_123',
+				clerkUserId: 'user_123',
 			};
 			const expectedIntegration = data.integration(integrationData);
 
@@ -121,7 +121,11 @@ describe('ClerkService', () => {
 					data: null,
 					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
-					userId: 'user_123',
+					user: {
+						connect: {
+							clerkId: 'user_123',
+						},
+					},
 				},
 			});
 		});
@@ -129,7 +133,7 @@ describe('ClerkService', () => {
 		it('should handle database errors during integration creation', async () => {
 			const integrationData = {
 				providerId: 'clerk_user_123',
-				userId: 'user_123',
+				clerkUserId: 'user_123',
 			};
 			const dbError = errors.database('Database connection failed');
 			prisma.db.integration.create.mockRejectedValue(dbError);
@@ -140,7 +144,11 @@ describe('ClerkService', () => {
 					data: null,
 					providerId: 'clerk_user_123',
 					type: IntegrationType.Clerk,
-					userId: 'user_123',
+					user: {
+						connect: {
+							clerkId: 'user_123',
+						},
+					},
 				},
 			});
 		});
