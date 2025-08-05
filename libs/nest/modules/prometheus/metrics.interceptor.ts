@@ -1,8 +1,12 @@
+import { CallHandler, ExecutionContext, Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
-import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor, Optional } from '@nestjs/common';
-import { PrometheusOptions } from './prometheus.module';
 import { PrometheusService } from './prometheus.service';
+
+export interface PrometheusOptions {
+	appName?: string;
+}
 
 export interface RequestMetrics {
 	request_duration_seconds: any;
@@ -20,6 +24,7 @@ export class MetricsInterceptor implements NestInterceptor {
 	constructor(
 		private readonly prometheusService: PrometheusService,
 		@Optional() @Inject('PROMETHEUS_OPTIONS') private readonly options?: PrometheusOptions,
+		@Optional() private readonly configService?: ConfigService,
 	) {}
 
 	private getServiceName(): string {
@@ -28,8 +33,8 @@ export class MetricsInterceptor implements NestInterceptor {
 			return this.options.appName;
 		}
 
-		// Try to get app name from environment variables as fallback
-		const appName = process.env.APP_NAME;
+		// Try to get app name from config service as fallback
+		const appName = this.configService?.get('APP_NAME');
 		if (appName) {
 			return appName;
 		}

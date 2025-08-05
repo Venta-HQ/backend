@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap, EventMetadata } from '@app/apitypes';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { RequestContextService } from '../request-context';
 
@@ -12,8 +13,9 @@ export class EventService {
 	constructor(
 		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 		@Optional() private readonly requestContextService?: RequestContextService,
+		@Optional() private readonly configService?: ConfigService,
 	) {
-		this.serviceName = process.env.SERVICE_NAME || 'unknown-service';
+		this.serviceName = this.configService?.get('SERVICE_NAME') || 'unknown-service';
 	}
 
 	/**

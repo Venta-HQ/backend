@@ -1,5 +1,6 @@
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Counter, Gauge, Histogram, Registry } from 'prom-client';
-import { Injectable, OnModuleInit } from '@nestjs/common';
 
 export interface MetricDefinition {
 	buckets?: number[];
@@ -31,8 +32,8 @@ export interface PrometheusMetrics {
 export class PrometheusService implements OnModuleInit {
 	private readonly registry = new Registry();
 	private readonly metrics: Map<string, Counter<string> | Gauge<string> | Histogram<string>> = new Map();
+	private readonly logger = new Logger(PrometheusService.name);
 
-	// Application metrics (common across all apps)
 	public readonly application = {
 		memoryUsage: new Gauge({
 			help: 'Application memory usage in bytes',
@@ -42,6 +43,7 @@ export class PrometheusService implements OnModuleInit {
 		}),
 		uptime: new Gauge({
 			help: 'Application uptime in seconds',
+			labelNames: ['version', 'commit', 'environment'],
 			name: 'application_uptime_seconds',
 			registers: [this.registry],
 		}),
@@ -53,13 +55,15 @@ export class PrometheusService implements OnModuleInit {
 		}),
 	};
 
+	constructor(private readonly configService: ConfigService) {}
+
 	onModuleInit() {
 		// Set initial application version
 		this.application.version.set(
 			{
-				commit: process.env.GIT_COMMIT || 'unknown',
-				environment: process.env.NODE_ENV || 'development',
-				version: process.env.npm_package_version || 'unknown',
+				commit: this.configService.get('GIT_COMMIT') || 'unknown',
+				environment: this.configService.get('NODE_ENV') || 'development',
+				version: this.configService.get('npm_package_version') || 'unknown',
 			},
 			1,
 		);

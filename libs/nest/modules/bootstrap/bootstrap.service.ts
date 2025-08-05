@@ -56,7 +56,7 @@ export class BootstrapService {
 				allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 				credentials: true,
 				methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-				origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
+				origin: configService.get('ALLOWED_ORIGINS')?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
 			};
 			app.enableCors(corsOptions);
 		}

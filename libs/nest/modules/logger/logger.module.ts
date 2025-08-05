@@ -94,7 +94,7 @@ export class LoggerModule {
 											} satisfies LokiOptions,
 											target: 'pino-loki',
 										},
-										...(process.env['NODE_ENV'] !== 'production'
+										...(configService.get('NODE_ENV') !== 'production'
 											? [
 													{
 														options: {
