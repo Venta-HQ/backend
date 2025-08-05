@@ -38,7 +38,7 @@ export class LocationService {
 			);
 
 			// Update database
-			const updatedVendor = await this.prisma.db.vendor.update({
+			await this.prisma.db.vendor.update({
 				data: {
 					lat: data.location.lat,
 					long: data.location.long,
@@ -49,7 +49,11 @@ export class LocationService {
 			});
 
 			// Publish location update event using EventService
-			await this.eventService.emit('vendor.updated', updatedVendor);
+			await this.eventService.emit('vendor.updated', {
+				id: data.entityId,
+				lat: data.location.lat,
+				long: data.location.long,
+			});
 
 			this.logger.log(`Updated vendor location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
 		} catch (e) {

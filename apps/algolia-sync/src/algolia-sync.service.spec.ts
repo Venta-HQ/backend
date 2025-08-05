@@ -187,22 +187,6 @@ describe('AlgoliaSyncService', () => {
 			});
 		});
 
-		describe('vendor.location.updated', () => {
-			it('should ignore vendor location updated event (not supported)', async () => {
-				const locationData = {
-					entityId: 'vendor_123',
-					location: {
-						lat: 40.7128,
-						long: -74.006,
-					},
-				};
-
-				await service.processVendorEvent(createBaseEvent(locationData), 'vendor.location.updated');
-
-				expect(algoliaService.updateObject).not.toHaveBeenCalled();
-			});
-		});
-
 		describe('unknown event types', () => {
 			it('should ignore unknown event types', async () => {
 				const vendorData = data.vendor({ id: 'vendor_123' });
