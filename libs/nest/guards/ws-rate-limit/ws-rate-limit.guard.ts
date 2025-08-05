@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { Socket } from 'socket.io';
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
@@ -34,7 +34,7 @@ export class WsRateLimitGuard implements CanActivate {
 
 			if (current > limit) {
 				this.logger.warn(`Rate limit exceeded for user: ${userId}`);
-				throw new WsException(new AppError('RATE_LIMIT_EXCEEDED', ErrorCodes.RATE_LIMIT_EXCEEDED));
+				throw new WsException(new AppError(ErrorType.RATE_LIMIT, 'RATE_LIMIT_EXCEEDED', 'Rate limit exceeded'));
 			}
 
 			return true;

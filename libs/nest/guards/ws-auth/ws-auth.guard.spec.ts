@@ -4,10 +4,14 @@ import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { WsAuthGuard } from './ws-auth.guard';
 
+interface AuthenticatedSocket extends Socket {
+	clerkId?: string;
+	userId?: string;
+}
+
 describe('WsAuthGuard', () => {
 	let guard: WsAuthGuard;
 	let mockContext: ExecutionContext;
-	let mockSocket: Partial<Socket>;
 	let mockPrisma: any;
 
 	beforeEach(() => {
@@ -19,21 +23,6 @@ describe('WsAuthGuard', () => {
 			},
 		};
 		guard = new WsAuthGuard(mockPrisma);
-
-		mockSocket = {
-			handshake: {
-				auth: {},
-				headers: {},
-				query: {},
-			},
-			id: 'test-socket-id',
-		};
-
-		mockContext = {
-			switchToWs: () => ({
-				getClient: () => mockSocket,
-			}),
-		} as ExecutionContext;
 	});
 
 	describe('canActivate', () => {
@@ -41,11 +30,20 @@ describe('WsAuthGuard', () => {
 			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
-			mockSocket.handshake = {
-				auth: { token: 'clerk-123' },
-				headers: {},
-				query: {},
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: { token: 'clerk-123' },
+					headers: {},
+					query: {},
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			const result = await guard.canActivate(mockContext);
 
@@ -58,11 +56,20 @@ describe('WsAuthGuard', () => {
 			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
-			mockSocket.handshake = {
-				auth: {},
-				headers: {},
-				query: { token: 'clerk-123' },
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: {},
+					headers: {},
+					query: { token: 'clerk-123' },
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			const result = await guard.canActivate(mockContext);
 
@@ -75,11 +82,20 @@ describe('WsAuthGuard', () => {
 			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
-			mockSocket.handshake = {
-				auth: {},
-				headers: { authorization: 'Bearer clerk-123' },
-				query: {},
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: {},
+					headers: { authorization: 'Bearer clerk-123' },
+					query: {},
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			const result = await guard.canActivate(mockContext);
 
@@ -89,17 +105,41 @@ describe('WsAuthGuard', () => {
 		});
 
 		it('should throw WsException when no token provided', async () => {
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: {},
+					headers: {},
+					query: {},
+				} as any,
+				id: 'test-socket-id',
+			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
+
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
 
 		it('should throw WsException when token is invalid', async () => {
 			mockPrisma.db.user.findFirst.mockResolvedValue(null);
 
-			mockSocket.handshake = {
-				auth: { token: 'invalid-token' },
-				headers: {},
-				query: {},
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: { token: 'invalid-token' },
+					headers: {},
+					query: {},
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
@@ -107,11 +147,20 @@ describe('WsAuthGuard', () => {
 		it('should throw WsException when user not found in database', async () => {
 			mockPrisma.db.user.findFirst.mockResolvedValue(null);
 
-			mockSocket.handshake = {
-				auth: { token: 'clerk-123' },
-				headers: {},
-				query: {},
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: { token: 'clerk-123' },
+					headers: {},
+					query: {},
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});
@@ -119,11 +168,20 @@ describe('WsAuthGuard', () => {
 		it('should handle database errors gracefully', async () => {
 			mockPrisma.db.user.findFirst.mockRejectedValue(new Error('Database error'));
 
-			mockSocket.handshake = {
-				auth: { token: 'clerk-123' },
-				headers: {},
-				query: {},
+			const mockSocket: Partial<AuthenticatedSocket> = {
+				handshake: {
+					auth: { token: 'clerk-123' },
+					headers: {},
+					query: {},
+				} as any,
+				id: 'test-socket-id',
 			};
+
+			mockContext = {
+				switchToWs: () => ({
+					getClient: () => mockSocket,
+				}),
+			} as ExecutionContext;
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
 		});

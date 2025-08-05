@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorType } from '@app/nest/errors';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { PrismaService } from '../../modules';
@@ -21,7 +21,9 @@ export class WsAuthGuard implements CanActivate {
 
 		if (!token) {
 			this.logger.warn('WebSocket connection attempt without token');
-			throw new WsException(new AppError('WS_AUTHENTICATION_FAILED', ErrorCodes.WS_AUTHENTICATION_FAILED));
+			throw new WsException(
+				new AppError(ErrorType.AUTHENTICATION, 'WS_AUTHENTICATION_FAILED', 'WebSocket authentication failed'),
+			);
 		}
 
 		try {
@@ -30,7 +32,9 @@ export class WsAuthGuard implements CanActivate {
 			return true;
 		} catch (error) {
 			this.logger.warn('WebSocket authentication failed', { error: error.message });
-			throw new WsException(new AppError('WS_AUTHENTICATION_FAILED', ErrorCodes.WS_AUTHENTICATION_FAILED));
+			throw new WsException(
+				new AppError(ErrorType.AUTHENTICATION, 'WS_AUTHENTICATION_FAILED', 'WebSocket authentication failed'),
+			);
 		}
 	}
 
@@ -69,7 +73,7 @@ export class WsAuthGuard implements CanActivate {
 		});
 
 		if (!user) {
-			throw new AppError('WS_AUTHENTICATION_FAILED', ErrorCodes.WS_AUTHENTICATION_FAILED);
+			throw new AppError(ErrorType.AUTHENTICATION, 'WS_AUTHENTICATION_FAILED', 'WebSocket authentication failed');
 		}
 
 		return user;
