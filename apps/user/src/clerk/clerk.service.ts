@@ -1,14 +1,10 @@
 import { PrismaService } from '@app/nest/modules';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 
 @Injectable()
 export class ClerkService {
-	constructor(
-		private prisma: PrismaService,
-		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
-	) {}
+	constructor(private prisma: PrismaService) {}
 	private readonly logger = new Logger(ClerkService.name);
 
 	async handleUserCreated(id: string) {
@@ -21,12 +17,7 @@ export class ClerkService {
 			select: { clerkId: true, id: true },
 		});
 
-		// Emit user created event using NestJS NATS client
-		this.natsClient.emit('user.created', {
-			clerkId: user.clerkId,
-			timestamp: new Date().toISOString(),
-			userId: user.id,
-		});
+
 
 		return user;
 	}
@@ -46,14 +37,7 @@ export class ClerkService {
 			},
 		});
 
-		// Emit user deleted event if user existed using NestJS NATS client
-		if (user) {
-			this.natsClient.emit('user.deleted', {
-				clerkId: user.clerkId,
-				timestamp: new Date().toISOString(),
-				userId: user.id,
-			});
-		}
+
 	}
 
 	async createIntegration({ data, providerId, userId }: { data?: unknown; providerId?: string; userId: string }) {
@@ -72,14 +56,7 @@ export class ClerkService {
 			},
 		});
 
-		// Emit integration created event using NestJS NATS client
-		this.natsClient.emit('user.integration.created', {
-			integrationId: integration.id,
-			providerId,
-			timestamp: new Date().toISOString(),
-			type: IntegrationType.Clerk,
-			userId,
-		});
+
 	}
 
 	async deleteIntegration({ providerId }: { providerId: string }) {
@@ -104,15 +81,6 @@ export class ClerkService {
 			},
 		});
 
-		// Emit integration deleted event if integration existed using NestJS NATS client
-		if (integration) {
-			this.natsClient.emit('user.integration.deleted', {
-				integrationId: integration.id,
-				providerId,
-				timestamp: new Date().toISOString(),
-				type: IntegrationType.Clerk,
-				userId: integration.userId,
-			});
-		}
+
 	}
 }

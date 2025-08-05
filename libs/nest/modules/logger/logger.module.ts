@@ -4,10 +4,10 @@ import { LokiOptions } from 'pino-loki';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestContextModule, RequestContextService } from '../request-context';
 import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
 import { GrpcLogger } from './grpc-logger.service';
 import { Logger } from './logger.service';
-import { RequestContextService } from './request-context.service';
 
 export interface LoggerOptions {
 	appName: string;
@@ -27,6 +27,7 @@ export class LoggerModule {
 			],
 			global: true,
 			imports: [
+				RequestContextModule,
 				PinoLoggerModule.forRootAsync({
 					imports: [ConfigModule],
 					inject: [ConfigService],

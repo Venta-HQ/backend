@@ -1,4 +1,4 @@
-import { BaseEvent, VendorEventSubject } from '@app/apitypes';
+import { AvailableEventSubjects, BaseEvent } from '@app/apitypes';
 import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
@@ -12,7 +12,7 @@ export class AlgoliaSyncService {
 	/**
 	 * Process vendor events and sync to Algolia
 	 */
-	async processVendorEvent(event: BaseEvent, subject: VendorEventSubject): Promise<void> {
+	async processVendorEvent(event: BaseEvent, subject: AvailableEventSubjects): Promise<void> {
 		const { data: vendor, eventId } = event;
 		this.logger.log(`Processing ${subject} event: ${eventId} for vendor: ${vendor.id}`);
 

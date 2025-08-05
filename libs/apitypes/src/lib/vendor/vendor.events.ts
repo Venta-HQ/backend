@@ -1,46 +1,46 @@
 import { z } from 'zod';
-import { BaseEvent } from '../events/base.types';
-import { eventRegistry } from '../events/event-registry';
 
 /**
  * Vendor event data schema
+ * Matches the Prisma Vendor model structure (without relations)
  */
-export const vendorEventDataSchema = z.object({
-	createdAt: z.string().optional(),
-	description: z.string().optional(),
-	email: z.string().optional(),
-	id: z.string(),
-	lat: z.number().optional(),
-	long: z.number().optional(),
-	name: z.string(),
-	open: z.boolean().optional(),
-	phone: z.string().optional(),
-	primaryImage: z.string().optional(),
-	updatedAt: z.string().optional(),
-	website: z.string().optional(),
+export const vendorEventDataSchema = z
+	.object({
+		createdAt: z.date(),
+		description: z.string().nullable(),
+		email: z.string().nullable(),
+		id: z.string(),
+		lat: z.number().nullable(),
+		long: z.number().nullable(),
+		name: z.string(),
+		open: z.boolean(),
+		phone: z.string().nullable(),
+		primaryImage: z.string().nullable(),
+		updatedAt: z.date(),
+		website: z.string().nullable(),
+		// Note: owner relation is excluded from events for security/privacy
+	})
+	.passthrough(); // Allow additional fields (like owner) to pass through
+
+/**
+ * Vendor event schemas object
+ * Maps subject names to their corresponding schemas
+ */
+/**
+ * Vendor location update event data schema
+ */
+export const vendorLocationEventDataSchema = z.object({
+	location: z.object({
+		lat: z.number(),
+		long: z.number(),
+	}),
+	timestamp: z.date(),
+	vendorId: z.string(),
 });
 
-/**
- * Vendor event interface
- */
-export interface VendorEventData extends BaseEvent {
-	data: z.infer<typeof vendorEventDataSchema>;
-}
-
-/**
- * Vendor event subject patterns for type safety
- */
-export type VendorEventSubject = 'vendor.created' | 'vendor.updated' | 'vendor.deleted';
-
-/**
- * Vendor event subjects as const assertion
- * This is used to generate the union type for intellisense
- */
-export const VENDOR_EVENT_SUBJECTS = ['vendor.created', 'vendor.updated', 'vendor.deleted'] as const;
-
-/**
- * Register vendor events with the global registry
- */
-eventRegistry.register('vendor.created', vendorEventDataSchema);
-eventRegistry.register('vendor.updated', vendorEventDataSchema);
-eventRegistry.register('vendor.deleted', vendorEventDataSchema);
+export const vendorEventSchemas = {
+	'vendor.created': vendorEventDataSchema,
+	'vendor.deleted': vendorEventDataSchema,
+	'vendor.location.updated': vendorLocationEventDataSchema,
+	'vendor.updated': vendorEventDataSchema,
+} as const;

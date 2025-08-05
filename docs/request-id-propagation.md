@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes how request IDs are tracked and propagated from HTTP requests through gRPC calls in the Venta backend system. After analysis, the current implementation is working correctly and the `RequestContextService` is necessary for proper request ID propagation.
+This document describes how request IDs are tracked and propagated from HTTP requests through gRPC calls and events in the Venta backend system. The system provides consistent request tracing across all services and automatically uses request IDs as correlation IDs for events.
 
 ## Current Architecture
 
@@ -87,6 +87,82 @@ intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 **Process**:
 - For HTTP: Pino automatically includes request ID in logs
 - For gRPC: Gets request ID from `RequestContextService` and includes it in log context
+
+### 5. Event Correlation ID Integration
+
+**Location**: `libs/nest/modules/events/typed-event.service.ts`
+
+**Process**:
+- The `EventService` automatically retrieves request ID from `RequestContextService`
+- Uses request ID as correlation ID for all emitted events
+- Provides consistent tracing across logs and events
+
+**Implementation**:
+```typescript
+const event: BaseEvent = {
+    correlationId: metadata?.correlationId || this.requestContextService?.get('requestId'),
+    data: validatedData,
+    eventId: randomUUID(),
+    // ... other fields
+};
+```
+
+**Benefits**:
+- All events from the same request have the same correlation ID
+- Easy to trace request flow through logs and events
+- No manual correlation ID management required
+
+## Complete Request Flow with Events
+
+### **Example: Vendor Creation Request**
+
+1. **HTTP Request** (Gateway):
+   ```
+   POST /vendors
+   Headers: x-request-id: req-123
+   ```
+
+2. **Request ID Generation**:
+   - Pino generates/uses request ID: `req-123`
+   - Stored in request context
+
+3. **gRPC Call** (Gateway → Vendor Service):
+   ```
+   gRPC: createVendor(data)
+   Metadata: requestId: req-123
+   ```
+
+4. **Vendor Service Processing**:
+   - Extracts request ID from gRPC metadata
+   - Stores in `RequestContextService`
+   - Creates vendor in database
+
+5. **Event Emission**:
+   ```typescript
+   await this.eventService.emit('vendor.created', vendor);
+   // Event automatically gets correlationId: req-123
+   ```
+
+6. **Event Processing** (Algolia Sync):
+   - Receives event with correlation ID: `req-123`
+   - Processes vendor data
+   - Logs include correlation ID for tracing
+
+7. **Complete Trace**:
+   ```
+   Gateway: [req-123] HTTP request received
+   Gateway: [req-123] gRPC call to vendor service
+   Vendor:  [req-123] Vendor created
+   Vendor:  [req-123] Event emitted: vendor.created
+   Algolia: [req-123] Event received: vendor.created
+   Algolia: [req-123] Vendor synced to Algolia
+   ```
+
+### **Benefits of Integrated Tracing**:
+- ✅ **Single Request ID**: Same ID across HTTP, gRPC, events, and logs
+- ✅ **Automatic Propagation**: No manual correlation ID management
+- ✅ **Complete Visibility**: Trace entire request flow end-to-end
+- ✅ **Easy Debugging**: Find all related logs and events by request ID
 
 ## Why RequestContextService is Necessary
 

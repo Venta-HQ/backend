@@ -1,62 +1,81 @@
-# Final Event System with Automatic Intellisense
+# Event System with Automatic Intellisense
 
 ## Overview
 
-We've implemented a clean, type-safe event system that provides automatic intellisense for available events. The system automatically derives the available subjects from domain-specific event definitions.
+We've implemented a clean, type-safe event system that provides automatic intellisense for vendor events. The system automatically derives available subjects from domain-specific event definitions and integrates with request ID propagation for correlation tracking.
 
 ## Architecture
 
 ### **Domain-Driven Event Definitions**
 
-Each domain defines its events in a dedicated file:
+Vendor events are defined in a dedicated file:
 
 ```typescript
 // libs/apitypes/src/lib/vendor/vendor.events.ts
-export const VENDOR_EVENT_SUBJECTS = ['vendor.created', 'vendor.updated', 'vendor.deleted'] as const;
-
 export const vendorEventDataSchema = z.object({
 	id: z.string(),
+	lat: z.number().nullable(),
+	long: z.number().nullable(),
 	name: z.string(),
-	// ... other fields
+	description: z.string().nullable(),
+	phone: z.string().nullable(),
+	email: z.string().nullable(),
+	website: z.string().nullable(),
+	open: z.boolean(),
+	primaryImage: z.string().nullable(),
+	createdAt: z.date(),
+	updatedAt: z.date(),
+}).passthrough(); // Allow additional fields (like relations) to pass through
+
+export const vendorLocationEventDataSchema = z.object({
+	location: z.object({
+		lat: z.number(),
+		long: z.number(),
+	}),
+	timestamp: z.date(),
+	vendorId: z.string(),
 });
 
-// Register with global registry
-eventRegistry.register('vendor.created', vendorEventDataSchema);
-eventRegistry.register('vendor.updated', vendorEventDataSchema);
-eventRegistry.register('vendor.deleted', vendorEventDataSchema);
+export const vendorEventSchemas = {
+	'vendor.created': vendorEventDataSchema,
+	'vendor.updated': vendorEventDataSchema,
+	'vendor.deleted': vendorEventDataSchema,
+	'vendor.location.updated': vendorLocationEventDataSchema,
+} as const;
 ```
 
 ### **Unified Event Registry**
 
-All domain subjects are combined into a single type:
+All vendor subjects are combined into a single type:
 
 ```typescript
 // libs/apitypes/src/lib/events/unified-event-registry.ts
-import { VENDOR_EVENT_SUBJECTS } from '../vendor/vendor.events';
+import { vendorEventSchemas } from '../vendor/vendor.events';
 
-export const ALL_EVENT_SUBJECTS = [
-	...VENDOR_EVENT_SUBJECTS,
-	// ...USER_EVENT_SUBJECTS,
-	// ...LOCATION_EVENT_SUBJECTS,
-] as const;
+export const ALL_EVENT_SCHEMAS = {
+	...vendorEventSchemas,
+	// Add other domain schemas here as they're created:
+	// ...userEventSchemas,
+	// ...locationEventSchemas,
+} as const;
 
-export type AvailableEventSubjects = (typeof ALL_EVENT_SUBJECTS)[number];
+export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
 ```
 
 ### **Type-Safe Event Service**
 
-The event service provides automatic intellisense:
+The event service provides automatic intellisense and type safety:
 
 ```typescript
 @Injectable()
 export class EventService {
-	async emit<T = any>(
-		subject: AvailableEventSubjects, // ← Intellisense here!
-		data: T,
+	async emit<TSubject extends AvailableEventSubjects>(
+		subject: TSubject, // ← Intellisense here!
+		data: EventDataMap[TSubject], // ← Type-safe data based on subject!
 		metadata?: EventMetadata,
 	): Promise<void> {
-		// Automatically validates against registered schema
-		const schema = eventRegistry.getSchema(subject);
+		// Automatically validates against schema from unified registry
+		const schema = ALL_EVENT_SCHEMAS[subject];
 		const validatedData = schema ? schema.parse(data) : data;
 		// ... emit event
 	}
@@ -76,81 +95,144 @@ export class VendorService {
 	async createVendor(data: VendorCreateData) {
 		const vendor = await this.prisma.db.vendor.create({...});
 
-		// TypeScript will provide intellisense for available subjects
+		// TypeScript provides intellisense for subjects AND type safety for data
 		await this.eventService.emit('vendor.created', vendor);
-		//                                    ↑ Intellisense shows: 'vendor.created' | 'vendor.updated' | 'vendor.deleted'
+		//                                    ↑ Intellisense shows: 'vendor.created' | 'vendor.updated' | 'vendor.deleted' | 'vendor.location.updated'
+		//                                    ↑ Data must match vendorEventDataSchema type
 		return vendor.id;
 	}
 }
 ```
 
-### **Adding New Domains**
-
-When adding a new domain (e.g., user events):
-
-1. **Create domain events file:**
+### **Location Service Example**
 
 ```typescript
-// libs/apitypes/src/lib/user/user.events.ts
-export const USER_EVENT_SUBJECTS = ['user.created', 'user.deleted'] as const;
+// In location service
+@Injectable()
+export class LocationService {
+	constructor(private eventService: EventService) {}
 
-export const userEventDataSchema = z.object({
-	userId: z.string(),
-	clerkId: z.string(),
-});
-
-// Register events
-eventRegistry.register('user.created', userEventDataSchema);
-eventRegistry.register('user.deleted', userEventDataSchema);
+	async updateVendorLocation(data: LocationUpdate) {
+		// Update location logic...
+		
+		await this.eventService.emit('vendor.location.updated', {
+			location: {
+				lat: data.location.lat,
+				long: data.location.long,
+			},
+			timestamp: new Date(),
+			vendorId: data.entityId,
+		});
+	}
+}
 ```
 
-2. **Add to unified registry:**
+## Correlation ID Integration
+
+The event system automatically integrates with the existing request ID propagation system:
+
+### **Automatic Correlation ID**
 
 ```typescript
-// libs/apitypes/src/lib/events/unified-event-registry.ts
-import { USER_EVENT_SUBJECTS } from '../user/user.events';
-
-export const ALL_EVENT_SUBJECTS = [
-	...VENDOR_EVENT_SUBJECTS,
-	...USER_EVENT_SUBJECTS, // ← Add new domain
-] as const;
+// Events automatically get correlation ID from request context
+const event: BaseEvent = {
+	correlationId: metadata?.correlationId || this.requestContextService?.get('requestId'),
+	data: validatedData,
+	eventId: randomUUID(),
+	source: metadata?.source || this.serviceName,
+	timestamp: new Date().toISOString(),
+	version: metadata?.version || '1.0',
+};
 ```
 
-3. **Use in service:**
+### **Request Tracing**
 
-```typescript
-	await this.eventService.emit('user.created', userData);
-	// Intellisense now includes: 'vendor.created' | 'vendor.updated' | 'vendor.deleted' | 'user.created' | 'user.deleted'
-```
+When a request comes in:
+1. **HTTP**: `x-request-id` header → `RequestContextService`
+2. **gRPC**: Request metadata → `RequestContextService` 
+3. **Events**: Same request ID becomes correlation ID
+4. **Logs**: Same request ID for tracing
+
+All events from the same request will have the same correlation ID, making it easy to trace the entire request flow.
+
+## Complete Request Flow Example
+
+### **Vendor Creation Request**
+
+1. **HTTP Request** (Gateway):
+   ```
+   POST /vendors
+   Headers: x-request-id: req-123
+   ```
+
+2. **Request ID Generation**:
+   - Pino generates/uses request ID: `req-123`
+   - Stored in request context
+
+3. **gRPC Call** (Gateway → Vendor Service):
+   ```
+   gRPC: createVendor(data)
+   Metadata: requestId: req-123
+   ```
+
+4. **Vendor Service Processing**:
+   - Extracts request ID from gRPC metadata
+   - Stores in `RequestContextService`
+   - Creates vendor in database
+
+5. **Event Emission**:
+   ```typescript
+   await this.eventService.emit('vendor.created', vendor);
+   // Event automatically gets correlationId: req-123
+   ```
+
+6. **Event Processing** (Algolia Sync):
+   - Receives event with correlation ID: `req-123`
+   - Processes vendor data
+   - Logs include correlation ID for tracing
+
+7. **Complete Trace**:
+   ```
+   Gateway: [req-123] HTTP request received
+   Gateway: [req-123] gRPC call to vendor service
+   Vendor:  [req-123] Vendor created
+   Vendor:  [req-123] Event emitted: vendor.created
+   Algolia: [req-123] Event received: vendor.created
+   Algolia: [req-123] Vendor synced to Algolia
+   ```
+
+## Current Vendor Events
+
+| Event                     | Service          | Description             |
+| ------------------------- | ---------------- | ----------------------- |
+| `vendor.created`          | Vendor Service   | New vendor created      |
+| `vendor.updated`          | Vendor Service   | Vendor data updated     |
+| `vendor.deleted`          | Vendor Service   | Vendor deleted          |
+| `vendor.location.updated` | Location Service | Vendor location changed |
 
 ## Benefits
 
 ### **1. Automatic Intellisense**
-
-- ✅ TypeScript provides autocomplete for available event subjects
+- ✅ TypeScript provides autocomplete for all available vendor events
 - ✅ Compile-time validation of event subjects
 - ✅ No more typos in event names
 
-### **2. No Duplication**
-
-- ✅ Event subjects defined once in their domain
-- ✅ Automatically combined into unified type
-- ✅ Single source of truth for each domain
-
-### **3. Type Safety**
-
-- ✅ Full TypeScript support
+### **2. Type Safety**
+- ✅ Full TypeScript support with automatic type inference
 - ✅ Automatic schema validation
 - ✅ Compile-time error checking
 
-### **4. Easy to Extend**
+### **3. No Duplication**
+- ✅ Event subjects defined once in vendor domain
+- ✅ Automatically combined into unified type
+- ✅ Single source of truth
 
-- ✅ Add new domains by following the pattern
-- ✅ Intellisense automatically updates
-- ✅ No changes needed to existing code
+### **4. Request Tracing**
+- ✅ Automatic correlation ID from request context
+- ✅ Consistent tracing across logs and events
+- ✅ Easy debugging and monitoring
 
 ### **5. Clean API**
-
 - ✅ Simple `emit(subject, data)` interface
 - ✅ Automatic validation from registry
 - ✅ Optional metadata support
@@ -161,7 +243,6 @@ export const ALL_EVENT_SUBJECTS = [
 libs/apitypes/src/lib/
 ├── events/
 │   ├── base.types.ts              # Shared base types
-│   ├── event-registry.ts          # Global event registry
 │   ├── unified-event-registry.ts  # Combined subjects type
 │   └── index.ts                   # Exports
 ├── vendor/
@@ -173,33 +254,36 @@ libs/apitypes/src/lib/
 ## Configuration
 
 ### **Module Setup**
-
 ```typescript
 @Module({
 	imports: [
 		EventsModule, // Provides EventService
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					name: 'NATS_SERVICE',
-					transport: Transport.NATS,
-				},
-			],
-		}),
+		RequestContextModule, // Provides RequestContextService for correlation IDs
 	],
 	providers: [VendorService],
 })
 export class VendorModule {}
 ```
 
+## Future Extensibility
+
+### **Adding New Vendor Events:**
+1. **Add schema** to `vendor.events.ts`
+2. **Add to schemas object** - types automatically update
+3. **Use in service** - intellisense immediately available
+
+### **Adding New Domains:**
+1. **Create domain events file** (e.g., `user.events.ts`)
+2. **Add to unified registry** - types automatically combine
+3. **Import in services** - full type safety and intellisense
+
 ## Conclusion
 
 This event system provides:
-
-- **Automatic intellisense** for all available events
+- **Automatic intellisense** for all vendor events
 - **Type safety** with compile-time validation
-- **No duplication** with single source of truth per domain
-- **Easy extensibility** for new domains
-- **Clean, simple API** that's easy to use
+- **Request tracing** with automatic correlation IDs
+- **Clean architecture** with no duplication
+- **Easy extensibility** for future domains
 
-The system automatically derives available events from domain definitions, providing the best developer experience with full TypeScript support and intellisense.
+The system automatically derives available events from domain definitions, provides the best developer experience with full TypeScript support and intellisense, and integrates seamlessly with the existing request ID propagation system.

@@ -1,8 +1,7 @@
 import Redis from 'ioredis';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger } from '@nestjs/common';
 
 export interface UserConnectionInfo {
 	connectedAt: Date;
@@ -14,10 +13,7 @@ export interface UserConnectionInfo {
 export class UserConnectionManagerService {
 	private readonly logger = new Logger(UserConnectionManagerService.name);
 
-	constructor(
-		@InjectRedis() private readonly redis: Redis,
-		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
-	) {}
+	constructor(@InjectRedis() private readonly redis: Redis) {}
 
 	/**
 	 * Register a user connection for location-based updates
@@ -44,12 +40,7 @@ export class UserConnectionManagerService {
 				{ logger: this.logger },
 			);
 
-			// Emit connection event using NestJS NATS client
-			this.natsClient.emit('websocket.user.connected', {
-				socketId,
-				timestamp: new Date().toISOString(),
-				userId,
-			});
+
 
 			this.logger.log(`User ${userId} connected with socket ${socketId}`);
 		} catch (error) {
@@ -95,12 +86,7 @@ export class UserConnectionManagerService {
 		await this.redis.del(`user:${userId}:rooms`);
 		await this.redis.del(`user_connection:${socketId}`);
 
-		// Emit disconnection event using NestJS NATS client
-		this.natsClient.emit('websocket.user.disconnected', {
-			socketId,
-			timestamp: new Date().toISOString(),
-			userId,
-		});
+
 
 		this.logger.log(`User ${userId} disconnected from socket ${socketId}`);
 	}

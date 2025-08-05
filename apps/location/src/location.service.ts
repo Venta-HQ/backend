@@ -1,11 +1,10 @@
 import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
+import { EventService, PrismaService } from '@app/nest/modules';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -15,7 +14,7 @@ export class LocationService {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
-		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+		private readonly eventService: EventService,
 	) {}
 
 	/**
@@ -49,13 +48,13 @@ export class LocationService {
 				},
 			});
 
-			// Publish location update event using NestJS NATS client
-			this.natsClient.emit('vendor.location.updated', {
+			// Publish location update event using EventService
+			await this.eventService.emit('vendor.location.updated', {
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
-				timestamp: new Date().toISOString(),
+				timestamp: new Date(),
 				vendorId: data.entityId,
 			});
 
@@ -99,16 +98,6 @@ export class LocationService {
 				where: {
 					id: data.entityId,
 				},
-			});
-
-			// Publish user location update event using NestJS NATS client
-			this.natsClient.emit('user.location.updated', {
-				location: {
-					lat: data.location.lat,
-					long: data.location.long,
-				},
-				timestamp: new Date().toISOString(),
-				userId: data.entityId,
 			});
 
 			this.logger.log(`Updated user location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
@@ -160,16 +149,6 @@ export class LocationService {
 			});
 
 			this.logger.log(`Found ${vendors.length} vendors in bounding box`);
-
-			// Emit location.search.performed event using NestJS NATS client
-			this.natsClient.emit('location.search.performed', {
-				boundingBox: {
-					ne: neLocation,
-					sw: swLocation,
-				},
-				resultCount: vendors.length,
-				timestamp: new Date().toISOString(),
-			});
 
 			return { vendors };
 		} catch (e) {

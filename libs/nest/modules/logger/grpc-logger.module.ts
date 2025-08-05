@@ -3,9 +3,9 @@ import { LokiOptions } from 'pino-loki/index';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { RequestContextService } from '../request-context';
 import { GrpcRequestIdInterceptor } from './grpc-logger.interceptor';
 import { GrpcLogger } from './grpc-logger.service';
-import { RequestContextService } from './request-context.service';
 
 @Module({})
 export class GrpcLoggerModule {

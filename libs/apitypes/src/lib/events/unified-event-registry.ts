@@ -1,18 +1,27 @@
-import { VENDOR_EVENT_SUBJECTS } from '../vendor/vendor.events';
+import { z } from 'zod';
+import { vendorEventSchemas } from '../vendor/vendor.events';
 
 /**
- * Combine all domain event subjects into a single const assertion
+ * Combine all domain event schemas
  * This provides intellisense for all available events
  */
-export const ALL_EVENT_SUBJECTS = [
-	...VENDOR_EVENT_SUBJECTS,
-	// Add other domain subjects here as they're created:
-	// ...USER_EVENT_SUBJECTS,
-	// ...LOCATION_EVENT_SUBJECTS,
-] as const;
+export const ALL_EVENT_SCHEMAS = {
+	...vendorEventSchemas,
+	// Add other domain schemas here as they're created:
+	// ...userEventSchemas,
+	// ...locationEventSchemas,
+} as const;
 
 /**
  * Type that represents all available event subjects
  * This provides intellisense for the emit method
  */
-export type AvailableEventSubjects = (typeof ALL_EVENT_SUBJECTS)[number];
+export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
+
+/**
+ * Type mapping from subject to data type
+ * This provides type safety for the second parameter of emit
+ */
+export type EventDataMap = {
+	[K in AvailableEventSubjects]: z.infer<(typeof ALL_EVENT_SCHEMAS)[K]>;
+};

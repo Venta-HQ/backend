@@ -10,4 +10,5 @@ export * from './nats-queue';
 export * from './prisma';
 export * from './prometheus';
 export * from './redis';
+export * from './request-context';
 export * from './upload';
