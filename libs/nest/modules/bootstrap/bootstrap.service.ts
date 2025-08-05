@@ -25,6 +25,24 @@ export interface GrpcBootstrapOptions {
 	urlEnvVar: string;
 }
 
+export interface NatsBootstrapOptions {
+	defaultUrl?: string;
+	module: any;
+	queue?: string;
+	urlEnvVar?: string;
+}
+
+export interface HealthBootstrapOptions {
+	host?: string;
+	module: any;
+	port?: string;
+}
+
+export interface MicroserviceBootstrapOptions {
+	health?: HealthBootstrapOptions;
+	main: GrpcBootstrapOptions | NatsBootstrapOptions;
+}
+
 export class BootstrapService {
 	private static readonly logger = new Logger(BootstrapService.name);
 
@@ -67,6 +85,20 @@ export class BootstrapService {
 		return { app };
 	}
 
+	static async createNatsApp(options: NatsBootstrapOptions) {
+		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
+			options: {
+				queue: options.queue || 'default-queue',
+				servers: process.env[options.urlEnvVar || 'NATS_URL'] || options.defaultUrl || 'nats://localhost:4222',
+			},
+			transport: Transport.NATS,
+		});
+
+		// Logger is configured by the LoggerModule, no need to set it here
+
+		return { app };
+	}
+
 	static async bootstrapHttp(options: HttpBootstrapOptions) {
 		const { app, host, port } = await this.createHttpApp(options);
 
@@ -83,5 +115,121 @@ export class BootstrapService {
 		await app.listen();
 
 		return app;
+	}
+
+	static async bootstrapNats(options: NatsBootstrapOptions) {
+		const { app } = await this.createNatsApp(options);
+
+		this.logger.log(`Starting NATS microservice`);
+		await app.listen();
+
+		return app;
+	}
+
+	static async bootstrapHealthCheck(options: HealthBootstrapOptions) {
+		const app = await NestFactory.create(options.module);
+		const configService = app.get(ConfigService);
+
+		// Get port and host
+		const port = options.port ? configService.get(options.port) : 3000;
+		const host = options.host || '0.0.0.0';
+
+		this.logger.log(`Starting health check server on ${host}:${port}`);
+		await app.listen(port, host);
+
+		return app;
+	}
+
+	// Coordinated bootstrap for microservices with health checks
+	static async bootstrapMicroserviceWithHealth(options: MicroserviceBootstrapOptions) {
+		const apps = [];
+
+		try {
+			// Bootstrap main service
+			let mainApp;
+			if ('package' in options.main) {
+				// gRPC service
+				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions);
+			} else {
+				// NATS service
+				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions);
+			}
+			apps.push(mainApp);
+
+			// Bootstrap health server if provided
+			if (options.health) {
+				const healthApp = await this.bootstrapHealthCheck(options.health);
+				apps.push(healthApp);
+			}
+
+			// Setup graceful shutdown
+			this.setupGracefulShutdown(apps);
+
+			this.logger.log(`Successfully bootstrapped ${apps.length} service(s)`);
+			return apps;
+		} catch (error) {
+			this.logger.error('Failed to bootstrap services:', error);
+
+			// Cleanup any started apps
+			for (const app of apps) {
+				try {
+					await app.close();
+				} catch (closeError) {
+					this.logger.error('Error closing app during cleanup:', closeError);
+				}
+			}
+
+			throw error;
+		}
+	}
+
+	private static setupGracefulShutdown(apps: any[]) {
+		const shutdown = async (signal: string) => {
+			this.logger.log(`Received ${signal}, starting graceful shutdown...`);
+
+			for (const app of apps) {
+				try {
+					await app.close();
+					this.logger.log('Service closed successfully');
+				} catch (error) {
+					this.logger.error('Error closing service:', error);
+				}
+			}
+
+			process.exit(0);
+		};
+
+		process.on('SIGTERM', () => shutdown('SIGTERM'));
+		process.on('SIGINT', () => shutdown('SIGINT'));
+	}
+
+	// Bootstrap methods for different service types
+
+	/**
+	 * Bootstrap a standalone HTTP service (e.g., API Gateway)
+	 * Health checks are included in the main server
+	 */
+	static async bootstrapHttpService(options: HttpBootstrapOptions) {
+		return this.bootstrapHttp(options);
+	}
+
+	/**
+	 * Bootstrap a gRPC microservice with health check server
+	 */
+	static async bootstrapGrpcMicroservice(options: MicroserviceBootstrapOptions) {
+		if (!('package' in options.main)) {
+			throw new Error('bootstrapGrpcMicroservice requires gRPC configuration');
+		}
+		return this.bootstrapMicroserviceWithHealth(options);
+	}
+
+	/**
+	 * Bootstrap a NATS microservice with health check server
+	 */
+	static async bootstrapNatsMicroservice(options: MicroserviceBootstrapOptions) {
+		if ('package' in options.main) {
+			throw new Error('bootstrapNatsMicroservice requires NATS configuration');
+		}
+		return this.bootstrapMicroserviceWithHealth(options);
 	}
 }
