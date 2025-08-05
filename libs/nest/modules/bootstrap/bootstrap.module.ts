@@ -1,12 +1,5 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
-import {
-	EventsModule,
-	HealthCheckModule,
-	HealthModule,
-	LoggerModule,
-	PrismaModule,
-	PrometheusModule,
-} from '@app/nest/modules';
+import { HealthCheckModule, HealthModule, LoggerModule, PrismaModule, PrometheusModule } from '@app/nest/modules';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -24,7 +17,6 @@ export class BootstrapModule {
 		const baseModules = [
 			ConfigModule,
 			ErrorHandlingModule,
-			EventsModule,
 			HealthModule.forRoot({
 				additionalChecks: options.healthChecks,
 				appName: options.appName,

@@ -1,5 +1,5 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
-import { EventsModule, HealthModule, LoggerModule, PrometheusModule } from '@app/nest/modules';
+import { HealthModule, LoggerModule, PrometheusModule } from '@app/nest/modules';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { BootstrapModule, BootstrapOptions } from './bootstrap.module';
@@ -19,10 +19,8 @@ describe('BootstrapModule', () => {
 			expect(dynamicModule.module).toBe(BootstrapModule);
 			expect(dynamicModule.imports).toContain(ConfigModule);
 			expect(dynamicModule.imports).toContain(ErrorHandlingModule);
-			expect(dynamicModule.imports).toContain(EventsModule);
 			expect(dynamicModule.exports).toContain(ConfigModule);
 			expect(dynamicModule.exports).toContain(ErrorHandlingModule);
-			expect(dynamicModule.exports).toContain(EventsModule);
 		});
 
 		it('should configure HealthModule with appName', async () => {
