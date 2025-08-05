@@ -8,7 +8,7 @@ export interface BootstrapOptions {
 	additionalProviders?: any[];
 	appName: string;
 	healthChecks?: () => Promise<Record<string, string>>;
-	protocol: 'http' | 'grpc' | 'websocket';
+	protocol?: 'http' | 'grpc' | 'auto';
 }
 
 @Module({})
@@ -24,7 +24,7 @@ export class BootstrapModule {
 			}),
 			LoggerModule.register({
 				appName: options.appName,
-				protocol: options.protocol === 'websocket' ? 'http' : options.protocol,
+				protocol: options.protocol || 'auto',
 			}),
 			PrometheusModule.register({ appName: options.appName }),
 			PrismaModule.register(),

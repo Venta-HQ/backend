@@ -43,7 +43,7 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 					],
 				}),
 			],
-			appName: 'Websocket Gateway Microservice',
+			appName: 'WebSocket Gateway Service',
 			protocol: 'http',
 		}),
 	],

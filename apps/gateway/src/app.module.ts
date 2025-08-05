@@ -19,7 +19,7 @@ import { modules, routes } from './router';
 				...modules,
 				RouterModule.register(routes),
 			],
-			appName: 'gateway',
+			appName: 'Gateway Service',
 			protocol: 'http',
 		}),
 	],

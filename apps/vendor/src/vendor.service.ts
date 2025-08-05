@@ -1,13 +1,13 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService, PrismaService } from '@app/nest/modules';
+import { MicroserviceEventsService, PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {
 	constructor(
 		private prisma: PrismaService,
-		@Inject('EventsService') private eventsService: IEventsService,
+		private eventsService: MicroserviceEventsService,
 	) {}
 	private readonly logger = new Logger(VendorService.name);
 
@@ -92,6 +92,6 @@ export class VendorService {
 			website: vendor.website,
 		};
 
-		await this.eventsService.publishEvent(type, payload);
+		await this.eventsService.publishVendorEvent(type, payload);
 	}
 }

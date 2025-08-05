@@ -7,7 +7,7 @@ import { VendorService } from './vendor.service';
 	controllers: [VendorController],
 	imports: [
 		BootstrapModule.forRoot({
-			appName: 'Vendor Microservice',
+			appName: 'Vendor Service',
 			protocol: 'grpc',
 		}),
 	],

@@ -1,67 +1,18 @@
 import { LocationUpdateData } from '@app/apitypes';
-import { AlgoliaService, EventStream, IEventsService } from '@app/nest/modules';
+import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { EventPattern } from '@nestjs/microservices';
 
 @Injectable()
-export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
+export class AlgoliaSyncService {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
-	private vendorEventStream: EventStream | null = null;
 
-	constructor(
-		private readonly algoliaService: AlgoliaService,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
-	) {}
+	constructor(private readonly algoliaService: AlgoliaService) {}
 
-	async onModuleInit() {
-		await this.setupEventListeners();
-	}
-
-	async onModuleDestroy() {
-		if (this.vendorEventStream) {
-			await this.eventsService.unsubscribeFromStream(this.vendorEventStream);
-		}
-	}
-
-	private async setupEventListeners() {
-		this.logger.log('Setting up Algolia sync event listeners');
-
-		// Create a dedicated stream for vendor events
-		this.vendorEventStream = await this.eventsService.subscribeToStream(
-			{
-				eventTypes: ['vendor.created', 'vendor.updated', 'vendor.deleted', 'vendor.location.updated'],
-				groupName: 'algolia-sync',
-				streamName: 'algolia-sync-vendor-events',
-			},
-			async (event) => {
-				try {
-					switch (event.type) {
-						case 'vendor.created':
-							await this.handleVendorCreated(event.data as Record<string, unknown>);
-							break;
-						case 'vendor.updated':
-							await this.handleVendorUpdated(event.data as Record<string, unknown>);
-							break;
-						case 'vendor.deleted':
-							await this.handleVendorDeleted(event.data as Record<string, unknown>);
-							break;
-						case 'vendor.location.updated':
-							await this.handleVendorLocationUpdated(event.data as LocationUpdateData);
-							break;
-						default:
-							this.logger.debug(`Ignoring event type: ${event.type}`);
-					}
-				} catch (error) {
-					this.logger.error(`Failed to handle event ${event.type}:`, error);
-					// Could implement dead letter queue here for failed events
-				}
-			},
-		);
-
-		this.logger.log('Algolia sync event listeners setup complete');
-	}
-
-	private async handleVendorCreated(vendor: Record<string, unknown>) {
+	@EventPattern('vendor.created')
+	async handleVendorCreated(vendor: Record<string, unknown>) {
+		this.logger.log(`Handling vendor.created event for vendor: ${vendor.id}`);
 		await retryOperation(
 			() =>
 				this.algoliaService.createObject('vendor', {
@@ -80,7 +31,9 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		);
 	}
 
-	private async handleVendorUpdated(vendor: Record<string, unknown>) {
+	@EventPattern('vendor.updated')
+	async handleVendorUpdated(vendor: Record<string, unknown>) {
+		this.logger.log(`Handling vendor.updated event for vendor: ${vendor.id}`);
 		await retryOperation(
 			() =>
 				this.algoliaService.updateObject('vendor', vendor.id as string, {
@@ -99,7 +52,9 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		);
 	}
 
-	private async handleVendorDeleted(vendor: Record<string, unknown>) {
+	@EventPattern('vendor.deleted')
+	async handleVendorDeleted(vendor: Record<string, unknown>) {
+		this.logger.log(`Handling vendor.deleted event for vendor: ${vendor.id}`);
 		await retryOperation(
 			() => this.algoliaService.deleteObject('vendor', vendor.id as string),
 			`Deleting vendor from Algolia: ${vendor.id}`,
@@ -107,7 +62,9 @@ export class AlgoliaSyncService implements OnModuleInit, OnModuleDestroy {
 		);
 	}
 
-	private async handleVendorLocationUpdated(locationData: LocationUpdateData) {
+	@EventPattern('vendor.location.updated')
+	async handleVendorLocationUpdated(locationData: LocationUpdateData) {
+		this.logger.log(`Handling vendor.location.updated event for vendor: ${locationData.entityId}`);
 		await retryOperation(
 			() =>
 				this.algoliaService.updateObject('vendor', locationData.entityId, {

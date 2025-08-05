@@ -2,5 +2,5 @@
 	"protoc": {
 		"options": ["--proto_path=${workspaceRoot}/libs/proto/src/definitions"]
 	},
-	"dimmer.enabled": false
+	"dimmer.enabled": true
 }

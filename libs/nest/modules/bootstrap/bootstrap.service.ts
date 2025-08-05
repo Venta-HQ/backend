@@ -4,83 +4,126 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
-export interface HttpBootstrapOptions {
-	corsOptions?: {
-		allowedHeaders?: string[];
-		credentials?: boolean;
-		methods?: string[];
-		origin?: string | string[];
+export interface UnifiedBootstrapOptions {
+	additionalModules?: any[];
+	additionalProviders?: any[];
+	appName: string;
+	grpc?: {
+		defaultUrl?: string;
+		package: string;
+		protoPath: string;
+		urlEnvVar: string;
 	};
-	enableCors?: boolean;
-	host?: string;
+	healthChecks?: () => Promise<Record<string, string>>;
+	http?: {
+		corsOptions?: {
+			allowedHeaders?: string[];
+			credentials?: boolean;
+			methods?: string[];
+			origin?: string | string[];
+		};
+		enableCors?: boolean;
+		host?: string;
+		port?: string;
+	};
 	module: any;
-	port?: string;
-}
-
-export interface GrpcBootstrapOptions {
-	defaultUrl?: string;
-	module: any;
-	package: string;
-	protoPath: string;
-	urlEnvVar: string;
+	nats?: {
+		queue: string;
+		servers: string;
+		// Support multiple NATS streams for different event types
+		// Example: A service might listen to vendor events AND user events
+		streams?: Array<{
+			queue: string;
+			servers: string;
+		}>;
+	};
 }
 
 export class BootstrapService {
 	private static readonly logger = new Logger(BootstrapService.name);
 
-	static async createHttpApp(options: HttpBootstrapOptions) {
+	static async bootstrap(options: UnifiedBootstrapOptions) {
+		// Create the application
 		const app = await NestFactory.create(options.module);
 		const configService = app.get(ConfigService);
 
-		// Configure CORS if enabled
-		if (options.enableCors !== false) {
-			const corsOptions = options.corsOptions || {
-				allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-				credentials: true,
-				methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-				origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
-			};
-			app.enableCors(corsOptions);
+		// Track which protocols are being used for logger configuration
+		const protocols: string[] = [];
+
+		// Add gRPC microservice if configured
+		if (options.grpc) {
+			app.connectMicroservice<MicroserviceOptions>({
+				options: {
+					package: options.grpc.package,
+					protoPath: join(__dirname, options.grpc.protoPath),
+					url: process.env[options.grpc.urlEnvVar] || options.grpc.defaultUrl || 'localhost:5000',
+				},
+				transport: Transport.GRPC,
+			});
+			protocols.push('grpc');
+			this.logger.log(`Added gRPC microservice for package: ${options.grpc.package}`);
 		}
 
-		// Logger is configured by the LoggerModule, no need to set it here
+		// Add NATS microservice if configured
+		if (options.nats) {
+			// Add primary NATS connection
+			app.connectMicroservice<MicroserviceOptions>({
+				options: {
+					queue: options.nats.queue,
+					servers: options.nats.servers,
+				},
+				transport: Transport.NATS,
+			});
+			protocols.push('nats');
+			this.logger.log(`Added NATS microservice with queue: ${options.nats.queue}`);
 
-		// Get port and host
-		const port = options.port ? configService.get(options.port) : 3000;
-		const host = options.host || '0.0.0.0';
+			// Add additional NATS streams if configured
+			if (options.nats.streams) {
+				for (const stream of options.nats.streams) {
+					app.connectMicroservice<MicroserviceOptions>({
+						options: {
+							queue: stream.queue,
+							servers: stream.servers,
+						},
+						transport: Transport.NATS,
+					});
+					this.logger.log(`Added additional NATS stream with queue: ${stream.queue}`);
+				}
+			}
+		}
 
-		return { app, host, port };
-	}
+		// Add HTTP if configured or if we have microservices (for health checks)
+		if (options.http || options.grpc || options.nats) {
+			protocols.push('http');
+		}
 
-	static async createGrpcApp(options: GrpcBootstrapOptions) {
-		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
-			options: {
-				package: options.package,
-				protoPath: join(__dirname, options.protoPath),
-				url: process.env[options.urlEnvVar] || options.defaultUrl || 'localhost:5000',
-			},
-			transport: Transport.GRPC,
-		});
+		// Start all microservices if any are configured
+		if (options.grpc || options.nats) {
+			await app.startAllMicroservices();
+		}
 
-		// Logger is configured by the LoggerModule, no need to set it here
+		// Start HTTP server if configured or if we have microservices (for health checks)
+		if (options.http || options.grpc || options.nats) {
+			const port = options.http?.port ? configService.get(options.http.port) : 3000;
+			const host = options.http?.host || '0.0.0.0';
 
-		return { app };
-	}
+			// Configure CORS if enabled
+			if (options.http?.enableCors !== false) {
+				const corsOptions = options.http?.corsOptions || {
+					allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+					credentials: true,
+					methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+					origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
+				};
+				app.enableCors(corsOptions);
+			}
 
-	static async bootstrapHttp(options: HttpBootstrapOptions) {
-		const { app, host, port } = await this.createHttpApp(options);
+			this.logger.log(`Starting HTTP server on ${host}:${port}`);
+			await app.listen(port, host);
+		}
 
-		this.logger.log(`Starting HTTP server on ${host}:${port}`);
-		await app.listen(port, host);
-
-		return app;
-	}
-
-	static async bootstrapGrpc(options: GrpcBootstrapOptions) {
-		const { app } = await this.createGrpcApp(options);
-
-		this.logger.log(`Starting gRPC server`);
-		await app.listen();
+		// Log the protocols being used
+		this.logger.log(`Service configured with protocols: ${protocols.join(', ')}`);
 
 		return app;
 	}

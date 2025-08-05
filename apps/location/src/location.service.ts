@@ -1,10 +1,10 @@
 import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService, PrismaService } from '@app/nest/modules';
+import { MicroserviceEventsService, PrismaService } from '@app/nest/modules';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class LocationService {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
+		private readonly eventsService: MicroserviceEventsService,
 	) {}
 
 	/**
@@ -50,12 +50,11 @@ export class LocationService {
 
 			// Publish location update event
 			await this.eventsService.publishEvent('vendor.location.updated', {
+				entityId: data.entityId,
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
-				timestamp: new Date().toISOString(),
-				vendorId: data.entityId,
 			});
 
 			this.logger.log(`Updated vendor location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);

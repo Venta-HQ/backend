@@ -11,7 +11,7 @@ import { VendorService } from './vendor/vendor.service';
 	controllers: [ClerkController, SubscriptionController, VendorController],
 	imports: [
 		BootstrapModule.forRoot({
-			appName: 'User Microservice',
+			appName: 'User Service',
 			protocol: 'grpc',
 		}),
 	],

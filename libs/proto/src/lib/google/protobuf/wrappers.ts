@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 
-export const protobufPackage = 'google.protobuf';
+export const protobufPackage = "google.protobuf";
 
 /**
  * Wrapper message for `double`.
@@ -14,8 +14,8 @@ export const protobufPackage = 'google.protobuf';
  * The JSON representation for `DoubleValue` is JSON number.
  */
 export interface DoubleValue {
-	/** The double value. */
-	value: number;
+  /** The double value. */
+  value: number;
 }
 
 /**
@@ -24,8 +24,8 @@ export interface DoubleValue {
  * The JSON representation for `FloatValue` is JSON number.
  */
 export interface FloatValue {
-	/** The float value. */
-	value: number;
+  /** The float value. */
+  value: number;
 }
 
 /**
@@ -34,8 +34,8 @@ export interface FloatValue {
  * The JSON representation for `Int64Value` is JSON string.
  */
 export interface Int64Value {
-	/** The int64 value. */
-	value: number;
+  /** The int64 value. */
+  value: number;
 }
 
 /**
@@ -44,8 +44,8 @@ export interface Int64Value {
  * The JSON representation for `UInt64Value` is JSON string.
  */
 export interface UInt64Value {
-	/** The uint64 value. */
-	value: number;
+  /** The uint64 value. */
+  value: number;
 }
 
 /**
@@ -54,8 +54,8 @@ export interface UInt64Value {
  * The JSON representation for `Int32Value` is JSON number.
  */
 export interface Int32Value {
-	/** The int32 value. */
-	value: number;
+  /** The int32 value. */
+  value: number;
 }
 
 /**
@@ -64,8 +64,8 @@ export interface Int32Value {
  * The JSON representation for `UInt32Value` is JSON number.
  */
 export interface UInt32Value {
-	/** The uint32 value. */
-	value: number;
+  /** The uint32 value. */
+  value: number;
 }
 
 /**
@@ -74,8 +74,8 @@ export interface UInt32Value {
  * The JSON representation for `BoolValue` is JSON `true` and `false`.
  */
 export interface BoolValue {
-	/** The bool value. */
-	value: boolean;
+  /** The bool value. */
+  value: boolean;
 }
 
 /**
@@ -84,8 +84,8 @@ export interface BoolValue {
  * The JSON representation for `StringValue` is JSON string.
  */
 export interface StringValue {
-	/** The string value. */
-	value: string;
+  /** The string value. */
+  value: string;
 }
 
 /**
@@ -94,8 +94,8 @@ export interface StringValue {
  * The JSON representation for `BytesValue` is JSON string.
  */
 export interface BytesValue {
-	/** The bytes value. */
-	value: Uint8Array;
+  /** The bytes value. */
+  value: Uint8Array;
 }
 
-export const GOOGLE_PROTOBUF_PACKAGE_NAME = 'google.protobuf';
+export const GOOGLE_PROTOBUF_PACKAGE_NAME = "google.protobuf";

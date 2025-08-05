@@ -13,7 +13,6 @@ import { AlgoliaSyncService } from './algolia-sync.service';
 					algoliaSync: 'operational',
 				};
 			},
-			protocol: 'http',
 		}),
 	],
 	providers: [AlgoliaSyncService],
