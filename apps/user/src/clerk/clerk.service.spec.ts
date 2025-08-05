@@ -107,8 +107,8 @@ describe('ClerkService', () => {
 	describe('createIntegration', () => {
 		it('should create integration successfully', async () => {
 			const integrationData = {
-				providerId: 'clerk_user_123',
 				clerkUserId: 'user_123',
+				providerId: 'clerk_user_123',
 			};
 			const expectedIntegration = data.integration(integrationData);
 
@@ -132,8 +132,8 @@ describe('ClerkService', () => {
 
 		it('should handle database errors during integration creation', async () => {
 			const integrationData = {
-				providerId: 'clerk_user_123',
 				clerkUserId: 'user_123',
+				providerId: 'clerk_user_123',
 			};
 			const dbError = errors.database('Database connection failed');
 			prisma.db.integration.create.mockRejectedValue(dbError);

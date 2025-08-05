@@ -1,6 +1,6 @@
+import { Counter, Gauge, Histogram, Registry } from 'prom-client';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Counter, Gauge, Histogram, Registry } from 'prom-client';
 
 export interface MetricDefinition {
 	buckets?: number[];

@@ -1,8 +1,7 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { CanActivate, ExecutionContext } from '@nestjs/common';
-import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { vi } from 'vitest';
+import { ExecutionContext } from '@nestjs/common';
+import { WsException } from '@nestjs/websockets';
 import { WsAuthGuard } from './ws-auth.guard';
 
 describe('WsAuthGuard', () => {
@@ -22,12 +21,12 @@ describe('WsAuthGuard', () => {
 		guard = new WsAuthGuard(mockPrisma);
 
 		mockSocket = {
-			id: 'test-socket-id',
 			handshake: {
 				auth: {},
-				query: {},
 				headers: {},
+				query: {},
 			},
+			id: 'test-socket-id',
 		};
 
 		mockContext = {
@@ -39,13 +38,13 @@ describe('WsAuthGuard', () => {
 
 	describe('canActivate', () => {
 		it('should allow access with valid token in auth', async () => {
-			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
 			mockSocket.handshake = {
 				auth: { token: 'clerk-123' },
-				query: {},
 				headers: {},
+				query: {},
 			};
 
 			const result = await guard.canActivate(mockContext);
@@ -56,13 +55,13 @@ describe('WsAuthGuard', () => {
 		});
 
 		it('should allow access with valid token in query params', async () => {
-			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
 			mockSocket.handshake = {
 				auth: {},
-				query: { token: 'clerk-123' },
 				headers: {},
+				query: { token: 'clerk-123' },
 			};
 
 			const result = await guard.canActivate(mockContext);
@@ -73,13 +72,13 @@ describe('WsAuthGuard', () => {
 		});
 
 		it('should allow access with valid token in authorization header', async () => {
-			const userData = { id: 'user-1', clerkId: 'clerk-123' };
+			const userData = { clerkId: 'clerk-123', id: 'user-1' };
 			mockPrisma.db.user.findFirst.mockResolvedValue(userData);
 
 			mockSocket.handshake = {
 				auth: {},
-				query: {},
 				headers: { authorization: 'Bearer clerk-123' },
+				query: {},
 			};
 
 			const result = await guard.canActivate(mockContext);
@@ -98,8 +97,8 @@ describe('WsAuthGuard', () => {
 
 			mockSocket.handshake = {
 				auth: { token: 'invalid-token' },
-				query: {},
 				headers: {},
+				query: {},
 			};
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
@@ -110,8 +109,8 @@ describe('WsAuthGuard', () => {
 
 			mockSocket.handshake = {
 				auth: { token: 'clerk-123' },
-				query: {},
 				headers: {},
+				query: {},
 			};
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);
@@ -122,8 +121,8 @@ describe('WsAuthGuard', () => {
 
 			mockSocket.handshake = {
 				auth: { token: 'clerk-123' },
-				query: {},
 				headers: {},
+				query: {},
 			};
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);

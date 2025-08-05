@@ -1,7 +1,7 @@
 import { Socket } from 'socket.io';
 import { vi } from 'vitest';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { CanActivate, ExecutionContext } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
 
@@ -13,14 +13,14 @@ describe('WsRateLimitGuard', () => {
 
 	beforeEach(() => {
 		mockRedis = {
-			incr: vi.fn(),
 			expire: vi.fn(),
+			incr: vi.fn(),
 		};
 		guard = new WsRateLimitGuard(mockRedis);
 
 		mockSocket = {
-			id: 'test-socket-id',
 			clerkId: 'test-user',
+			id: 'test-socket-id',
 		};
 
 		mockContext = {

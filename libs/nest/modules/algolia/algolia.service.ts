@@ -41,8 +41,8 @@ export class AlgoliaService {
 
 		if (!hits.length) {
 			this.logger.warn('Attempted to update an algolia record that did not exist', {
-				indexName,
 				entityId,
+				indexName,
 				searchParams: {
 					query: entityId,
 					restrictSearchableAttributes: ['id'],
@@ -79,8 +79,8 @@ export class AlgoliaService {
 
 		if (!hits.length) {
 			this.logger.warn('Attempted to delete an algolia record that did not exist', {
-				indexName,
 				entityId,
+				indexName,
 				searchParams: {
 					query: entityId,
 					restrictSearchableAttributes: ['id'],

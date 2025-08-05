@@ -1,13 +1,6 @@
 import { z } from 'zod';
 
 export const configSchema = z.object({
-	// Application metadata
-	APP_NAME: z.string().optional(),
-	GIT_COMMIT: z.string().optional(),
-	NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-	SERVICE_NAME: z.string().optional(),
-	npm_package_version: z.string().optional(),
-
 	// Required services
 	ALGOLIA_API_KEY: z.string(),
 	ALGOLIA_APPLICATION_ID: z.string(),
@@ -16,6 +9,8 @@ export const configSchema = z.object({
 
 	// CORS Configuration
 	ALLOWED_ORIGINS: z.string().optional(),
+	// Application metadata
+	APP_NAME: z.string().optional(),
 	CLERK_SECRET_KEY: z.string(),
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),
@@ -24,6 +19,7 @@ export const configSchema = z.object({
 	DATABASE_URL: z.string().url(),
 	GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	GATEWAY_SERVICE_URL: z.string(),
+	GIT_COMMIT: z.string().optional(),
 	LOCATION_SERVICE_ADDRESS: z.string(),
 	LOCATION_SERVICE_PORT: z.string().or(z.number()),
 	LOCATION_SERVICE_URL: z.string(),
@@ -35,9 +31,11 @@ export const configSchema = z.object({
 	LOKI_URL: z.string().url(),
 	LOKI_USERNAME: z.string().optional(),
 	NATS_URL: z.string().default('nats://localhost:4222'),
+	NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 	PULSE_API_KEY: z.string(),
 	REDIS_PASSWORD: z.string(),
 	REDIS_URL: z.string().url(),
+	SERVICE_NAME: z.string().optional(),
 
 	// Service URLs (for local development)
 	USER_SERVICE_ADDRESS: z.string(),
@@ -50,4 +48,5 @@ export const configSchema = z.object({
 	VENDOR_SERVICE_URL: z.string(),
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	WEBSOCKET_GATEWAY_SERVICE_URL: z.string(),
+	npm_package_version: z.string().optional(),
 });

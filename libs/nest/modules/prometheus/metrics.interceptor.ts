@@ -1,7 +1,7 @@
-import { CallHandler, ExecutionContext, Inject, Injectable, Logger, Optional } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Observable } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
+import { CallHandler, ExecutionContext, Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrometheusService } from './prometheus.service';
 
 export interface PrometheusOptions {
