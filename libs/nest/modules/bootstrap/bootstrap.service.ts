@@ -70,12 +70,16 @@ export class BootstrapService {
 		return { app, host, port };
 	}
 
-	static async createGrpcApp(options: GrpcBootstrapOptions) {
+	static async createGrpcApp(options: GrpcBootstrapOptions, configService?: ConfigService) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				package: options.package,
 				protoPath: join(__dirname, options.protoPath),
-				url: process.env[options.urlEnvVar] || options.defaultUrl || 'localhost:5000',
+				url:
+					configService?.get(options.urlEnvVar) ||
+					process.env[options.urlEnvVar] ||
+					options.defaultUrl ||
+					'localhost:5000',
 			},
 			transport: Transport.GRPC,
 		});
@@ -85,11 +89,15 @@ export class BootstrapService {
 		return { app };
 	}
 
-	static async createNatsApp(options: NatsBootstrapOptions) {
+	static async createNatsApp(options: NatsBootstrapOptions, configService?: ConfigService) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				queue: options.queue || 'default-queue',
-				servers: process.env[options.urlEnvVar || 'NATS_URL'] || options.defaultUrl || 'nats://localhost:4222',
+				servers:
+					configService?.get(options.urlEnvVar || 'NATS_URL') ||
+					process.env[options.urlEnvVar || 'NATS_URL'] ||
+					options.defaultUrl ||
+					'nats://localhost:4222',
 			},
 			transport: Transport.NATS,
 		});
@@ -108,8 +116,8 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapGrpc(options: GrpcBootstrapOptions) {
-		const { app } = await this.createGrpcApp(options);
+	static async bootstrapGrpc(options: GrpcBootstrapOptions, configService?: ConfigService) {
+		const { app } = await this.createGrpcApp(options, configService);
 
 		this.logger.log(`Starting gRPC server`);
 		await app.listen();
@@ -117,8 +125,8 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapNats(options: NatsBootstrapOptions) {
-		const { app } = await this.createNatsApp(options);
+	static async bootstrapNats(options: NatsBootstrapOptions, configService?: ConfigService) {
+		const { app } = await this.createNatsApp(options, configService);
 
 		this.logger.log(`Starting NATS microservice`);
 		await app.listen();
@@ -126,11 +134,11 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapHealthCheck(options: HealthBootstrapOptions) {
+	static async bootstrapHealthCheck(options: HealthBootstrapOptions, configService?: ConfigService) {
 		const app = await NestFactory.create(options.module);
 
-		// Get port and host - use environment variables directly since ConfigService might not be available
-		const port = options.port ? process.env[options.port] || 3000 : 3000;
+		// Get port and host - use ConfigService when available, fallback to process.env
+		const port = options.port ? configService?.get(options.port) || process.env[options.port] || 3000 : 3000;
 		const host = options.host || '0.0.0.0';
 
 		this.logger.log(`Starting health check server on ${host}:${port}`);
@@ -144,20 +152,23 @@ export class BootstrapService {
 		const apps = [];
 
 		try {
+			// Create a temporary ConfigService instance for environment variable access
+			const tempConfigService = new ConfigService();
+
 			// Bootstrap main service
 			let mainApp;
 			if ('package' in options.main) {
 				// gRPC service
-				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions);
+				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions, tempConfigService);
 			} else {
 				// NATS service
-				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions);
+				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions, tempConfigService);
 			}
 			apps.push(mainApp);
 
 			// Bootstrap health server if provided
 			if (options.health) {
-				const healthApp = await this.bootstrapHealthCheck(options.health);
+				const healthApp = await this.bootstrapHealthCheck(options.health, tempConfigService);
 				apps.push(healthApp);
 			}
 
