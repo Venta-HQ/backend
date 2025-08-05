@@ -1,5 +1,5 @@
 import { AppError } from '@app/nest/errors';
-import { clearMocks, data, errors, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';
+import { clearMocks, data, errors, mockPrisma } from '../../../test/helpers/test-utils';
 import { VendorService } from './vendor.service';
 
 // Mock the retry utility
@@ -12,12 +12,14 @@ vi.mock('@app/utils', () => ({
 describe('VendorService', () => {
 	let service: VendorService;
 	let prisma: any;
-	let eventsService: any;
+	let natsClient: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		eventsService = mockEvents();
-		service = new VendorService(prisma, eventsService);
+		natsClient = {
+			emit: vi.fn(),
+		};
+		service = new VendorService(prisma, natsClient);
 	});
 
 	afterEach(() => {
@@ -67,7 +69,6 @@ describe('VendorService', () => {
 		it('should create vendor successfully', async () => {
 			const mockVendor = data.vendor({ id: 'vendor_123', ...createData });
 			prisma.db.vendor.create.mockResolvedValue(mockVendor);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			const result = await service.createVendor(createData);
 
@@ -86,7 +87,7 @@ describe('VendorService', () => {
 					website: 'https://testvendor.com',
 				},
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('vendor.created', {
+			expect(natsClient.emit).toHaveBeenCalledWith('vendor.created', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,
@@ -107,7 +108,6 @@ describe('VendorService', () => {
 			const { imageUrl, ...dataWithoutImage } = createData;
 			const mockVendor = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
 			prisma.db.vendor.create.mockResolvedValue(mockVendor);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			const result = await service.createVendor(dataWithoutImage);
 
@@ -135,15 +135,6 @@ describe('VendorService', () => {
 
 			await expect(service.createVendor(createData)).rejects.toThrow('Database connection failed');
 		});
-
-		it('should handle event publishing errors', async () => {
-			const mockVendor = data.vendor({ id: 'vendor_123', ...createData });
-			prisma.db.vendor.create.mockResolvedValue(mockVendor);
-			const eventError = new Error('Event publishing failed');
-			eventsService.publishEvent.mockRejectedValue(eventError);
-
-			await expect(service.createVendor(createData)).rejects.toThrow('Event publishing failed');
-		});
 	});
 
 	describe('updateVendor', () => {
@@ -160,7 +151,6 @@ describe('VendorService', () => {
 			prisma.db.vendor.count.mockResolvedValue(1);
 			const mockVendor = data.vendor({ id: 'vendor_123', ...updateData });
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.updateVendor('vendor_123', 'user_123', updateData);
 
@@ -178,7 +168,7 @@ describe('VendorService', () => {
 				},
 				where: { id: 'vendor_123', owner: { id: 'user_123' } },
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('vendor.updated', {
+			expect(natsClient.emit).toHaveBeenCalledWith('vendor.updated', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,
@@ -199,7 +189,6 @@ describe('VendorService', () => {
 			prisma.db.vendor.count.mockResolvedValue(1);
 			const mockVendor = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.updateVendor('vendor_123', 'user_123', dataWithoutImage);
 
@@ -243,7 +232,6 @@ describe('VendorService', () => {
 			const mockVendor = data.vendor({ id: 'vendor_123' });
 			prisma.db.vendor.findFirst.mockResolvedValue(mockVendor);
 			prisma.db.vendor.delete.mockResolvedValue(mockVendor);
-			eventsService.publishEvent.mockResolvedValue(undefined);
 
 			await service.deleteVendor('vendor_123', 'user_123');
 
@@ -253,7 +241,7 @@ describe('VendorService', () => {
 			expect(prisma.db.vendor.delete).toHaveBeenCalledWith({
 				where: { id: 'vendor_123' },
 			});
-			expect(eventsService.publishEvent).toHaveBeenCalledWith('vendor.deleted', {
+			expect(natsClient.emit).toHaveBeenCalledWith('vendor.deleted', {
 				createdAt: mockVendor.createdAt,
 				description: mockVendor.description,
 				email: mockVendor.email,

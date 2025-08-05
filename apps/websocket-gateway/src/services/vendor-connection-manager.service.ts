@@ -1,8 +1,8 @@
 import Redis from 'ioredis';
-import { IEventsService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 
 export interface VendorConnectionInfo {
 	connectedAt: Date;
@@ -16,7 +16,7 @@ export class VendorConnectionManagerService {
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
+		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 	) {}
 
 	/**
@@ -44,8 +44,8 @@ export class VendorConnectionManagerService {
 				{ logger: this.logger },
 			);
 
-			// Emit connection event
-			await this.eventsService.publishEvent('websocket.vendor.connected', {
+			// Emit connection event using NestJS NATS client
+			this.natsClient.emit('websocket.vendor.connected', {
 				socketId,
 				timestamp: new Date().toISOString(),
 				vendorId,
@@ -100,8 +100,8 @@ export class VendorConnectionManagerService {
 			await this.redis.srem(`user:${userId}:rooms`, vendorId);
 		}
 
-		// Emit disconnection event
-		await this.eventsService.publishEvent('websocket.vendor.disconnected', {
+		// Emit disconnection event using NestJS NATS client
+		this.natsClient.emit('websocket.vendor.disconnected', {
 			affectedUsers: usersInRoom,
 			socketId,
 			timestamp: new Date().toISOString(),

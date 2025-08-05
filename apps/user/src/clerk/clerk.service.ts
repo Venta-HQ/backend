@@ -1,12 +1,13 @@
-import { IEventsService, PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/nest/modules';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { IntegrationType } from '@prisma/client';
 
 @Injectable()
 export class ClerkService {
 	constructor(
 		private prisma: PrismaService,
-		@Inject('EventsService') private eventsService: IEventsService,
+		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 	) {}
 	private readonly logger = new Logger(ClerkService.name);
 
@@ -20,8 +21,8 @@ export class ClerkService {
 			select: { clerkId: true, id: true },
 		});
 
-		// Emit user created event
-		await this.eventsService.publishEvent('user.created', {
+		// Emit user created event using NestJS NATS client
+		this.natsClient.emit('user.created', {
 			clerkId: user.clerkId,
 			timestamp: new Date().toISOString(),
 			userId: user.id,
@@ -45,9 +46,9 @@ export class ClerkService {
 			},
 		});
 
-		// Emit user deleted event if user existed
+		// Emit user deleted event if user existed using NestJS NATS client
 		if (user) {
-			await this.eventsService.publishEvent('user.deleted', {
+			this.natsClient.emit('user.deleted', {
 				clerkId: user.clerkId,
 				timestamp: new Date().toISOString(),
 				userId: user.id,
@@ -71,8 +72,8 @@ export class ClerkService {
 			},
 		});
 
-		// Emit integration created event
-		await this.eventsService.publishEvent('user.integration.created', {
+		// Emit integration created event using NestJS NATS client
+		this.natsClient.emit('user.integration.created', {
 			integrationId: integration.id,
 			providerId,
 			timestamp: new Date().toISOString(),
@@ -103,9 +104,9 @@ export class ClerkService {
 			},
 		});
 
-		// Emit integration deleted event if integration existed
+		// Emit integration deleted event if integration existed using NestJS NATS client
 		if (integration) {
-			await this.eventsService.publishEvent('user.integration.deleted', {
+			this.natsClient.emit('user.integration.deleted', {
 				integrationId: integration.id,
 				providerId,
 				timestamp: new Date().toISOString(),

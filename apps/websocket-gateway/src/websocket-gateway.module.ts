@@ -40,6 +40,16 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 								transport: Transport.GRPC,
 							}),
 						},
+						{
+							inject: [ConfigService],
+							name: 'NATS_SERVICE',
+							useFactory: (configService: ConfigService) => ({
+								options: {
+									servers: configService.get('NATS_URL') || 'nats://localhost:4222',
+								},
+								transport: Transport.NATS,
+							}),
+						},
 					],
 				}),
 			],

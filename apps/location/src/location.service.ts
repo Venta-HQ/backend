@@ -1,10 +1,11 @@
 import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService, PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/nest/modules';
 import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -14,7 +15,7 @@ export class LocationService {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly prisma: PrismaService,
-		@Inject('EventsService') private readonly eventsService: IEventsService,
+		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 	) {}
 
 	/**
@@ -48,8 +49,8 @@ export class LocationService {
 				},
 			});
 
-			// Publish location update event
-			await this.eventsService.publishEvent('vendor.location.updated', {
+			// Publish location update event using NestJS NATS client
+			this.natsClient.emit('vendor.location.updated', {
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
@@ -100,8 +101,8 @@ export class LocationService {
 				},
 			});
 
-			// Publish user location update event
-			await this.eventsService.publishEvent('user.location.updated', {
+			// Publish user location update event using NestJS NATS client
+			this.natsClient.emit('user.location.updated', {
 				location: {
 					lat: data.location.lat,
 					long: data.location.long,
@@ -160,8 +161,8 @@ export class LocationService {
 
 			this.logger.log(`Found ${vendors.length} vendors in bounding box`);
 
-			// Emit location.search.performed event
-			await this.eventsService.publishEvent('location.search.performed', {
+			// Emit location.search.performed event using NestJS NATS client
+			this.natsClient.emit('location.search.performed', {
 				boundingBox: {
 					ne: neLocation,
 					sw: swLocation,

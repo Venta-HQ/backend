@@ -1,13 +1,14 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { IEventsService, PrismaService } from '@app/nest/modules';
+import { PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class VendorService {
 	constructor(
 		private prisma: PrismaService,
-		@Inject('EventsService') private eventsService: IEventsService,
+		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 	) {}
 	private readonly logger = new Logger(VendorService.name);
 
@@ -92,6 +93,7 @@ export class VendorService {
 			website: vendor.website,
 		};
 
-		await this.eventsService.publishEvent(type, payload);
+		// Use NestJS's built-in NATS client
+		this.natsClient.emit(type, payload);
 	}
 }
