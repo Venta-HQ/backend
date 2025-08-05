@@ -130,17 +130,15 @@ describe('EventService', () => {
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
 
-			const locationData = {
+			const minimalVendor = {
 				id: 'vendor-123',
-				lat: 40.7128,
-				long: -74.006,
 			};
 
-			await service.emit('vendor.updated', locationData);
+			await service.emit('vendor.updated', minimalVendor);
 
 			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.updated', {
 				correlationId: 'req-location',
-				data: locationData,
+				data: minimalVendor,
 				eventId: expect.any(String),
 				source: expect.any(String),
 				timestamp: expect.any(String),

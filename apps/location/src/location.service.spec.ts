@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { AppError } from '@app/nest/errors';
 import { Prisma } from '@prisma/client';
 import { clearMocks, data, mockEvents, mockPrisma } from '../../../test/helpers/test-utils';

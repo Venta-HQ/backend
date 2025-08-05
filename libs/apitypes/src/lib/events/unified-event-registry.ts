@@ -1,5 +1,4 @@
-import { z } from 'zod';
-import { vendorEventSchemas } from '../vendor/vendor.events';
+import { VendorEventData, vendorEventSchemas } from '../vendor/vendor.events';
 
 /**
  * Combine all domain event schemas
@@ -23,5 +22,7 @@ export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
  * This provides type safety for the second parameter of emit
  */
 export type EventDataMap = {
-	[K in AvailableEventSubjects]: z.infer<(typeof ALL_EVENT_SCHEMAS)[K]>;
+	'vendor.created': VendorEventData;
+	'vendor.deleted': VendorEventData;
+	'vendor.updated': VendorEventData;
 };
