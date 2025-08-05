@@ -62,18 +62,9 @@ describe('LocationService', () => {
 				},
 			});
 			expect(eventsService.emit).toHaveBeenCalledWith('vendor.updated', {
-				createdAt: expect.any(String),
-				description: 'Test Description',
-				email: 'vendor@example.com',
 				id: 'vendor_123',
-				imageUrl: 'https://example.com/image.jpg',
 				lat: 40.7128,
 				long: -74.006,
-				name: 'Test Vendor',
-				open: true,
-				phone: '123-456-7890',
-				updatedAt: expect.any(String),
-				website: 'https://example.com',
 			});
 		});
 

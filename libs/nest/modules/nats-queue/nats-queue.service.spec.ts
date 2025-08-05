@@ -1,7 +1,5 @@
-import { connect, NatsConnection, Subscription } from 'nats';
+import { connect } from 'nats';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConfigService } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
 import { NatsQueueService } from './nats-queue.service';
 
 // Mock the nats module
@@ -24,16 +22,18 @@ describe('NatsQueueService', () => {
 
 		mockSubscription = {
 			unsubscribe: vi.fn(),
-			[Symbol.asyncIterator]: vi.fn().mockReturnValue((async function* () {
-				// Empty async iterator by default
-			})()),
+			[Symbol.asyncIterator]: vi.fn().mockReturnValue(
+				(async function* () {
+					// Empty async iterator by default
+				})(),
+			),
 		} as any;
 
 		mockNatsConnection = {
-			subscribe: vi.fn().mockReturnValue(mockSubscription),
-			publish: vi.fn().mockResolvedValue(undefined),
 			close: vi.fn().mockResolvedValue(undefined),
 			closed: vi.fn().mockReturnValue(false),
+			publish: vi.fn().mockResolvedValue(undefined),
+			subscribe: vi.fn().mockReturnValue(mockSubscription),
 		} as any;
 
 		mockConnect.mockResolvedValue(mockNatsConnection);
@@ -201,8 +201,8 @@ describe('NatsQueueService', () => {
 			const handler1 = vi.fn();
 			const handler2 = vi.fn();
 			const handlers = [
-				{ subject: 'test.subject1', handler: handler1 },
-				{ subject: 'test.subject2', handler: handler2 },
+				{ handler: handler1, subject: 'test.subject1' },
+				{ handler: handler2, subject: 'test.subject2' },
 			];
 
 			service.subscribeToMultipleQueues(handlers, 'test-queue');
@@ -263,12 +263,12 @@ describe('NatsQueueService', () => {
 
 		it('should handle complex data structures', async () => {
 			const complexData = {
-				string: 'test',
-				number: 42,
-				boolean: true,
-				object: { nested: 'value' },
 				array: [1, 2, 3],
+				boolean: true,
 				null: null,
+				number: 42,
+				object: { nested: 'value' },
+				string: 'test',
 			};
 
 			await service.publish('test.subject', complexData);

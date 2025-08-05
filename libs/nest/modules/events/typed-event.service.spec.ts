@@ -1,6 +1,4 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ALL_EVENT_SCHEMAS } from '@app/apitypes';
-import { ClientProxy } from '@nestjs/microservices';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestContextService } from '../request-context';
 import { EventService } from './typed-event.service';
@@ -46,18 +44,18 @@ describe('EventService', () => {
 
 	describe('emit', () => {
 		const mockVendor = {
-			id: 'vendor-123',
-			name: 'Test Vendor',
+			createdAt: new Date('2024-01-01'),
 			description: 'Test Description',
 			email: 'test@example.com',
-			phone: '+1234567890',
-			website: 'https://example.com',
-			open: true,
-			primaryImage: 'https://example.com/image.jpg',
+			id: 'vendor-123',
 			lat: 40.7128,
 			long: -74.006,
-			createdAt: new Date('2024-01-01'),
+			name: 'Test Vendor',
+			open: true,
+			phone: '+1234567890',
+			primaryImage: 'https://example.com/image.jpg',
 			updatedAt: new Date('2024-01-01'),
+			website: 'https://example.com',
 		};
 
 		it('should emit vendor.created event successfully', async () => {
@@ -123,7 +121,7 @@ describe('EventService', () => {
 			});
 		});
 
-		it('should emit vendor.location.updated event successfully', async () => {
+		it('should emit vendor.updated event successfully', async () => {
 			mockRequestContextService.get.mockImplementation((key: string) => {
 				if (key === 'requestId') return 'req-location';
 				return undefined;
@@ -133,17 +131,14 @@ describe('EventService', () => {
 			(service as any).requestContextService = mockRequestContextService;
 
 			const locationData = {
-				location: {
-					lat: 40.7128,
-					long: -74.006,
-				},
-				timestamp: new Date('2024-01-01'),
-				vendorId: 'vendor-123',
+				id: 'vendor-123',
+				lat: 40.7128,
+				long: -74.006,
 			};
 
-			await service.emit('vendor.location.updated', locationData);
+			await service.emit('vendor.updated', locationData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.location.updated', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.updated', {
 				correlationId: 'req-location',
 				data: locationData,
 				eventId: expect.any(String),
@@ -320,18 +315,18 @@ describe('EventService', () => {
 			(service as any).requestContextService = mockRequestContextService;
 
 			await service.emit('vendor.created', {
-				id: 'vendor-123',
-				name: 'Test Vendor',
+				createdAt: new Date('2024-01-01'),
 				description: 'Test Description',
 				email: 'test@example.com',
-				phone: '+1234567890',
-				website: 'https://example.com',
-				open: true,
-				primaryImage: 'https://example.com/image.jpg',
+				id: 'vendor-123',
 				lat: 40.7128,
 				long: -74.006,
-				createdAt: new Date('2024-01-01'),
+				name: 'Test Vendor',
+				open: true,
+				phone: '+1234567890',
+				primaryImage: 'https://example.com/image.jpg',
 				updatedAt: new Date('2024-01-01'),
+				website: 'https://example.com',
 			});
 
 			const emittedEvent = mockNatsClient.emit.mock.calls[0][1];

@@ -34,12 +34,12 @@ describe('RequestContextService', () => {
 
 		it('should handle different data types', () => {
 			const testData = {
-				string: 'test',
-				number: 42,
-				boolean: true,
-				object: { key: 'value' },
 				array: [1, 2, 3],
+				boolean: true,
 				null: null,
+				number: 42,
+				object: { key: 'value' },
+				string: 'test',
 			};
 
 			Object.entries(testData).forEach(([key, value]) => {
