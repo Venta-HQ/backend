@@ -2,6 +2,7 @@ export * from './algolia';
 export * from './bootstrap';
 export * from './clerk';
 export * from './config';
+export * from './events';
 export * from './grpc-instance';
 export * from './health';
 export * from './logger';

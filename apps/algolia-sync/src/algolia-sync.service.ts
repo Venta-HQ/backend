@@ -1,3 +1,4 @@
+import { BaseEvent, VendorEventSubject } from '@app/apitypes';
 import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
@@ -11,7 +12,10 @@ export class AlgoliaSyncService {
 	/**
 	 * Process vendor events and sync to Algolia
 	 */
-	async processVendorEvent(subject: string, vendor: Record<string, unknown>): Promise<void> {
+	async processVendorEvent(event: BaseEvent, subject: VendorEventSubject): Promise<void> {
+		const { data: vendor, eventId } = event;
+		this.logger.log(`Processing ${subject} event: ${eventId} for vendor: ${vendor.id}`);
+
 		switch (subject) {
 			case 'vendor.created':
 				await this.handleVendorCreated(vendor);

@@ -1,14 +1,13 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
+import { EventService, PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()
 export class VendorService {
 	constructor(
 		private prisma: PrismaService,
-		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+		private eventService: EventService,
 	) {}
 	private readonly logger = new Logger(VendorService.name);
 
@@ -33,8 +32,7 @@ export class VendorService {
 				primaryImage: imageUrl,
 			},
 		});
-
-		await this.emitVendorEvent('vendor.created', vendor);
+		await this.eventService.emit('vendor.created', vendor);
 		return vendor.id;
 	}
 
@@ -57,7 +55,7 @@ export class VendorService {
 			where: { id, owner: { id: userId } },
 		});
 
-		await this.emitVendorEvent('vendor.updated', vendor);
+		await this.eventService.emit('vendor.updated', vendor);
 	}
 
 	async deleteVendor(id: string, userId: string) {
@@ -70,30 +68,6 @@ export class VendorService {
 		await this.prisma.db.vendor.delete({
 			where: { id },
 		});
-		await this.emitVendorEvent('vendor.deleted', vendor);
-	}
-
-	private async emitVendorEvent(
-		type: 'vendor.created' | 'vendor.updated' | 'vendor.deleted',
-		vendor: Record<string, unknown>,
-	) {
-		// Standardize key order
-		const payload = {
-			createdAt: vendor.createdAt,
-			description: vendor.description,
-			email: vendor.email,
-			id: vendor.id,
-			lat: vendor.lat,
-			long: vendor.long,
-			name: vendor.name,
-			open: vendor.open,
-			phone: vendor.phone,
-			primaryImage: vendor.primaryImage,
-			updatedAt: vendor.updatedAt,
-			website: vendor.website,
-		};
-
-		// Use NestJS's built-in NATS client
-		this.natsClient.emit(type, payload);
+		await this.eventService.emit('vendor.deleted', vendor);
 	}
 }
