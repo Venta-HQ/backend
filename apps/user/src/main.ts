@@ -1,7 +1,10 @@
 import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
+import { Logger } from '@nestjs/common';
 import { UserModule } from './user.module';
 
 async function bootstrap() {
+	const logger = new Logger('UserService');
+
 	try {
 		// Bootstrap gRPC microservice with health checks
 		await BootstrapService.bootstrapGrpcMicroservice({
@@ -18,8 +21,10 @@ async function bootstrap() {
 				urlEnvVar: 'USER_SERVICE_ADDRESS',
 			},
 		});
+
+		logger.log('User microservice started successfully');
 	} catch (error) {
-		console.error('Failed to start user service:', error);
+		logger.error('Failed to start user microservice:', error);
 		process.exit(1);
 	}
 }

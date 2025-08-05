@@ -1,4 +1,4 @@
-import { BootstrapModule } from '@app/nest/modules';
+import { BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -16,6 +16,7 @@ import { VendorService } from './vendor/vendor.service';
 			appName: 'User Microservice',
 			protocol: 'grpc',
 		}),
+		NatsQueueModule,
 		ClientsModule.registerAsync({
 			clients: [
 				{

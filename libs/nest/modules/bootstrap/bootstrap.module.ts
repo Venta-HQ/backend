@@ -9,6 +9,7 @@ export interface BootstrapOptions {
 	appName: string;
 	healthChecks?: () => Promise<Record<string, string>>;
 	protocol: 'http' | 'grpc' | 'websocket' | 'nats';
+	enableJetStream?: boolean;
 }
 
 @Module({})
