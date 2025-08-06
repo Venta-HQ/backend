@@ -19,20 +19,20 @@
 
 ## 🏗️ Architecture Overview
 
-Venta Backend is a distributed system consisting of multiple microservices that work together to provide a comprehensive backend solution. The system follows modern architectural patterns including gRPC for inter-service communication, WebSocket for real-time features, and a unified API gateway.
+Venta Backend is a distributed system built with Domain-Driven Design (DDD) principles, consisting of multiple microservices organized around business domains. The system follows modern architectural patterns including gRPC for inter-service communication, WebSocket for real-time features, and a unified API gateway.
 
 ## 🏛️ System Architecture
 
 ### 🚀 Core Services
 
-| Service               | Purpose                    | Protocol  | Description                                  |
-| --------------------- | -------------------------- | --------- | -------------------------------------------- |
-| **Gateway**           | API Gateway & Routing      | HTTP/gRPC | Main entry point for all client requests     |
-| **User**              | User Management & Webhooks | gRPC      | Handles Clerk and RevenueCat webhooks        |
-| **Vendor**            | Vendor Management          | gRPC      | Vendor profile and business operations       |
-| **Location**          | Location Tracking          | gRPC      | Real-time location and geospatial operations |
-| **WebSocket Gateway** | Real-time Communication    | WebSocket | Live updates and real-time features          |
-| **Algolia Sync**      | Search Index Sync          | HTTP      | Search index synchronization                 |
+| Service               | Purpose                        | Protocol  | Description                                  |
+| --------------------- | ------------------------------ | --------- | -------------------------------------------- |
+| **API Gateway**       | HTTP Routing & Auth            | HTTP/gRPC | Main entry point for all client requests     |
+| **User Management**   | User Registration & Profiles   | gRPC      | User accounts, preferences, and webhooks     |
+| **Vendor Management** | Vendor Onboarding & Operations | gRPC      | Vendor profiles and business operations      |
+| **Location Services** | Geolocation & Proximity        | gRPC      | Real-time location and geospatial operations |
+| **Real-time Gateway** | WebSocket Communication        | WebSocket | Live updates and real-time features          |
+| **Search Discovery**  | Search Index & Discovery       | HTTP      | Search, recommendations, and discovery       |
 
 ### 📚 Shared Libraries
 
@@ -92,12 +92,12 @@ pnpm run format
 
 ```bash
 # Start specific service
-pnpm run start:dev gateway
-pnpm run start:dev user
-pnpm run start:dev vendor
-pnpm run start:dev location
-pnpm run start:dev websocket-gateway
-pnpm run start:dev algolia-sync
+pnpm run start:dev api-gateway
+pnpm run start:dev user-management
+pnpm run start:dev vendor-management
+pnpm run start:dev location-services
+pnpm run start:dev real-time-gateway
+pnpm run start:dev search-discovery
 ```
 
 ## ⚙️ Environment Configuration
@@ -180,16 +180,20 @@ docker-compose logs -f
 
 - **[Architecture Overview](docs/architecture-overview.md)** - Complete system architecture and design patterns
 - **[Development Guide](docs/development-guide.md)** - Setup, workflows, and best practices
+- **[Domain-Driven Design Guide](docs/ddd-migration-guide.md)** - DDD architecture implementation guide
 
 ### 🔧 Development & Testing
 
 - **[Testing Strategy](docs/testing-strategy.md)** - Comprehensive testing approach and guidelines
+- **[Naming Conventions](docs/naming-conventions.md)** - Code organization standards
 
 ### 🚀 Deployment & Operations
 
 - **[Deployment Guide](docs/deployment-guide.md)** - Containerization and deployment procedures
 - **[Metrics Instrumentation](docs/metrics-instrumentation-guide.md)** - Monitoring and observability
 - **[Request ID Propagation](docs/request-id-propagation.md)** - Distributed tracing
+
+
 
 ### 📖 Quick Reference
 

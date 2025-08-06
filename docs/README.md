@@ -10,7 +10,7 @@ Welcome to the Venta Backend documentation! This comprehensive guide covers ever
 - **[Development Guide](./development-guide.md)** - Setup, development workflow, and coding standards
 - **[Deployment Guide](./deployment-guide.md)** - Production deployment and infrastructure management
 - **[Naming Conventions](./naming-conventions.md)** - Consistent naming patterns across the codebase
-- **[Organization Improvements Summary](./organization-improvements-summary.md)** - Comprehensive overview of organizational improvements
+
 
 - **[Testing Strategy](./testing-strategy.md)** - Comprehensive testing approach and guidelines
 - **[Metrics Instrumentation Guide](./metrics-instrumentation-guide.md)** - Observability and monitoring setup
