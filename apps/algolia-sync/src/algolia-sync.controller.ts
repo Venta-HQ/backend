@@ -28,9 +28,9 @@ export class AlgoliaSyncController implements OnModuleInit {
 	private async handleVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
 		const { data: event, subject } = data;
 
-		// Set correlation ID from event for request context
+		// Set correlation ID in request context for automatic logger pickup
 		if (event.correlationId) {
-			this.requestContextService.set('requestId', event.correlationId);
+			this.requestContextService.set('correlationId', event.correlationId);
 		}
 
 		this.logger.log(`Handling ${subject} event: ${event.eventId} for vendor: ${event.data.id}`);

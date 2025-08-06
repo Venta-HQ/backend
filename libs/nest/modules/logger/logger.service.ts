@@ -17,12 +17,18 @@ export class Logger implements LoggerService {
 		return this;
 	}
 
-	// Generate or retrieve request ID
+	// Generate or retrieve request ID or correlation ID
 	private getRequestId(): string | undefined {
-		// First try to get from RequestContextService (for gRPC)
+		// First try to get from RequestContextService (for gRPC and NATS)
 		const existingRequestId = this.requestContextService?.get('requestId');
 		if (existingRequestId) {
 			return existingRequestId;
+		}
+
+		// Check for correlation ID (for NATS messages)
+		const correlationId = this.requestContextService?.get('correlationId');
+		if (correlationId) {
+			return correlationId;
 		}
 
 		// For HTTP requests, generate a new one if none exists
