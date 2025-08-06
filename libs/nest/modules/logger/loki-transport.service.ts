@@ -25,9 +25,16 @@ export class LokiTransportService {
 		private readonly configService: ConfigService,
 		@Inject('LOGGER_OPTIONS') private readonly options: { appName: string },
 	) {
-		this.lokiUrl = this.configService.get('LOKI_URL') || '';
-		this.lokiUsername = this.configService.get('LOKI_USERNAME') || '';
-		this.lokiPassword = this.configService.get('LOKI_PASSWORD') || '';
+		try {
+			this.lokiUrl = this.configService?.get('LOKI_URL') || '';
+			this.lokiUsername = this.configService?.get('LOKI_USERNAME') || '';
+			this.lokiPassword = this.configService?.get('LOKI_PASSWORD') || '';
+		} catch (error) {
+			// Handle case where ConfigService is not available (e.g., during testing)
+			this.lokiUrl = '';
+			this.lokiUsername = '';
+			this.lokiPassword = '';
+		}
 		this.appName = this.options.appName;
 	}
 

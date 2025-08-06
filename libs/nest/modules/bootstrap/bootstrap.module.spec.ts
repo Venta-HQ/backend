@@ -1,3 +1,4 @@
+import { vi } from 'vitest';
 import { ErrorHandlingModule } from '@app/nest/errors';
 import { HealthModule, LoggerModule, PrometheusModule } from '@app/nest/modules';
 import { ConfigModule } from '@nestjs/config';
@@ -153,7 +154,12 @@ describe('BootstrapModule', () => {
 
 			module = await Test.createTestingModule({
 				imports: [BootstrapModule.forRoot(options)],
-			}).compile();
+			})
+				.overrideProvider('ConfigService')
+				.useValue({
+					get: vi.fn().mockReturnValue('test-value'),
+				})
+				.compile();
 
 			expect(module).toBeDefined();
 		});
@@ -166,7 +172,12 @@ describe('BootstrapModule', () => {
 
 			module = await Test.createTestingModule({
 				imports: [BootstrapModule.forRoot(options)],
-			}).compile();
+			})
+				.overrideProvider('ConfigService')
+				.useValue({
+					get: vi.fn().mockReturnValue('test-value'),
+				})
+				.compile();
 
 			expect(module).toBeDefined();
 		});
@@ -179,7 +190,12 @@ describe('BootstrapModule', () => {
 
 			module = await Test.createTestingModule({
 				imports: [BootstrapModule.forRoot(options)],
-			}).compile();
+			})
+				.overrideProvider('ConfigService')
+				.useValue({
+					get: vi.fn().mockReturnValue('test-value'),
+				})
+				.compile();
 
 			expect(module).toBeDefined();
 		});
@@ -198,7 +214,12 @@ describe('BootstrapModule', () => {
 
 			module = await Test.createTestingModule({
 				imports: [BootstrapModule.forRoot(options)],
-			}).compile();
+			})
+				.overrideProvider('ConfigService')
+				.useValue({
+					get: vi.fn().mockReturnValue('test-value'),
+				})
+				.compile();
 
 			expect(module).toBeDefined();
 		});
