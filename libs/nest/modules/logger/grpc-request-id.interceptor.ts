@@ -1,12 +1,12 @@
-import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { RequestContextService } from '../request-context';
 
 /**
  * Interceptor for gRPC request handlers that automatically extracts request IDs
  * from gRPC metadata and sets them in the request context for logging and tracing.
- * 
+ *
  * This follows the same pattern as HTTP and NATS interceptors for consistency.
  */
 @Injectable()
@@ -22,7 +22,7 @@ export class GrpcRequestIdInterceptor {
 
 		// Extract request ID from metadata
 		const requestId = metadata?.get('requestId')?.[0];
-		
+
 		if (requestId) {
 			this.requestContextService.set('requestId', requestId);
 			this.logger.log(`Received gRPC request with ID: ${requestId}`);
@@ -33,13 +33,13 @@ export class GrpcRequestIdInterceptor {
 		// Process the request and clear context when done
 		return next.handle().pipe(
 			tap({
-				next: () => {
+				error: () => {
 					this.requestContextService.clear();
 				},
-				error: () => {
+				next: () => {
 					this.requestContextService.clear();
 				},
 			}),
 		);
 	}
-} 
+}
