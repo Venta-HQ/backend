@@ -1,10 +1,11 @@
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Metadata } from '@grpc/grpc-js';
 import GrpcInstance from './grpc-instance.service';
 
-// Mock the retryOperation utility
+// Mock the retryObservable utility
 vi.mock('@app/utils', () => ({
-	retryOperation: vi.fn((operation) => operation()),
+	retryObservable: vi.fn().mockImplementation((observable) => observable),
 }));
 
 describe('GrpcInstance', () => {
@@ -37,7 +38,7 @@ describe('GrpcInstance', () => {
 	});
 
 	describe('invoke', () => {
-		it('should invoke service method with metadata and request ID', async () => {
+		it('should invoke service method with metadata and request ID for Promise-based methods', async () => {
 			const testData = { key: 'value' };
 			const expectedResult = { success: true };
 
@@ -47,6 +48,19 @@ describe('GrpcInstance', () => {
 
 			expect(mockService.testMethod).toHaveBeenCalledWith(testData, expect.any(Metadata));
 			expect(result).toEqual(expectedResult);
+		});
+
+		it('should invoke service method with metadata and request ID for Observable-based methods', () => {
+			const testData = { key: 'value' };
+			const expectedResult = { success: true };
+			const mockObservable = of(expectedResult);
+
+			mockService.testMethod.mockReturnValue(mockObservable);
+
+			const result = grpcInstance.invoke('testMethod', testData);
+
+			expect(mockService.testMethod).toHaveBeenCalledWith(testData, expect.any(Metadata));
+			expect(result).toBe(mockObservable);
 		});
 
 		it('should set request ID in metadata when available', async () => {
@@ -73,20 +87,39 @@ describe('GrpcInstance', () => {
 			expect(metadata.get('requestId')).toEqual([]);
 		});
 
-		it('should throw error when method does not exist on service', async () => {
+		it('should throw error when method does not exist on service', () => {
 			const testData = { key: 'value' };
 
-			await expect(grpcInstance.invoke('nonExistentMethod' as any, testData)).rejects.toThrow(
-				'Method nonExistentMethod not found on service',
-			);
+			// Create a new mock service without the nonExistentMethod
+			const serviceWithoutMethod = {
+				testMethod: vi.fn(),
+			};
+			const instanceWithoutMethod = new GrpcInstance(mockRequest, serviceWithoutMethod);
+			(instanceWithoutMethod as any).logger = mockLogger;
+
+			expect(() => {
+				instanceWithoutMethod.invoke('nonExistentMethod' as any, testData);
+			}).toThrow('Method nonExistentMethod not found on service');
 		});
 
-		it('should handle service method errors', async () => {
+		it('should handle service method errors for Promise-based methods', async () => {
 			const testData = { key: 'value' };
 			const serviceError = new Error('Service error');
 			mockService.testMethod.mockRejectedValue(serviceError);
 
 			await expect(grpcInstance.invoke('testMethod', testData)).rejects.toThrow('Service error');
+		});
+
+		it('should handle service method errors for Observable-based methods', () => {
+			const testData = { key: 'value' };
+			const serviceError = new Error('Service error');
+			const errorObservable = throwError(() => serviceError);
+
+			mockService.testMethod.mockReturnValue(errorObservable);
+
+			// Should not throw since retryObservable is mocked to return the observable
+			const result = grpcInstance.invoke('testMethod', testData);
+			expect(result).toBe(errorObservable);
 		});
 
 		it('should handle different data types', async () => {
