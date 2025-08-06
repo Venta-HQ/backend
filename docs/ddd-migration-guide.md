@@ -1,9 +1,9 @@
-# 🏗️ Domain-Driven Design Architecture Guide
+# 🏗️ Domain-Driven Design Migration Guide
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Current Architecture Assessment](#current-architecture-assessment)
+- [Current Functionality Analysis](#current-functionality-analysis)
 - [DDD Migration Strategy](#ddd-migration-strategy)
 - [Phase 1: Domain Organization](#phase-1-domain-organization)
 - [Phase 2: Domain Services](#phase-2-domain-services)
@@ -18,33 +18,57 @@
 
 This guide outlines the migration of your Venta backend system to a Domain-Driven Design (DDD) architecture. Your current excellent technical foundation provides the perfect base for this evolution, enabling business alignment, team scalability, and long-term maintainability.
 
-## ✅ Current Architecture Assessment
+**Focus**: This migration focuses on your **current implemented features** while designing domains to accommodate **future planned features**.
 
-### **Excellent Foundation You Already Have**
+## ✅ Current Functionality Analysis
 
-Your current architecture already implements many DDD principles:
+### **Currently Implemented Features**
 
-#### **✅ Strong Technical Foundation**
+#### **🔍 User Management**
 
-- **BootstrapModule**: Perfect service initialization
-- **EventService**: Type-safe event emission with correlation
-- **Logger**: Structured logging with request correlation
-- **PrometheusModule**: Comprehensive monitoring
-- **Error Handling**: Standardized error patterns
-- **Configuration**: Centralized configuration management
+- **Authentication**: Clerk-based user authentication
+- **User Profiles**: Basic user account management
+- **User-Vendor Relationships**: Users can have associated vendors
 
-#### **✅ Event-Driven Architecture**
+#### **🏪 Vendor Management**
 
-- **Type-safe events**: `vendor.created`, `vendor.updated`, etc.
-- **Automatic correlation**: Request IDs → Event correlation IDs
-- **Schema validation**: Zod schemas for event data
-- **NATS integration**: Reliable event delivery
+- **Vendor Profiles**: Create, read, update vendor information
+- **Vendor Ownership**: Users can own and manage vendors
+- **Profile Data**: Name, description, contact info, images
 
-#### **✅ Service Boundaries**
+#### **📍 Location Services**
 
-- **Clear separation**: User, Vendor, Location, Gateway services
-- **Protocol optimization**: HTTP, gRPC, NATS services
-- **Health checks**: Comprehensive monitoring
+- **Real-time Location Tracking**: Both users and vendors
+- **Geospatial Queries**: Find vendors near user location
+- **Location Broadcasting**: Real-time updates via WebSocket
+- **Redis Geolocation**: Efficient location storage and queries
+
+#### **🔍 Search & Discovery**
+
+- **Algolia Integration**: Search indexing and discovery
+- **Location-based Search**: Find vendors by proximity
+- **Basic Search**: Vendor name and location criteria
+
+#### **📤 File Management**
+
+- **Image Upload**: Profile picture and vendor image uploads
+- **File Storage**: Cloud-based file storage
+
+#### **🔗 External Integrations**
+
+- **Clerk Webhooks**: User authentication events
+- **Subscription Webhooks**: Payment/subscription events
+- **RevenueCat**: Subscription management
+
+### **Future Planned Features** (Design Considerations)
+
+- **Reviews & Ratings**: Customer feedback system
+- **Favorites**: User vendor bookmarking
+- **In-app Payments**: Stripe integration for transactions
+- **Analytics & Reporting**: Business intelligence
+- **Loyalty Programs**: Customer retention features
+- **Event Organizers**: Additional user types
+- **Static Businesses**: Location-based advertising
 
 ## 🚀 DDD Migration Strategy
 
@@ -63,7 +87,7 @@ We'll **evolve** your current architecture:
 - ✅ **Add domain context**: Layer business semantics on top
 - ✅ **Incremental migration**: One domain at a time
 - ✅ **Backward compatibility**: No breaking changes
-- ✅ **Team learning**: Gradual adoption of DDD concepts
+- ✅ **Future-ready design**: Accommodate planned features
 
 ## 🏗️ Phase 1: Domain Organization
 
@@ -71,52 +95,56 @@ We'll **evolve** your current architecture:
 
 ```
 apps/
-├── gateway/           # Technical boundary
-├── user/             # Technical boundary
-├── vendor/           # Technical boundary
-├── location/         # Technical boundary
-└── algolia-sync/     # Technical boundary
+├── gateway/           # HTTP API Gateway
+├── user/             # User Management (gRPC)
+├── vendor/           # Vendor Management (gRPC)
+├── location/         # Location Services (gRPC)
+├── websocket-gateway/ # Real-time Communication
+├── algolia-sync/     # Search Indexing
+└── [partially migrated domains]
 ```
 
 ### **Target DDD Structure**
 
 ```
 apps/
-├── marketplace/           # Business domain
-│   ├── user-management/   # User domain
-│   ├── vendor-management/ # Vendor domain
-│   └── search-discovery/  # Search domain
-├── location-services/     # Location domain
-│   ├── geolocation/      # Location tracking
-│   ├── proximity/        # Nearby searches
-│   └── real-time/        # Live updates
-├── communication/        # Communication domain
-│   ├── notifications/    # Push notifications
-│   ├── messaging/        # Real-time messaging
+├── marketplace/           # Core Business Domain
+│   ├── user-management/   # User accounts & profiles
+│   ├── vendor-management/ # Vendor profiles & operations
+│   └── search-discovery/  # Search & discovery (Algolia)
+├── location-services/     # Location Domain
+│   ├── geolocation/      # Location tracking & storage
+│   ├── proximity/        # Nearby vendor queries
+│   └── real-time/        # Live location updates (WebSocket)
+├── communication/        # Communication Domain
+│   ├── notifications/    # Push notifications (future)
+│   ├── messaging/        # Real-time messaging (future)
 │   └── webhooks/         # External integrations
-└── infrastructure/       # Cross-cutting concerns
-    ├── api-gateway/      # HTTP routing
-    ├── event-bus/        # Event streaming
+└── infrastructure/       # Cross-cutting Concerns
+    ├── api-gateway/      # HTTP routing & auth
+    ├── file-management/  # File uploads & storage
     └── monitoring/       # Observability
 ```
 
 ### **Implementation Strategy**
 
-#### **Step 1: Create Domain Directories**
+#### **Step 1: Complete Domain Directory Structure**
 
 ```bash
-# Create new domain structure
-mkdir -p apps/marketplace/{user-management,vendor-management,search-discovery}
-mkdir -p apps/location-services/{geolocation,proximity,real-time}
-mkdir -p apps/communication/{notifications,messaging,webhooks}
-mkdir -p apps/infrastructure/{api-gateway,event-bus,monitoring}
+# Create remaining domain structure
+mkdir -p apps/marketplace/vendor-management
+mkdir -p apps/marketplace/search-discovery
+mkdir -p apps/location-services/geolocation
+mkdir -p apps/location-services/real-time
+mkdir -p apps/communication/webhooks
+mkdir -p apps/infrastructure/api-gateway
+mkdir -p apps/infrastructure/file-management
 ```
 
 #### **Step 2: Move Existing Services**
 
 ```bash
 # Move existing services to domain structure
-mv apps/user apps/marketplace/user-management/
 mv apps/vendor apps/marketplace/vendor-management/
 mv apps/location apps/location-services/geolocation/
 mv apps/gateway apps/infrastructure/api-gateway/
@@ -222,7 +250,6 @@ export class UserRegistrationService {
 			notificationSettings: { email: true, push: true, sms: false },
 			searchRadius: 5000, // 5km default
 			favoriteCategories: [],
-			dietaryRestrictions: data.dietaryRestrictions || [],
 		};
 	}
 }
@@ -295,17 +322,24 @@ await this.eventService.emit('marketplace.user_registered', {
 	preferences: {
 		notificationSettings: { email: true, push: true },
 		searchRadius: 5000,
-		favoriteCategories: ['restaurant', 'retail'],
+		favoriteCategories: ['food', 'retail'],
 	},
 	timestamp: new Date(),
 });
 
 await this.eventService.emit('marketplace.vendor_onboarded', {
 	vendorId: '456',
-	businessType: 'restaurant',
+	businessType: 'food_vendor',
 	location: { lat: 40.7128, lng: -74.006 },
 	ownerId: '123',
 	services: ['dine_in', 'delivery', 'takeout'],
+	timestamp: new Date(),
+});
+
+await this.eventService.emit('location.vendor_location_updated', {
+	vendorId: '456',
+	location: { lat: 40.7128, lng: -74.006 },
+	accuracy: 10,
 	timestamp: new Date(),
 });
 ```
@@ -335,7 +369,7 @@ export const marketplaceEventSchemas = {
 
 	'marketplace.vendor_onboarded': z.object({
 		vendorId: z.string(),
-		businessType: z.enum(['restaurant', 'retail', 'service']),
+		businessType: z.enum(['food_vendor', 'retail', 'service']),
 		location: z.object({
 			lat: z.number(),
 			lng: z.number(),
@@ -345,10 +379,9 @@ export const marketplaceEventSchemas = {
 		timestamp: z.date(),
 	}),
 
-	'marketplace.user_subscribed': z.object({
-		userId: z.string(),
-		subscriptionType: z.enum(['free', 'premium', 'enterprise']),
-		vendorPreferences: z.array(z.string()),
+	'marketplace.vendor_profile_updated': z.object({
+		vendorId: z.string(),
+		updatedFields: z.array(z.string()),
 		timestamp: z.date(),
 	}),
 } as const;
@@ -357,6 +390,16 @@ export const marketplaceEventSchemas = {
 export const locationEventSchemas = {
 	'location.vendor_location_updated': z.object({
 		vendorId: z.string(),
+		location: z.object({
+			lat: z.number(),
+			lng: z.number(),
+		}),
+		accuracy: z.number().optional(),
+		timestamp: z.date(),
+	}),
+
+	'location.user_location_updated': z.object({
+		userId: z.string(),
 		location: z.object({
 			lat: z.number(),
 			lng: z.number(),
@@ -498,88 +541,6 @@ export class GeolocationModule {}
 
 ### **Domain Service Implementation**
 
-#### **User Registration Domain Service**
-
-```typescript
-// apps/marketplace/user-management/services/user-registration.service.ts
-@Injectable()
-export class UserRegistrationService {
-	constructor(
-		private prisma: PrismaService,
-		private eventService: DomainEventService,
-		private logger: Logger,
-		private metricsService: DomainMetricsService,
-	) {}
-
-	async registerNewUser(registrationData: UserRegistrationData): Promise<UserProfile> {
-		const startTime = Date.now();
-
-		try {
-			this.logger.log('Starting user registration', {
-				email: registrationData.email,
-				source: registrationData.source,
-			});
-
-			// Domain validation
-			await this.validateRegistrationData(registrationData);
-
-			// Domain logic
-			const user = await this.createUserProfile(registrationData);
-			const preferences = this.createDefaultPreferences(registrationData);
-
-			// Domain events
-			await this.eventService.emitDomainEvent('marketplace.user_registered', {
-				userId: user.id,
-				email: user.email,
-				source: registrationData.source,
-				preferences: preferences,
-				timestamp: new Date(),
-			});
-
-			// Metrics
-			this.metricsService.recordUserAction('registered', user.id, {
-				source: registrationData.source,
-				duration: Date.now() - startTime,
-			});
-
-			this.logger.log('User registration completed', { userId: user.id });
-			return user;
-		} catch (error) {
-			this.metricsService.recordUserAction('registration_failed', null, {
-				source: registrationData.source,
-				error: error.message,
-			});
-			throw error;
-		}
-	}
-
-	private async validateRegistrationData(data: UserRegistrationData): Promise<void> {
-		// Business rules validation
-		if (await this.prisma.db.user.findUnique({ where: { email: data.email } })) {
-			throw new UserDomainError(UserDomainErrorCodes.ALREADY_EXISTS, 'User with this email already exists', {
-				email: data.email,
-			});
-		}
-
-		// Additional business rules
-		if (data.age && data.age < 18) {
-			throw new UserDomainError(UserDomainErrorCodes.INVALID_AGE, 'User must be at least 18 years old', {
-				age: data.age,
-			});
-		}
-	}
-
-	private createDefaultPreferences(data: UserRegistrationData): UserPreferences {
-		return {
-			notificationSettings: { email: true, push: true, sms: false },
-			searchRadius: 5000, // 5km default
-			favoriteCategories: [],
-			dietaryRestrictions: data.dietaryRestrictions || [],
-		};
-	}
-}
-```
-
 #### **Vendor Onboarding Domain Service**
 
 ```typescript
@@ -647,26 +608,101 @@ export class VendorOnboardingService {
 }
 ```
 
-### **Domain Controller Implementation**
-
-#### **User Registration Controller**
+#### **Location Tracking Domain Service**
 
 ```typescript
-// apps/marketplace/user-management/controllers/user-registration.controller.ts
-@Controller('users')
-@UseGuards(AuthGuard)
-@UseInterceptors(MetricsInterceptor, RequestIdInterceptor)
-export class UserRegistrationController {
-	constructor(private userRegistrationService: UserRegistrationService) {}
+// apps/location-services/geolocation/services/location-tracking.service.ts
+@Injectable()
+export class LocationTrackingService {
+	constructor(
+		private prisma: PrismaService,
+		private eventService: DomainEventService,
+		private logger: Logger,
+		private redis: Redis,
+	) {}
 
-	@Post('register')
-	async registerUser(@Body() data: UserRegistrationDto): Promise<UserProfile> {
-		return this.userRegistrationService.registerNewUser(data);
+	async updateVendorLocation(vendorId: string, location: LocationData): Promise<void> {
+		this.logger.log('Updating vendor location', { vendorId, location });
+
+		// Domain validation
+		await this.validateLocationData(location);
+
+		// Domain logic
+		await this.storeVendorLocation(vendorId, location);
+		await this.updateGeolocationIndex(vendorId, location);
+
+		// Domain events
+		await this.eventService.emitDomainEvent('location.vendor_location_updated', {
+			vendorId,
+			location,
+			accuracy: location.accuracy,
+			timestamp: new Date(),
+		});
+
+		this.logger.log('Vendor location updated', { vendorId });
 	}
 
-	@Post('verify-email')
-	async verifyEmail(@Body() data: EmailVerificationDto): Promise<void> {
-		return this.userRegistrationService.verifyEmail(data);
+	async findNearbyVendors(userLocation: LocationData, radius: number = 5000): Promise<VendorLocation[]> {
+		// Domain logic for proximity search
+		const nearbyVendors = await this.redis.georadius(
+			'vendor_locations',
+			userLocation.lng,
+			userLocation.lat,
+			radius,
+			'm',
+			'WITHCOORD',
+			'WITHDIST',
+		);
+
+		return this.formatNearbyVendors(nearbyVendors);
+	}
+
+	private async validateLocationData(location: LocationData): Promise<void> {
+		if (location.lat < -90 || location.lat > 90) {
+			throw new LocationDomainError('INVALID_LATITUDE', 'Invalid latitude value');
+		}
+		if (location.lng < -180 || location.lng > 180) {
+			throw new LocationDomainError('INVALID_LONGITUDE', 'Invalid longitude value');
+		}
+	}
+}
+```
+
+### **Domain Controller Implementation**
+
+#### **Vendor Management Controller**
+
+```typescript
+// apps/marketplace/vendor-management/controllers/vendor-management.controller.ts
+@Controller('vendors')
+@UseGuards(AuthGuard)
+@UseInterceptors(MetricsInterceptor, RequestIdInterceptor)
+export class VendorManagementController {
+	constructor(
+		private vendorOnboardingService: VendorOnboardingService,
+		private vendorProfileService: VendorProfileService,
+	) {}
+
+	@Post()
+	async createVendor(@Body() data: CreateVendorDto, @Req() req: AuthedRequest): Promise<VendorProfile> {
+		return this.vendorOnboardingService.onboardNewVendor({
+			...data,
+			ownerId: req.userId,
+		});
+	}
+
+	@Get(':id')
+	async getVendor(@Param('id') id: string): Promise<VendorProfile> {
+		return this.vendorProfileService.getVendorById(id);
+	}
+
+	@Put(':id')
+	async updateVendor(
+		@Param('id') id: string,
+		@Body() data: UpdateVendorDto,
+		@Req() req: AuthedRequest,
+	): Promise<VendorProfile> {
+		return this.vendorProfileService.updateVendor(id, data, req.userId);
 	}
 }
 ```
@@ -675,8 +711,8 @@ export class UserRegistrationController {
 
 ### **Phase 1: Foundation (Weeks 1-2)**
 
-- [ ] Create domain directory structure
-- [ ] Move existing services to domain structure
+- [x] Create domain directory structure (partially done)
+- [ ] Complete service moves to domain structure
 - [ ] Update module names and app names
 - [ ] Update documentation
 
@@ -738,10 +774,10 @@ export class UserRegistrationController {
 
 ### **Immediate Actions**
 
-1. **Domain Discovery**: Map current services to business domains
-2. **Team Preparation**: Ensure team is ready for DDD concepts
-3. **Migration Planning**: Create detailed migration plan with timeline
-4. **Start Implementation**: Begin with Phase 1 foundation work
+1. **Complete Domain Organization**: Finish moving services to domain structure
+2. **Update Configuration**: Update `nest-cli.json` and module configurations
+3. **Domain Service Enhancement**: Add business logic to existing services
+4. **Domain Event Implementation**: Create business-focused events
 
 ### **Success Metrics**
 

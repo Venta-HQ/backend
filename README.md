@@ -21,6 +21,8 @@
 
 Venta Backend is a distributed system built with Domain-Driven Design (DDD) principles, consisting of multiple microservices organized around business domains. The system follows modern architectural patterns including gRPC for inter-service communication, WebSocket for real-time features, and a unified API gateway.
 
+**🚀 Currently migrating to full DDD architecture** - See [DDD Migration Status](./docs/ddd-migration-status.md) for current progress.
+
 ## 🏛️ System Architecture
 
 ### 🚀 Core Services
@@ -33,6 +35,8 @@ Venta Backend is a distributed system built with Domain-Driven Design (DDD) prin
 | **Location Services** | Geolocation & Proximity        | gRPC      | Real-time location and geospatial operations |
 | **Real-time Gateway** | WebSocket Communication        | WebSocket | Live updates and real-time features          |
 | **Search Discovery**  | Search Index & Discovery       | HTTP      | Search, recommendations, and discovery       |
+
+> **📋 Note**: Services are being reorganized into domain-driven structure. See [DDD Migration Guide](./docs/ddd-migration-guide.md) for target architecture.
 
 ### 📚 Shared Libraries
 
@@ -181,6 +185,8 @@ docker-compose logs -f
 - **[Architecture Overview](docs/architecture-overview.md)** - Complete system architecture and design patterns
 - **[Development Guide](docs/development-guide.md)** - Setup, workflows, and best practices
 - **[Domain-Driven Design Guide](docs/ddd-migration-guide.md)** - DDD architecture implementation guide
+- **[DDD Migration Status](docs/ddd-migration-status.md)** - Current migration progress and status
+- **[Full Architecture Vision](docs/full-architecture-vision.md)** - Complete end-state architecture with all features
 
 ### 🔧 Development & Testing
 
@@ -192,8 +198,6 @@ docker-compose logs -f
 - **[Deployment Guide](docs/deployment-guide.md)** - Containerization and deployment procedures
 - **[Metrics Instrumentation](docs/metrics-instrumentation-guide.md)** - Monitoring and observability
 - **[Request ID Propagation](docs/request-id-propagation.md)** - Distributed tracing
-
-
 
 ### 📖 Quick Reference
 
