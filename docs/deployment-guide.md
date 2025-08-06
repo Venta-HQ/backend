@@ -575,7 +575,9 @@ spec:
 
 ## 🔄 CI/CD Pipeline
 
-### **1. GitHub Actions Workflow**
+> **Note**: CI/CD workflows are not currently implemented in this codebase. The following is a reference implementation for future use.
+
+### **1. GitHub Actions Workflow (Reference)**
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -800,6 +802,8 @@ pg_restore -d venta_prod backup.sql
 | **Location Service**  | 200m        | 400m      | 256Mi          | 512Mi        |
 | **WebSocket Gateway** | 300m        | 600m      | 512Mi          | 1Gi          |
 | **Algolia Sync**      | 100m        | 200m      | 128Mi          | 256Mi        |
+
+> **Note**: These are example Kubernetes resource allocations. The actual docker-compose.yml doesn't specify resource limits.
 
 ### **Scaling Policies**
 

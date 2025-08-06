@@ -25,23 +25,23 @@ Venta Backend is a distributed system consisting of multiple microservices that 
 
 ### 🚀 Core Services
 
-| Service | Purpose | Protocol | Description |
-|---------|---------|----------|-------------|
-| **Gateway** | API Gateway & Routing | HTTP/gRPC | Main entry point for all client requests |
-| **User** | User Management & Webhooks | gRPC | Handles Clerk and RevenueCat webhooks |
-| **Vendor** | Vendor Management | gRPC | Vendor profile and business operations |
-| **Location** | Location Tracking | gRPC | Real-time location and geospatial operations |
-| **WebSocket Gateway** | Real-time Communication | WebSocket | Live updates and real-time features |
-| **Algolia Sync** | Search Index Sync | HTTP | Search index synchronization |
+| Service               | Purpose                    | Protocol  | Description                                  |
+| --------------------- | -------------------------- | --------- | -------------------------------------------- |
+| **Gateway**           | API Gateway & Routing      | HTTP/gRPC | Main entry point for all client requests     |
+| **User**              | User Management & Webhooks | gRPC      | Handles Clerk and RevenueCat webhooks        |
+| **Vendor**            | Vendor Management          | gRPC      | Vendor profile and business operations       |
+| **Location**          | Location Tracking          | gRPC      | Real-time location and geospatial operations |
+| **WebSocket Gateway** | Real-time Communication    | WebSocket | Live updates and real-time features          |
+| **Algolia Sync**      | Search Index Sync          | HTTP      | Search index synchronization                 |
 
 ### 📚 Shared Libraries
 
-| Library | Purpose | Description |
-|---------|---------|-------------|
-| **API Types** | Type Definitions | Centralized schemas and validation |
-| **NestJS Shared** | Framework Modules | Reusable NestJS modules and utilities |
-| **Protocol Buffers** | gRPC Definitions | Service contracts and generated code |
-| **Utilities** | Helper Functions | Common utility functions and helpers |
+| Library              | Purpose           | Description                           |
+| -------------------- | ----------------- | ------------------------------------- |
+| **API Types**        | Type Definitions  | Centralized schemas and validation    |
+| **NestJS Shared**    | Framework Modules | Reusable NestJS modules and utilities |
+| **Protocol Buffers** | gRPC Definitions  | Service contracts and generated code  |
+| **Utilities**        | Helper Functions  | Common utility functions and helpers  |
 
 ## 🚀 Quick Start
 
@@ -177,19 +177,22 @@ docker-compose logs -f
 ## 📚 Documentation
 
 ### 🏗️ Architecture & Design
+
 - **[Architecture Overview](docs/architecture-overview.md)** - Complete system architecture and design patterns
 - **[Development Guide](docs/development-guide.md)** - Setup, workflows, and best practices
 
 ### 🔧 Development & Testing
-- **[API Documentation Guide](docs/api-documentation-guide.md)** - Standards for documenting APIs
+
 - **[Testing Strategy](docs/testing-strategy.md)** - Comprehensive testing approach and guidelines
 
 ### 🚀 Deployment & Operations
+
 - **[Deployment Guide](docs/deployment-guide.md)** - Containerization and deployment procedures
 - **[Metrics Instrumentation](docs/metrics-instrumentation-guide.md)** - Monitoring and observability
 - **[Request ID Propagation](docs/request-id-propagation.md)** - Distributed tracing
 
 ### 📖 Quick Reference
+
 - **Service Ports**: All configurable via environment variables
 - **Communication**: gRPC for inter-service, HTTP for external APIs, WebSocket for real-time
 - **Database**: PostgreSQL with Prisma ORM

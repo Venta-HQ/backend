@@ -15,51 +15,50 @@ scrape_configs:
   # WebSocket Gateway Service
   - job_name: 'websocket-gateway'
     static_configs:
-      - targets: ['host.docker.internal:3000']  # Adjust port based on your websocket gateway
+      - targets: ['host.docker.internal:5004'] # WebSocket Gateway port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # Gateway Service (if it has metrics)
+  # Gateway Service
   - job_name: 'gateway'
     static_configs:
-      - targets: ['host.docker.internal:3001']  # Adjust port based on your gateway service
+      - targets: ['host.docker.internal:5002'] # Gateway port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # User Service (if it has metrics)
+  # User Service Health Check
   - job_name: 'user-service'
     static_configs:
-      - targets: ['host.docker.internal:3002']  # Adjust port based on your user service
+      - targets: ['host.docker.internal:5010'] # User health check port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # Vendor Service (if it has metrics)
+  # Vendor Service Health Check
   - job_name: 'vendor-service'
     static_configs:
-      - targets: ['host.docker.internal:3003']  # Adjust port based on your vendor service
+      - targets: ['host.docker.internal:5015'] # Vendor health check port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # Location Service (if it has metrics)
+  # Location Service Health Check
   - job_name: 'location-service'
     static_configs:
-      - targets: ['host.docker.internal:3004']  # Adjust port based on your location service
+      - targets: ['host.docker.internal:5011'] # Location health check port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
 
-  # Algolia Sync Service (if it has metrics)
+  # Algolia Sync Service Health Check
   - job_name: 'algolia-sync'
     static_configs:
-      - targets: ['host.docker.internal:3005']  # Adjust port based on your algolia sync service
+      - targets: ['host.docker.internal:5016'] # Algolia sync health check port
     metrics_path: '/metrics'
     scrape_interval: 10s
     scrape_timeout: 5s
-
 # Alerting rules (optional)
 # alerting:
 #   alertmanagers:
@@ -70,4 +69,4 @@ scrape_configs:
 # Rule files
 # rule_files:
 #   # - "first_rules.yml"
-#   # - "second_rules.yml" 
+#   # - "second_rules.yml"
