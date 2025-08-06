@@ -25,7 +25,7 @@ describe('VendorController', () => {
 		clearMocks();
 	});
 
-	describe('lookupVendorById', () => {
+	describe('getVendorById', () => {
 		it('should return vendor when found', async () => {
 			const mockVendor = {
 				createdAt: new Date(),
@@ -43,7 +43,7 @@ describe('VendorController', () => {
 			};
 			vendorService.getVendorById.mockResolvedValue(mockVendor);
 
-			const result = await controller.lookupVendorById({ id: 'vendor_123' });
+			const result = await controller.getVendorById({ id: 'vendor_123' });
 
 			expect(vendorService.getVendorById).toHaveBeenCalledWith('vendor_123');
 			expect(result).toEqual({
@@ -67,7 +67,7 @@ describe('VendorController', () => {
 		it('should return undefined vendor when not found', async () => {
 			vendorService.getVendorById.mockResolvedValue(null);
 
-			const result = await controller.lookupVendorById({ id: 'vendor_123' });
+			const result = await controller.getVendorById({ id: 'vendor_123' });
 
 			expect(result).toEqual({ vendor: undefined });
 		});
@@ -76,7 +76,7 @@ describe('VendorController', () => {
 			const serviceError = new Error('Service error');
 			vendorService.getVendorById.mockRejectedValue(serviceError);
 
-			await expect(controller.lookupVendorById({ id: 'vendor_123' })).rejects.toThrow();
+			await expect(controller.getVendorById({ id: 'vendor_123' })).rejects.toThrow();
 		});
 	});
 

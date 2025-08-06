@@ -41,8 +41,8 @@ describe('ClerkController', () => {
 			expect(result).toEqual({ message: 'Success' });
 			expect(mockClerkService.handleUserCreated).toHaveBeenCalledWith('clerk_user_123');
 			expect(mockClerkService.createIntegration).toHaveBeenCalledWith({
+				clerkUserId: 'db_user_123',
 				providerId: 'clerk_user_123',
-				userId: 'db_user_123',
 			});
 		});
 

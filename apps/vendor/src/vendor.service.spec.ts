@@ -87,11 +87,7 @@ describe('VendorService', () => {
 					description: 'A test vendor',
 					email: 'test@vendor.com',
 					name: 'Test Vendor',
-					owner: {
-						connect: {
-							id: 'user_123',
-						},
-					},
+					ownerId: 'user_123',
 					phone: '123-456-7890',
 					primaryImage: 'https://example.com/image.jpg',
 					website: 'https://testvendor.com',
@@ -130,11 +126,7 @@ describe('VendorService', () => {
 					description: 'A test vendor',
 					email: 'test@vendor.com',
 					name: 'Test Vendor',
-					owner: {
-						connect: {
-							id: 'user_123',
-						},
-					},
+					ownerId: 'user_123',
 					phone: '123-456-7890',
 					primaryImage: undefined,
 					website: 'https://testvendor.com',
@@ -173,7 +165,7 @@ describe('VendorService', () => {
 			await service.updateVendor('vendor_123', 'user_123', updateData);
 
 			expect(prisma.db.vendor.count).toHaveBeenCalledWith({
-				where: { id: 'vendor_123', owner: { id: 'user_123' } },
+				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
 				data: {
@@ -184,7 +176,7 @@ describe('VendorService', () => {
 					primaryImage: 'https://example.com/updated-image.jpg',
 					website: 'https://updatedvendor.com',
 				},
-				where: { id: 'vendor_123', owner: { id: 'user_123' } },
+				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 			expect(eventService.emit).toHaveBeenCalledWith('vendor.updated', {
 				createdAt: mockVendor.createdAt,
@@ -222,7 +214,7 @@ describe('VendorService', () => {
 					phone: '987-654-3210',
 					website: 'https://updatedvendor.com',
 				},
-				where: { id: 'vendor_123', owner: { id: 'user_123' } },
+				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 		});
 
@@ -262,7 +254,7 @@ describe('VendorService', () => {
 			await service.deleteVendor('vendor_123', 'user_123');
 
 			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
-				where: { id: 'vendor_123', owner: { id: 'user_123' } },
+				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 			expect(prisma.db.vendor.delete).toHaveBeenCalledWith({
 				where: { id: 'vendor_123' },
