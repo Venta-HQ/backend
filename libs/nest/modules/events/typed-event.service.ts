@@ -34,7 +34,7 @@ export class EventService {
 
 			// Create standardized event
 			const event: BaseEvent = {
-				correlationId: metadata?.correlationId || this.requestContextService?.get('requestId'),
+				correlationId: metadata?.correlationId || this.requestContextService?.getRequestId(),
 				data: validatedData,
 				eventId: randomUUID(),
 				source: metadata?.source || this.appName,

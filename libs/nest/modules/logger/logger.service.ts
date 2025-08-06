@@ -3,6 +3,14 @@ import { Injectable, LoggerService, Scope } from '@nestjs/common';
 import { RequestContextService } from '../request-context';
 import { LokiTransportService } from './loki-transport.service';
 
+interface LogData {
+	context?: string;
+	level: 'log' | 'error' | 'warn' | 'debug' | 'verbose';
+	message: string;
+	requestId?: string;
+	timestamp: string;
+}
+
 @Injectable({ scope: Scope.TRANSIENT })
 export class Logger implements LoggerService {
 	private context?: string;
@@ -20,100 +28,91 @@ export class Logger implements LoggerService {
 	// Generate or retrieve request ID or correlation ID
 	private getRequestId(): string | undefined {
 		// First try to get from RequestContextService (for gRPC and NATS)
-		const existingRequestId = this.requestContextService?.get('requestId');
+		const existingRequestId = this.requestContextService?.getRequestId();
 		if (existingRequestId) {
 			return existingRequestId;
 		}
 
 		// Check for correlation ID (for NATS messages)
-		const correlationId = this.requestContextService?.get('correlationId');
+		const correlationId = this.requestContextService?.getCorrelationId();
 		if (correlationId) {
 			return correlationId;
 		}
 
-		// For HTTP requests, generate a new one if none exists
-		const newRequestId = randomUUID();
-		this.requestContextService?.set('requestId', newRequestId);
-		return newRequestId;
+		// For HTTP requests, only generate if we have a RequestContextService
+		// This prevents unnecessary UUID generation when no context is available
+		if (this.requestContextService) {
+			const newRequestId = randomUUID();
+			this.requestContextService.setRequestId(newRequestId);
+			return newRequestId;
+		}
+
+		return undefined;
 	}
 
-	private getStructuredMessage(
+	private createLogData(
 		message: string,
+		level: 'log' | 'error' | 'warn' | 'debug' | 'verbose',
 		context?: string,
-		level: 'log' | 'error' | 'warn' | 'debug' | 'verbose' = 'log',
-	) {
-		const requestId = this.getRequestId();
-		const structuredData = {
+	): LogData {
+		return {
 			context: context || this.context,
 			level,
 			message,
-			...(requestId && { requestId }),
+			requestId: this.getRequestId(),
 			timestamp: new Date().toISOString(),
 		};
-		return JSON.stringify(structuredData);
 	}
 
-	log(message: string, context?: string) {
-		const structuredMessage = this.getStructuredMessage(message, context, 'log');
-		console.log(structuredMessage);
-		this.lokiTransport?.sendLog({
-			context: context || this.context,
-			level: 'log',
-			message,
-			requestId: this.getRequestId(),
-			timestamp: new Date().toISOString(),
+	private logToConsole(logData: LogData, trace?: string): void {
+		const { requestId, ...consoleData } = logData;
+		const structuredMessage = JSON.stringify({
+			...consoleData,
+			...(requestId && { requestId }),
 		});
-	}
 
-	error(message: string, trace?: string, context?: string) {
-		const structuredMessage = this.getStructuredMessage(message, context, 'error');
-		if (trace) {
-			console.error(`${structuredMessage}\nTrace: ${trace}`);
-		} else {
-			console.error(structuredMessage);
+		switch (logData.level) {
+			case 'error':
+				console.error(trace ? `${structuredMessage}\nTrace: ${trace}` : structuredMessage);
+				break;
+			case 'warn':
+				console.warn(structuredMessage);
+				break;
+			case 'debug':
+				console.debug(structuredMessage);
+				break;
+			default:
+				console.log(structuredMessage);
 		}
-		this.lokiTransport?.sendLog({
-			context: context || this.context,
-			level: 'error',
-			message,
-			requestId: this.getRequestId(),
-			timestamp: new Date().toISOString(),
-		});
 	}
 
-	warn(message: string, context?: string) {
-		const structuredMessage = this.getStructuredMessage(message, context, 'warn');
-		console.warn(structuredMessage);
-		this.lokiTransport?.sendLog({
-			context: context || this.context,
-			level: 'warn',
-			message,
-			requestId: this.getRequestId(),
-			timestamp: new Date().toISOString(),
-		});
+	log(message: string, context?: string): void {
+		const logData = this.createLogData(message, 'log', context);
+		this.logToConsole(logData);
+		this.lokiTransport?.sendLog(logData);
 	}
 
-	debug(message: string, context?: string) {
-		const structuredMessage = this.getStructuredMessage(message, context, 'debug');
-		console.debug(structuredMessage);
-		this.lokiTransport?.sendLog({
-			context: context || this.context,
-			level: 'debug',
-			message,
-			requestId: this.getRequestId(),
-			timestamp: new Date().toISOString(),
-		});
+	error(message: string, trace?: string, context?: string): void {
+		const logData = this.createLogData(message, 'error', context);
+		this.logToConsole(logData, trace);
+		this.lokiTransport?.sendLog(logData);
 	}
 
-	verbose(message: string, context?: string) {
-		const structuredMessage = this.getStructuredMessage(message, context, 'verbose');
-		console.log(structuredMessage);
-		this.lokiTransport?.sendLog({
-			context: context || this.context,
-			level: 'verbose',
-			message,
-			requestId: this.getRequestId(),
-			timestamp: new Date().toISOString(),
-		});
+	warn(message: string, context?: string): void {
+		const logData = this.createLogData(message, 'warn', context);
+		this.logToConsole(logData);
+		this.lokiTransport?.sendLog(logData);
+	}
+
+	debug(message: string, context?: string): void {
+		const logData = this.createLogData(message, 'debug', context);
+		this.logToConsole(logData);
+		this.lokiTransport?.sendLog(logData);
+	}
+
+	verbose(message: string, context?: string): void {
+		const logData = this.createLogData(message, 'verbose', context);
+		this.logToConsole(logData);
+		this.lokiTransport?.sendLog(logData);
 	}
 }

@@ -3,10 +3,10 @@ import { NatsRequestIdInterceptor } from './nats-request-id.interceptor';
 
 /**
  * Base class for NATS consumers that automatically includes request ID interceptor.
- * 
+ *
  * This ensures that all NATS consumers automatically extract correlation IDs
  * from messages and make them available to the logger service.
- * 
+ *
  * Usage:
  * ```typescript
  * @Injectable()
@@ -26,4 +26,4 @@ export abstract class NatsConsumerBase {
 	 * The correlation ID will be automatically available in all log messages.
 	 */
 	protected abstract handleMessage(data: any): Promise<void>;
-} 
+}

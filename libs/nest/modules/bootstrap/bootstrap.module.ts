@@ -1,5 +1,12 @@
 import { ErrorHandlingModule } from '@app/nest/errors';
-import { HealthCheckModule, HealthModule, LoggerModule, PrismaModule, PrometheusModule } from '@app/nest/modules';
+import {
+	HealthCheckModule,
+	HealthModule,
+	LoggerModule,
+	PrismaModule,
+	PrometheusModule,
+	RequestTracingModule,
+} from '@app/nest/modules';
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 
@@ -29,9 +36,15 @@ export class BootstrapModule {
 		// Automatically include HealthCheckModule for HTTP services
 		const httpModules = options.protocol === 'http' ? [HealthCheckModule] : [];
 
+		// Automatically include RequestTracingModule for gRPC and NATS services
+		const tracingModules =
+			options.protocol === 'grpc' || options.protocol === 'nats'
+				? [RequestTracingModule.register({ protocol: options.protocol })]
+				: [];
+
 		return {
 			exports: baseModules,
-			imports: [...baseModules, ...httpModules, ...(options.additionalModules || [])],
+			imports: [...baseModules, ...httpModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
 			providers: options.additionalProviders || [],
 		};

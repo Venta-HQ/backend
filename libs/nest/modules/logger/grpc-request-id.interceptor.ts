@@ -16,30 +16,39 @@ export class GrpcRequestIdInterceptor {
 	constructor(private readonly requestContextService: RequestContextService) {}
 
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-		// Extract metadata from gRPC context
-		const grpcContext = context.switchToRpc();
-		const metadata = grpcContext.getContext();
+		try {
+			// Extract metadata from gRPC context
+			const grpcContext = context.switchToRpc();
+			const metadata = grpcContext.getContext();
 
-		// Extract request ID from metadata
-		const requestId = metadata?.get('requestId')?.[0];
+			// Extract request ID from metadata
+			const requestId = metadata?.get('requestId')?.[0];
 
-		if (requestId) {
-			this.requestContextService.set('requestId', requestId);
-			this.logger.log(`Received gRPC request with ID: ${requestId}`);
-		} else {
-			this.logger.debug('Received gRPC request without request ID');
+			if (requestId) {
+				this.requestContextService.setRequestId(requestId);
+				this.logger.debug(`Extracted gRPC request ID: ${requestId}`);
+			} else {
+				this.logger.debug('No request ID found in gRPC metadata');
+			}
+
+			// Process the request and clear context when done
+			return next.handle().pipe(
+				tap({
+					error: (_error) => {
+						this.logger.debug('Clearing request context after gRPC error');
+						this.requestContextService.clear();
+					},
+					next: () => {
+						this.logger.debug('Clearing request context after gRPC success');
+						this.requestContextService.clear();
+					},
+				}),
+			);
+		} catch (error) {
+			this.logger.error('Error in gRPC request ID interceptor', error);
+			// Ensure context is cleared even if interceptor fails
+			this.requestContextService.clear();
+			return next.handle();
 		}
-
-		// Process the request and clear context when done
-		return next.handle().pipe(
-			tap({
-				error: () => {
-					this.requestContextService.clear();
-				},
-				next: () => {
-					this.requestContextService.clear();
-				},
-			}),
-		);
 	}
 }

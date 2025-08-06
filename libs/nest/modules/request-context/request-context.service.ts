@@ -7,14 +7,14 @@ import { Injectable, Scope } from '@nestjs/common';
  */
 @Injectable({ scope: Scope.REQUEST })
 export class RequestContextService {
-	private readonly context = new Map<string, any>();
+	private readonly context = new Map<string, unknown>();
 
 	/**
 	 * Set a value in the request context
 	 * @param key The key to store the value under
 	 * @param value The value to store
 	 */
-	set(key: string, value: any): void {
+	set(key: string, value: unknown): void {
 		this.context.set(key, value);
 	}
 
@@ -23,8 +23,28 @@ export class RequestContextService {
 	 * @param key The key to retrieve
 	 * @returns The stored value or undefined if not found
 	 */
-	get(key: string): any {
+	get(key: string): unknown {
 		return this.context.get(key);
+	}
+
+	/**
+	 * Get a typed value from the request context
+	 * @param key The key to retrieve
+	 * @returns The stored value cast to the specified type, or undefined if not found
+	 */
+	getTyped<T>(key: string): T | undefined {
+		const value = this.context.get(key);
+		return value as T | undefined;
+	}
+
+	/**
+	 * Get a string value from the request context
+	 * @param key The key to retrieve
+	 * @returns The stored string value or undefined if not found or not a string
+	 */
+	getString(key: string): string | undefined {
+		const value = this.context.get(key);
+		return typeof value === 'string' ? value : undefined;
 	}
 
 	/**
@@ -64,7 +84,7 @@ export class RequestContextService {
 	 * Get all values in the request context
 	 * @returns Array of all values
 	 */
-	values(): any[] {
+	values(): unknown[] {
 		return Array.from(this.context.values());
 	}
 
@@ -72,7 +92,7 @@ export class RequestContextService {
 	 * Get all entries in the request context
 	 * @returns Array of [key, value] pairs
 	 */
-	entries(): [string, any][] {
+	entries(): [string, unknown][] {
 		return Array.from(this.context.entries());
 	}
 
@@ -82,5 +102,37 @@ export class RequestContextService {
 	 */
 	size(): number {
 		return this.context.size;
+	}
+
+	/**
+	 * Get the request ID from context
+	 * @returns The request ID or undefined if not found
+	 */
+	getRequestId(): string | undefined {
+		return this.getString('requestId');
+	}
+
+	/**
+	 * Get the correlation ID from context
+	 * @returns The correlation ID or undefined if not found
+	 */
+	getCorrelationId(): string | undefined {
+		return this.getString('correlationId');
+	}
+
+	/**
+	 * Set the request ID in context
+	 * @param requestId The request ID to store
+	 */
+	setRequestId(requestId: string): void {
+		this.set('requestId', requestId);
+	}
+
+	/**
+	 * Set the correlation ID in context
+	 * @param correlationId The correlation ID to store
+	 */
+	setCorrelationId(correlationId: string): void {
+		this.set('correlationId', correlationId);
 	}
 }

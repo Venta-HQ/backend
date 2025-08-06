@@ -4,6 +4,7 @@
 
 - [Overview](#overview)
 - [Automatic Correlation ID Extraction](#automatic-correlation-id-extraction)
+- [App-Level Interceptor Configuration](#app-level-interceptor-configuration)
 - [Implementation Pattern](#implementation-pattern)
 - [Usage Examples](#usage-examples)
 - [Benefits](#benefits)
@@ -33,11 +34,11 @@ private async handleVendorEvent(data: { data: BaseEvent; subject: string }): Pro
 ```
 
 ### **The Solution**
-Use the `NatsRequestIdInterceptor` to automatically extract correlation IDs:
+The `NatsRequestIdInterceptor` is automatically applied at the app level for all NATS consumers:
 
 ```typescript
-// ✅ Automatic approach (scalable)
-@UseInterceptors(NatsRequestIdInterceptor)
+// ✅ Automatic approach (app-level)
+@Injectable()
 export class YourNatsConsumer {
   private async handleVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
     const { data: event, subject } = data;
@@ -49,16 +50,40 @@ export class YourNatsConsumer {
 }
 ```
 
-## 🏗️ Implementation Pattern
+## 🏗️ App-Level Interceptor Configuration
 
-### **1. Basic Pattern**
+### **Automatic Configuration**
+
+The `BootstrapModule` automatically configures the appropriate interceptor based on the protocol:
 
 ```typescript
-import { Injectable, Logger, OnModuleInit, UseInterceptors } from '@nestjs/common';
-import { NatsQueueService, NatsRequestIdInterceptor } from '@app/nest/modules';
+@Module({
+  imports: [
+    BootstrapModule.forRoot({
+      appName: 'Your Service',
+      protocol: 'nats', // ← This automatically includes NatsRequestIdInterceptor
+    }),
+  ],
+})
+export class YourModule {}
+```
+
+### **How It Works**
+
+1. **Protocol Detection**: `BootstrapModule` detects the protocol type
+2. **Interceptor Registration**: Automatically registers the appropriate interceptor as `APP_INTERCEPTOR`
+3. **Global Application**: The interceptor applies to all controllers in the module
+4. **Automatic Extraction**: Correlation IDs are automatically extracted from all NATS messages
+
+## 🏗️ Implementation Pattern
+
+### **1. Basic Pattern (No Manual Configuration Required)**
+
+```typescript
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { NatsQueueService } from '@app/nest/modules';
 
 @Injectable()
-@UseInterceptors(NatsRequestIdInterceptor)
 export class YourNatsConsumer implements OnModuleInit {
   private readonly logger = new Logger(YourNatsConsumer.name);
 
@@ -90,37 +115,23 @@ export class YourNatsConsumer implements OnModuleInit {
 }
 ```
 
-### **2. Using the Base Class (Optional)**
-
-For even more consistency, you can extend the `NatsConsumerBase`:
+### **2. Module Configuration**
 
 ```typescript
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { NatsQueueService, NatsConsumerBase } from '@app/nest/modules';
-
-@Injectable()
-export class YourNatsConsumer extends NatsConsumerBase implements OnModuleInit {
-  constructor(
-    private readonly natsQueueService: NatsQueueService,
-    private readonly yourService: YourService,
-  ) {
-    super();
-  }
-
-  async onModuleInit() {
-    this.natsQueueService.subscribeToQueue(
-      'your.subject.>',
-      'your-queue-group',
-      this.handleMessage.bind(this),
-    );
-  }
-
-  protected async handleMessage(data: any): Promise<void> {
-    // Correlation ID automatically available in logs
-    this.logger.log('Processing message', { messageId: data.id });
-    await this.yourService.process(data);
-  }
-}
+@Module({
+  imports: [
+    BootstrapModule.forRoot({
+      appName: 'Your Service',
+      protocol: 'nats', // ← Automatically includes NatsRequestIdInterceptor
+      additionalModules: [
+        // Your other modules
+      ],
+    }),
+  ],
+  controllers: [YourNatsConsumer],
+  providers: [YourService],
+})
+export class YourModule {}
 ```
 
 ## 📝 Usage Examples
@@ -129,7 +140,6 @@ export class YourNatsConsumer extends NatsConsumerBase implements OnModuleInit {
 
 ```typescript
 @Injectable()
-@UseInterceptors(NatsRequestIdInterceptor)
 export class EventProcessorController implements OnModuleInit {
   private readonly logger = new Logger(EventProcessorController.name);
 
@@ -162,7 +172,6 @@ export class EventProcessorController implements OnModuleInit {
 
 ```typescript
 @Injectable()
-@UseInterceptors(NatsRequestIdInterceptor)
 export class NotificationController implements OnModuleInit {
   private readonly logger = new Logger(NotificationController.name);
 
@@ -191,18 +200,18 @@ export class NotificationController implements OnModuleInit {
 
 ## ✅ Benefits
 
-### **1. Automatic Correlation ID Extraction**
-- **No manual correlation ID handling** required
-- **Consistent across all NATS consumers**
-- **Automatic logger integration**
+### **1. Zero Configuration Required**
+- **No manual interceptor setup** needed
+- **Automatic correlation ID extraction** for all NATS consumers
+- **Consistent across all services**
 
 ### **2. Scalable Pattern**
-- **Easy to apply to new consumers**
-- **Consistent implementation across services**
-- **Reduced boilerplate code**
+- **Works for any NATS consumer** automatically
+- **No boilerplate code** required
+- **Consistent implementation** across services
 
 ### **3. Complete Request Tracing**
-- **Correlation IDs automatically available in logs**
+- **Correlation IDs automatically available** in all logs
 - **End-to-end request tracing**
 - **Easy debugging and monitoring**
 
@@ -213,36 +222,46 @@ export class NotificationController implements OnModuleInit {
 
 ## 🔧 Configuration
 
-### **Module Registration**
-
-The interceptor is automatically available when you import from `@app/nest/modules`:
-
-```typescript
-import { NatsRequestIdInterceptor } from '@app/nest/modules';
-```
-
 ### **Automatic Features**
 
-When you use `@UseInterceptors(NatsRequestIdInterceptor)`:
+When you use `protocol: 'nats'` in `BootstrapModule.forRoot()`:
 
-1. **Correlation ID Extraction**: Automatically extracts from message data
+1. **Correlation ID Extraction**: Automatically extracts from all NATS messages
 2. **Request Context**: Sets correlation ID in RequestContextService
 3. **Logger Integration**: Makes correlation ID available to all log messages
 4. **Context Cleanup**: Automatically clears context after processing
 5. **Error Handling**: Ensures context cleanup even on errors
 
+### **No Manual Configuration Required**
+
+```typescript
+// ✅ Just specify the protocol - everything else is automatic
+BootstrapModule.forRoot({
+  appName: 'Your Service',
+  protocol: 'nats', // ← That's it!
+})
+```
+
 ## 🎯 Best Practices
 
-### **1. Always Use the Interceptor**
+### **1. Always Use the BootstrapModule**
 ```typescript
 // ✅ Do this
-@UseInterceptors(NatsRequestIdInterceptor)
-export class YourConsumer { }
+@Module({
+  imports: [
+    BootstrapModule.forRoot({
+      appName: 'Your Service',
+      protocol: 'nats',
+    }),
+  ],
+})
 
-// ❌ Don't do this
-export class YourConsumer {
-  // Manual correlation ID handling
-}
+// ❌ Don't manually configure interceptors
+@Module({
+  imports: [
+    // Manual interceptor configuration
+  ],
+})
 ```
 
 ### **2. Consistent Logging**
@@ -265,4 +284,12 @@ try {
 }
 ```
 
-This pattern ensures that all NATS consumers in your system have consistent, automatic correlation ID handling without any manual intervention required. 
+## 🔄 Protocol Comparison
+
+| Protocol | Interceptor | Configuration | Automatic |
+|----------|-------------|---------------|-----------|
+| **HTTP** | Pino HTTP | `protocol: 'http'` | ✅ Yes |
+| **gRPC** | `GrpcRequestIdInterceptor` | `protocol: 'grpc'` | ✅ Yes |
+| **NATS** | `NatsRequestIdInterceptor` | `protocol: 'nats'` | ✅ Yes |
+
+This pattern ensures that **all NATS consumers** in your system have consistent, automatic correlation ID handling with **zero manual configuration required**. 
