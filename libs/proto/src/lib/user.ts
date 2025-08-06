@@ -5,113 +5,114 @@
 // source: user.proto
 
 /* eslint-disable */
-import { Observable } from 'rxjs';
-import { Metadata } from '@grpc/grpc-js';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'user';
+export const protobufPackage = "user";
 
 export interface ClerkWebhookResponse {
-	message: string;
+  message: string;
 }
 
 export interface ClerkUserData {
-	id: string;
+  id: string;
 }
 
 export interface RevenueCatSubscriptionData {
-	clerkUserId: string;
-	providerId: string;
-	data: RevenueCatProviderData | undefined;
+  clerkUserId: string;
+  providerId: string;
+  data: RevenueCatProviderData | undefined;
 }
 
 export interface SubscriptionCreatedResponse {
-	message: string;
+  message: string;
 }
 
 export interface UserVendorData {
-	userId: string;
+  userId: string;
 }
 
 export interface UserVendorsResponse {
-	vendors: UserVendor[];
+  vendors: UserVendor[];
 }
 
 /** Helper Types */
 export interface UserVendor {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
 export interface ClerkWebhookEvent {
-	type: string;
-	object: string;
-	event: ClerkUserData | undefined;
+  type: string;
+  object: string;
+  event: ClerkUserData | undefined;
 }
 
 export interface RevenueCatProviderData {
-	transactionId: string;
-	eventId: string;
-	productId: string;
+  transactionId: string;
+  eventId: string;
+  productId: string;
 }
 
-export interface Empty {}
+export interface Empty {
+}
 
-export const USER_PACKAGE_NAME = 'user';
+export const USER_PACKAGE_NAME = "user";
 
 export interface UserServiceClient {
-	handleClerkUserCreated(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
+  handleClerkUserCreated(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
 
-	handleClerkUserDeleted(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
+  handleClerkUserDeleted(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
 
-	handleSubscriptionCreated(
-		request: RevenueCatSubscriptionData,
-		metadata?: Metadata,
-	): Observable<SubscriptionCreatedResponse>;
+  handleSubscriptionCreated(
+    request: RevenueCatSubscriptionData,
+    metadata?: Metadata,
+  ): Observable<SubscriptionCreatedResponse>;
 
-	getUserVendors(request: UserVendorData, metadata?: Metadata): Observable<UserVendorsResponse>;
+  getUserVendors(request: UserVendorData, metadata?: Metadata): Observable<UserVendorsResponse>;
 }
 
 export interface UserServiceController {
-	handleClerkUserCreated(
-		request: ClerkUserData,
-		metadata?: Metadata,
-	): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
+  handleClerkUserCreated(
+    request: ClerkUserData,
+    metadata?: Metadata,
+  ): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
 
-	handleClerkUserDeleted(
-		request: ClerkUserData,
-		metadata?: Metadata,
-	): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
+  handleClerkUserDeleted(
+    request: ClerkUserData,
+    metadata?: Metadata,
+  ): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
 
-	handleSubscriptionCreated(
-		request: RevenueCatSubscriptionData,
-		metadata?: Metadata,
-	): Promise<SubscriptionCreatedResponse> | Observable<SubscriptionCreatedResponse> | SubscriptionCreatedResponse;
+  handleSubscriptionCreated(
+    request: RevenueCatSubscriptionData,
+    metadata?: Metadata,
+  ): Promise<SubscriptionCreatedResponse> | Observable<SubscriptionCreatedResponse> | SubscriptionCreatedResponse;
 
-	getUserVendors(
-		request: UserVendorData,
-		metadata?: Metadata,
-	): Promise<UserVendorsResponse> | Observable<UserVendorsResponse> | UserVendorsResponse;
+  getUserVendors(
+    request: UserVendorData,
+    metadata?: Metadata,
+  ): Promise<UserVendorsResponse> | Observable<UserVendorsResponse> | UserVendorsResponse;
 }
 
 export function UserServiceControllerMethods() {
-	return function (constructor: Function) {
-		const grpcMethods: string[] = [
-			'handleClerkUserCreated',
-			'handleClerkUserDeleted',
-			'handleSubscriptionCreated',
-			'getUserVendors',
-		];
-		for (const method of grpcMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcMethod('UserService', method)(constructor.prototype[method], method, descriptor);
-		}
-		const grpcStreamMethods: string[] = [];
-		for (const method of grpcStreamMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcStreamMethod('UserService', method)(constructor.prototype[method], method, descriptor);
-		}
-	};
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "handleClerkUserCreated",
+      "handleClerkUserDeleted",
+      "handleSubscriptionCreated",
+      "getUserVendors",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("UserService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("UserService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
 }
 
-export const USER_SERVICE_NAME = 'UserService';
+export const USER_SERVICE_NAME = "UserService";
