@@ -19,8 +19,15 @@ export class GrpcRequestIdInterceptor implements NestInterceptor {
 
 		return next.handle().pipe(
 			tap(() => {
-				// Clear the context after the request is complete
-				this.requestContextService.clear();
+				// Safely clear the context after the request is complete
+				try {
+					if (this.requestContextService && typeof this.requestContextService.clear === 'function') {
+						this.requestContextService.clear();
+					}
+				} catch (error) {
+					// Silently handle any errors during context clearing
+					// This prevents gRPC errors from being thrown
+				}
 			}),
 		);
 	}

@@ -77,6 +77,20 @@ export class MetricsInterceptor implements NestInterceptor {
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 		this.initializeMetrics();
 
+		// Check if this is an HTTP or gRPC request
+		const contextType = context.getType();
+
+		if (contextType === 'http') {
+			return this.interceptHttp(context, next);
+		} else if (contextType === 'rpc') {
+			return this.interceptGrpc(context, next);
+		}
+
+		// For other context types, just pass through
+		return next.handle();
+	}
+
+	private interceptHttp(context: ExecutionContext, next: CallHandler): Observable<any> {
 		const request = context.switchToHttp().getRequest();
 		const response = context.switchToHttp().getResponse();
 		const startTime = Date.now();
@@ -98,6 +112,31 @@ export class MetricsInterceptor implements NestInterceptor {
 				},
 				next: (data) => {
 					this.recordRequest(method, route, response.statusCode, startTime, data);
+				},
+			}),
+		);
+	}
+
+	private interceptGrpc(context: ExecutionContext, next: CallHandler): Observable<any> {
+		const startTime = Date.now();
+
+		// For gRPC, we can get the handler name and method
+		const handler = context.getHandler();
+		const method = handler.name || 'unknown';
+		const route = 'grpc'; // gRPC doesn't have routes like HTTP
+
+		// gRPC doesn't have content-length headers, so we'll skip request size
+		// We could potentially calculate this from the actual data if needed
+
+		return next.handle().pipe(
+			tap({
+				error: (error) => {
+					const statusCode = error.code || 500;
+					this.recordRequest(method, route, statusCode, startTime);
+				},
+				next: (data) => {
+					// gRPC typically returns 200 (OK) for successful responses
+					this.recordRequest(method, route, 200, startTime, data);
 				},
 			}),
 		);

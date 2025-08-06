@@ -22,7 +22,6 @@ export class VendorController {
 	constructor(private readonly vendorService: VendorService) {}
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcVendorLookupDataSchema))
 	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
@@ -32,7 +31,7 @@ export class VendorController {
 
 			// Convert Prisma vendor to proto Vendor type
 			const protoVendor: Vendor = {
-				createdAt: vendor.createdAt,
+				createdAt: vendor.createdAt.toISOString(),
 				description: vendor.description || '',
 				email: vendor.email || '',
 				id: vendor.id,
@@ -42,7 +41,7 @@ export class VendorController {
 				open: vendor.open,
 				phone: vendor.phone || '',
 				primaryImage: vendor.primaryImage || '',
-				updatedAt: vendor.updatedAt,
+				updatedAt: vendor.updatedAt.toISOString(),
 				website: vendor.website || '',
 			};
 
