@@ -1,5 +1,5 @@
 import { AuthGuard } from '@app/nest/guards';
-import { BootstrapModule, ClerkModule, RedisModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, ClerkModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -20,7 +20,7 @@ import { modules, routes } from './router';
 				...modules,
 				RouterModule.register(routes),
 			],
-			appName: 'gateway',
+			appName: APP_NAMES.GATEWAY,
 			protocol: 'http',
 		}),
 	],

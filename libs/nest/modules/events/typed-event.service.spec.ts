@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RequestContextService } from '../request-context';
 import { EventService } from './typed-event.service';
@@ -7,6 +8,7 @@ describe('EventService', () => {
 	let service: EventService;
 	let mockNatsClient: any;
 	let mockRequestContextService: any;
+	let mockConfigService: any;
 
 	beforeEach(async () => {
 		mockNatsClient = {
@@ -16,6 +18,10 @@ describe('EventService', () => {
 		mockRequestContextService = {
 			get: vi.fn(),
 			getRequestId: vi.fn(),
+		} as any;
+
+		mockConfigService = {
+			get: vi.fn().mockReturnValue('test-service'),
 		} as any;
 
 		const module: TestingModule = await Test.createTestingModule({
@@ -30,8 +36,8 @@ describe('EventService', () => {
 					useValue: mockRequestContextService,
 				},
 				{
-					provide: 'EVENTS_OPTIONS',
-					useValue: { appName: 'test-service' },
+					provide: ConfigService,
+					useValue: mockConfigService,
 				},
 			],
 		}).compile();
@@ -205,11 +211,14 @@ describe('EventService', () => {
 			expect(typeof eventId2).toBe('string');
 		});
 
-		it('should use service name from EVENTS_OPTIONS', async () => {
+		it('should use service name from ConfigService', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
-			// Manually set the requestContextService since it's optional
+			// Manually set the services since they're optional
 			(service as any).requestContextService = mockRequestContextService;
+			(service as any).configService = mockConfigService;
+			// Update the appName since it was set in constructor
+			(service as any).appName = mockConfigService.get('APP_NAME');
 
 			await service.emit('vendor.created', mockVendor);
 

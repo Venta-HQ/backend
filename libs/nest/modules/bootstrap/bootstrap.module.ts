@@ -21,15 +21,17 @@ export interface BootstrapOptions {
 @Module({})
 export class BootstrapModule {
 	static forRoot(options: BootstrapOptions): DynamicModule {
+		// Set the APP_NAME environment variable for the ConfigService
+		process.env.APP_NAME = options.appName;
+
 		const baseModules = [
 			ConfigModule,
 			ErrorHandlingModule,
 			HealthModule.forRoot({
 				additionalChecks: options.healthChecks,
-				appName: options.appName,
 			}),
-			LoggerModule.register(options.appName),
-			PrometheusModule.register({ appName: options.appName }),
+			LoggerModule.register(),
+			PrometheusModule.register(),
 			PrismaModule.register(),
 		];
 

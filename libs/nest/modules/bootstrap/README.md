@@ -14,6 +14,7 @@ This module provides:
 - Error handling and logging configuration
 - Service naming and identification for observability
 - Additional module and provider injection capabilities
+- **Automatic APP_NAME environment variable setup** for ConfigService integration
 
 ## Usage
 
@@ -22,10 +23,12 @@ This module provides:
 Configure a service with the BootstrapModule:
 
 ```typescript
+import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+
 @Module({
   imports: [
     BootstrapModule.forRoot({
-      appName: 'User Service',
+      appName: APP_NAMES.USER,
       protocol: 'grpc',
     }),
   ],
@@ -39,16 +42,39 @@ export class UserModule {}
 Add service-specific modules to the bootstrap configuration:
 
 ```typescript
+import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+
 @Module({
   imports: [
     BootstrapModule.forRoot({
-      appName: 'Vendor Service',
+      appName: APP_NAMES.VENDOR,
       protocol: 'grpc',
       additionalModules: [
-        EventsModule.register({ appName: 'Vendor Service' }),
         ClientsModule.registerAsync([/* gRPC clients */]),
       ],
     }),
+  ],
+})
+export class VendorModule {}
+```
+
+### Service with EventsModule
+
+Add EventsModule for services that need event publishing:
+
+```typescript
+import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
+
+@Module({
+  imports: [
+    BootstrapModule.forRoot({
+      appName: APP_NAMES.VENDOR,
+      protocol: 'grpc',
+      additionalModules: [
+        ClientsModule.registerAsync([/* gRPC clients */]),
+      ],
+    }),
+    EventsModule.register(), // Automatically uses APP_NAME from ConfigService
   ],
 })
 export class VendorModule {}
@@ -59,10 +85,12 @@ export class VendorModule {}
 Configure an HTTP service with health checks:
 
 ```typescript
+import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+
 @Module({
   imports: [
     BootstrapModule.forRoot({
-      appName: 'Gateway Service',
+      appName: APP_NAMES.GATEWAY,
       protocol: 'http',
       additionalModules: [
         ClerkModule.register(),
@@ -80,10 +108,12 @@ export class GatewayModule {}
 Add custom health checks for your service:
 
 ```typescript
+import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+
 @Module({
   imports: [
     BootstrapModule.forRoot({
-      appName: 'Location Service',
+      appName: APP_NAMES.LOCATION,
       protocol: 'grpc',
       healthChecks: async () => ({
         locationService: { status: 'up' },
@@ -100,10 +130,12 @@ export class LocationModule {}
 Configure a WebSocket service with authentication:
 
 ```typescript
+import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+
 @Module({
   imports: [
     BootstrapModule.forRoot({
-      appName: 'WebSocket Gateway',
+      appName: APP_NAMES.WEBSOCKET_GATEWAY,
       protocol: 'http', // WebSocket uses HTTP protocol
       additionalModules: [
         ClerkModule.register(),
@@ -130,6 +162,22 @@ interface BootstrapOptions {
 }
 ```
 
+### Centralized App Names
+
+Use the centralized app names to ensure consistency across all services:
+
+```typescript
+import { APP_NAMES } from '@app/nest/modules';
+
+// Available app names:
+APP_NAMES.ALGOLIA_SYNC      // 'Algolia Sync Service'
+APP_NAMES.GATEWAY           // 'Gateway Service'
+APP_NAMES.LOCATION          // 'Location Microservice'
+APP_NAMES.USER              // 'User Microservice'
+APP_NAMES.VENDOR            // 'Vendor Microservice'
+APP_NAMES.WEBSOCKET_GATEWAY // 'Websocket Gateway Microservice'
+```
+
 ### Automatically Included Modules
 
 The BootstrapModule automatically includes these modules:
@@ -142,6 +190,12 @@ The BootstrapModule automatically includes these modules:
 - **PrismaModule**: Database access and connection management
 - **HealthCheckModule**: HTTP health check endpoints (for HTTP services)
 
+### Optional Modules
+
+These modules can be added as needed:
+
+- **EventsModule**: Event publishing and subscription (uses APP_NAME from ConfigService)
+
 ## Key Benefits
 
 - **Standardization**: Consistent service configuration across all microservices
@@ -150,6 +204,8 @@ The BootstrapModule automatically includes these modules:
 - **Observability**: Built-in logging, monitoring, and health checks
 - **Flexibility**: Easy addition of service-specific modules and providers
 - **Maintainability**: Centralized configuration management
+- **Consistency**: Centralized app names prevent duplication and ensure consistency
+- **ConfigService Integration**: APP_NAME is automatically available to all modules via ConfigService
 
 ## Dependencies
 

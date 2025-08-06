@@ -14,9 +14,9 @@ export class EventService {
 		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 		@Optional() private readonly requestContextService?: RequestContextService,
 		@Optional() private readonly configService?: ConfigService,
-		@Inject('EVENTS_OPTIONS') private readonly options?: { appName: string },
 	) {
-		this.appName = this.options.appName;
+		// Get app name from ConfigService, with fallback
+		this.appName = this.configService?.get('APP_NAME') || 'unknown-service';
 	}
 
 	/**

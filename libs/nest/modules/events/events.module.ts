@@ -1,16 +1,12 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { RequestContextModule } from '../request-context';
 import { EventService } from './typed-event.service';
 
-export interface EventsModuleOptions {
-	appName: string;
-}
-
 @Module({})
 export class EventsModule {
-	static register(options: EventsModuleOptions): DynamicModule {
+	static register(): DynamicModule {
 		return {
 			exports: [EventService],
 			imports: [
@@ -21,10 +17,7 @@ export class EventsModule {
 			module: EventsModule,
 			providers: [
 				EventService,
-				{
-					provide: 'EVENTS_OPTIONS',
-					useValue: options,
-				},
+				ConfigService, // Make ConfigService available to EventService
 			],
 		};
 	}

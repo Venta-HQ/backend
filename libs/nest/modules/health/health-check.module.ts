@@ -3,9 +3,7 @@ import { HealthModule } from './health.module';
 
 @Module({
 	imports: [
-		HealthModule.forRoot({
-			appName: 'Health Check Service',
-		}),
+		HealthModule.forRoot(),
 	],
 })
 export class HealthCheckModule {}

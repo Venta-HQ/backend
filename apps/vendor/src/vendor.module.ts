@@ -1,4 +1,4 @@
-import { BootstrapModule, EventsModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -26,10 +26,10 @@ import { VendorService } from './vendor.service';
 					],
 				}),
 			],
-			appName: 'Vendor Microservice',
+			appName: APP_NAMES.VENDOR,
 			protocol: 'grpc',
 		}),
-		EventsModule.register({ appName: 'Vendor Microservice' }),
+		EventsModule.register(), // No longer needs appName parameter
 	],
 	providers: [VendorService],
 })

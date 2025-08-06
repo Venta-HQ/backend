@@ -1,4 +1,4 @@
-import { BootstrapModule, NatsQueueModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ClerkController } from './clerk/clerk.controller';
 import { ClerkService } from './clerk/clerk.service';
@@ -12,7 +12,7 @@ import { VendorService } from './vendor/vendor.service';
 	imports: [
 		BootstrapModule.forRoot({
 			additionalModules: [NatsQueueModule],
-			appName: 'User Microservice',
+			appName: APP_NAMES.USER,
 			protocol: 'grpc',
 		}),
 	],

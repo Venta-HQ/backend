@@ -2,142 +2,146 @@
 
 ## Purpose
 
-The Health module provides health check endpoints and monitoring capabilities for the Venta backend system. It includes health check controllers, service status monitoring, dependency health checks, and integration with monitoring systems for comprehensive service observability.
+The Health Module provides comprehensive health checking capabilities across all services in the Venta backend system. It automatically provides health check endpoints, custom health checks, and integrates with monitoring systems to ensure service reliability and availability.
 
 ## Overview
 
 This module provides:
-- Health check endpoints for monitoring and load balancers
-- Service status monitoring and reporting
-- Database, Redis, and external service health monitoring
-- Custom health check integration capabilities
-- Monitoring system integration
-- Health check metrics and alerting
+
+- Automatic health check endpoints
+- Custom health check support
+- Service status monitoring
+- Database connectivity checks
+- External service dependency checks
+- Health metrics and reporting
 
 ## Usage
 
 ### Module Registration
 
-The module is automatically included via BootstrapModule in all services:
-
-```typescript
-// Automatically included in BootstrapModule.forRoot()
-BootstrapModule.forRoot({
-  appName: 'Your Service',
-  protocol: 'http',
-  // HealthModule is automatically registered
-})
-```
-
-### Custom Health Checks
-
-Add custom health checks for your service:
+The HealthModule is automatically included by BootstrapModule:
 
 ```typescript
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: 'Your Service',
-      protocol: 'http',
-      healthChecks: async () => ({
-        customService: { status: 'up' },
-        externalApi: await checkExternalApi(),
-        database: await checkDatabaseConnection(),
-      }),
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.USER,
+			protocol: 'grpc',
+		}),
+	],
 })
-export class YourModule {}
+export class UserModule {}
 ```
 
-### Health Check Endpoints
+The module automatically uses the app name from ConfigService.
 
-Access health check endpoints:
+### Custom Health Checks
+
+Add custom health checks to your service:
+
+```typescript
+@Module({
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.USER,
+			protocol: 'grpc',
+			healthChecks: async () => ({
+				database: { status: 'up', responseTime: 15 },
+				externalApi: { status: 'up', lastCheck: new Date() },
+				cache: { status: 'up', hitRate: 0.95 },
+			}),
+		}),
+	],
+})
+export class UserModule {}
+```
+
+### Health Check Endpoint
+
+Access health status at the `/health` endpoint:
+
+```bash
+curl http://localhost:3000/health
+```
+
+Example response:
+
+```json
+{
+	"status": "ok",
+	"timestamp": "2024-01-01T00:00:00.000Z",
+	"service": "user-service",
+	"checks": {
+		"database": {
+			"status": "up",
+			"responseTime": 15
+		},
+		"externalApi": {
+			"status": "up",
+			"lastCheck": "2024-01-01T00:00:00.000Z"
+		}
+	}
+}
+```
+
+### Health Check Types
+
+Different types of health checks are available:
 
 ```typescript
 // Basic health check
-GET /health
-// Response: { status: 'ok', timestamp: '2024-01-01T00:00:00Z' }
+healthChecks: async () => ({
+  status: 'up',
+  timestamp: new Date(),
+}),
 
-// Detailed health check
-GET /health/detailed
-// Response: {
-//   status: 'ok',
-//   checks: {
-//     database: { status: 'up' },
-//     redis: { status: 'up' },
-//     customService: { status: 'up' }
-//   }
-// }
+// Detailed health check with multiple services
+healthChecks: async () => ({
+  database: await checkDatabaseConnection(),
+  redis: await checkRedisConnection(),
+  externalApi: await checkExternalApi(),
+}),
 
-// Readiness check
-GET /health/ready
-// Response: { status: 'ready', timestamp: '2024-01-01T00:00:00Z' }
-
-// Liveness check
-GET /health/live
-// Response: { status: 'alive', timestamp: '2024-01-01T00:00:00Z' }
+// Health check with metrics
+healthChecks: async () => ({
+  database: {
+    status: 'up',
+    responseTime: await measureDatabaseResponseTime(),
+    connections: await getActiveConnections(),
+  },
+}),
 ```
 
-### Custom Health Check Functions
+## Configuration
 
-Implement custom health check functions:
+The HealthModule automatically configures itself using:
 
-```typescript
-async function checkExternalApi() {
-  try {
-    const response = await fetch('https://api.external.com/health');
-    return { status: response.ok ? 'up' : 'down' };
-  } catch (error) {
-    return { status: 'down', error: error.message };
-  }
-}
+- **Service Name**: Retrieved from ConfigService (APP_NAME environment variable)
+- **Health Endpoint**: Available at `/health` by default
+- **Custom Checks**: Configurable via BootstrapModule options
 
-async function checkDatabaseConnection() {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    return { status: 'up' };
-  } catch (error) {
-    return { status: 'down', error: error.message };
-  }
-}
+### Environment Variables
 
-async function checkRedisConnection() {
-  try {
-    await redis.ping();
-    return { status: 'up' };
-  } catch (error) {
-    return { status: 'down', error: error.message };
-  }
-}
-```
+```bash
+# Required
+APP_NAME=User Service
 
-### Health Check Configuration
-
-Configure health check behavior:
-
-```env
-# Health Check Configuration
+# Optional
+HEALTH_CHECK_PATH=/health
 HEALTH_CHECK_TIMEOUT=5000
-HEALTH_CHECK_INTERVAL=30000
-HEALTH_CHECK_ENABLED=true
-
-# Monitoring Integration
-HEALTH_METRICS_ENABLED=true
-HEALTH_ALERTING_ENABLED=true
 ```
 
 ## Key Benefits
 
-- **Monitoring**: Service health monitoring and alerting
-- **Load Balancing**: Health check endpoints for load balancers
-- **Debugging**: Service status information for troubleshooting
-- **Reliability**: Automatic health monitoring and reporting
-- **Observability**: Comprehensive service health visibility
-- **Automation**: Integration with monitoring and alerting systems
+- **Automatic Health Checks**: Built-in health check endpoints
+- **Custom Checks**: Easy addition of service-specific health checks
+- **Service Identification**: Automatic service name labeling
+- **Monitoring Integration**: Compatible with monitoring systems
+- **Performance**: Minimal overhead with efficient health checking
+- **Flexibility**: Support for various health check types
 
 ## Dependencies
 
-- **NestJS** for health check framework and endpoints
-- **Database** for database connection health checks
-- **Redis** for Redis connection health checks 
+- **NestJS Core** for dependency injection and module system
+- **ConfigModule** for service name and configuration
+- **Terminus** for health check framework

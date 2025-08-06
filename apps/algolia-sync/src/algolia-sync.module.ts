@@ -1,4 +1,4 @@
-import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
+import { AlgoliaModule, APP_NAMES, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { AlgoliaSyncController } from './algolia-sync.controller';
 import { AlgoliaSyncService } from './algolia-sync.service';
@@ -8,7 +8,7 @@ import { AlgoliaSyncService } from './algolia-sync.service';
 	imports: [
 		BootstrapModule.forRoot({
 			additionalModules: [AlgoliaModule.register(), NatsQueueModule],
-			appName: 'Algolia Sync Service',
+			appName: APP_NAMES.ALGOLIA_SYNC,
 			protocol: 'nats',
 		}),
 	],

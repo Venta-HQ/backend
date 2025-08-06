@@ -1,4 +1,4 @@
-import { BootstrapModule, EventsModule, RedisModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, EventsModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
@@ -8,10 +8,10 @@ import { LocationService } from './location.service';
 	imports: [
 		BootstrapModule.forRoot({
 			additionalModules: [RedisModule],
-			appName: 'Location Microservice',
+			appName: APP_NAMES.LOCATION,
 			protocol: 'grpc',
 		}),
-		EventsModule.register({ appName: 'Location Microservice' }),
+		EventsModule.register(), // No longer needs appName parameter
 	],
 	providers: [LocationService],
 })

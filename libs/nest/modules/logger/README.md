@@ -2,128 +2,120 @@
 
 ## Purpose
 
-The Logger Module provides standardized logging capabilities across all services in the Venta backend system. It offers structured JSON logging with request context tracking, console output, and optional Loki integration for centralized log aggregation. This module ensures consistent logging patterns, proper log levels, and comprehensive request tracing throughout the application.
+The Logger Module provides structured logging capabilities across all services in the Venta backend system. It integrates with Loki for centralized log aggregation and provides consistent logging patterns with automatic request correlation and service identification.
 
 ## Overview
 
 This module provides:
-- Structured JSON logging with consistent formatting across all services
-- Request context tracking and correlation for distributed tracing
-- Console logging with configurable output levels
-- Optional Loki integration for centralized log aggregation
-- Request ID propagation and correlation across service boundaries
-- Log level management and filtering capabilities
-- Performance monitoring and logging metrics
+- Structured logging with automatic service name identification
+- Loki integration for centralized log aggregation
+- Request correlation and tracing
+- Automatic log formatting and metadata injection
+- Error handling and log level management
+- Performance monitoring and metrics collection
 
 ## Usage
 
 ### Module Registration
 
-The module is automatically included via BootstrapModule in all services:
+Register the LoggerModule in your service:
 
 ```typescript
-// Automatically included in BootstrapModule.forRoot()
-BootstrapModule.forRoot({
-  appName: 'Your Service',
-  protocol: 'grpc',
-  // LoggerModule is automatically registered with service name
+@Module({
+  imports: [
+    BootstrapModule.forRoot({
+      appName: APP_NAMES.USER,
+      protocol: 'grpc',
+    }),
+  ],
 })
+export class UserModule {}
 ```
+
+The LoggerModule is automatically included by BootstrapModule and will use the app name from ConfigService.
 
 ### Service Injection
 
-Inject LoggerService into your services for structured logging:
+Inject Logger into your services:
 
 ```typescript
-@Injectable()
-export class YourService {
-  constructor(private logger: LoggerService) {}
+import { Logger } from '@app/nest/modules';
 
-  async processData(data: any) {
-    this.logger.log('Processing data', { dataId: data.id, type: data.type });
+@Injectable()
+export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
+  async createUser(userData: CreateUserData) {
+    this.logger.log('Creating new user', { email: userData.email });
     
     try {
-      const result = await this.performOperation(data);
-      this.logger.log('Data processed successfully', { resultId: result.id });
-      return result;
+      const user = await this.userRepository.create(userData);
+      this.logger.log('User created successfully', { userId: user.id });
+      return user;
     } catch (error) {
-      this.logger.error('Failed to process data', { error: error.message, dataId: data.id });
+      this.logger.error('Failed to create user', error);
       throw error;
     }
   }
 }
 ```
 
-### Log Levels
+### Logging Levels
 
-Use appropriate log levels for different types of messages:
-
-```typescript
-// Info level for general information
-this.logger.log('User logged in', { userId: user.id });
-
-// Error level for errors and exceptions
-this.logger.error('Database connection failed', { error: error.message });
-
-// Debug level for detailed debugging information
-this.logger.debug('Processing request', { requestId: req.id, method: req.method });
-```
-
-### Request Context
-
-The logger automatically includes request context when available:
+Use different logging levels as appropriate:
 
 ```typescript
-// Request context is automatically included in logs
-// Includes request ID, user ID, service name, and timestamp
-this.logger.log('Processing user request', { action: 'update_profile' });
+this.logger.log('Info message');
+this.logger.warn('Warning message');
+this.logger.error('Error message', error);
+this.logger.debug('Debug message');
+this.logger.verbose('Verbose message');
 ```
 
-### Structured Logging Output
+### Structured Logging
 
-Logs are output in structured JSON format:
+Include structured data with your log messages:
 
-```json
-{
-  "level": "info",
-  "message": "User logged in",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "service": "user-service",
-  "requestId": "req_123456789",
-  "userId": "user_123",
-  "metadata": {
-    "action": "login",
-    "method": "POST"
-  }
-}
+```typescript
+this.logger.log('User action completed', {
+  userId: user.id,
+  action: 'profile_update',
+  duration: 150,
+  success: true,
+});
 ```
 
-### Environment Configuration
+## Configuration
 
-Configure logging behavior and Loki integration:
+The LoggerModule automatically configures itself using:
+- **Service Name**: Retrieved from ConfigService (APP_NAME environment variable)
+- **Loki Integration**: Configured via environment variables
+- **Request Correlation**: Automatic request ID injection
 
-```env
-# Logging Configuration
-LOG_LEVEL=info
-LOG_FORMAT=json
+### Environment Variables
 
-# Loki Integration (optional)
+```bash
+# Required
 LOKI_URL=http://localhost:3100
-LOKI_BATCH_SIZE=100
-LOKI_BATCH_INTERVAL=5000
+APP_NAME=User Service
+
+# Optional
+LOKI_USERNAME=loki
+LOKI_PASSWORD=password
 ```
 
 ## Key Benefits
 
-- **Structured Logging**: Consistent JSON format across all services
-- **Request Tracing**: Automatic request ID propagation and correlation
-- **Centralized Aggregation**: Optional Loki integration for log management
-- **Performance Optimized**: Efficient logging with minimal overhead
-- **Context Awareness**: Automatic inclusion of request and service context
-- **Configurable Levels**: Flexible log level management and filtering
+- **Centralized Logging**: All logs aggregated in Loki
+- **Request Correlation**: Automatic request ID tracking
+- **Service Identification**: Automatic service name injection
+- **Structured Data**: JSON-formatted logs with metadata
+- **Performance**: Efficient logging with minimal overhead
+- **Consistency**: Standardized logging patterns across services
 
 ## Dependencies
 
-- **NestJS Logger** for base logging functionality
-- **Request Context Service** for request tracking and correlation
-- **Loki Transport** (optional) for centralized log aggregation
+- **NestJS Core** for dependency injection and module system
+- **ConfigModule** for service name and configuration
+- **RequestContextModule** for request correlation
+- **Loki** for log aggregation and storage

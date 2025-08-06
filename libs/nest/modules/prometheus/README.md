@@ -2,166 +2,139 @@
 
 ## Purpose
 
-The Prometheus module provides protocol-agnostic metrics collection and monitoring capabilities for the Venta backend system. It automatically collects request metrics across HTTP, gRPC, and other transport protocols, providing comprehensive observability and monitoring for all services.
+The Prometheus Module provides comprehensive metrics collection and monitoring capabilities across all services in the Venta backend system. It automatically collects HTTP/gRPC request metrics, custom business metrics, and provides a Prometheus-compatible metrics endpoint for monitoring and alerting.
 
 ## Overview
 
 This module provides:
 
-- Protocol-agnostic metrics collection (HTTP, gRPC, WebSocket)
-- Automatic request duration and throughput monitoring
-- Request and response size tracking
-- Status code and error rate monitoring
-- Unified metrics interface across all protocols
-- Extensible architecture for new protocols
-- Integration with Prometheus monitoring systems
+- Automatic HTTP/gRPC request metrics collection
+- Custom business metrics support
+- Prometheus-compatible metrics endpoint
+- Request duration, count, and error rate tracking
+- Service identification and labeling
+- Metrics aggregation and reporting
 
 ## Usage
 
 ### Module Registration
 
-The module is automatically included via BootstrapModule in all services:
+The PrometheusModule is automatically included by BootstrapModule:
 
 ```typescript
-// Automatically included in BootstrapModule.forRoot()
-BootstrapModule.forRoot({
-	appName: 'Your Service',
-	protocol: 'http',
-	// PrometheusModule is automatically registered
-});
-```
-
-### Manual Registration
-
-Register the Prometheus module manually if needed:
-
-```typescript
-import { PrometheusModule } from '@app/nest/modules/prometheus';
-
 @Module({
 	imports: [
-		PrometheusModule.register({
-			appName: 'Your Service',
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.USER,
+			protocol: 'grpc',
 		}),
 	],
 })
-export class YourModule {}
+export class UserModule {}
 ```
 
-### Metrics Endpoint
+The module automatically uses the app name from ConfigService.
 
-Access metrics endpoint for Prometheus scraping:
+### Service Injection
 
-```typescript
-// Metrics endpoint for Prometheus
-GET / metrics;
-// Returns Prometheus-formatted metrics
-```
-
-### Automatic Metrics Collection
-
-The module automatically collects metrics for all requests:
+Inject PrometheusService into your services for custom metrics:
 
 ```typescript
-// HTTP requests automatically generate metrics
-@Controller('users')
-export class UsersController {
-	@Get(':id')
-	async getUser(@Param('id') id: string) {
-		// Automatically generates metrics with protocol='http'
-		return { id, name: 'John Doe' };
+import { PrometheusService } from '@app/nest/modules';
+
+@Injectable()
+export class UserService {
+	constructor(private prometheusService: PrometheusService) {}
+
+	async createUser(userData: CreateUserData) {
+		const timer = this.prometheusService.startTimer('user_creation_duration');
+
+		try {
+			const user = await this.userRepository.create(userData);
+			this.prometheusService.incrementCounter('users_created_total');
+			timer.end();
+			return user;
+		} catch (error) {
+			this.prometheusService.incrementCounter('users_creation_errors_total');
+			timer.end();
+			throw error;
+		}
 	}
 }
-
-// gRPC requests automatically generate metrics
-@Controller()
-export class UserServiceController {
-	@GrpcMethod('UserService', 'GetUser')
-	async getUser(data: { id: string }) {
-		// Automatically generates metrics with protocol='grpc'
-		return { id: data.id, name: 'John Doe' };
-	}
-}
-```
-
-### Metrics Collected
-
-The module automatically collects these Prometheus metrics:
-
-```typescript
-// Request duration histogram
-request_duration_seconds{method="GET",route="/users/:id",status_code="200",protocol="http"}
-
-// Request count counter
-requests_total{method="GET",route="/users/:id",status_code="200",protocol="http"}
-
-// Request size histogram
-request_size_bytes{method="POST",route="/users",protocol="http"}
-
-// Response size histogram
-response_size_bytes{method="GET",route="/users/:id",protocol="http"}
 ```
 
 ### Custom Metrics
 
-Add custom metrics to your services:
+Create and use custom metrics:
 
 ```typescript
-import { PrometheusService } from '@app/nest/modules/prometheus';
+// Counter for tracking events
+this.prometheusService.incrementCounter('orders_processed_total', {
+	status: 'success',
+	region: 'us-east-1',
+});
 
-@Injectable()
-export class YourService {
-	constructor(private prometheusService: PrometheusService) {}
+// Gauge for current values
+this.prometheusService.setGauge('active_users', 150);
 
-	async processData(data: any) {
-		// Increment custom counter
-		this.prometheusService.increment('data_processed_total', {
-			type: data.type,
-			status: 'success',
-		});
-
-		// Record custom histogram
-		this.prometheusService.observe(
-			'data_processing_duration_seconds',
-			{
-				type: data.type,
-			},
-			processingTime,
-		);
-
-		return processedData;
-	}
-}
+// Histogram for request duration
+const timer = this.prometheusService.startTimer('api_request_duration');
+// ... perform operation
+timer.end();
 ```
 
-### Environment Configuration
+### Metrics Endpoint
 
-Configure Prometheus metrics collection:
+Access metrics at the `/metrics` endpoint:
 
-```env
-# Prometheus Configuration
-PROMETHEUS_METRICS_ENABLED=true
-PROMETHEUS_METRICS_PORT=9090
-PROMETHEUS_METRICS_PATH=/metrics
+```bash
+curl http://localhost:3000/metrics
+```
 
-# Metrics Collection
-METRICS_COLLECTION_ENABLED=true
-METRICS_DURATION_BUCKETS=0.1,0.5,1,2,5
-METRICS_SIZE_BUCKETS=100,1000,10000,100000
+Example output:
+
+```
+# HELP http_requests_total Total number of HTTP requests
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/users",status="200",service="user-service"} 150
+
+# HELP http_request_duration_seconds HTTP request duration in seconds
+# TYPE http_request_duration_seconds histogram
+http_request_duration_seconds_bucket{method="GET",path="/users",le="0.1"} 120
+http_request_duration_seconds_bucket{method="GET",path="/users",le="0.5"} 145
+http_request_duration_seconds_bucket{method="GET",path="/users",le="1"} 150
+```
+
+## Configuration
+
+The PrometheusModule automatically configures itself using:
+
+- **Service Name**: Retrieved from ConfigService (APP_NAME environment variable)
+- **Metrics Endpoint**: Available at `/metrics` by default
+- **Automatic Interceptors**: HTTP and gRPC request metrics collection
+
+### Environment Variables
+
+```bash
+# Required
+APP_NAME=User Service
+
+# Optional
+PROMETHEUS_PORT=9090
+PROMETHEUS_PATH=/metrics
 ```
 
 ## Key Benefits
 
-- **Protocol Agnostic**: Works across HTTP, gRPC, WebSocket, and other protocols
-- **Automatic Collection**: No manual instrumentation required
-- **Comprehensive Metrics**: Request duration, throughput, size, and error rates
-- **Observability**: Complete visibility into service performance
-- **Monitoring Integration**: Seamless Prometheus integration
-- **Extensible**: Easy to add support for new protocols
+- **Automatic Metrics**: HTTP/gRPC request metrics collected automatically
+- **Custom Metrics**: Easy creation and tracking of business metrics
+- **Service Identification**: Automatic service name labeling
+- **Prometheus Compatible**: Standard metrics format for monitoring
 - **Performance**: Minimal overhead with efficient metrics collection
+- **Flexibility**: Support for counters, gauges, and histograms
 
 ## Dependencies
 
-- **Prometheus** for metrics collection and monitoring
-- **NestJS** for module framework and interceptors
-- **Prometheus Client** for metrics generation and formatting
+- **NestJS Core** for dependency injection and module system
+- **ConfigModule** for service name and configuration
+- **Prometheus Client** for metrics collection and formatting
