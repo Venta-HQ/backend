@@ -28,6 +28,7 @@ describe('retryOperation', () => {
 
 			const result = await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
@@ -41,6 +42,7 @@ describe('retryOperation', () => {
 
 			const result = await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
@@ -60,6 +62,7 @@ describe('retryOperation', () => {
 			await expect(
 				retryOperation(operation, 'test operation', {
 					delayFn: mockDelayFn,
+					jitter: false,
 					logger: mockLogger,
 				}),
 			).rejects.toThrow('Persistent failure');
@@ -75,6 +78,7 @@ describe('retryOperation', () => {
 			await expect(
 				retryOperation(operation, 'test operation', {
 					delayFn: mockDelayFn,
+					jitter: false,
 					logger: mockLogger,
 					maxRetries: 2,
 				}),
@@ -91,6 +95,7 @@ describe('retryOperation', () => {
 
 			await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 				retryDelay: 200,
 			});
@@ -109,12 +114,67 @@ describe('retryOperation', () => {
 			await retryOperation(operation, 'test operation', {
 				backoffMultiplier: 3,
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
 			expect(operation).toHaveBeenCalledTimes(3);
 			expect(mockDelayFn).toHaveBeenCalledWith(1000); // First retry: 1000 * (3^0)
 			expect(mockDelayFn).toHaveBeenCalledWith(3000); // Second retry: 1000 * (3^1)
+		});
+
+		it('should respect max timeout', async () => {
+			const operation = vi.fn().mockRejectedValue(new Error('Persistent failure'));
+
+			await expect(
+				retryOperation(operation, 'test operation', {
+					delayFn: mockDelayFn,
+					jitter: false,
+					logger: mockLogger,
+					maxTimeout: 500,
+					retryDelay: 1000,
+				}),
+			).rejects.toThrow('Persistent failure');
+
+			// Should cap at maxTimeout (500ms) instead of retryDelay (1000ms)
+			expect(mockDelayFn).toHaveBeenCalledWith(500);
+		});
+
+		it('should use jitter when enabled', async () => {
+			const operation = vi.fn().mockRejectedValueOnce(new Error('First failure')).mockResolvedValue('success');
+
+			await retryOperation(operation, 'test operation', {
+				delayFn: mockDelayFn,
+				jitter: true,
+				logger: mockLogger,
+				retryDelay: 1000,
+			});
+
+			expect(operation).toHaveBeenCalledTimes(2);
+			expect(mockDelayFn).toHaveBeenCalledTimes(1);
+			
+			// With jitter, the delay should be between 750ms and 1250ms (±25%)
+			const actualDelay = mockDelayFn.mock.calls[0][0];
+			expect(actualDelay).toBeGreaterThanOrEqual(750);
+			expect(actualDelay).toBeLessThanOrEqual(1250);
+		});
+
+		it('should respect retry condition', async () => {
+			const operation = vi.fn().mockRejectedValue(new Error('Persistent failure'));
+			const retryCondition = vi.fn().mockReturnValue(false); // Never retry
+
+			await expect(
+				retryOperation(operation, 'test operation', {
+					delayFn: mockDelayFn,
+					jitter: false,
+					logger: mockLogger,
+					retryCondition,
+				}),
+			).rejects.toThrow('Persistent failure');
+
+			expect(operation).toHaveBeenCalledTimes(1); // Only initial attempt
+			expect(mockDelayFn).not.toHaveBeenCalled(); // No retries
+			expect(retryCondition).toHaveBeenCalledWith(expect.any(Error));
 		});
 	});
 
@@ -124,6 +184,7 @@ describe('retryOperation', () => {
 
 			await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
@@ -135,7 +196,7 @@ describe('retryOperation', () => {
 		it('should create default logger when not provided', async () => {
 			const operation = vi.fn().mockResolvedValue('success');
 
-			await retryOperation(operation, 'test operation', { delayFn: mockDelayFn });
+			await retryOperation(operation, 'test operation', { delayFn: mockDelayFn, jitter: false });
 
 			expect(Logger).toHaveBeenCalledWith('RetryUtil');
 		});
@@ -147,6 +208,7 @@ describe('retryOperation', () => {
 
 			const result = await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
@@ -159,6 +221,7 @@ describe('retryOperation', () => {
 
 			const result = await retryOperation(operation, 'test operation', {
 				delayFn: mockDelayFn,
+				jitter: false,
 				logger: mockLogger,
 			});
 
@@ -173,6 +236,7 @@ describe('retryOperation', () => {
 			await expect(
 				retryOperation(operation, 'test operation', {
 					delayFn: mockDelayFn,
+					jitter: false,
 					logger: mockLogger,
 				}),
 			).rejects.toBe(stringError);
@@ -197,7 +261,10 @@ describe('retryObservable', () => {
 		it('should return result on first attempt', async () => {
 			const observable = of('success');
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete the operation
 			vi.runAllTimers();
@@ -218,7 +285,10 @@ describe('retryObservable', () => {
 				}
 			});
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete all attempts
 			vi.runAllTimers();
@@ -234,7 +304,10 @@ describe('retryObservable', () => {
 			const error = new Error('Persistent failure');
 			const observable = throwError(() => error);
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete all attempts
 			vi.runAllTimers();
@@ -247,6 +320,7 @@ describe('retryObservable', () => {
 			const observable = throwError(() => error);
 
 			const resultPromise = retryObservable(observable, 'test observable', {
+				jitter: false,
 				logger: mockLogger,
 				maxRetries: 2,
 			}).toPromise();
@@ -272,6 +346,7 @@ describe('retryObservable', () => {
 			});
 
 			const resultPromise = retryObservable(observable, 'test observable', {
+				jitter: false,
 				logger: mockLogger,
 				retryDelay: 200,
 			}).toPromise();
@@ -297,6 +372,7 @@ describe('retryObservable', () => {
 
 			const resultPromise = retryObservable(observable, 'test observable', {
 				backoffMultiplier: 3,
+				jitter: false,
 				logger: mockLogger,
 			}).toPromise();
 
@@ -323,7 +399,10 @@ describe('retryObservable', () => {
 				}
 			});
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete all attempts
 			vi.runAllTimers();
@@ -336,7 +415,7 @@ describe('retryObservable', () => {
 		it('should create default logger when not provided', async () => {
 			const observable = of('success');
 
-			const resultPromise = retryObservable(observable, 'test observable').toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { jitter: false }).toPromise();
 
 			// Fast-forward time to complete the operation
 			vi.runAllTimers();
@@ -350,7 +429,10 @@ describe('retryObservable', () => {
 		it('should handle observable that emits undefined', async () => {
 			const observable = of(undefined);
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete the operation
 			vi.runAllTimers();
@@ -362,7 +444,10 @@ describe('retryObservable', () => {
 		it('should handle observable that emits null', async () => {
 			const observable = of(null);
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete the operation
 			vi.runAllTimers();
@@ -375,7 +460,10 @@ describe('retryObservable', () => {
 			const stringError = 'String error';
 			const observable = throwError(() => stringError);
 
-			const resultPromise = retryObservable(observable, 'test observable', { logger: mockLogger }).toPromise();
+			const resultPromise = retryObservable(observable, 'test observable', { 
+				jitter: false,
+				logger: mockLogger 
+			}).toPromise();
 
 			// Fast-forward time to complete all attempts
 			vi.runAllTimers();
