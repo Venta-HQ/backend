@@ -1,18 +1,28 @@
-# Bootstrap Pattern
+# 🚀 Bootstrap Pattern
 
-This document describes the standardized bootstrap pattern used across all Venta backend services.
+## 📋 Table of Contents
 
-## Overview
+- [Overview](#overview)
+- [Service Types](#service-types)
+- [Environment Variables](#environment-variables)
+- [Benefits](#benefits)
+- [Port Ranges](#port-ranges)
+- [Migration Notes](#migration-notes)
+- [Recommended Usage](#recommended-usage)
 
-The bootstrap pattern ensures consistent service initialization while optimizing resource usage based on service type.
+## 🎯 Overview
 
-## Service Types
+This document describes the **standardized bootstrap pattern** used across all Venta backend services. The bootstrap pattern ensures consistent service initialization while optimizing resource usage based on service type.
 
-### 1. HTTP Services (Gateway, WebSocket Gateway)
+## 🔧 Service Types
 
-- **Single HTTP server** with health checks included
-- **BootstrapModule** provides full infrastructure (logging, error handling, etc.)
-- **HealthCheckModule** automatically included for HTTP services
+### 1. **HTTP Services** (Gateway, WebSocket Gateway)
+
+- **✅ Single HTTP server** with health checks included
+- **✅ BootstrapModule** provides full infrastructure (logging, error handling, etc.)
+- **✅ HealthCheckModule** automatically included for HTTP services
+
+#### **Implementation Example**
 
 ```typescript
 // main.ts
@@ -20,132 +30,184 @@ await BootstrapService.bootstrapHttpService({
 	module: AppModule, // HealthCheckModule automatically included
 	port: 'GATEWAY_SERVICE_PORT',
 });
-```
 
 // app.module.ts
 @Module({
-imports: [
-BootstrapModule.forRoot({
-additionalModules: [...otherModules], // HealthCheckModule auto-included
-appName: 'gateway',
-protocol: 'http',
-}),
-],
+	imports: [
+		BootstrapModule.forRoot({
+			additionalModules: [...otherModules], // HealthCheckModule auto-included
+			appName: 'gateway',
+			protocol: 'http',
+		}),
+	],
 })
+export class AppModule {}
+```
 
-````
+### 2. **gRPC Microservices** (Location, User, Vendor)
 
-### 2. gRPC Microservices (Location, User, Vendor)
+- **✅ gRPC server** for main functionality
+- **✅ Separate HTTP server** for health checks
+- **✅ BootstrapModule** in main module for gRPC infrastructure
 
-- **gRPC server** for main functionality
-- **Separate HTTP server** for health checks
-- **BootstrapModule** in main module for gRPC infrastructure
+#### **Implementation Example**
 
 ```typescript
 // main.ts
 await BootstrapService.bootstrapGrpcMicroservice({
-  health: {
-    host: '0.0.0.0',
-    module: HealthCheckModule,
-    port: 'LOCATION_HEALTH_PORT',
-  },
-  main: {
-    module: LocationModule, // Includes BootstrapModule
-    package: LOCATION_PACKAGE_NAME,
-    protoPath: '../proto/src/definitions/location.proto',
-    urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
-  },
+	health: {
+		host: '0.0.0.0',
+		module: HealthCheckModule,
+		port: 'LOCATION_HEALTH_PORT',
+	},
+	main: {
+		module: LocationModule, // Includes BootstrapModule
+		package: LOCATION_PACKAGE_NAME,
+		protoPath: '../proto/src/definitions/location.proto',
+		urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
+	},
 });
-````
 
 // location.module.ts
 @Module({
-imports: [
-BootstrapModule.forRoot({
-appName: 'Location Microservice',
-protocol: 'grpc',
-}),
-],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: 'Location Microservice',
+			protocol: 'grpc',
+		}),
+	],
 })
+export class LocationModule {}
+```
 
-````
+### 3. **NATS Consumers** (Algolia Sync)
 
-### 3. NATS Consumers (Algolia Sync)
+- **✅ NATS microservice** for message consumption
+- **✅ Separate HTTP server** for health checks
+- **✅ No BootstrapModule** needed (pure message consumer)
 
-- **NATS microservice** for message consumption
-- **Separate HTTP server** for health checks
-- **No BootstrapModule** needed (pure message consumer)
+#### **Implementation Example**
 
 ```typescript
 // main.ts
 await BootstrapService.bootstrapNatsMicroservice({
-  health: {
-    host: '0.0.0.0',
-    module: HealthCheckModule,
-    port: 'ALGOLIA_SYNC_HEALTH_PORT',
-  },
-  main: {
-    module: AlgoliaSyncModule, // No BootstrapModule
-    queue: 'algolia-sync-queue',
-    urlEnvVar: 'NATS_URL',
-  },
+	health: {
+		host: '0.0.0.0',
+		module: HealthCheckModule,
+		port: 'ALGOLIA_SYNC_HEALTH_PORT',
+	},
+	main: {
+		module: AlgoliaSyncModule, // No BootstrapModule
+		queue: 'algolia-sync-queue',
+		urlEnvVar: 'NATS_URL',
+	},
 });
-````
 
 // algolia-sync.module.ts
 @Module({
-imports: [AlgoliaModule.register()], // Only what's needed
+	imports: [AlgoliaModule.register()], // Only what's needed
 })
+export class AlgoliaSyncModule {}
+```
 
-````
+## 🔧 Environment Variables
 
-## Environment Variables
+### **Standardized Naming Convention**
 
-### Standardized Naming Convention
+| Service               | Main Port                        | Health Port                | Description               |
+| --------------------- | -------------------------------- | -------------------------- | ------------------------- |
+| **Gateway**           | `GATEWAY_SERVICE_PORT`           | (included in main)         | API Gateway service       |
+| **WebSocket Gateway** | `WEBSOCKET_GATEWAY_SERVICE_PORT` | (included in main)         | WebSocket Gateway service |
+| **Location**          | `LOCATION_SERVICE_ADDRESS`       | `LOCATION_HEALTH_PORT`     | Location microservice     |
+| **User**              | `USER_SERVICE_ADDRESS`           | `USER_HEALTH_PORT`         | User microservice         |
+| **Vendor**            | `VENDOR_SERVICE_ADDRESS`         | `VENDOR_HEALTH_PORT`       | Vendor microservice       |
+| **Algolia Sync**      | `NATS_URL`                       | `ALGOLIA_SYNC_HEALTH_PORT` | Algolia sync service      |
 
-| Service           | Main Port                        | Health Port                |
-| ----------------- | -------------------------------- | -------------------------- |
-| Gateway           | `GATEWAY_SERVICE_PORT`           | (included in main)         |
-| WebSocket Gateway | `WEBSOCKET_GATEWAY_SERVICE_PORT` | (included in main)         |
-| Location          | `LOCATION_SERVICE_ADDRESS`       | `LOCATION_HEALTH_PORT`     |
-| User              | `USER_SERVICE_ADDRESS`           | `USER_HEALTH_PORT`         |
-| Vendor            | `VENDOR_SERVICE_ADDRESS`         | `VENDOR_HEALTH_PORT`       |
-| Algolia Sync      | `NATS_URL`                       | `ALGOLIA_SYNC_HEALTH_PORT` |
+## ✅ Benefits
 
-## Benefits
+| Benefit                           | Description                                         |
+| --------------------------------- | --------------------------------------------------- |
+| **🔄 Resource Optimization**      | HTTP services don't run duplicate servers           |
+| **🏥 Consistent Health Checks**   | All services have health endpoints                  |
+| **⚙️ Appropriate Infrastructure** | Each service type gets the right level of bootstrap |
+| **📏 Standardized Pattern**       | Consistent approach across all services             |
+| **🔧 Flexible Configuration**     | Environment-based port configuration                |
 
-1. **Resource Optimization**: HTTP services don't run duplicate servers
-2. **Consistent Health Checks**: All services have health endpoints
-3. **Appropriate Infrastructure**: Each service type gets the right level of bootstrap
-4. **Standardized Pattern**: Consistent approach across all services
-5. **Flexible Configuration**: Environment-based port configuration
+## 🔌 Port Ranges
 
-## Port Ranges
+### **Service Port Allocation**
 
-- **Main Service Ports**: 5000-5009 (gRPC services), 5002, 5004 (HTTP services)
-- **Health Check Ports**: 5010-5019 (for microservices that need separate health servers)
-- **NATS**: 4222 (standard NATS port)
+| Port Range     | Service Type       | Examples                                            |
+| -------------- | ------------------ | --------------------------------------------------- |
+| **5000-5009**  | gRPC services      | User (5000), Location (5001), Vendor (5005)         |
+| **5002, 5004** | HTTP services      | Gateway (5002), WebSocket Gateway (5004)            |
+| **5010-5019**  | Health check ports | For microservices that need separate health servers |
+| **4222**       | NATS               | Standard NATS port                                  |
 
-## Bootstrap Method Naming Convention
+### **Port Assignment Strategy**
 
-| Service Type | Method Name | Health Check Location |
-|--------------|-------------|----------------------|
-| HTTP Service | `bootstrapHttpService` | Included in main server |
-| gRPC Microservice | `bootstrapGrpcMicroservice` | Separate server |
-| NATS Microservice | `bootstrapNatsMicroservice` | Separate server |
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Port Allocation                          │
+├─────────────────────────────────────────────────────────────┤
+│ 5000: User Service (gRPC)                                   │
+│ 5001: Location Service (gRPC)                               │
+│ 5002: API Gateway (HTTP)                                    │
+│ 5004: WebSocket Gateway (HTTP)                              │
+│ 5005: Vendor Service (gRPC)                                 │
+│ 5010: User Health Check (HTTP)                              │
+│ 5011: Location Health Check (HTTP)                          │
+│ 5015: Vendor Health Check (HTTP)                            │
+│ 5016: Algolia Sync Health Check (HTTP)                      │
+│ 4222: NATS Server                                           │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## Migration Notes
+## 📝 Bootstrap Method Naming Convention
 
-- HTTP services automatically include health checks in main server
-- gRPC/NATS services use separate lightweight health servers
-- Environment variables follow consistent naming pattern
-- BootstrapModule only used where needed (gRPC/HTTP services, not NATS consumers)
-- Health checks are always included (no "with health" suffix needed)
-- HealthCheckModule automatically included for HTTP services in BootstrapModule
+| Service Type          | Method Name                 | Health Check Location   | Use Case                   |
+| --------------------- | --------------------------- | ----------------------- | -------------------------- |
+| **HTTP Service**      | `bootstrapHttpService`      | Included in main server | Gateway, WebSocket Gateway |
+| **gRPC Microservice** | `bootstrapGrpcMicroservice` | Separate server         | User, Vendor, Location     |
+| **NATS Microservice** | `bootstrapNatsMicroservice` | Separate server         | Algolia Sync               |
 
-## Recommended Usage
+## 🔄 Migration Notes
 
-### For HTTP Services
+### **Key Changes**
+
+- ✅ **HTTP services** automatically include health checks in main server
+- ✅ **gRPC/NATS services** use separate lightweight health servers
+- ✅ **Environment variables** follow consistent naming pattern
+- ✅ **BootstrapModule** only used where needed (gRPC/HTTP services, not NATS consumers)
+- ✅ **Health checks** are always included (no "with health" suffix needed)
+- ✅ **HealthCheckModule** automatically included for HTTP services in BootstrapModule
+
+### **Before vs After**
+
+#### **Before (Legacy Pattern)**
+
+```typescript
+// ❌ Inconsistent patterns
+await BootstrapService.bootstrapHttpServiceWithHealth({
+	module: AppModule,
+	port: 'PORT',
+	healthPort: 'HEALTH_PORT', // Separate health port
+});
+```
+
+#### **After (Standardized Pattern)**
+
+```typescript
+// ✅ Consistent patterns
+await BootstrapService.bootstrapHttpService({
+	module: AppModule, // HealthCheckModule automatically included
+	port: 'SERVICE_PORT',
+});
+```
+
+## 🎯 Recommended Usage
+
+### **For HTTP Services**
 
 ```typescript
 // HTTP services with health checks automatically included
@@ -153,9 +215,9 @@ await BootstrapService.bootstrapHttpService({
 	module: AppModule, // HealthCheckModule automatically included
 	port: 'SERVICE_PORT',
 });
-````
+```
 
-### For gRPC Microservices
+### **For gRPC Microservices**
 
 ```typescript
 // gRPC microservices with separate health server
@@ -174,7 +236,7 @@ await BootstrapService.bootstrapGrpcMicroservice({
 });
 ```
 
-### For NATS Microservices
+### **For NATS Microservices**
 
 ```typescript
 // NATS microservices with separate health server
@@ -192,10 +254,82 @@ await BootstrapService.bootstrapNatsMicroservice({
 });
 ```
 
-## Benefits of Coordinated Bootstrap
+## 🚀 Benefits of Coordinated Bootstrap
 
-1. **Error Handling**: Proper cleanup if either service fails to start
-2. **Graceful Shutdown**: Coordinated shutdown of all services
-3. **Kubernetes Ready**: Perfect for K8s health checks and lifecycle management
-4. **Resource Management**: Automatic cleanup of resources on failure
-5. **Logging**: Better visibility into service startup/shutdown
+### **Error Handling**
+
+- ✅ **Proper cleanup** if either service fails to start
+- ✅ **Graceful shutdown** of all services
+- ✅ **Resource management** with automatic cleanup on failure
+
+### **Kubernetes Ready**
+
+- ✅ **Perfect for K8s** health checks and lifecycle management
+- ✅ **Container health monitoring** with proper probes
+- ✅ **Service discovery** integration
+
+### **Observability**
+
+- ✅ **Better logging** visibility into service startup/shutdown
+- ✅ **Health check monitoring** across all services
+- ✅ **Performance tracking** of bootstrap process
+
+## 🔧 Configuration Examples
+
+### **Environment Configuration**
+
+```bash
+# .env
+# HTTP Services
+GATEWAY_SERVICE_PORT=5002
+WEBSOCKET_GATEWAY_SERVICE_PORT=5004
+
+# gRPC Services
+USER_SERVICE_ADDRESS=localhost:5000
+LOCATION_SERVICE_ADDRESS=localhost:5001
+VENDOR_SERVICE_ADDRESS=localhost:5005
+
+# Health Check Ports
+USER_HEALTH_PORT=5010
+LOCATION_HEALTH_PORT=5011
+VENDOR_HEALTH_PORT=5015
+ALGOLIA_SYNC_HEALTH_PORT=5016
+
+# NATS
+NATS_URL=nats://localhost:4222
+```
+
+### **Docker Configuration**
+
+```yaml
+# docker-compose.yml
+services:
+  gateway:
+    environment:
+      - GATEWAY_SERVICE_PORT=5002
+    ports:
+      - '5002:5002'
+
+  user-service:
+    environment:
+      - USER_SERVICE_ADDRESS=user-service:5000
+      - USER_HEALTH_PORT=5010
+    ports:
+      - '5000:5000'
+      - '5010:5010'
+```
+
+## 📊 Service Bootstrap Summary
+
+| Service               | Type | Bootstrap Method            | Health Check | Ports      |
+| --------------------- | ---- | --------------------------- | ------------ | ---------- |
+| **Gateway**           | HTTP | `bootstrapHttpService`      | Included     | 5002       |
+| **WebSocket Gateway** | HTTP | `bootstrapHttpService`      | Included     | 5004       |
+| **User**              | gRPC | `bootstrapGrpcMicroservice` | Separate     | 5000, 5010 |
+| **Vendor**            | gRPC | `bootstrapGrpcMicroservice` | Separate     | 5005, 5015 |
+| **Location**          | gRPC | `bootstrapGrpcMicroservice` | Separate     | 5001, 5011 |
+| **Algolia Sync**      | NATS | `bootstrapNatsMicroservice` | Separate     | 4222, 5016 |
+
+---
+
+**This bootstrap pattern provides a consistent, efficient, and maintainable approach to service initialization across the entire Venta backend ecosystem.**

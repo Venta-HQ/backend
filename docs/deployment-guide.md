@@ -1,49 +1,88 @@
-# Deployment Guide
+# 🚀 Deployment Guide
 
-## Overview
+## 📋 Table of Contents
 
-This guide covers the deployment process for the Venta Backend project across different environments. The system is designed to be deployed using containerization and can be scaled horizontally.
+- [Overview](#overview)
+- [Deployment Architecture](#deployment-architecture)
+- [Environment Configuration](#environment-configuration)
+- [Docker Deployment](#docker-deployment)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Monitoring and Observability](#monitoring-and-observability)
+- [Deployment Checklist](#deployment-checklist)
+- [Rollback Procedures](#rollback-procedures)
 
-## Deployment Architecture
+## 🎯 Overview
 
-### Container Strategy
+This guide covers the **deployment process** for the Venta Backend project across different environments. The system is designed to be deployed using containerization and can be scaled horizontally.
 
-The Venta Backend uses Docker containers for consistent deployment across environments:
+## 🏗️ Deployment Architecture
 
+### **Container Strategy**
+
+The Venta Backend uses **Docker containers** for consistent deployment across environments:
+
+```mermaid
+graph TB
+    subgraph "Load Balancer"
+        LB[Load Balancer]
+    end
+
+    subgraph "API Gateway Layer"
+        AG1[API Gateway<br/>Port 5002]
+        AG2[API Gateway<br/>Port 5002]
+        AG3[API Gateway<br/>Port 5002]
+    end
+
+    subgraph "Core Services"
+        US[User Service<br/>Port 5000]
+        VS[Vendor Service<br/>Port 5005]
+        LS[Location Service<br/>Port 5001]
+    end
+
+    subgraph "Real-time Services"
+        WG[WebSocket Gateway<br/>Port 5004]
+        AS[Algolia Sync<br/>Port 5006]
+    end
+
+    subgraph "Infrastructure"
+        PG[PostgreSQL]
+        R[Redis]
+        N[NATS]
+    end
+
+    LB --> AG1
+    LB --> AG2
+    LB --> AG3
+
+    AG1 --> US
+    AG1 --> VS
+    AG1 --> LS
+    AG2 --> US
+    AG2 --> VS
+    AG2 --> LS
+    AG3 --> US
+    AG3 --> VS
+    AG3 --> LS
+
+    WG --> US
+    WG --> VS
+    WG --> LS
+
+    US --> PG
+    VS --> PG
+    LS --> PG
+
+    US --> R
+    VS --> R
+    LS --> R
+
+    AS --> N
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Load Balancer                            │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-        ┌─────────────┼─────────────┐
-        │             │             │
-┌───────▼────────┐ ┌──▼──────────┐ ┌▼────────────┐
-│  API Gateway   │ │  API Gateway │ │ API Gateway │
-│   (Port 5002)  │ │   (Port 5002)│ │ (Port 5002) │
-└───────┬────────┘ └──┬──────────┘ └┬────────────┘
-        │              │             │
-        └──────────────┼─────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-┌───────▼────────┐ ┌───▼─────────┐ ┌──▼──────────┐
-│  User Service  │ │Vendor Service│ │Location Svc │
-│   (Port 5000)  │ │ (Port 5005) │ │ (Port 5001) │
-└───────┬────────┘ └───┬─────────┘ └──┬──────────┘
-        │               │              │
-        └───────────────┼──────────────┘
-                        │
-        ┌───────────────┼──────────────┐
-        │               │              │
-┌───────▼────────┐ ┌────▼────────┐ ┌───▼─────────┐
-│WebSocket Gateway│ │Algolia Sync │ │   Redis    │
-│  (Port 5004)   │ │ (Port 5006) │ │ (Port 6379) │
-└────────────────┘ └─────────────┘ └─────────────┘
-```
 
-## Environment Configuration
+## ⚙️ Environment Configuration
 
-### Environment Variables
+### **Environment Variables**
 
 Create environment-specific configuration files:
 
@@ -75,44 +114,44 @@ PROMETHEUS_PORT=9090
 GRAFANA_PORT=3000
 ```
 
-### Configuration Management
+### **Configuration Management**
 
 ```typescript
 // libs/nest/modules/config/config.schema.ts
 import { z } from 'zod';
 
 export const configSchema = z.object({
-  nodeEnv: z.enum(['development', 'test', 'production']),
-  port: z.number().default(3000),
-  database: z.object({
-    url: z.string().url(),
-  }),
-  redis: z.object({
-    url: z.string().url(),
-  }),
-  nats: z.object({
-    url: z.string().url(),
-  }),
-  clerk: z.object({
-    secretKey: z.string(),
-  }),
-  algolia: z.object({
-    appId: z.string(),
-    apiKey: z.string(),
-  }),
-  cloudinary: z.object({
-    cloudName: z.string(),
-    apiKey: z.string(),
-    apiSecret: z.string(),
-  }),
+	nodeEnv: z.enum(['development', 'test', 'production']),
+	port: z.number().default(3000),
+	database: z.object({
+		url: z.string().url(),
+	}),
+	redis: z.object({
+		url: z.string().url(),
+	}),
+	nats: z.object({
+		url: z.string().url(),
+	}),
+	clerk: z.object({
+		secretKey: z.string(),
+	}),
+	algolia: z.object({
+		appId: z.string(),
+		apiKey: z.string(),
+	}),
+	cloudinary: z.object({
+		cloudName: z.string(),
+		apiKey: z.string(),
+		apiSecret: z.string(),
+	}),
 });
 
 export type Config = z.infer<typeof configSchema>;
 ```
 
-## Docker Deployment
+## 🐳 Docker Deployment
 
-### 1. Docker Compose (Development/Staging)
+### **1. Docker Compose (Development/Staging)**
 
 ```yaml
 # docker-compose.yml
@@ -129,9 +168,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U venta_user -d venta"]
+      test: ['CMD-SHELL', 'pg_isready -U venta_user -d venta']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -141,11 +180,11 @@ services:
     image: redis:7-alpine
     command: redis-server --requirepass redis_password
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -154,16 +193,14 @@ services:
   nats:
     image: nats:2.9-alpine
     ports:
-      - "4222:4222"
-      - "8222:8222"
+      - '4222:4222'
+      - '8222:8222'
     command: -js -m 8222
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8222/healthz"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:8222/healthz']
       interval: 10s
       timeout: 5s
       retries: 5
-
-
 
   # API Gateway
   gateway:
@@ -179,7 +216,7 @@ services:
       - VENDOR_SERVICE_ADDRESS=vendor-service:5005
       - LOCATION_SERVICE_ADDRESS=location-service:5001
     ports:
-      - "5002:5002"
+      - '5002:5002'
     depends_on:
       postgres:
         condition: service_healthy
@@ -192,7 +229,7 @@ services:
       location-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:5002/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -207,7 +244,7 @@ services:
       - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
       - REDIS_URL=redis://:redis_password@redis:6379
     ports:
-      - "5000:5000"
+      - '5000:5000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -224,7 +261,7 @@ services:
       - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
       - REDIS_URL=redis://:redis_password@redis:6379
     ports:
-      - "5005:5005"
+      - '5005:5005'
     depends_on:
       postgres:
         condition: service_healthy
@@ -241,7 +278,7 @@ services:
       - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
       - REDIS_URL=redis://:redis_password@redis:6379
     ports:
-      - "5001:5001"
+      - '5001:5001'
     depends_on:
       postgres:
         condition: service_healthy
@@ -261,7 +298,7 @@ services:
       - VENDOR_SERVICE_ADDRESS=vendor-service:5005
       - LOCATION_SERVICE_ADDRESS=location-service:5001
     ports:
-      - "5004:5004"
+      - '5004:5004'
     depends_on:
       postgres:
         condition: service_healthy
@@ -284,7 +321,7 @@ services:
       - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
       - REDIS_URL=redis://:redis_password@redis:6379
     ports:
-      - "5006:5006"
+      - '5006:5006'
     depends_on:
       postgres:
         condition: service_healthy
@@ -295,7 +332,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9090:9090"
+      - '9090:9090'
     volumes:
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
@@ -310,7 +347,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - '3000:3000'
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
@@ -324,7 +361,7 @@ volumes:
   grafana_data:
 ```
 
-### 2. Dockerfile Optimization
+### **2. Dockerfile Optimization**
 
 ```dockerfile
 # Multi-stage build for production
@@ -388,9 +425,9 @@ EXPOSE ${PORT:-3000}
 CMD ["node", "dist/apps/gateway/src/main.js"]
 ```
 
-## Kubernetes Deployment
+## ☸️ Kubernetes Deployment
 
-### 1. Namespace and ConfigMaps
+### **1. Namespace and ConfigMaps**
 
 ```yaml
 # k8s/namespace.yaml
@@ -409,16 +446,16 @@ metadata:
   name: venta-config
   namespace: venta-backend
 data:
-  NODE_ENV: "production"
-  GATEWAY_SERVICE_PORT: "5002"
-  USER_SERVICE_ADDRESS: "user-service:5000"
-  VENDOR_SERVICE_ADDRESS: "vendor-service:5005"
-  LOCATION_SERVICE_ADDRESS: "location-service:5001"
-  WEBSOCKET_GATEWAY_SERVICE_PORT: "5004"
-  ALGOLIA_SYNC_SERVICE_PORT: "5006"
+  NODE_ENV: 'production'
+  GATEWAY_SERVICE_PORT: '5002'
+  USER_SERVICE_ADDRESS: 'user-service:5000'
+  VENDOR_SERVICE_ADDRESS: 'vendor-service:5005'
+  LOCATION_SERVICE_ADDRESS: 'location-service:5001'
+  WEBSOCKET_GATEWAY_SERVICE_PORT: '5004'
+  ALGOLIA_SYNC_SERVICE_PORT: '5006'
 ```
 
-### 2. Secrets
+### **2. Secrets**
 
 ```yaml
 # k8s/secrets.yaml
@@ -440,7 +477,7 @@ data:
   CLOUDINARY_API_SECRET: <base64-encoded-cloudinary-secret>
 ```
 
-### 3. Service Deployments
+### **3. Service Deployments**
 
 ```yaml
 # k8s/gateway-deployment.yaml
@@ -460,34 +497,34 @@ spec:
         app: gateway
     spec:
       containers:
-      - name: gateway
-        image: venta/gateway:latest
-        ports:
-        - containerPort: 5002
-        envFrom:
-        - configMapRef:
-            name: venta-config
-        - secretRef:
-            name: venta-secrets
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 5002
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 5002
-          initialDelaySeconds: 5
-          periodSeconds: 5
+        - name: gateway
+          image: venta/gateway:latest
+          ports:
+            - containerPort: 5002
+          envFrom:
+            - configMapRef:
+                name: venta-config
+            - secretRef:
+                name: venta-secrets
+          resources:
+            requests:
+              memory: '256Mi'
+              cpu: '250m'
+            limits:
+              memory: '512Mi'
+              cpu: '500m'
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5002
+            initialDelaySeconds: 5
+            periodSeconds: 5
 
 ---
 apiVersion: v1
@@ -499,13 +536,13 @@ spec:
   selector:
     app: gateway
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 5002
+    - protocol: TCP
+      port: 80
+      targetPort: 5002
   type: LoadBalancer
 ```
 
-### 4. Ingress Configuration
+### **4. Ingress Configuration**
 
 ```yaml
 # k8s/ingress.yaml
@@ -516,29 +553,29 @@ metadata:
   namespace: venta-backend
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
 spec:
   tls:
-  - hosts:
-    - api.venta.com
-    secretName: venta-tls
+    - hosts:
+        - api.venta.com
+      secretName: venta-tls
   rules:
-  - host: api.venta.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: gateway-service
-            port:
-              number: 80
+    - host: api.venta.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-service
+                port:
+                  number: 80
 ```
 
-## CI/CD Pipeline
+## 🔄 CI/CD Pipeline
 
-### 1. GitHub Actions Workflow
+### **1. GitHub Actions Workflow**
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -553,19 +590,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Run tests
         run: pnpm run test:run
-      
+
       - name: Build application
         run: pnpm run build
 
@@ -574,16 +611,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-      
+
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      
+
       - name: Build and push Docker images
         uses: docker/build-push-action@v4
         with:
@@ -608,17 +645,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Install kubectl
         uses: azure/setup-kubectl@v3
         with:
           version: 'latest'
-      
+
       - name: Configure kubectl
         run: |
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig.yaml
           export KUBECONFIG=kubeconfig.yaml
-      
+
       - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/
@@ -630,63 +667,58 @@ jobs:
           kubectl set image deployment/algolia-sync algolia-sync=venta/algolia-sync:${{ github.sha }} -n venta-backend
 ```
 
-## Monitoring and Observability
+## 📊 Monitoring and Observability
 
-### 1. Health Checks
+### **1. Health Checks**
 
 ```typescript
 // Health check endpoint
 @Controller('health')
 export class HealthController {
-  constructor(
-    private readonly health: HealthCheckService,
-    private readonly db: TypeOrmHealthIndicator,
-    private readonly redis: RedisHealthIndicator,
-  ) {}
+	constructor(
+		private readonly health: HealthCheckService,
+		private readonly db: TypeOrmHealthIndicator,
+		private readonly redis: RedisHealthIndicator,
+	) {}
 
-  @Get()
-  @HealthCheck()
-  check() {
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-      () => this.redis.pingCheck('redis'),
-    ]);
-  }
+	@Get()
+	@HealthCheck()
+	check() {
+		return this.health.check([() => this.db.pingCheck('database'), () => this.redis.pingCheck('redis')]);
+	}
 }
 ```
 
-### 2. Metrics Collection
+### **2. Metrics Collection**
 
 ```typescript
 // Prometheus metrics
 @Injectable()
 export class MetricsService {
-  private readonly httpRequestDuration = new Histogram({
-    name: 'http_request_duration_seconds',
-    help: 'Duration of HTTP requests in seconds',
-    labelNames: ['method', 'route', 'status_code'],
-  });
+	private readonly httpRequestDuration = new Histogram({
+		name: 'http_request_duration_seconds',
+		help: 'Duration of HTTP requests in seconds',
+		labelNames: ['method', 'route', 'status_code'],
+	});
 
-  private readonly activeConnections = new Gauge({
-    name: 'websocket_active_connections',
-    help: 'Number of active WebSocket connections',
-  });
+	private readonly activeConnections = new Gauge({
+		name: 'websocket_active_connections',
+		help: 'Number of active WebSocket connections',
+	});
 
-  recordHttpRequest(method: string, route: string, statusCode: number, duration: number) {
-    this.httpRequestDuration
-      .labels(method, route, statusCode.toString())
-      .observe(duration);
-  }
+	recordHttpRequest(method: string, route: string, statusCode: number, duration: number) {
+		this.httpRequestDuration.labels(method, route, statusCode.toString()).observe(duration);
+	}
 
-  setActiveConnections(count: number) {
-    this.activeConnections.set(count);
-  }
+	setActiveConnections(count: number) {
+		this.activeConnections.set(count);
+	}
 }
 ```
 
-## Deployment Checklist
+## ✅ Deployment Checklist
 
-### Pre-Deployment
+### **Pre-Deployment**
 
 - [ ] All tests passing
 - [ ] Code review completed
@@ -697,7 +729,7 @@ export class MetricsService {
 - [ ] Secrets updated
 - [ ] Monitoring alerts configured
 
-### Deployment
+### **Deployment**
 
 - [ ] Backup production database
 - [ ] Deploy to staging environment
@@ -708,7 +740,7 @@ export class MetricsService {
 - [ ] Check performance metrics
 - [ ] Update DNS if needed
 
-### Post-Deployment
+### **Post-Deployment**
 
 - [ ] Monitor application logs
 - [ ] Check error rates
@@ -717,9 +749,9 @@ export class MetricsService {
 - [ ] Update documentation
 - [ ] Notify stakeholders
 
-## Rollback Procedures
+## 🔄 Rollback Procedures
 
-### 1. Docker Compose Rollback
+### **1. Docker Compose Rollback**
 
 ```bash
 # Rollback to previous version
@@ -732,7 +764,7 @@ docker-compose down
 docker-compose up -d --force-recreate
 ```
 
-### 2. Kubernetes Rollback
+### **2. Kubernetes Rollback**
 
 ```bash
 # Rollback deployment
@@ -745,7 +777,7 @@ kubectl rollout undo deployment/gateway --to-revision=2 -n venta-backend
 kubectl rollout status deployment/gateway -n venta-backend
 ```
 
-### 3. Database Rollback
+### **3. Database Rollback**
 
 ```bash
 # Rollback database migration
@@ -756,4 +788,158 @@ pnpm run prisma:migrate:deploy
 pg_restore -d venta_prod backup.sql
 ```
 
-This deployment guide provides comprehensive coverage for deploying the Venta Backend across different environments with proper monitoring and rollback procedures. 
+## 📈 Performance Optimization
+
+### **Resource Allocation**
+
+| Service               | CPU Request | CPU Limit | Memory Request | Memory Limit |
+| --------------------- | ----------- | --------- | -------------- | ------------ |
+| **Gateway**           | 250m        | 500m      | 256Mi          | 512Mi        |
+| **User Service**      | 200m        | 400m      | 256Mi          | 512Mi        |
+| **Vendor Service**    | 200m        | 400m      | 256Mi          | 512Mi        |
+| **Location Service**  | 200m        | 400m      | 256Mi          | 512Mi        |
+| **WebSocket Gateway** | 300m        | 600m      | 512Mi          | 1Gi          |
+| **Algolia Sync**      | 100m        | 200m      | 128Mi          | 256Mi        |
+
+### **Scaling Policies**
+
+```yaml
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway-hpa
+  namespace: venta-backend
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+```
+
+## 🔒 Security Considerations
+
+### **Network Policies**
+
+```yaml
+# k8s/network-policy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: venta-network-policy
+  namespace: venta-backend
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 5002
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: venta-backend
+      ports:
+        - protocol: TCP
+          port: 5000
+        - protocol: TCP
+          port: 5001
+        - protocol: TCP
+          port: 5005
+```
+
+### **Pod Security Standards**
+
+```yaml
+# k8s/pod-security.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gateway-pod
+  namespace: venta-backend
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+  containers:
+    - name: gateway
+      image: venta/gateway:latest
+      securityContext:
+        allowPrivilegeEscalation: false
+        readOnlyRootFilesystem: true
+        capabilities:
+          drop:
+            - ALL
+```
+
+## 📊 Monitoring Dashboards
+
+### **Grafana Dashboard Configuration**
+
+```json
+{
+	"dashboard": {
+		"title": "Venta Backend Overview",
+		"panels": [
+			{
+				"title": "Service Health",
+				"type": "stat",
+				"targets": [
+					{
+						"expr": "up{job=\"venta-backend\"}",
+						"legendFormat": "{{service}}"
+					}
+				]
+			},
+			{
+				"title": "Request Rate",
+				"type": "graph",
+				"targets": [
+					{
+						"expr": "rate(http_requests_total[5m])",
+						"legendFormat": "{{service}}"
+					}
+				]
+			},
+			{
+				"title": "Response Time",
+				"type": "graph",
+				"targets": [
+					{
+						"expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+						"legendFormat": "95th percentile"
+					}
+				]
+			}
+		]
+	}
+}
+```
+
+---
+
+**This deployment guide provides comprehensive coverage for deploying the Venta Backend across different environments with proper monitoring and rollback procedures.**
