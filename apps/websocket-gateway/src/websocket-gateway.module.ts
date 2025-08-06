@@ -22,12 +22,13 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 			additionalModules: [
 				RedisModule,
 				ClerkModule.register(),
+				ConfigModule,
 				GrpcInstanceModule.register<LocationServiceClient>({
 					proto: 'location.proto',
 					protoPackage: LOCATION_PACKAGE_NAME,
 					provide: LOCATION_SERVICE_NAME,
 					serviceName: LOCATION_SERVICE_NAME,
-					urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
+					url: 'LOCATION_SERVICE_ADDRESS',
 				}),
 				ClientsModule.registerAsync({
 					clients: [
@@ -54,6 +55,11 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 			inject: [PrometheusService],
 			provide: WEBSOCKET_METRICS,
 			useFactory: createWebSocketMetrics,
+		},
+		{
+			inject: [ConfigService],
+			provide: 'LOCATION_SERVICE_URL',
+			useFactory: (configService: ConfigService) => configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
 		},
 		UserConnectionManagerService,
 		VendorConnectionManagerService,

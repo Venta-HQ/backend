@@ -35,5 +35,4 @@ export const configSchema = z.object({
 	VENDOR_HEALTH_PORT: z.string().or(z.number()),
 	VENDOR_SERVICE_ADDRESS: z.string(),
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
-	npm_package_version: z.string().optional(),
 });

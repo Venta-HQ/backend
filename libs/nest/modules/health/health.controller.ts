@@ -78,7 +78,6 @@ export class HealthController {
 			...healthResult,
 			service: this.serviceName,
 			uptime: process.uptime(),
-			version: process.env['npm_package_version'] || 'unknown',
 			...customData,
 		};
 	}
