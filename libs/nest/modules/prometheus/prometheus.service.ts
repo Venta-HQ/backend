@@ -63,7 +63,6 @@ export class PrometheusService implements OnModuleInit {
 			{
 				commit: this.configService.get('GIT_COMMIT') || 'unknown',
 				environment: this.configService.get('NODE_ENV') || 'development',
-				version: this.configService.get('npm_package_version') || 'unknown',
 			},
 			1,
 		);
