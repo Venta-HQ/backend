@@ -18,46 +18,52 @@
 
 Before you begin, ensure you have the following installed:
 
-| Tool | Version | Purpose |
-|------|---------|---------|
-| **Node.js** | v18 or higher | JavaScript runtime |
-| **pnpm** | Latest | Package manager |
-| **Docker** | Latest | Containerization |
-| **Docker Compose** | Latest | Multi-container orchestration |
-| **Git** | Latest | Version control |
-| **PostgreSQL** | 15+ | Database (for local development) |
-| **Redis** | 7+ | Caching (for local development) |
+| Tool               | Version       | Purpose                          |
+| ------------------ | ------------- | -------------------------------- |
+| **Node.js**        | v18 or higher | JavaScript runtime               |
+| **pnpm**           | Latest        | Package manager                  |
+| **Docker**         | Latest        | Containerization                 |
+| **Docker Compose** | Latest        | Multi-container orchestration    |
+| **Git**            | Latest        | Version control                  |
+| **PostgreSQL**     | 15+           | Database (for local development) |
+| **Redis**          | 7+            | Caching (for local development)  |
 
 ### 🛠️ Initial Setup
 
 #### 1. **Clone the repository**
+
 ```bash
 git clone <repository-url>
 cd venta-backend
 ```
 
 #### 2. **Install dependencies**
+
 ```bash
 pnpm install
 ```
 
 #### 3. **Set up environment variables**
+
 ```bash
 cp .env.example .env
 # Edit .env with your local configuration
 ```
 
 #### 4. **Generate Prisma client**
+
 ```bash
 pnpm run prisma:generate
 ```
 
 #### 5. **Build protocol buffers**
+
 ```bash
 pnpm run build-proto
 ```
 
 #### 6. **Start infrastructure services**
+
 ```bash
 pnpm run docker:up
 ```
@@ -110,85 +116,120 @@ apps/service-name/
 ### 1. **Feature Development**
 
 #### **Step 1: Create a feature branch**
+
 ```bash
 git checkout -b feature/your-feature-name
 ```
 
 #### **Step 2: Make your changes**
+
 - ✅ Follow the coding standards
 - ✅ Write tests for new functionality
 - ✅ Update documentation as needed
 
 #### **Step 3: Run tests**
+
 ```bash
 pnpm run test:run
 ```
 
 #### **Step 4: Check code quality**
+
 ```bash
 pnpm run lint
 pnpm run format
 ```
 
 #### **Step 5: Commit your changes**
+
 ```bash
 git add .
 git commit -m "feat: add your feature description"
 ```
 
 #### **Step 6: Push and create a pull request**
+
 ```bash
 git push origin feature/your-feature-name
 ```
 
 ### 2. **Running Services**
 
-#### **Start all services**
+#### **Start all services with hot reload**
+
 ```bash
+# Start infrastructure first
 pnpm run docker:up
+
+# Start all NestJS applications with hot reload
+pnpm run start:dev
 ```
 
-#### **Start individual services (development mode with hot reload)**
+**What this starts:**
+
+- ✅ Gateway (port 3000)
+- ✅ User service (port 3001)
+- ✅ Vendor service (port 3002)
+- ✅ Location service (port 3003)
+- ✅ WebSocket Gateway (port 3004)
+- ✅ Algolia Sync service (background)
+- ✅ **Hot reload** - file changes trigger automatic restarts
+
+#### **Start individual services (for debugging)**
+
 ```bash
-# API Gateway
-pnpm run start:dev gateway
-
-# Core Services
-pnpm run start:dev user
-pnpm run start:dev vendor
-pnpm run start:dev location
-
-# Real-time Services
-pnpm run start:dev websocket-gateway
-
-# Data Processing
-pnpm run start:dev algolia-sync
+# Start specific service
+nest start gateway --watch
+nest start user --watch
+nest start vendor --watch
+nest start location --watch
+nest start websocket-gateway --watch
+nest start algolia-sync --watch
 ```
 
-#### **Build and run production**
+#### **Production mode**
+
 ```bash
+# Build all services
 pnpm run build
-pnpm run start:prod gateway
+
+# Start all services in production mode
+pnpm run start:prod
 ```
+
+#### **Service Ports**
+
+| Service           | Port | Description             |
+| ----------------- | ---- | ----------------------- |
+| Gateway           | 3000 | API Gateway             |
+| User              | 3001 | User Management         |
+| Vendor            | 3002 | Vendor Management       |
+| Location          | 3003 | Location Services       |
+| WebSocket Gateway | 3004 | Real-time Communication |
+| Algolia Sync      | -    | Background Processing   |
 
 ### 3. **Database Management**
 
 #### **Run migrations**
+
 ```bash
 pnpm run prisma:migrate:dev
 ```
 
 #### **Reset database**
+
 ```bash
 pnpm run prisma:migrate:reset
 ```
 
 #### **View database**
+
 ```bash
 pnpm run prisma:studio
 ```
 
 #### **Generate Prisma client**
+
 ```bash
 pnpm run prisma:generate
 ```
@@ -198,105 +239,110 @@ pnpm run prisma:generate
 ### TypeScript Guidelines
 
 #### **1. Use strict TypeScript configuration**
+
 - ✅ Enable all strict flags
 - ✅ Use explicit types when beneficial
 - ✅ Avoid `any` type
 
 #### **2. Follow naming conventions**
+
 ```typescript
 // Interfaces and types
-interface UserProfile { }
+interface UserProfile {}
 type UserStatus = 'active' | 'inactive';
 
 // Classes
-class UserService { }
+class UserService {}
 
 // Constants
-const API_ENDPOINTS = { };
+const API_ENDPOINTS = {};
 
 // Functions
-function getUserById(id: string): Promise<User> { }
+function getUserById(id: string): Promise<User> {}
 ```
 
 #### **3. Use proper imports**
+
 ```typescript
 // Prefer named imports
 import { Injectable } from '@nestjs/common';
-
-// Use relative imports for local files
-import { UserService } from './user.service';
-
 // Use absolute imports for shared libraries
 import { UserSchema } from '@venta/apitypes';
+// Use relative imports for local files
+import { UserService } from './user.service';
 ```
 
 ### NestJS Best Practices
 
 #### **1. Module Organization**
+
 ```typescript
 @Module({
-  imports: [
-    // External modules first
-    ConfigModule,
-    // Internal modules
-    UserModule,
-    // Feature modules
-    AuthModule,
-  ],
-  controllers: [UserController],
-  providers: [UserService],
-  exports: [UserService],
+	imports: [
+		// External modules first
+		ConfigModule,
+		// Internal modules
+		UserModule,
+		// Feature modules
+		AuthModule,
+	],
+	controllers: [UserController],
+	providers: [UserService],
+	exports: [UserService],
 })
 export class AppModule {}
 ```
 
 #### **2. Service Design**
+
 ```typescript
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly logger: LoggerService,
-  ) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly logger: LoggerService,
+	) {}
 
-  async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
-    try {
-      // Handle Clerk user creation webhook
-      return { message: 'User created successfully' };
-    } catch (error) {
-      this.logger.error('Failed to handle Clerk user creation', error);
-      throw new AppError('USER_CREATION_FAILED');
-    }
-  }
+	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
+		try {
+			// Handle Clerk user creation webhook
+			return { message: 'User created successfully' };
+		} catch (error) {
+			this.logger.error('Failed to handle Clerk user creation', error);
+			throw new AppError('USER_CREATION_FAILED');
+		}
+	}
 }
 ```
 
 #### **3. Controller Design**
+
 ```typescript
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+	constructor(private readonly userService: UserService) {}
 
-  @Post('webhook/clerk')
-  @UseGuards(SignedWebhookGuard)
-  async handleClerkWebhook(@Body() data: ClerkWebhookData): Promise<ClerkWebhookResponse> {
-    return this.userService.handleClerkUserCreated(data);
-  }
+	@Post('webhook/clerk')
+	@UseGuards(SignedWebhookGuard)
+	async handleClerkWebhook(@Body() data: ClerkWebhookData): Promise<ClerkWebhookResponse> {
+		return this.userService.handleClerkUserCreated(data);
+	}
 }
 ```
 
 ### Error Handling
 
 #### **1. Use centralized error handling**
+
 ```typescript
 // Define error types
 export class AppError extends Error {
-  constructor(
-    public readonly code: string,
-    public readonly statusCode: number = 500,
-  ) {
-    super(code);
-  }
+	constructor(
+		public readonly code: string,
+		public readonly statusCode: number = 500,
+	) {
+		super(code);
+	}
 }
 
 // Use in services
@@ -304,14 +350,15 @@ throw new AppError('WEBHOOK_PROCESSING_FAILED', 500);
 ```
 
 #### **2. Handle async errors properly**
+
 ```typescript
 async function handleAsyncOperation() {
-  try {
-    return await someAsyncOperation();
-  } catch (error) {
-    this.logger.error('Operation failed', error);
-    throw new AppError('OPERATION_FAILED');
-  }
+	try {
+		return await someAsyncOperation();
+	} catch (error) {
+		this.logger.error('Operation failed', error);
+		throw new AppError('OPERATION_FAILED');
+	}
 }
 ```
 
@@ -321,37 +368,37 @@ async function handleAsyncOperation() {
 
 ```typescript
 describe('UserService', () => {
-  let service: UserService;
-  let prisma: PrismaService;
+	let service: UserService;
+	let prisma: PrismaService;
 
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [
-        UserService,
-        {
-          provide: PrismaService,
-          useValue: {
-            user: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-            },
-          },
-        },
-      ],
-    }).compile();
+	beforeEach(async () => {
+		const module = await Test.createTestingModule({
+			providers: [
+				UserService,
+				{
+					provide: PrismaService,
+					useValue: {
+						user: {
+							create: jest.fn(),
+							findUnique: jest.fn(),
+						},
+					},
+				},
+			],
+		}).compile();
 
-    service = module.get<UserService>(UserService);
-    prisma = module.get<PrismaService>(PrismaService);
-  });
+		service = module.get<UserService>(UserService);
+		prisma = module.get<PrismaService>(PrismaService);
+	});
 
-  it('should handle Clerk user creation', async () => {
-    const clerkData = { id: 'clerk_user_123' };
-    const expectedResponse = { message: 'User created successfully' };
+	it('should handle Clerk user creation', async () => {
+		const clerkData = { id: 'clerk_user_123' };
+		const expectedResponse = { message: 'User created successfully' };
 
-    const result = await service.handleClerkUserCreated(clerkData);
+		const result = await service.handleClerkUserCreated(clerkData);
 
-    expect(result).toEqual(expectedResponse);
-  });
+		expect(result).toEqual(expectedResponse);
+	});
 });
 ```
 
@@ -359,23 +406,20 @@ describe('UserService', () => {
 
 ```typescript
 describe('UserController (e2e)', () => {
-  let app: INestApplication;
+	let app: INestApplication;
 
-  beforeEach(async () => {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+	beforeEach(async () => {
+		const moduleFixture = await Test.createTestingModule({
+			imports: [AppModule],
+		}).compile();
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
+		app = moduleFixture.createNestApplication();
+		await app.init();
+	});
 
-  it('/users/webhook/clerk (POST)', () => {
-    return request(app.getHttpServer())
-      .post('/users/webhook/clerk')
-      .send({ id: 'clerk_user_123' })
-      .expect(200);
-  });
+	it('/users/webhook/clerk (POST)', () => {
+		return request(app.getHttpServer()).post('/users/webhook/clerk').send({ id: 'clerk_user_123' }).expect(200);
+	});
 });
 ```
 
@@ -384,81 +428,91 @@ describe('UserController (e2e)', () => {
 ### Adding a New Service
 
 #### **Step 1: Create service directory**
+
 ```bash
 mkdir apps/new-service
 cd apps/new-service
 ```
 
 #### **Step 2: Initialize NestJS application**
+
 ```bash
 nest new . --package-manager pnpm
 ```
 
 #### **Step 3: Update nest-cli.json**
+
 ```json
 {
-  "new-service": {
-    "type": "application",
-    "root": "apps/new-service",
-    "entryFile": "src/main",
-    "sourceRoot": ".",
-    "compilerOptions": {
-      "tsConfigPath": "apps/new-service/tsconfig.app.json"
-    }
-  }
+	"new-service": {
+		"type": "application",
+		"root": "apps/new-service",
+		"entryFile": "src/main",
+		"sourceRoot": ".",
+		"compilerOptions": {
+			"tsConfigPath": "apps/new-service/tsconfig.app.json"
+		}
+	}
 }
 ```
 
 #### **Step 4: Add service to package.json scripts**
+
 ```json
 {
-  "scripts": {
-    "start:dev:new-service": "nest start new-service --watch"
-  }
+	"scripts": {
+		"start:dev:new-service": "nest start new-service --watch"
+	}
 }
 ```
 
 ### Adding a New Library
 
 #### **Step 1: Create library directory**
+
 ```bash
 mkdir libs/new-library
 cd libs/new-library
 ```
 
 #### **Step 2: Initialize library**
+
 ```bash
 nest generate library new-library
 ```
 
 #### **Step 3: Update nest-cli.json**
+
 ```json
 {
-  "new-library": {
-    "type": "library",
-    "root": "libs/new-library",
-    "entryFile": "index",
-    "sourceRoot": "libs/new-library/src",
-    "compilerOptions": {
-      "tsConfigPath": "libs/new-library/tsconfig.lib.json"
-    }
-  }
+	"new-library": {
+		"type": "library",
+		"root": "libs/new-library",
+		"entryFile": "index",
+		"sourceRoot": "libs/new-library/src",
+		"compilerOptions": {
+			"tsConfigPath": "libs/new-library/tsconfig.lib.json"
+		}
+	}
 }
 ```
 
 ### Database Schema Changes
 
 #### **Step 1: Create migration**
+
 ```bash
 pnpm run prisma:migrate:dev --name add_new_table
 ```
 
 #### **Step 2: Update Prisma client**
+
 ```bash
 pnpm run prisma:generate
 ```
 
 #### **Step 3: Update API types if needed**
+
 ```bash
 # Update schemas in libs/apitypes
 pnpm run build
@@ -467,6 +521,7 @@ pnpm run build
 ### Protocol Buffer Changes
 
 #### **Step 1: Update .proto files**
+
 ```protobuf
 // libs/proto/src/definitions/service.proto
 service NewService {
@@ -475,11 +530,13 @@ service NewService {
 ```
 
 #### **Step 2: Regenerate TypeScript code**
+
 ```bash
 pnpm run build-proto
 ```
 
 #### **Step 3: Update service implementations**
+
 ```typescript
 // Implement new gRPC methods
 ```
@@ -489,43 +546,48 @@ pnpm run build-proto
 ### Local Development
 
 #### **1. Enable debug logging**
+
 ```bash
 DEBUG=* pnpm run start:dev gateway
 ```
 
 #### **2. Use VS Code debugging**
+
 ```json
 // .vscode/launch.json
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug Gateway",
-      "type": "node",
-      "request": "launch",
-      "program": "${workspaceFolder}/apps/gateway/src/main.ts",
-      "runtimeArgs": ["-r", "ts-node/register"],
-      "env": {
-        "NODE_ENV": "development"
-      }
-    }
-  ]
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Gateway",
+			"type": "node",
+			"request": "launch",
+			"program": "${workspaceFolder}/apps/gateway/src/main.ts",
+			"runtimeArgs": ["-r", "ts-node/register"],
+			"env": {
+				"NODE_ENV": "development"
+			}
+		}
+	]
 }
 ```
 
 ### Docker Debugging
 
 #### **1. View logs**
+
 ```bash
 pnpm run docker:logs
 ```
 
 #### **2. Access container shell**
+
 ```bash
 docker exec -it venta-backend-gateway-1 sh
 ```
 
 #### **3. Inspect container**
+
 ```bash
 docker inspect venta-backend-gateway-1
 ```
@@ -535,6 +597,7 @@ docker inspect venta-backend-gateway-1
 ### Code Optimization
 
 #### **1. Use async/await properly**
+
 ```typescript
 // ✅ Good - Parallel execution
 const users = await Promise.all(
@@ -549,28 +612,30 @@ for (const id of userIds) {
 ```
 
 #### **2. Implement caching**
+
 ```typescript
 @Injectable()
 export class UserService {
-  constructor(
-    private readonly redis: RedisService,
-    private readonly prisma: PrismaService,
-  ) {}
+	constructor(
+		private readonly redis: RedisService,
+		private readonly prisma: PrismaService,
+	) {}
 
-  async findById(id: string): Promise<User> {
-    const cached = await this.redis.get(`user:${id}`);
-    if (cached) {
-      return JSON.parse(cached);
-    }
+	async findById(id: string): Promise<User> {
+		const cached = await this.redis.get(`user:${id}`);
+		if (cached) {
+			return JSON.parse(cached);
+		}
 
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    await this.redis.setex(`user:${id}`, 3600, JSON.stringify(user));
-    return user;
-  }
+		const user = await this.prisma.user.findUnique({ where: { id } });
+		await this.redis.setex(`user:${id}`, 3600, JSON.stringify(user));
+		return user;
+	}
 }
 ```
 
 #### **3. Use database indexes**
+
 ```sql
 -- Add indexes for frequently queried columns
 CREATE INDEX idx_users_email ON users(email);
@@ -582,6 +647,7 @@ CREATE INDEX idx_users_created_at ON users(created_at);
 ### Common Issues
 
 #### **1. Port conflicts**
+
 ```bash
 # Check what's using a port
 lsof -i :5000
@@ -591,6 +657,7 @@ kill -9 <PID>
 ```
 
 #### **2. Database connection issues**
+
 ```bash
 # Check database status
 docker ps | grep postgres
@@ -600,6 +667,7 @@ docker-compose restart postgres
 ```
 
 #### **3. Build errors**
+
 ```bash
 # Clean and rebuild
 pnpm run clean
@@ -608,6 +676,7 @@ pnpm run build
 ```
 
 #### **4. Test failures**
+
 ```bash
 # Run tests with verbose output
 pnpm run test:run -- --verbose
@@ -619,16 +688,19 @@ pnpm run test:run -- user.service.spec.ts
 ### Getting Help
 
 #### **1. Check existing documentation**
+
 - ✅ README files in each service
 - ✅ API documentation
 - ✅ Architecture overview
 
 #### **2. Review logs**
+
 - ✅ Application logs
 - ✅ Docker logs
 - ✅ Test output
 
 #### **3. Search codebase**
+
 ```bash
 # Search for specific patterns
 grep -r "pattern" apps/ libs/
@@ -641,22 +713,22 @@ find . -name "*.ts" -type f
 
 ### Code Quality Standards
 
-| Metric | Target | Tool |
-|--------|--------|------|
-| **Test Coverage** | >80% | Vitest |
-| **Linting** | 0 errors | ESLint |
-| **Type Safety** | 0 errors | TypeScript |
-| **Build Time** | <2 minutes | pnpm build |
+| Metric            | Target     | Tool       |
+| ----------------- | ---------- | ---------- |
+| **Test Coverage** | >80%       | Vitest     |
+| **Linting**       | 0 errors   | ESLint     |
+| **Type Safety**   | 0 errors   | TypeScript |
+| **Build Time**    | <2 minutes | pnpm build |
 
 ### Performance Benchmarks
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| **Startup Time** | <30 seconds | Service startup |
-| **Test Execution** | <1 minute | Full test suite |
-| **Build Time** | <2 minutes | Production build |
-| **Memory Usage** | <512MB | Per service |
+| Metric             | Target      | Measurement      |
+| ------------------ | ----------- | ---------------- |
+| **Startup Time**   | <30 seconds | Service startup  |
+| **Test Execution** | <1 minute   | Full test suite  |
+| **Build Time**     | <2 minutes  | Production build |
+| **Memory Usage**   | <512MB      | Per service      |
 
 ---
 
-**This development guide should help you get started and maintain high code quality throughout the project.** 
+**This development guide should help you get started and maintain high code quality throughout the project.**

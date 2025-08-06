@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { CallHandler, ExecutionContext, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrometheusService } from './prometheus.service';
 
@@ -20,10 +20,11 @@ export class MetricsInterceptor implements NestInterceptor {
 	constructor(
 		private readonly prometheusService: PrometheusService,
 		private readonly configService: ConfigService,
+		@Inject('PROMETHEUS_OPTIONS') private readonly options: { appName: string },
 	) {}
 
 	private getServiceName(): string {
-		return this.configService.get('APP_NAME') || 'unknown-app';
+		return this.options?.appName || this.configService.get('APP_NAME') || 'unknown-app';
 	}
 
 	private initializeMetrics() {
