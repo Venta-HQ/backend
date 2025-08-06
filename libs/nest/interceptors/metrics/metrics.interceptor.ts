@@ -2,9 +2,9 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { MetricsFactoryRegistry } from './factories/metrics-factory-registry';
-import { RequestMetrics } from './interfaces/request-metrics.interface';
-import { PrometheusService } from './prometheus.service';
+import { MetricsFactoryRegistry } from '../../modules/monitoring/prometheus/factories/metrics-factory-registry';
+import { RequestMetrics } from '../../modules/monitoring/prometheus/interfaces/request-metrics.interface';
+import { PrometheusService } from '../../modules/monitoring/prometheus/prometheus.service';
 
 interface Metrics {
 	requestDuration: any;

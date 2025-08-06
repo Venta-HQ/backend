@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
-import { RequestContextService } from '../../networking/request-context';
+import { RequestContextService } from '../../modules/networking/request-context';
 
 export interface RequestIdExtractor {
 	extractId(context: ExecutionContext): string | undefined;

@@ -1,7 +1,7 @@
 export * from './prometheus.module';
 export * from './prometheus.service';
 export * from './prometheus.controller';
-export * from './metrics.interceptor';
+// Interceptors are now in libs/nest/interceptors/
 export * from './metrics.factory';
 export * from './interfaces/request-metrics.interface';
 export * from './factories/metrics-factory-registry';

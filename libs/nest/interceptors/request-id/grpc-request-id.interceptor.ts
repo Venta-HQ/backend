@@ -1,5 +1,5 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
-import { RequestContextService } from '../../networking/request-context';
+import { RequestContextService } from '../../modules/networking/request-context';
 import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
 /**

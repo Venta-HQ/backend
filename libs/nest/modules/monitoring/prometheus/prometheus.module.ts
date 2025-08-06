@@ -1,7 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { MetricsInterceptor } from './metrics.interceptor';
+import { MetricsInterceptor } from '../../../interceptors/metrics/metrics.interceptor';
 import { PrometheusController } from './prometheus.controller';
 import { PrometheusService } from './prometheus.service';
 

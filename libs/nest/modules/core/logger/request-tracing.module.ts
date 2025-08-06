@@ -1,6 +1,6 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { GrpcRequestIdInterceptor, NatsRequestIdInterceptor } from './index';
+import { GrpcRequestIdInterceptor, NatsRequestIdInterceptor } from '../../../interceptors/request-id';
 
 export interface RequestTracingOptions {
 	protocol: 'http' | 'grpc' | 'websocket' | 'nats';

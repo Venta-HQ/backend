@@ -78,6 +78,15 @@
 				"tsConfigPath": "libs/nest/errors/tsconfig.lib.json"
 			}
 		},
+		"nest/interceptors": {
+			"type": "library",
+			"root": "libs/nest/interceptors/",
+			"entryFile": "index",
+			"sourceRoot": "libs/nest/interceptors/",
+			"compilerOptions": {
+				"tsConfigPath": "libs/nest/interceptors/tsconfig.lib.json"
+			}
+		},
 		"proto": {
 			"type": "library",
 			"root": "libs/proto",

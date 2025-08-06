@@ -7,6 +7,7 @@ The NestJS Shared Library provides reusable NestJS modules, services, guards, fi
 ## Overview
 
 This library provides:
+
 - Standardized modules for common functionality (database, caching, authentication, etc.)
 - Reusable guards and filters for security and validation
 - Utility services for logging, error handling, and monitoring
@@ -21,30 +22,30 @@ This library provides:
 Import the modules you need in your service:
 
 ```typescript
-import { 
-  BootstrapModule,
-  PrismaModule, 
-  RedisModule, 
-  LoggerModule,
-  EventsModule,
-  ClerkModule,
-  AlgoliaModule
+import {
+	AlgoliaModule,
+	BootstrapModule,
+	ClerkModule,
+	EventsModule,
+	LoggerModule,
+	PrismaModule,
+	RedisModule,
 } from '@app/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: 'Your Service',
-      protocol: 'grpc',
-      additionalModules: [
-        PrismaModule,
-        RedisModule,
-        EventsModule.register({ appName: 'Your Service' }),
-        ClerkModule.register(),
-        AlgoliaModule.register(),
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: 'Your Service',
+			protocol: 'grpc',
+			additionalModules: [
+				PrismaModule,
+				RedisModule,
+				EventsModule.register({ appName: 'Your Service' }),
+				ClerkModule.register(),
+				AlgoliaModule.register(),
+			],
+		}),
+	],
 })
 export class YourModule {}
 ```
@@ -54,54 +55,57 @@ export class YourModule {}
 Inject the services you need in your service classes:
 
 ```typescript
-import { 
-  LoggerService, 
-  PrismaService, 
-  RedisService,
-  EventService,
-  ClerkService,
-  AlgoliaService
+import {
+	AlgoliaService,
+	ClerkService,
+	EventService,
+	LoggerService,
+	PrismaService,
+	RedisService,
 } from '@app/nest/modules';
 
 @Injectable()
 export class YourService {
-  constructor(
-    private logger: LoggerService,
-    private prisma: PrismaService,
-    private redis: RedisService,
-    private eventService: EventService,
-    private clerkService: ClerkService,
-    private algoliaService: AlgoliaService
-  ) {}
+	constructor(
+		private logger: LoggerService,
+		private prisma: PrismaService,
+		private redis: RedisService,
+		private eventService: EventService,
+		private clerkService: ClerkService,
+		private algoliaService: AlgoliaService,
+	) {}
 
-  async processData(data: any) {
-    this.logger.log('Processing data', { dataId: data.id });
-    
-    // Database operations
-    const result = await this.prisma.db.yourModel.create({ data });
-    
-    // Caching
-    await this.redis.set(`data:${result.id}`, JSON.stringify(result));
-    
-    // Event publishing
-    await this.eventService.emit('data.created', { id: result.id });
-    
-    return result;
-  }
+	async processData(data: any) {
+		this.logger.log('Processing data', { dataId: data.id });
+
+		// Database operations
+		const result = await this.prisma.db.yourModel.create({ data });
+
+		// Caching
+		await this.redis.set(`data:${result.id}`, JSON.stringify(result));
+
+		// Event publishing
+		await this.eventService.emit('data.created', { id: result.id });
+
+		return result;
+	}
 }
 ```
 
-### Guards and Filters
+### Guards, Interceptors, and Filters
 
-Use guards and filters for security and validation:
+Use guards, interceptors, and filters for security, monitoring, and validation:
 
-```typescript
-import { 
-  AuthGuard, 
+````typescript
+import {
+  AuthGuard,
   WsAuthGuard,
   WsRateLimitGuard,
+  MetricsInterceptor,
+  GrpcRequestIdInterceptor,
+  NatsRequestIdInterceptor,
   AppExceptionFilter,
-  SchemaValidatorPipe 
+  SchemaValidatorPipe
 } from '@app/nest';
 
 @Controller('api')
@@ -121,7 +125,21 @@ export class YourController {
 export class YourGateway {
   // WebSocket methods
 }
-```
+
+// Interceptors for monitoring and request correlation
+@Module({
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: GrpcRequestIdInterceptor,
+    },
+  ],
+})
+export class YourModule {}
 
 ### Error Handling
 
@@ -134,11 +152,11 @@ import { AppError, ErrorCodes } from '@app/nest/errors';
 export class YourService {
   async getResource(id: string) {
     const resource = await this.prisma.db.resource.findUnique({ where: { id } });
-    
+
     if (!resource) {
       throw AppError.notFound(ErrorCodes.RESOURCE_NOT_FOUND, { resourceId: id });
     }
-    
+
     return resource;
   }
 
@@ -148,7 +166,7 @@ export class YourService {
     }
   }
 }
-```
+````
 
 ### Configuration
 
@@ -189,4 +207,4 @@ NATS_URL=nats://localhost:4222
 - **Clerk** for authentication and user management
 - **Algolia** for search functionality
 - **NATS** for event messaging and communication
-- **Cloudinary** for file storage and media processing 
+- **Cloudinary** for file storage and media processing
