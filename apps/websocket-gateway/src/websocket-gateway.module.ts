@@ -1,4 +1,3 @@
-import { join } from 'path';
 import {
 	WsAuthGuard,
 	WsRateLimitGuardLenient,
@@ -24,8 +23,8 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 				RedisModule,
 				ClerkModule.register(),
 				GrpcInstanceModule.register<LocationServiceClient>({
-					protoPackage: LOCATION_PACKAGE_NAME,
 					proto: 'location.proto',
+					protoPackage: LOCATION_PACKAGE_NAME,
 					provide: LOCATION_SERVICE_NAME,
 					serviceName: LOCATION_SERVICE_NAME,
 					urlEnvVar: 'LOCATION_SERVICE_ADDRESS',

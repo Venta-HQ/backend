@@ -58,4 +58,4 @@ export class GrpcRequestMetricsFactory implements RequestMetricsFactory {
 
 		return new GrpcRequestMetrics(method, route, requestSize, responseSize, duration, statusCode);
 	}
-} 
+}

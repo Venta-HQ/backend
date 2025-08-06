@@ -1,4 +1,3 @@
-import { join } from 'path';
 import { ClerkModule, GrpcInstanceModule } from 'libs/nest/modules';
 import { VENDOR_PACKAGE_NAME, VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
 import { Module } from '@nestjs/common';
@@ -9,8 +8,8 @@ import { VendorController } from './vendor.controller';
 	imports: [
 		ClerkModule.register(),
 		GrpcInstanceModule.register<VendorServiceClient>({
-			protoPackage: VENDOR_PACKAGE_NAME,
 			proto: 'vendor.proto',
+			protoPackage: VENDOR_PACKAGE_NAME,
 			provide: VENDOR_SERVICE_NAME,
 			serviceName: VENDOR_SERVICE_NAME,
 			urlEnvVar: 'VENDOR_SERVICE_ADDRESS',

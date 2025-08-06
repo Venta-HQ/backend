@@ -11,7 +11,7 @@ import {
 describe('Location Schemas', () => {
 	describe('VendorLocationUpdateDataSchema', () => {
 		const testCases = createBasicSchemaTests(VendorLocationUpdateDataSchema, ['vendorId', 'lat', 'long']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -73,7 +73,7 @@ describe('Location Schemas', () => {
 
 	describe('GrpcLocationSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcLocationSchema, ['lat', 'long']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -174,7 +174,10 @@ describe('Location Schemas', () => {
 		});
 
 		// Test optional fields
-		const optionalFieldTests = createOptionalFieldTests(GrpcVendorLocationRequestSchema, {}, ['neLocation', 'swLocation']);
+		const optionalFieldTests = createOptionalFieldTests(GrpcVendorLocationRequestSchema, {}, [
+			'neLocation',
+			'swLocation',
+		]);
 		optionalFieldTests.forEach(({ name, test }) => {
 			it(name, test);
 		});

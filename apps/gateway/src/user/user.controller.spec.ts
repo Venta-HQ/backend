@@ -1,5 +1,10 @@
 import { vi } from 'vitest';
-import { createGrpcErrorTest, createGrpcSuccessTest, grpc, mockGrpcClient, mockRequest } from '../../../../test/helpers/test-utils';
+import {
+	createGrpcErrorTest,
+	createGrpcSuccessTest,
+	mockGrpcClient,
+	mockRequest,
+} from '../../../../test/helpers/test-utils';
 import { UserController } from './user.controller';
 
 // Mock the proto imports to avoid module resolution issues
@@ -40,7 +45,7 @@ describe('UserController', () => {
 				'getUserVendors',
 				mockRequestObj,
 				mockResponse,
-				expectedGrpcCall
+				expectedGrpcCall,
 			);
 			await test();
 		});
@@ -54,7 +59,7 @@ describe('UserController', () => {
 				'getUserVendors',
 				mockRequestObj,
 				mockError,
-				expectedGrpcCall
+				expectedGrpcCall,
 			);
 			await test();
 		});
@@ -68,7 +73,7 @@ describe('UserController', () => {
 				'getUserVendors',
 				mockRequestObj,
 				emptyResponse,
-				expectedGrpcCall
+				expectedGrpcCall,
 			);
 			await test();
 		});
@@ -77,7 +82,7 @@ describe('UserController', () => {
 			const requestWithoutUserId = mockRequest({ userId: undefined });
 			const emptyResponse = { vendors: [] };
 			const expectedCallWithoutUserId = { userId: undefined };
-			
+
 			const test = createGrpcSuccessTest(
 				controller,
 				'getUserVendors',
@@ -85,7 +90,7 @@ describe('UserController', () => {
 				'getUserVendors',
 				requestWithoutUserId,
 				emptyResponse,
-				expectedCallWithoutUserId
+				expectedCallWithoutUserId,
 			);
 			await test();
 		});

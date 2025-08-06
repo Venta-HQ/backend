@@ -12,7 +12,7 @@ describe('Vendor Schemas', () => {
 	describe('CreateVendorSchema', () => {
 		const requiredFields = ['name'];
 		const optionalFields = ['description', 'email', 'imageUrl', 'phone', 'website'];
-		
+
 		const testCases = createBasicSchemaTests(CreateVendorSchema, requiredFields, optionalFields);
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
@@ -75,7 +75,7 @@ describe('Vendor Schemas', () => {
 
 	describe('GrpcVendorCreateDataSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcVendorCreateDataSchema, ['name', 'userId']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -83,7 +83,7 @@ describe('Vendor Schemas', () => {
 
 	describe('GrpcVendorUpdateDataSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcVendorUpdateDataSchema, ['id']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -91,7 +91,7 @@ describe('Vendor Schemas', () => {
 
 	describe('GrpcVendorLookupDataSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcVendorLookupDataSchema, ['id']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});

@@ -1,8 +1,8 @@
-import { ExecutionContext } from '@nestjs/common';
 import { vi } from 'vitest';
-import { MetricsFactoryRegistry } from './metrics-factory-registry';
-import { HttpRequestMetricsFactory } from './http-request-metrics.factory';
+import { ExecutionContext } from '@nestjs/common';
 import { GrpcRequestMetricsFactory } from './grpc-request-metrics.factory';
+import { HttpRequestMetricsFactory } from './http-request-metrics.factory';
+import { MetricsFactoryRegistry } from './metrics-factory-registry';
 
 describe('MetricsFactoryRegistry', () => {
 	describe('getFactory', () => {
@@ -48,4 +48,4 @@ describe('MetricsFactoryRegistry', () => {
 			expect(MetricsFactoryRegistry.supports('websocket')).toBe(false);
 		});
 	});
-}); 
+});

@@ -60,4 +60,4 @@ export class HttpRequestMetricsFactory implements RequestMetricsFactory {
 
 		return new HttpRequestMetrics(method, route, requestSize, responseSize, duration, statusCode);
 	}
-} 
+}

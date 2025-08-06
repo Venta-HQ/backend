@@ -4,14 +4,19 @@
  */
 export interface RequestMetrics {
 	/**
+	 * Get request duration in milliseconds
+	 */
+	getDuration(): number;
+
+	/**
 	 * Get the method/operation name
 	 */
 	getMethod(): string;
 
 	/**
-	 * Get the route/path/operation identifier
+	 * Get protocol type for labeling
 	 */
-	getRoute(): string;
+	getProtocol(): string;
 
 	/**
 	 * Get request size in bytes (if available)
@@ -24,19 +29,14 @@ export interface RequestMetrics {
 	getResponseSize(): number;
 
 	/**
-	 * Get request duration in milliseconds
+	 * Get the route/path/operation identifier
 	 */
-	getDuration(): number;
+	getRoute(): string;
 
 	/**
 	 * Get status code/result code
 	 */
 	getStatusCode(): number;
-
-	/**
-	 * Get protocol type for labeling
-	 */
-	getProtocol(): string;
 }
 
 /**
@@ -47,4 +47,4 @@ export interface RequestMetricsFactory {
 	 * Create request metrics from execution context
 	 */
 	createMetrics(context: any, startTime: number, endTime: number, data?: any): RequestMetrics;
-} 
+}

@@ -44,8 +44,6 @@ export function createGrpcErrorMock(error: Error) {
  * Creates a standardized gRPC observable mock
  */
 export function createGrpcObservableMock<T>(responses: T[]) {
-	let currentIndex = 0;
-	
 	return {
 		pipe: vi.fn().mockReturnValue({
 			subscribe: vi.fn().mockImplementation((observer) => {
@@ -85,7 +83,7 @@ export function createGrpcSuccessTest(
 	grpcMethod: string,
 	requestData: any,
 	expectedResponse: any,
-	expectedGrpcCall: any
+	expectedGrpcCall: any,
 ) {
 	return async () => {
 		grpcClient.invoke.mockReturnValue(createGrpcSuccessMock(expectedResponse));
@@ -107,7 +105,7 @@ export function createGrpcErrorTest(
 	grpcMethod: string,
 	requestData: any,
 	expectedError: Error,
-	expectedGrpcCall: any
+	expectedGrpcCall: any,
 ) {
 	return async () => {
 		grpcClient.invoke.mockReturnValue(createGrpcErrorMock(expectedError));
@@ -115,4 +113,4 @@ export function createGrpcErrorTest(
 		await expect(controller[method](requestData)).rejects.toThrow(expectedError);
 		expect(grpcClient.invoke).toHaveBeenCalledWith(grpcMethod, expectedGrpcCall);
 	};
-} 
+}

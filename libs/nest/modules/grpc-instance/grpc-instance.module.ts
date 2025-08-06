@@ -1,21 +1,21 @@
+import { ProtoPathUtil } from '@app/proto';
 import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { ClientGrpc, ClientsModule, Transport } from '@nestjs/microservices';
-import { ProtoPathUtil } from '@app/proto';
 import GrpcInstance from './grpc-instance.service';
 
 @Module({})
 export class GrpcInstanceModule {
 	static register<T>({
-		protoPackage,
 		proto,
+		protoPackage,
 		provide,
 		serviceName,
 		urlEnvVar,
 	}: {
-		protoPackage: string;
 		proto: string;
+		protoPackage: string;
 		provide: string;
 		serviceName: string;
 		urlEnvVar: string;

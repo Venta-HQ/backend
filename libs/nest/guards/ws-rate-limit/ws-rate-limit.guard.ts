@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { Socket } from 'socket.io';
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorType } from '@app/nest/errors';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';

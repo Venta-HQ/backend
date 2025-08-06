@@ -22,14 +22,14 @@ export abstract class BaseWebSocketGatewayTest {
 	protected async setupGateway() {
 		this.mockDeps = createMockDependencies({
 			websocketMetrics: {
-				[`${this.getMetricsPrefix()}_connection_duration_seconds`]: { observe: vi.fn() },
-				[`${this.getMetricsPrefix()}_connections_active`]: { dec: vi.fn(), inc: vi.fn() },
-				[`${this.getMetricsPrefix()}_connections_total`]: { inc: vi.fn() },
-				[`${this.getMetricsPrefix()}_disconnections_total`]: { inc: vi.fn() },
 				[`${this.getMetricsPrefix()}_errors_total`]: { inc: vi.fn() },
-				location_updates_total: { inc: vi.fn() },
-				location_update_duration_seconds: { observe: vi.fn() },
+				[`${this.getMetricsPrefix()}_disconnections_total`]: { inc: vi.fn() },
+				[`${this.getMetricsPrefix()}_connections_total`]: { inc: vi.fn() },
+				[`${this.getMetricsPrefix()}_connections_active`]: { dec: vi.fn(), inc: vi.fn() },
+				[`${this.getMetricsPrefix()}_connection_duration_seconds`]: { observe: vi.fn() },
 				active_location_tracking: { set: vi.fn() },
+				location_update_duration_seconds: { observe: vi.fn() },
+				location_updates_total: { inc: vi.fn() },
 			},
 		});
 
@@ -63,16 +63,16 @@ export abstract class BaseWebSocketGatewayTest {
 
 	protected createMockSocket(overrides: any = {}) {
 		return {
-			id: 'socket-123',
 			clerkId: 'user-123',
-			userId: 'user-123',
-			vendorId: 'vendor-123',
 			emit: vi.fn(),
+			id: 'socket-123',
+			join: vi.fn(),
+			leave: vi.fn(),
 			to: vi.fn().mockReturnValue({
 				emit: vi.fn(),
 			}),
-			join: vi.fn(),
-			leave: vi.fn(),
+			userId: 'user-123',
+			vendorId: 'vendor-123',
 			...overrides,
 		};
 	}
@@ -129,18 +129,6 @@ export function createWebSocketConnectionTests(
 	metricsPrefix: string,
 ) {
 	return {
-		success: async (socket: any) => {
-			await gateway.handleConnection(socket);
-
-			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_total`].inc).toHaveBeenCalledWith({
-				status: 'connected',
-				type: metricsPrefix.replace('_', ''),
-			});
-			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_active`].inc).toHaveBeenCalledWith({
-				type: metricsPrefix.replace('_', ''),
-			});
-		},
-
 		error: async (socket: any, errorMessage: string) => {
 			// Mock the metrics to throw an error
 			const originalInc = mockDeps.websocketMetrics[`${metricsPrefix}_connections_total`].inc;
@@ -152,6 +140,18 @@ export function createWebSocketConnectionTests(
 
 			// Restore the original mock
 			mockDeps.websocketMetrics[`${metricsPrefix}_connections_total`].inc = originalInc;
+		},
+
+		success: async (socket: any) => {
+			await gateway.handleConnection(socket);
+
+			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_total`].inc).toHaveBeenCalledWith({
+				status: 'connected',
+				type: metricsPrefix.replace('_', ''),
+			});
+			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_active`].inc).toHaveBeenCalledWith({
+				type: metricsPrefix.replace('_', ''),
+			});
 		},
 	};
 }
@@ -166,19 +166,6 @@ export function createWebSocketDisconnectionTests(
 	metricsPrefix: string,
 ) {
 	return {
-		success: (socket: any) => {
-			gateway.handleDisconnect(socket);
-
-			expect(mockDeps.websocketMetrics[`${metricsPrefix}_disconnections_total`].inc).toHaveBeenCalledWith({
-				reason: 'disconnect',
-				type: metricsPrefix.replace('_', ''),
-			});
-			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_active`].dec).toHaveBeenCalledWith({
-				type: metricsPrefix.replace('_', ''),
-			});
-			expect(connectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
-		},
-
 		error: async (socket: any, errorMessage: string) => {
 			// Mock the metrics to throw an error
 			const originalInc = mockDeps.websocketMetrics[`${metricsPrefix}_disconnections_total`].inc;
@@ -190,6 +177,19 @@ export function createWebSocketDisconnectionTests(
 
 			// Restore the original mock
 			mockDeps.websocketMetrics[`${metricsPrefix}_disconnections_total`].inc = originalInc;
+		},
+
+		success: (socket: any) => {
+			gateway.handleDisconnect(socket);
+
+			expect(mockDeps.websocketMetrics[`${metricsPrefix}_disconnections_total`].inc).toHaveBeenCalledWith({
+				reason: 'disconnect',
+				type: metricsPrefix.replace('_', ''),
+			});
+			expect(mockDeps.websocketMetrics[`${metricsPrefix}_connections_active`].dec).toHaveBeenCalledWith({
+				type: metricsPrefix.replace('_', ''),
+			});
+			expect(connectionManager.handleDisconnect).toHaveBeenCalledWith('socket-123');
 		},
 	};
 }

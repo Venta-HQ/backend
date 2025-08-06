@@ -1,5 +1,5 @@
 import { IntegrationType } from '@prisma/client';
-import { clearMocks, createServiceErrorTest, createServiceNotFoundTest, createServiceSuccessTest, data, mockPrisma } from '../../../../test/helpers/test-utils';
+import { clearMocks, data, mockPrisma } from '../../../../test/helpers/test-utils';
 import { ClerkService } from './clerk.service';
 
 describe('ClerkService', () => {

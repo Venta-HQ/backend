@@ -113,4 +113,4 @@ describe('RequestMetrics Interface', () => {
 			expect(grpcMetrics.getProtocol()).toBe('grpc');
 		});
 	});
-}); 
+});

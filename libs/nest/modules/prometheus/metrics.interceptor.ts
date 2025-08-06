@@ -102,14 +102,14 @@ export class MetricsInterceptor implements NestInterceptor {
 			const metrics: RequestMetrics = factory.createMetrics(context, startTime, endTime, data);
 
 			// Handle error status codes
-			const statusCode = error ? (error.status || error.code || 500) : metrics.getStatusCode();
+			const statusCode = error ? error.status || error.code || 500 : metrics.getStatusCode();
 
 			// Record metrics using protocol-agnostic interface
 			const labels = {
 				method: metrics.getMethod(),
+				protocol: metrics.getProtocol(),
 				route: metrics.getRoute(),
 				status_code: statusCode.toString(),
-				protocol: metrics.getProtocol(),
 			};
 
 			const duration = metrics.getDuration() / 1000; // Convert to seconds
@@ -121,7 +121,7 @@ export class MetricsInterceptor implements NestInterceptor {
 			const requestSize = metrics.getRequestSize();
 			if (requestSize > 0) {
 				this.metrics!.requestSize.observe(
-					{ method: labels.method, route: labels.route, protocol: labels.protocol },
+					{ method: labels.method, protocol: labels.protocol, route: labels.route },
 					requestSize,
 				);
 			}
@@ -130,13 +130,13 @@ export class MetricsInterceptor implements NestInterceptor {
 			const responseSize = metrics.getResponseSize();
 			if (responseSize > 0) {
 				this.metrics!.responseSize.observe(
-					{ method: labels.method, route: labels.route, protocol: labels.protocol },
+					{ method: labels.method, protocol: labels.protocol, route: labels.route },
 					responseSize,
 				);
 			}
-		} catch (error) {
+		} catch (e) {
 			// Log but don't throw - metrics collection should not break the application
-			this.logger.warn('Failed to record metrics', error);
+			this.logger.warn('Failed to record metrics', e);
 		}
 	}
 }

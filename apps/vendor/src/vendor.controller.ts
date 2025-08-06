@@ -1,4 +1,4 @@
-import { GrpcVendorCreateDataSchema, GrpcVendorLookupDataSchema, GrpcVendorUpdateDataSchema } from '@app/apitypes';
+import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@app/apitypes';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import {

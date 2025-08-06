@@ -1,7 +1,7 @@
 import { ExecutionContext } from '@nestjs/common';
+import { RequestMetricsFactory } from '../interfaces/request-metrics.interface';
 import { GrpcRequestMetricsFactory } from './grpc-request-metrics.factory';
 import { HttpRequestMetricsFactory } from './http-request-metrics.factory';
-import { RequestMetricsFactory } from '../interfaces/request-metrics.interface';
 
 /**
  * Registry for protocol-specific metrics factories
@@ -33,4 +33,4 @@ export class MetricsFactoryRegistry {
 	static supports(contextType: string): boolean {
 		return this.factories.has(contextType);
 	}
-} 
+}

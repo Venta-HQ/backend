@@ -10,7 +10,7 @@ import {
 describe('User Schemas', () => {
 	describe('GrpcUserVendorDataSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcUserVendorDataSchema, ['userId']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -24,15 +24,19 @@ describe('User Schemas', () => {
 
 	describe('GrpcClerkUserDataSchema', () => {
 		const testCases = createBasicSchemaTests(GrpcClerkUserDataSchema, ['id']);
-		
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
 	});
 
 	describe('GrpcRevenueCatProviderDataSchema', () => {
-		const testCases = createBasicSchemaTests(GrpcRevenueCatProviderDataSchema, ['eventId', 'productId', 'transactionId']);
-		
+		const testCases = createBasicSchemaTests(GrpcRevenueCatProviderDataSchema, [
+			'eventId',
+			'productId',
+			'transactionId',
+		]);
+
 		testCases.forEach(({ name, test }) => {
 			it(name, test);
 		});
@@ -74,7 +78,10 @@ describe('User Schemas', () => {
 		});
 
 		// Test required fields
-		const requiredFieldTests = createBasicSchemaTests(GrpcRevenueCatSubscriptionDataSchema, ['clerkUserId', 'providerId']);
+		const requiredFieldTests = createBasicSchemaTests(GrpcRevenueCatSubscriptionDataSchema, [
+			'clerkUserId',
+			'providerId',
+		]);
 		requiredFieldTests.forEach(({ name, test }) => {
 			it(name, test);
 		});
