@@ -18,7 +18,8 @@ model Vendor {
     updatedAt DateTime @updatedAt
 
     // Relations
-    owner User @relation(fields: [id], references: [id])
+    ownerId String
+    owner   User   @relation(fields: [ownerId], references: [id])
 
     @@map("vendor")
 }

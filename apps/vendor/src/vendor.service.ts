@@ -24,11 +24,7 @@ export class VendorService {
 		const vendor = await this.prisma.db.vendor.create({
 			data: {
 				...rest,
-				owner: {
-					connect: {
-						id: userId,
-					},
-				},
+				ownerId: userId,
 				primaryImage: imageUrl,
 			},
 		});
@@ -38,7 +34,7 @@ export class VendorService {
 
 	async updateVendor(id: string, userId: string, data: Omit<VendorUpdateData, 'id' | 'userId'>) {
 		const exists = await this.prisma.db.vendor.count({
-			where: { id, owner: { id: userId } },
+			where: { id, ownerId: userId },
 		});
 
 		if (!exists) {
@@ -52,7 +48,7 @@ export class VendorService {
 				...updateData,
 				...(imageUrl ? { primaryImage: imageUrl } : {}),
 			},
-			where: { id, owner: { id: userId } },
+			where: { id, ownerId: userId },
 		});
 
 		await this.eventService.emit('vendor.updated', vendor);
@@ -60,7 +56,7 @@ export class VendorService {
 
 	async deleteVendor(id: string, userId: string) {
 		const vendor = await this.prisma.db.vendor.findFirst({
-			where: { id, owner: { id: userId } },
+			where: { id, ownerId: userId },
 		});
 		if (!vendor) {
 			throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: id });
