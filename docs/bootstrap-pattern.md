@@ -84,7 +84,7 @@ export class LocationModule {}
 
 - **✅ NATS microservice** for message consumption
 - **✅ Separate HTTP server** for health checks
-- **✅ No BootstrapModule** needed (pure message consumer)
+- **✅ BootstrapModule** for consistency and observability
 
 #### **Implementation Example**
 
@@ -97,7 +97,7 @@ await BootstrapService.bootstrapNatsMicroservice({
 		port: 'ALGOLIA_SYNC_HEALTH_PORT',
 	},
 	main: {
-		module: AlgoliaSyncModule, // No BootstrapModule
+		module: AlgoliaSyncModule, // Includes BootstrapModule
 		queue: 'algolia-sync-queue',
 		urlEnvVar: 'NATS_URL',
 	},
@@ -105,7 +105,13 @@ await BootstrapService.bootstrapNatsMicroservice({
 
 // algolia-sync.module.ts
 @Module({
-	imports: [AlgoliaModule.register()], // Only what's needed
+	imports: [
+		BootstrapModule.forRoot({
+			additionalModules: [AlgoliaModule.register(), NatsQueueModule],
+			appName: 'Algolia Sync Service',
+			protocol: 'nats',
+		}),
+	],
 })
 export class AlgoliaSyncModule {}
 ```
@@ -178,7 +184,7 @@ export class AlgoliaSyncModule {}
 - ✅ **HTTP services** automatically include health checks in main server
 - ✅ **gRPC/NATS services** use separate lightweight health servers
 - ✅ **Environment variables** follow consistent naming pattern
-- ✅ **BootstrapModule** only used where needed (gRPC/HTTP services, not NATS consumers)
+- ✅ **BootstrapModule** used for all service types (HTTP, gRPC, NATS) for consistency
 - ✅ **Health checks** are always included (no "with health" suffix needed)
 - ✅ **HealthCheckModule** automatically included for HTTP services in BootstrapModule
 
