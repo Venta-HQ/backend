@@ -1,0 +1,69 @@
+{
+	"id": null,
+	"title": "Request Flow Tracker",
+	"tags": ["request-tracing", "simple", "venta"],
+	"style": "dark",
+	"timezone": "browser",
+	"panels": [
+		{
+			"id": 1,
+			"title": "Complete Request Flow",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} | json | (requestId=\"$requestId\" or correlationId=\"$requestId\") | line_format \"{{.timestamp}} [{{.app}}] {{.level}} {{.msg}}\"",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 24,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			}
+		}
+	],
+	"time": {
+		"from": "now-1h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"selected": false,
+					"text": "Enter request ID",
+					"value": ""
+				},
+				"hide": 0,
+				"includeAll": false,
+				"label": "Request ID",
+				"multi": false,
+				"name": "requestId",
+				"options": [],
+				"query": "",
+				"queryValue": "",
+				"skipUrlSync": false,
+				"type": "textbox"
+			}
+		]
+	},
+	"annotations": {
+		"list": []
+	},
+	"refresh": "5s",
+	"schemaVersion": 27,
+	"version": 0,
+	"links": []
+}

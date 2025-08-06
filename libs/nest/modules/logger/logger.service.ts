@@ -1,107 +1,113 @@
-import { PinoLogger } from 'nestjs-pino';
-import { Injectable, LoggerService } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { Injectable, LoggerService, Scope } from '@nestjs/common';
 import { RequestContextService } from '../request-context';
+import { LokiTransportService } from './loki-transport.service';
 
-@Injectable()
+@Injectable({ scope: Scope.TRANSIENT })
 export class Logger implements LoggerService {
+	private context?: string;
+
 	constructor(
-		private logger: PinoLogger,
-		private readonly requestContextService: RequestContextService,
+		private readonly requestContextService?: RequestContextService,
+		private readonly lokiTransport?: LokiTransportService,
 	) {}
 
+	setContext(context: string) {
+		this.context = context;
+		return this;
+	}
+
+	// Generate or retrieve request ID
 	private getRequestId(): string | undefined {
-		// For gRPC: get from RequestContextService
-		const grpcRequestId = this.requestContextService.get('requestId');
-		if (grpcRequestId) {
-			return grpcRequestId;
+		// First try to get from RequestContextService (for gRPC)
+		const existingRequestId = this.requestContextService?.get('requestId');
+		if (existingRequestId) {
+			return existingRequestId;
 		}
 
-		// For HTTP: Pino automatically handles request IDs via pinoHttp configuration
-		// The request ID is already included in the log context by Pino
-		return undefined;
+		// For HTTP requests, generate a new one if none exists
+		const newRequestId = randomUUID();
+		this.requestContextService?.set('requestId', newRequestId);
+		return newRequestId;
 	}
 
-	log(message: string, context: string, optionalParams: { [K: string]: any }) {
+	private getStructuredMessage(
+		message: string,
+		context?: string,
+		level: 'log' | 'error' | 'warn' | 'debug' | 'verbose' = 'log',
+	) {
 		const requestId = this.getRequestId();
-		return this.logger.info(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+		const structuredData = {
+			context: context || this.context,
+			level,
 			message,
-		);
+			...(requestId && { requestId }),
+			timestamp: new Date().toISOString(),
+		};
+		return JSON.stringify(structuredData);
 	}
 
-	error(message: string, context: string, optionalParams: { [K: string]: any }) {
-		const requestId = this.getRequestId();
-		return this.logger.error(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+	log(message: string, context?: string) {
+		const structuredMessage = this.getStructuredMessage(message, context, 'log');
+		console.log(structuredMessage);
+		this.lokiTransport?.sendLog({
+			context: context || this.context,
+			level: 'log',
 			message,
-		);
+			requestId: this.getRequestId(),
+			timestamp: new Date().toISOString(),
+		});
 	}
 
-	/**
-	 * Write a 'fatal' level log.
-	 */
-	fatal(message: string, context: string, optionalParams: { [K: string]: any }) {
-		const requestId = this.getRequestId();
-		return this.logger.fatal(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+	error(message: string, trace?: string, context?: string) {
+		const structuredMessage = this.getStructuredMessage(message, context, 'error');
+		if (trace) {
+			console.error(`${structuredMessage}\nTrace: ${trace}`);
+		} else {
+			console.error(structuredMessage);
+		}
+		this.lokiTransport?.sendLog({
+			context: context || this.context,
+			level: 'error',
 			message,
-		);
+			requestId: this.getRequestId(),
+			timestamp: new Date().toISOString(),
+		});
 	}
 
-	/**
-	 * Write a 'warn' level log.
-	 */
-	warn(message: string, context: string, optionalParams: { [K: string]: any }) {
-		const requestId = this.getRequestId();
-		return this.logger.warn(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+	warn(message: string, context?: string) {
+		const structuredMessage = this.getStructuredMessage(message, context, 'warn');
+		console.warn(structuredMessage);
+		this.lokiTransport?.sendLog({
+			context: context || this.context,
+			level: 'warn',
 			message,
-		);
+			requestId: this.getRequestId(),
+			timestamp: new Date().toISOString(),
+		});
 	}
 
-	/**
-	 * Write a 'debug' level log.
-	 */
-	debug?(message: string, context: string, optionalParams: { [K: string]: any }) {
-		const requestId = this.getRequestId();
-		return this.logger.debug(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+	debug(message: string, context?: string) {
+		const structuredMessage = this.getStructuredMessage(message, context, 'debug');
+		console.debug(structuredMessage);
+		this.lokiTransport?.sendLog({
+			context: context || this.context,
+			level: 'debug',
 			message,
-		);
+			requestId: this.getRequestId(),
+			timestamp: new Date().toISOString(),
+		});
 	}
 
-	/**
-	 * Write a 'verbose' level log.
-	 */
-	verbose?(message: string, context: string, optionalParams: { [K: string]: any }) {
-		const requestId = this.getRequestId();
-		return this.logger.info(
-			{
-				...optionalParams,
-				context,
-				...(requestId && { requestId }),
-			},
+	verbose(message: string, context?: string) {
+		const structuredMessage = this.getStructuredMessage(message, context, 'verbose');
+		console.log(structuredMessage);
+		this.lokiTransport?.sendLog({
+			context: context || this.context,
+			level: 'verbose',
 			message,
-		);
+			requestId: this.getRequestId(),
+			timestamp: new Date().toISOString(),
+		});
 	}
 }

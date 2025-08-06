@@ -1,0 +1,280 @@
+{
+	"id": null,
+	"title": "Request Tree Tracing",
+	"tags": ["request-tracing", "distributed-tracing", "venta"],
+	"style": "dark",
+	"timezone": "browser",
+	"panels": [
+		{
+			"id": 1,
+			"title": "Request ID Input",
+			"type": "text",
+			"content": "Enter a request ID to trace the complete request flow across all services",
+			"gridPos": {
+				"h": 2,
+				"w": 24,
+				"x": 0,
+				"y": 0
+			}
+		},
+		{
+			"id": 2,
+			"title": "Complete Request Tree (Single Query)",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} | json | (requestId=\"$requestId\" or correlationId=\"$requestId\") | line_format \"{{.timestamp}} [{{.app}}] {{.level}} {{.msg}} {{if .error}}ERROR: {{.error}}{{end}}\"",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 12,
+				"w": 24,
+				"x": 0,
+				"y": 2
+			}
+		},
+		{
+			"id": 3,
+			"title": "Event Flow (Correlation ID)",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} |= \"correlationId=$requestId\" | json | line_format \"{{.timestamp}} [{{.source}}] {{.msg}}\"",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 0,
+				"y": 14
+			}
+		},
+		{
+			"id": 4,
+			"title": "Service Interaction Map",
+			"type": "stat",
+			"targets": [
+				{
+					"expr": "count by (app) ({app=~\".*\"} |= \"requestId=$requestId\")",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					},
+					"mappings": []
+				}
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 12,
+				"x": 12,
+				"y": 14
+			}
+		},
+		{
+			"id": 5,
+			"title": "Request Duration by Service",
+			"type": "graph",
+			"targets": [
+				{
+					"expr": "request_duration_seconds{route=~\".*\"}",
+					"legendFormat": "{{app}} - {{route}}",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"axisLabel": "",
+						"axisPlacement": "auto",
+						"barAlignment": 0,
+						"drawStyle": "line",
+						"fillOpacity": 10,
+						"gradientMode": "none",
+						"hideFrom": {
+							"legend": false,
+							"tooltip": false,
+							"vis": false
+						},
+						"lineInterpolation": "linear",
+						"lineWidth": 1,
+						"pointSize": 5,
+						"scaleDistribution": {
+							"type": "linear"
+						},
+						"showPoints": "never",
+						"spanNulls": false,
+						"stacking": {
+							"group": "A",
+							"mode": "none"
+						},
+						"thresholdsStyle": {
+							"mode": "off"
+						}
+					},
+					"mappings": [],
+					"thresholds": {
+						"steps": [
+							{
+								"color": "green",
+								"value": null
+							}
+						]
+					},
+					"unit": "s"
+				}
+			},
+			"gridPos": {
+				"h": 8,
+				"w": 24,
+				"x": 0,
+				"y": 22
+			}
+		},
+		{
+			"id": 6,
+			"title": "Error Tracking for Request",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} |= \"requestId=$requestId\" |= \"error\" | json",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 24,
+				"x": 0,
+				"y": 30
+			}
+		},
+		{
+			"id": 7,
+			"title": "gRPC Call Tracking",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} |= \"requestId=$requestId\" |= \"gRPC\" | json",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 12,
+				"x": 0,
+				"y": 36
+			}
+		},
+		{
+			"id": 8,
+			"title": "HTTP Request Tracking",
+			"type": "logs",
+			"targets": [
+				{
+					"expr": "{app=~\".*\"} |= \"requestId=$requestId\" |= \"HTTP\" | json",
+					"refId": "A"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "palette-classic"
+					},
+					"custom": {
+						"displayMode": "list"
+					}
+				}
+			},
+			"gridPos": {
+				"h": 6,
+				"w": 12,
+				"x": 12,
+				"y": 36
+			}
+		}
+	],
+	"time": {
+		"from": "now-1h",
+		"to": "now"
+	},
+	"timepicker": {},
+	"templating": {
+		"list": [
+			{
+				"current": {
+					"selected": false,
+					"text": "Enter request ID",
+					"value": ""
+				},
+				"hide": 0,
+				"includeAll": false,
+				"label": "Request ID",
+				"multi": false,
+				"name": "requestId",
+				"options": [],
+				"query": "",
+				"queryValue": "",
+				"skipUrlSync": false,
+				"type": "textbox"
+			}
+		]
+	},
+	"annotations": {
+		"list": []
+	},
+	"refresh": "5s",
+	"schemaVersion": 27,
+	"version": 0,
+	"links": []
+}

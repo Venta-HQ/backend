@@ -107,6 +107,19 @@ services:
         mkdir -p /etc/grafana/provisioning/datasources
         mkdir -p /etc/grafana/provisioning/dashboards
         cp /etc/grafana/dashboards/*.json /etc/grafana/provisioning/dashboards/ 2>/dev/null || true
+        cat <<EOF > /etc/grafana/provisioning/dashboards/dashboard-provisioning.yaml
+        apiVersion: 1
+        providers:
+          - name: 'venta-dashboards'
+            orgId: 1
+            folder: 'Venta'
+            type: file
+            disableDeletion: false
+            updateIntervalSeconds: 10
+            allowUiUpdates: true
+            options:
+              path: /etc/grafana/provisioning/dashboards
+        EOF
         cat <<EOF > /etc/grafana/provisioning/datasources/ds.yaml
         apiVersion: 1
         datasources:
@@ -132,7 +145,7 @@ services:
         /run.sh
     image: grafana/grafana:latest
     ports:
-      - '3005:3000'
+      - '3001:3000'
     volumes:
       - ./docker/grafana-dashboards:/etc/grafana/dashboards
     networks:

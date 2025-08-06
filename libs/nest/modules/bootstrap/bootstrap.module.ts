@@ -7,9 +7,8 @@ export interface BootstrapOptions {
 	additionalModules?: any[];
 	additionalProviders?: any[];
 	appName: string;
-	enableJetStream?: boolean;
-	healthChecks?: () => Promise<Record<string, string>>;
-	protocol: 'http' | 'grpc' | 'websocket' | 'nats';
+	healthChecks?: () => Promise<Record<string, any>>;
+	protocol?: 'http' | 'grpc' | 'websocket' | 'nats';
 }
 
 @Module({})
@@ -22,10 +21,7 @@ export class BootstrapModule {
 				additionalChecks: options.healthChecks,
 				appName: options.appName,
 			}),
-			LoggerModule.register({
-				appName: options.appName,
-				protocol: options.protocol === 'websocket' || options.protocol === 'nats' ? 'http' : options.protocol,
-			}),
+			LoggerModule.register(options.appName),
 			PrometheusModule.register({ appName: options.appName }),
 			PrismaModule.register(),
 		];
