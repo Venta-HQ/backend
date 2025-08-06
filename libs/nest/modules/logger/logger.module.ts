@@ -16,11 +16,11 @@ export class LoggerModule {
 				Logger,
 				LokiTransportService,
 				{
+					inject: [ConfigService],
 					provide: 'LOGGER_OPTIONS',
 					useFactory: (configService: ConfigService) => ({
 						appName: configService.get('APP_NAME') || 'unknown-service',
 					}),
-					inject: [ConfigService],
 				},
 				ConfigService, // Make ConfigService available to Logger services
 			],

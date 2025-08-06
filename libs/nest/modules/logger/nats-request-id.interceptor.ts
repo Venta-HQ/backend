@@ -61,4 +61,4 @@ export class NatsRequestIdInterceptor extends BaseRequestIdInterceptor {
 	protected setId(id: string): void {
 		this.requestContextService.setCorrelationId(id);
 	}
-} 
+}

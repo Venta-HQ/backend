@@ -18,12 +18,12 @@ export class HealthModule {
 			providers: [
 				HealthController,
 				{
+					inject: [ConfigService],
 					provide: 'HEALTH_OPTIONS',
 					useFactory: (configService: ConfigService) => ({
 						additionalChecks: options.additionalChecks,
 						appName: configService.get('APP_NAME') || 'unknown-service',
 					}),
-					inject: [ConfigService],
 				},
 				ConfigService, // Make ConfigService available to Health services
 			],

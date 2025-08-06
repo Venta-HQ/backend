@@ -70,7 +70,7 @@ export class BootstrapService {
 		return { app, host, port };
 	}
 
-	static async createGrpcApp(options: GrpcBootstrapOptions, configService?: ConfigService) {
+	static async createGrpcApp(options: GrpcBootstrapOptions) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				package: options.package,
@@ -87,7 +87,7 @@ export class BootstrapService {
 		return { app };
 	}
 
-	static async createNatsApp(options: NatsBootstrapOptions, configService?: ConfigService) {
+	static async createNatsApp(options: NatsBootstrapOptions) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				queue: options.queue || 'default-queue',
@@ -110,8 +110,8 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapGrpc(options: GrpcBootstrapOptions, configService?: ConfigService) {
-		const { app } = await this.createGrpcApp(options, configService);
+	static async bootstrapGrpc(options: GrpcBootstrapOptions) {
+		const { app } = await this.createGrpcApp(options);
 
 		this.logger.log(`Starting gRPC microservice`);
 		await app.listen();
@@ -119,8 +119,8 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapNats(options: NatsBootstrapOptions, configService?: ConfigService) {
-		const { app } = await this.createNatsApp(options, configService);
+	static async bootstrapNats(options: NatsBootstrapOptions) {
+		const { app } = await this.createNatsApp(options);
 
 		this.logger.log(`Starting NATS microservice`);
 		await app.listen();
@@ -128,7 +128,7 @@ export class BootstrapService {
 		return app;
 	}
 
-	static async bootstrapHealthCheck(options: HealthBootstrapOptions, configService?: ConfigService) {
+	static async bootstrapHealthCheck(options: HealthBootstrapOptions) {
 		const app = await NestFactory.create(options.module);
 
 		// Get port and host
@@ -146,23 +146,20 @@ export class BootstrapService {
 		const apps = [];
 
 		try {
-			// Create a temporary ConfigService instance for environment variable access
-			const tempConfigService = new ConfigService();
-
 			// Bootstrap main service
 			let mainApp;
 			if ('package' in options.main) {
 				// gRPC service
-				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions, tempConfigService);
+				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions);
 			} else {
 				// NATS service
-				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions, tempConfigService);
+				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions);
 			}
 			apps.push(mainApp);
 
 			// Bootstrap health server if provided
 			if (options.health) {
-				const healthApp = await this.bootstrapHealthCheck(options.health, tempConfigService);
+				const healthApp = await this.bootstrapHealthCheck(options.health);
 				apps.push(healthApp);
 			}
 

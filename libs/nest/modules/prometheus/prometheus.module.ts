@@ -20,11 +20,11 @@ export class PrometheusModule {
 					useClass: MetricsInterceptor,
 				},
 				{
+					inject: [ConfigService],
 					provide: 'PROMETHEUS_OPTIONS',
 					useFactory: (configService: ConfigService) => ({
 						appName: configService.get('APP_NAME') || 'unknown-service',
 					}),
-					inject: [ConfigService],
 				},
 				ConfigService, // Make ConfigService available to Prometheus services
 			],

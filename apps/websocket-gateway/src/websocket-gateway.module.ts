@@ -5,7 +5,14 @@ import {
 	WsRateLimitGuardStatus,
 	WsRateLimitGuardStrict,
 } from '@app/nest/guards';
-import { APP_NAMES, BootstrapModule, ClerkModule, GrpcInstanceModule, PrometheusService, RedisModule } from '@app/nest/modules';
+import {
+	APP_NAMES,
+	BootstrapModule,
+	ClerkModule,
+	GrpcInstanceModule,
+	PrometheusService,
+	RedisModule,
+} from '@app/nest/modules';
 import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';

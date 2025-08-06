@@ -1,6 +1,6 @@
-import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { RequestContextService } from '../request-context';
 
 export interface RequestIdExtractor {
@@ -61,4 +61,4 @@ export abstract class BaseRequestIdInterceptor {
 	protected setId(id: string): void {
 		this.requestContextService.setRequestId(id);
 	}
-} 
+}

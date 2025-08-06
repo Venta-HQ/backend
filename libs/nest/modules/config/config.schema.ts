@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
 export const configSchema = z.object({
-	// Application configuration
-	APP_NAME: z.string().optional(),
-
 	// Required services
 	ALGOLIA_API_KEY: z.string(),
 	ALGOLIA_APPLICATION_ID: z.string(),
@@ -11,6 +8,8 @@ export const configSchema = z.object({
 
 	// CORS Configuration
 	ALLOWED_ORIGINS: z.string().optional(),
+	// Application configuration
+	APP_NAME: z.string().optional(),
 	CLERK_SECRET_KEY: z.string(),
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),
