@@ -1,7 +1,7 @@
+import { retryObservable } from '@app/utils';
 import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { retryObservable } from '@app/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 class GrpcInstance<T> {
@@ -21,19 +21,22 @@ class GrpcInstance<T> {
 			metadata.set('requestId', this.request.id);
 		}
 
+		// Log the gRPC request being made
+		this.logger.log(`Making gRPC request to ${String(method)}`, { requestId: this.request.id });
+
 		// Adds our custom metadata
 		if (this.service[method]) {
 			const result = (this.service[method] as (...args: any[]) => any)(data, metadata);
-			
+
 			// If the result is an Observable, add retry logic using shared utility
 			if (result && typeof result.pipe === 'function') {
-				return retryObservable(
-					result,
-					`gRPC call to ${String(method)}`,
-					{ logger: this.logger }
-				) as T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never;
+				return retryObservable(result, `gRPC call to ${String(method)}`, { logger: this.logger }) as T[K] extends (
+					...args: any[]
+				) => any
+					? ReturnType<T[K]>
+					: never;
 			}
-			
+
 			return result;
 		}
 
