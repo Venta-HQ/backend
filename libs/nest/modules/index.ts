@@ -1,14 +1,17 @@
-export * from './algolia';
-export * from './bootstrap';
-export * from './clerk';
-export * from './config';
-export * from './events';
-export * from './grpc-instance';
-export * from './health';
-export * from './logger';
-export * from './nats-queue';
-export * from './prisma';
-export * from './prometheus';
-export * from './redis';
-export * from './request-context';
-export * from './upload';
+// Core infrastructure modules
+export * from './core';
+
+// Data and persistence modules
+export * from './data';
+
+// External service integrations
+export * from './external';
+
+// Event-driven messaging modules
+export * from './messaging';
+
+// Monitoring and observability modules
+export * from './monitoring';
+
+// Networking and communication modules
+export * from './networking';

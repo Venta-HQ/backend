@@ -1,6 +1,9 @@
-export * from './lib/helpers';
-export * from './lib/location';
-export * from './lib/subscription';
-export * from './lib/user';
-export * from './lib/vendor';
-export * from './lib/events';
+// Domain exports
+export * from './domains/user';
+export * from './domains/vendor';
+export * from './domains/location';
+export * from './domains/subscription';
+
+// Shared exports
+export * from './shared/events';
+export * from './shared/helpers';

@@ -2,183 +2,115 @@
 
 ## Purpose
 
-The API Types library provides centralized type definitions, schemas, and validation rules for the entire Venta backend system. It serves as the single source of truth for all data structures used across microservices, ensuring type safety, consistent validation, and maintainable data contracts.
+The API Types library provides centralized type definitions, schemas, and validation for the Venta backend system. It ensures type safety and consistency across all microservices by providing a single source of truth for all API-related types.
 
 ## Overview
 
 This library provides:
-- TypeScript interfaces and types for all API data structures
-- Zod validation schemas for request/response validation
-- Shared constants and enums used across services
-- Helper functions for data transformation and validation
-- Event type definitions for inter-service communication
-- Consistent data contracts across all microservices
+- **Domain-specific types** organized by business domain
+- **Shared types** for common functionality across domains
+- **Event schemas** for type-safe event publishing and consumption
+- **Validation schemas** using Zod for runtime type checking
+- **Protocol buffer types** for gRPC communication
+- **Helper functions** for common type operations
+
+## Organization
+
+### Domain Structure
+
+```
+libs/apitypes/src/
+├── domains/
+│   ├── user/              # User domain types
+│   │   ├── user.schemas.ts
+│   │   └── index.ts
+│   ├── vendor/            # Vendor domain types
+│   │   ├── vendor.schemas.ts
+│   │   ├── vendor.events.ts
+│   │   └── index.ts
+│   ├── location/          # Location domain types
+│   │   ├── location.schemas.ts
+│   │   └── index.ts
+│   └── subscription/      # Subscription domain types
+│       ├── subscription.types.ts
+│       └── index.ts
+├── shared/
+│   ├── events/            # Shared event types
+│   │   ├── base.types.ts
+│   │   ├── unified-event-registry.ts
+│   │   └── index.ts
+│   └── helpers/           # Shared helper functions
+│       ├── helpers.ts
+│       └── index.ts
+└── index.ts               # Main export file
+```
+
+### Domain Organization
+
+Each domain contains:
+- **Schemas**: Zod validation schemas for request/response validation
+- **Types**: TypeScript type definitions
+- **Events**: Domain-specific event types and schemas
+- **Index**: Domain-specific exports
+
+### Shared Organization
+
+Shared components include:
+- **Events**: Common event types and registry
+- **Helpers**: Utility functions for type operations
 
 ## Usage
 
-### Type Imports
-
-Import types and schemas in your services:
+### Importing Domain Types
 
 ```typescript
 import { 
-  UserCreateRequest, 
-  UserResponse, 
-  userCreateSchema,
-  VendorData,
-  vendorSchema,
-  LocationUpdate,
-  locationUpdateSchema
+  UserCreateSchema, 
+  UserUpdateSchema,
+  UserResponseSchema 
 } from '@app/apitypes';
 
-@Injectable()
-export class YourService {
-  async createUser(data: UserCreateRequest): Promise<UserResponse> {
-    // Validate input data
-    const validatedData = userCreateSchema.parse(data);
-    
-    // Process with type safety
-    const user = await this.processUserCreation(validatedData);
-    
-    return user;
-  }
-
-  async updateLocation(locationData: LocationUpdate) {
-    // Validate location data
-    const validatedLocation = locationUpdateSchema.parse(locationData);
-    
-    // Process with type safety
-    return await this.locationService.update(validatedLocation);
-  }
-}
+// Use schemas for validation
+const validatedData = UserCreateSchema.parse(requestBody);
 ```
 
-### Request Validation
-
-Use schemas for request validation in controllers:
+### Importing Event Types
 
 ```typescript
 import { 
-  userCreateSchema, 
-  vendorUpdateSchema,
-  locationUpdateSchema 
-} from '@app/apitypes';
-
-@Controller('users')
-export class UserController {
-  @Post()
-  @UsePipes(new SchemaValidatorPipe(userCreateSchema))
-  async createUser(@Body() data: UserCreateRequest) {
-    return this.userService.createUser(data);
-  }
-}
-
-@Controller('vendors')
-export class VendorController {
-  @Put(':id')
-  @UsePipes(new SchemaValidatorPipe(vendorUpdateSchema))
-  async updateVendor(@Param('id') id: string, @Body() data: VendorUpdateRequest) {
-    return this.vendorService.updateVendor(id, data);
-  }
-}
-```
-
-### Event Types
-
-Use event types for inter-service communication:
-
-```typescript
-import { 
-  UserCreatedEvent,
+  VendorCreatedEvent,
   VendorUpdatedEvent,
-  LocationChangedEvent
+  VendorDeletedEvent 
 } from '@app/apitypes';
 
-@Injectable()
-export class EventHandlerService {
-  async handleUserCreated(event: UserCreatedEvent) {
-    // Type-safe event handling
-    const { userId, email, timestamp } = event;
-    await this.processUserCreation(userId, email, timestamp);
-  }
-
-  async handleVendorUpdated(event: VendorUpdatedEvent) {
-    // Type-safe vendor update handling
-    const { vendorId, changes, timestamp } = event;
-    await this.processVendorUpdate(vendorId, changes, timestamp);
-  }
+// Type-safe event handling
+function handleVendorEvent(event: VendorCreatedEvent) {
+  // TypeScript knows the exact structure
 }
 ```
 
-### Data Transformation
-
-Use helper functions for data transformation:
+### Importing Shared Types
 
 ```typescript
 import { 
-  transformUserData,
-  transformVendorData,
-  validateLocationData
+  BaseEvent,
+  EventMetadata,
+  AvailableEventSubjects 
 } from '@app/apitypes';
 
-@Injectable()
-export class DataService {
-  async processUserData(rawData: any) {
-    // Transform and validate user data
-    const transformedData = transformUserData(rawData);
-    return await this.userRepository.create(transformedData);
-  }
-
-  async processVendorData(rawData: any) {
-    // Transform and validate vendor data
-    const transformedData = transformVendorData(rawData);
-    return await this.vendorRepository.create(transformedData);
-  }
-}
+// Use shared event types
+const event: BaseEvent = {
+  eventId: 'uuid',
+  timestamp: new Date().toISOString(),
+  // ... other properties
+};
 ```
 
-### Constants and Enums
+## Benefits
 
-Use shared constants and enums:
-
-```typescript
-import { 
-  UserStatus,
-  VendorCategory,
-  LocationType,
-  ErrorCodes
-} from '@app/apitypes';
-
-@Injectable()
-export class ValidationService {
-  validateUserStatus(status: UserStatus) {
-    return Object.values(UserStatus).includes(status);
-  }
-
-  validateVendorCategory(category: VendorCategory) {
-    return Object.values(VendorCategory).includes(category);
-  }
-
-  throwNotFoundError(resourceType: string, id: string) {
-    throw new AppError(
-      `${resourceType} not found`, 
-      ErrorCodes.RESOURCE_NOT_FOUND,
-      { resourceId: id }
-    );
-  }
-}
-```
-
-## Key Benefits
-
-- **Type Safety**: Ensures consistent data structures across all services
-- **Validation**: Centralized validation rules prevent data inconsistencies
-- **Maintainability**: Single place to update data structures and schemas
-- **Documentation**: Self-documenting through TypeScript types and interfaces
-- **Consistency**: Uniform data contracts across all microservices
-- **Error Prevention**: Compile-time and runtime validation catch errors early
-
-## Dependencies
-
-- **Zod** for schema validation and runtime type checking
-- **TypeScript** for type definitions and compile-time type safety 
+- **Domain-driven organization** for better maintainability
+- **Type safety** across all microservices
+- **Centralized validation** with Zod schemas
+- **Consistent patterns** for all API types
+- **Easy discovery** of available types by domain
+- **Reduced duplication** through shared types 

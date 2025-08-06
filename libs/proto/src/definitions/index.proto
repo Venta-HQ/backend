@@ -1,5 +1,6 @@
 syntax = "proto3";
 
-import public "user.proto";
-import public "location.proto";
-import public "vendor.proto";
+// Import domain-specific protocol buffers
+import public "domains/user/user.proto";
+import public "domains/location/location.proto";
+import public "domains/vendor/vendor.proto";

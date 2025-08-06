@@ -2,173 +2,125 @@
 
 ## Purpose
 
-The Protocol Buffers library provides gRPC service definitions and generated TypeScript code for inter-service communication in the Venta backend system. It defines the contract between microservices and ensures type-safe communication through standardized proto file management and path resolution.
+The Protocol Buffers library provides gRPC service definitions and generated TypeScript types for inter-service communication in the Venta backend system. It ensures type-safe and efficient communication between microservices.
 
 ## Overview
 
 This library provides:
+- **Domain-specific service definitions** organized by business domain
+- **Generated TypeScript types** for type-safe gRPC communication
+- **Service contracts** that define the API between microservices
+- **Consistent patterns** for request/response structures
+- **Shared message types** for common data structures
 
-- Protocol buffer definitions for all microservices
-- Generated TypeScript interfaces and classes for gRPC communication
-- Type definitions for request/response structures
-- Client and server implementations for gRPC services
-- Standardized proto file path resolution utilities
-- Service contract enforcement across the system
+## Organization
+
+### Domain Structure
+
+```
+libs/proto/src/
+├── definitions/
+│   ├── index.proto              # Main proto file with imports
+│   └── domains/
+│       ├── user/
+│       │   └── user.proto       # User service definitions
+│       ├── vendor/
+│       │   └── vendor.proto     # Vendor service definitions
+│       └── location/
+│           └── location.proto   # Location service definitions
+├── lib/
+│   ├── google/                  # Google protobuf types
+│   ├── location.ts              # Generated location types
+│   ├── user.ts                  # Generated user types
+│   ├── vendor.ts                # Generated vendor types
+│   └── index.ts                 # Main export file
+└── index.ts                     # Library entry point
+```
+
+### Domain Organization
+
+Each domain contains:
+- **Service definitions**: gRPC service interfaces
+- **Message types**: Request/response message structures
+- **Enums**: Domain-specific enumerations
+- **Comments**: Documentation for each service and message
+
+### Import Structure
+
+The main `index.proto` file imports all domain-specific proto files:
+
+```protobuf
+syntax = "proto3";
+
+// Import domain-specific protocol buffers
+import public "domains/user/user.proto";
+import public "domains/location/location.proto";
+import public "domains/vendor/vendor.proto";
+```
 
 ## Usage
 
-### Proto File Path Resolution
-
-Use the standardized approach for resolving proto file paths:
+### Importing Generated Types
 
 ```typescript
-import { ProtoPathUtil } from '@app/proto';
-
-// Resolve proto file by filename (recommended)
-const protoPath = ProtoPathUtil.resolveProtoPath('user.proto');
-
-// Resolve from current working directory
-const protoPath = ProtoPathUtil.resolveFromCwd('libs/proto/src/definitions/user.proto');
-```
-
-### Service Implementation (Microservices)
-
-Implement gRPC services using generated interfaces:
-
-```typescript
-import {
-	CreateUserRequest,
-	CreateUserResponse,
-	UserServiceController,
-	UserServiceControllerMethods,
+import { 
+  UserServiceClient,
+  UserCreateRequest,
+  UserResponse,
+  USER_PACKAGE_NAME,
+  USER_SERVICE_NAME
 } from '@app/proto/user';
 
-@Controller()
-@UserServiceControllerMethods()
-export class UserController implements UserServiceController {
-	async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
-		const user = await this.userService.createUser({
-			email: request.email,
-			name: request.name,
-		});
-
-		return {
-			user: {
-				id: user.id,
-				email: user.email,
-				name: user.name,
-			},
-		};
-	}
-}
+// Use in gRPC client configuration
+const client = new UserServiceClient();
+const request: UserCreateRequest = {
+  email: 'user@example.com',
+  name: 'John Doe'
+};
 ```
 
-### Client Usage (Gateway)
-
-Use generated clients for service communication:
+### Service Registration
 
 ```typescript
-import { CreateUserRequest, GetUserRequest, UserServiceClient } from '@app/proto/user';
-
-@Injectable()
-export class UserGatewayService {
-	constructor(private readonly grpcInstance: GrpcInstanceService) {}
-
-	async createUser(data: CreateUserRequest) {
-		const client = this.grpcInstance.getClient<UserServiceClient>('user');
-		return client.createUser(data);
-	}
-
-	async getUser(id: string) {
-		const client = this.grpcInstance.getClient<UserServiceClient>('user');
-		return client.getUser({ id });
-	}
-}
-```
-
-### Module Configuration
-
-Configure gRPC services in your modules:
-
-```typescript
-import { USER_PACKAGE_NAME } from '@app/proto/user';
+import { GrpcInstanceModule } from '@app/nest/modules';
+import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 
 @Module({
-	imports: [
-		GrpcInstanceModule.register<UserServiceClient>({
-			proto: 'user.proto',
-			protoPackage: USER_PACKAGE_NAME,
-			provide: USER_PACKAGE_NAME,
-			serviceName: USER_PACKAGE_NAME,
-			urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
-		}),
-	],
+  imports: [
+    GrpcInstanceModule.register<UserServiceClient>({
+      proto: 'domains/user/user.proto',
+      protoPackage: USER_PACKAGE_NAME,
+      provide: USER_SERVICE_NAME,
+      serviceName: USER_SERVICE_NAME,
+      urlFactory: (configService: ConfigService) => 
+        configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
+    }),
+  ],
 })
-export class UserGatewayModule {}
+export class YourModule {}
 ```
 
-### Type Definitions
+### Building Protocol Buffers
 
-Use generated types for type safety:
+```bash
+# Build all proto files
+pnpm run build-proto
 
-```typescript
-import { CreateUserRequest, Location, UpdateVendorRequest, User, Vendor } from '@app/proto';
-
-// Type-safe request/response handling
-async function handleUserCreation(request: CreateUserRequest): Promise<User> {
-	const user = await userService.createUser(request);
-	return user;
-}
-
-// Type-safe vendor operations
-async function handleVendorUpdate(request: UpdateVendorRequest): Promise<Vendor> {
-	const vendor = await vendorService.updateVendor(request);
-	return vendor;
-}
+# This generates TypeScript types in libs/proto/src/lib/
 ```
 
-### Best Practices
+## Benefits
 
-1. **Use filename-only approach** for proto paths:
+- **Domain-driven organization** for better maintainability
+- **Type safety** in gRPC communication
+- **Clear service contracts** between microservices
+- **Consistent patterns** for all service definitions
+- **Easy discovery** of available services by domain
+- **Generated types** reduce manual type definition work
 
-   ```typescript
-   // ✅ Recommended
-   protoPath: 'user.proto';
+## Development Workflow
 
-   // ❌ Avoid
-   protoPath: '../proto/src/definitions/user.proto';
-   ```
-
-2. **Use generated interfaces** for type safety:
-
-   ```typescript
-   // ✅ Use generated types
-   import { CreateUserRequest } from '@app/proto/user';
-
-   // ❌ Avoid manual type definitions
-   interface CreateUserRequest { ... }
-   ```
-
-3. **Use service packages** for client management:
-
-   ```typescript
-   // ✅ Use package names
-   const client = this.grpcInstance.getClient<UserServiceClient>('user');
-
-   // ❌ Avoid direct client instantiation
-   const client = new UserServiceClient();
-   ```
-
-## Key Benefits
-
-- **Type Safety**: Compile-time checking of service contracts
-- **Performance**: Efficient binary serialization for inter-service communication
-- **Consistency**: Enforced service contracts prevent breaking changes
-- **Documentation**: Self-documenting service interfaces
-- **Standardization**: Consistent proto file management across the system
-
-## Dependencies
-
-- **Protocol Buffers** for service definition and serialization
-- **gRPC** for high-performance inter-service communication
-- **TypeScript** for type definitions and compile-time safety
+1. **Add new service**: Create a new proto file in the appropriate domain directory
+2. **Update imports**: Add the import to `index.proto`
+3. **Build types**: Run `pnpm run build-proto` to generate TypeScript types
+4. **Update services**: Use the generated types in your microservices
