@@ -23,7 +23,7 @@ export class VendorController {
 
 	@GrpcMethod(VENDOR_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorLookupDataSchema))
-	async lookupVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
+	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
 			if (!vendor) {
