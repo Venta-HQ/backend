@@ -9,8 +9,6 @@ export const configSchema = z.object({
 
 	// CORS Configuration
 	ALLOWED_ORIGINS: z.string().optional(),
-	// Application metadata
-	APP_NAME: z.string().optional(),
 	CLERK_SECRET_KEY: z.string(),
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),

@@ -26,7 +26,7 @@ export class MetricsInterceptor implements NestInterceptor {
 	) {}
 
 	private getServiceName(): string {
-		return this.options?.appName || this.configService.get('APP_NAME') || 'unknown-app';
+		return this.options.appName;
 	}
 
 	private initializeMetrics() {

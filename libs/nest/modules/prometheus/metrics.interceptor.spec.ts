@@ -34,7 +34,7 @@ describe('MetricsInterceptor', () => {
 		};
 
 		// Manually create the interceptor with mocked dependencies
-		interceptor = new MetricsInterceptor(prometheusService, configService);
+		interceptor = new MetricsInterceptor(prometheusService, configService, { appName: 'test-app' });
 	});
 
 	afterEach(() => {
@@ -72,7 +72,6 @@ describe('MetricsInterceptor', () => {
 		expect(result).toBe('success');
 		expect(mockCallHandler.handle).toHaveBeenCalled();
 		expect(prometheusService.registerMetrics).toHaveBeenCalled();
-		expect(configService.get).toHaveBeenCalledWith('APP_NAME');
 	});
 
 	it('should handle gRPC requests correctly', async () => {

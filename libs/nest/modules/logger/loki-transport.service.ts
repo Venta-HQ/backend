@@ -28,7 +28,7 @@ export class LokiTransportService {
 		this.lokiUrl = this.configService.get('LOKI_URL') || '';
 		this.lokiUsername = this.configService.get('LOKI_USERNAME') || '';
 		this.lokiPassword = this.configService.get('LOKI_PASSWORD') || '';
-		this.appName = this.options?.appName || this.configService.get('APP_NAME') || 'unknown';
+		this.appName = this.options.appName;
 	}
 
 	sendLog(entry: Omit<LogEntry, 'app'>) {
