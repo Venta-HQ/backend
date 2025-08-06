@@ -1,21 +1,25 @@
 import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
+import { ConfigService } from '@nestjs/config';
 import { VendorModule } from './vendor.module';
 
 async function bootstrap() {
 	try {
+		// Create a temporary ConfigService instance for environment variable access
+		const configService = new ConfigService();
+
 		// Bootstrap gRPC microservice with health checks
 		await BootstrapService.bootstrapGrpcMicroservice({
 			health: {
 				host: '0.0.0.0',
 				module: HealthCheckModule,
-				port: 'VENDOR_HEALTH_PORT',
+				port: configService.get('VENDOR_HEALTH_PORT') || 3004,
 			},
 			main: {
 				defaultUrl: 'localhost:5004',
 				module: VendorModule,
 				package: 'vendor',
 				protoPath: 'vendor.proto',
-				urlEnvVar: 'VENDOR_SERVICE_ADDRESS',
+				url: configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
 			},
 		});
 	} catch (error) {

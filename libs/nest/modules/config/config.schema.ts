@@ -4,6 +4,7 @@ export const configSchema = z.object({
 	// Required services
 	ALGOLIA_API_KEY: z.string(),
 	ALGOLIA_APPLICATION_ID: z.string(),
+	ALGOLIA_SYNC_HEALTH_PORT: z.string().or(z.number()),
 
 	// CORS Configuration
 	ALLOWED_ORIGINS: z.string().optional(),
@@ -13,7 +14,10 @@ export const configSchema = z.object({
 	CLOUDINARY_CLOUD_NAME: z.string(),
 	// Required core services
 	DATABASE_URL: z.string().url(),
+	GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	GIT_COMMIT: z.string().optional(),
+	LOCATION_HEALTH_PORT: z.string().or(z.number()),
+	LOCATION_SERVICE_ADDRESS: z.string(),
 
 	// Optional services
 	LOKI_PASSWORD: z.string().optional(),
@@ -26,5 +30,10 @@ export const configSchema = z.object({
 	PULSE_API_KEY: z.string(),
 	REDIS_PASSWORD: z.string(),
 	REDIS_URL: z.string().url(),
+	USER_HEALTH_PORT: z.string().or(z.number()),
+	USER_SERVICE_ADDRESS: z.string(),
+	VENDOR_HEALTH_PORT: z.string().or(z.number()),
+	VENDOR_SERVICE_ADDRESS: z.string(),
+	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	npm_package_version: z.string().optional(),
 });

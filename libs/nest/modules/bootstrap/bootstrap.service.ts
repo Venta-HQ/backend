@@ -14,7 +14,7 @@ export interface HttpBootstrapOptions {
 	enableCors?: boolean;
 	host?: string;
 	module: any;
-	port?: string;
+	port?: number;
 }
 
 export interface GrpcBootstrapOptions {
@@ -22,20 +22,20 @@ export interface GrpcBootstrapOptions {
 	module: any;
 	package: string;
 	protoPath: string; // Can be either a filename (e.g., 'vendor.proto') or a full path
-	urlEnvVar: string;
+	url: string;
 }
 
 export interface NatsBootstrapOptions {
 	defaultUrl?: string;
 	module: any;
 	queue?: string;
-	urlEnvVar?: string;
+	url?: string;
 }
 
 export interface HealthBootstrapOptions {
 	host?: string;
 	module: any;
-	port?: string;
+	port?: number;
 }
 
 export interface MicroserviceBootstrapOptions {
@@ -64,7 +64,7 @@ export class BootstrapService {
 		// Logger is configured by the LoggerModule, no need to set it here
 
 		// Get port and host
-		const port = options.port ? configService.get(options.port) : 3000;
+		const port = options.port || 3000;
 		const host = options.host || '0.0.0.0';
 
 		return { app, host, port };
@@ -77,11 +77,7 @@ export class BootstrapService {
 				protoPath: options.protoPath.includes('/')
 					? ProtoPathUtil.resolveFromDirname(__dirname, options.protoPath)
 					: ProtoPathUtil.resolveProtoPath(options.protoPath),
-				url:
-					configService?.get(options.urlEnvVar) ||
-					process.env[options.urlEnvVar] ||
-					options.defaultUrl ||
-					'localhost:5000',
+				url: options.url || options.defaultUrl || 'localhost:5000',
 			},
 			transport: Transport.GRPC,
 		});
@@ -95,11 +91,7 @@ export class BootstrapService {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				queue: options.queue || 'default-queue',
-				servers:
-					configService?.get(options.urlEnvVar || 'NATS_URL') ||
-					process.env[options.urlEnvVar || 'NATS_URL'] ||
-					options.defaultUrl ||
-					'nats://localhost:4222',
+				servers: options.url || options.defaultUrl || 'nats://localhost:4222',
 			},
 			transport: Transport.NATS,
 		});
@@ -121,7 +113,7 @@ export class BootstrapService {
 	static async bootstrapGrpc(options: GrpcBootstrapOptions, configService?: ConfigService) {
 		const { app } = await this.createGrpcApp(options, configService);
 
-		this.logger.log(`Starting gRPC server`);
+		this.logger.log(`Starting gRPC microservice`);
 		await app.listen();
 
 		return app;
@@ -139,8 +131,8 @@ export class BootstrapService {
 	static async bootstrapHealthCheck(options: HealthBootstrapOptions, configService?: ConfigService) {
 		const app = await NestFactory.create(options.module);
 
-		// Get port and host - use ConfigService when available, fallback to process.env
-		const port = options.port ? configService?.get(options.port) || process.env[options.port] || 3000 : 3000;
+		// Get port and host
+		const port = options.port || 3000;
 		const host = options.host || '0.0.0.0';
 
 		this.logger.log(`Starting health check server on ${host}:${port}`);
