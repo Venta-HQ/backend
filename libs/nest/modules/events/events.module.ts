@@ -5,7 +5,7 @@ import { RequestContextModule } from '../request-context';
 import { EventService } from './typed-event.service';
 
 export interface EventsModuleOptions {
-	serviceName: string;
+	appName: string;
 }
 
 @Module({})

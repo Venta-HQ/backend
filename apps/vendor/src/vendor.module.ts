@@ -29,7 +29,7 @@ import { VendorService } from './vendor.service';
 			appName: 'Vendor Microservice',
 			protocol: 'grpc',
 		}),
-		EventsModule.register({ serviceName: 'Vendor Microservice' }),
+		EventsModule.register({ appName: 'Vendor Microservice' }),
 	],
 	providers: [VendorService],
 })

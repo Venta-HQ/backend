@@ -28,7 +28,7 @@ Register the EventsModule in your service:
 		BootstrapModule.forRoot({
 			appName: 'Your Service',
 			protocol: 'grpc',
-			additionalModules: [EventsModule.register({ serviceName: 'Your Service' })],
+			additionalModules: [EventsModule.register({ appName: 'Your Service' })],
 		}),
 	],
 })

@@ -30,7 +30,7 @@ describe('EventService', () => {
 				},
 				{
 					provide: 'EVENTS_OPTIONS',
-					useValue: { serviceName: 'test-service' },
+					useValue: { appName: 'test-service' },
 				},
 			],
 		}).compile();

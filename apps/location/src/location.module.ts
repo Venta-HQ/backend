@@ -11,7 +11,7 @@ import { LocationService } from './location.service';
 			appName: 'Location Microservice',
 			protocol: 'grpc',
 		}),
-		EventsModule.register({ serviceName: 'Location Microservice' }),
+		EventsModule.register({ appName: 'Location Microservice' }),
 	],
 	providers: [LocationService],
 })

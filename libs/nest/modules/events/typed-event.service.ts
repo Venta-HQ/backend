@@ -8,15 +8,15 @@ import { RequestContextService } from '../request-context';
 @Injectable()
 export class EventService {
 	private readonly logger = new Logger(EventService.name);
-	private readonly serviceName: string;
+	private readonly appName: string;
 
 	constructor(
 		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 		@Optional() private readonly requestContextService?: RequestContextService,
 		@Optional() private readonly configService?: ConfigService,
-		@Inject('EVENTS_OPTIONS') private readonly options?: { serviceName: string },
+		@Inject('EVENTS_OPTIONS') private readonly options?: { appName: string },
 	) {
-		this.serviceName = this.options.serviceName;
+		this.appName = this.options.appName;
 	}
 
 	/**
@@ -37,7 +37,7 @@ export class EventService {
 				correlationId: metadata?.correlationId || this.requestContextService?.get('requestId'),
 				data: validatedData,
 				eventId: randomUUID(),
-				source: metadata?.source || this.serviceName,
+				source: metadata?.source || this.appName,
 				timestamp: new Date().toISOString(),
 				version: metadata?.version || '1.0',
 			};

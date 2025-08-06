@@ -45,7 +45,7 @@ Add service-specific modules to the bootstrap configuration:
       appName: 'Vendor Service',
       protocol: 'grpc',
       additionalModules: [
-        EventsModule.register({ serviceName: 'Vendor Service' }),
+        EventsModule.register({ appName: 'Vendor Service' }),
         ClientsModule.registerAsync([/* gRPC clients */]),
       ],
     }),

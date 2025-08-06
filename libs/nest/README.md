@@ -39,7 +39,7 @@ import {
       additionalModules: [
         PrismaModule,
         RedisModule,
-        EventsModule.register({ serviceName: 'Your Service' }),
+        EventsModule.register({ appName: 'Your Service' }),
         ClerkModule.register(),
         AlgoliaModule.register(),
       ],

@@ -151,7 +151,7 @@ const event: BaseEvent = {
   correlationId: metadata?.correlationId || this.requestContextService?.get('requestId'),
   data: validatedData,
   eventId: randomUUID(),
-  source: metadata?.source || this.serviceName,
+  source: metadata?.source || this.appName,
   timestamp: new Date().toISOString(),
   version: metadata?.version || '1.0',
 };
