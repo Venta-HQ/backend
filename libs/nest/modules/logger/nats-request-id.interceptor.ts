@@ -1,64 +1,19 @@
-import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { RequestContextService } from '../request-context';
-
-interface BaseEvent {
-	correlationId?: string;
-	eventId: string;
-	data: any;
-	source: string;
-	timestamp: string;
-	version: string;
-}
+import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
 /**
- * Interceptor for NATS message handlers that automatically extracts correlation IDs
- * from message data and sets them in the request context for logging and tracing.
- *
- * This follows the same pattern as gRPC interceptors for consistency.
+ * NATS-specific correlation ID extractor
  */
-@Injectable()
-export class NatsRequestIdInterceptor {
-	private readonly logger = new Logger(NatsRequestIdInterceptor.name);
+class NatsCorrelationIdExtractor implements RequestIdExtractor {
+	extractId(context: ExecutionContext): string | undefined {
+		const natsContext = context.switchToRpc();
+		const message = natsContext.getData();
+		return this.extractCorrelationId(message);
+	}
 
-	constructor(private readonly requestContextService: RequestContextService) {}
-
-	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-		try {
-			// Extract message data from NATS context
-			const natsContext = context.switchToRpc();
-			const message = natsContext.getData();
-
-			// Extract correlation ID from message
-			const correlationId = this.extractCorrelationId(message);
-
-			if (correlationId) {
-				this.requestContextService.setCorrelationId(correlationId);
-				this.logger.debug(`Extracted NATS correlation ID: ${correlationId}`);
-			} else {
-				this.logger.debug('No correlation ID found in NATS message');
-			}
-
-			// Process the message and clear context when done
-			return next.handle().pipe(
-				tap({
-					error: (_error) => {
-						this.logger.debug('Clearing request context after NATS error');
-						this.requestContextService.clear();
-					},
-					next: () => {
-						this.logger.debug('Clearing request context after NATS success');
-						this.requestContextService.clear();
-					},
-				}),
-			);
-		} catch (error) {
-			this.logger.error('Error in NATS request ID interceptor', error);
-			// Ensure context is cleared even if interceptor fails
-			this.requestContextService.clear();
-			return next.handle();
-		}
+	getProtocolName(): string {
+		return 'NATS correlation';
 	}
 
 	private extractCorrelationId(message: any): string | undefined {
@@ -87,5 +42,23 @@ export class NatsRequestIdInterceptor {
 		}
 
 		return undefined;
+	}
+}
+
+/**
+ * Interceptor for NATS message handlers that automatically extracts correlation IDs
+ * from message data and sets them in the request context for logging and tracing.
+ */
+@Injectable()
+export class NatsRequestIdInterceptor extends BaseRequestIdInterceptor {
+	constructor(requestContextService: RequestContextService) {
+		super(requestContextService, new NatsCorrelationIdExtractor());
+	}
+
+	/**
+	 * Override to set correlation ID instead of request ID for NATS
+	 */
+	protected setId(id: string): void {
+		this.requestContextService.setCorrelationId(id);
 	}
 } 

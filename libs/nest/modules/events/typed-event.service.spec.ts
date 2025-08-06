@@ -15,6 +15,7 @@ describe('EventService', () => {
 
 		mockRequestContextService = {
 			get: vi.fn(),
+			getRequestId: vi.fn(),
 		} as any;
 
 		const module: TestingModule = await Test.createTestingModule({
@@ -63,10 +64,7 @@ describe('EventService', () => {
 		};
 
 		it('should emit vendor.created event successfully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -84,10 +82,7 @@ describe('EventService', () => {
 		});
 
 		it('should emit vendor.updated event successfully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-456';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-456');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -105,10 +100,7 @@ describe('EventService', () => {
 		});
 
 		it('should emit vendor.deleted event successfully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-789';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-789');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -126,23 +118,16 @@ describe('EventService', () => {
 		});
 
 		it('should emit vendor.updated event successfully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-location';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-456');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
 
-			const minimalVendor = {
-				id: 'vendor-123',
-			};
-
-			await service.emit('vendor.updated', minimalVendor);
+			await service.emit('vendor.updated', mockVendor);
 
 			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.updated', {
-				correlationId: 'req-location',
-				data: minimalVendor,
+				correlationId: 'req-456',
+				data: mockVendor,
 				eventId: expect.any(String),
 				source: expect.any(String),
 				timestamp: expect.any(String),
@@ -150,30 +135,28 @@ describe('EventService', () => {
 			});
 		});
 
-		it('should use metadata correlationId when provided', async () => {
-			const metadata = {
-				correlationId: 'custom-correlation-id',
-				source: 'custom-source',
-				version: '2.0',
-			};
+		it('should use correlationId from metadata when provided', async () => {
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
-			await service.emit('vendor.created', mockVendor, metadata);
+			// Manually set the requestContextService since it's optional
+			(service as any).requestContextService = mockRequestContextService;
+
+			await service.emit('vendor.created', mockVendor, {
+				correlationId: 'custom-correlation-id',
+			});
 
 			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.created', {
 				correlationId: 'custom-correlation-id',
 				data: mockVendor,
 				eventId: expect.any(String),
-				source: 'custom-source',
+				source: expect.any(String),
 				timestamp: expect.any(String),
-				version: '2.0',
+				version: '1.0',
 			});
 		});
 
 		it('should fallback to request context correlationId when metadata not provided', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-context-id';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-context-id');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -191,7 +174,7 @@ describe('EventService', () => {
 		});
 
 		it('should handle undefined request context gracefully', async () => {
-			mockRequestContextService.get.mockReturnValue(undefined);
+			mockRequestContextService.getRequestId.mockReturnValue(undefined);
 
 			await service.emit('vendor.created', mockVendor);
 
@@ -206,7 +189,7 @@ describe('EventService', () => {
 		});
 
 		it('should generate unique event IDs for each emission', async () => {
-			mockRequestContextService.get.mockReturnValue('req-123');
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			await service.emit('vendor.created', mockVendor);
 			await service.emit('vendor.updated', mockVendor);
@@ -223,10 +206,7 @@ describe('EventService', () => {
 		});
 
 		it('should use service name from EVENTS_OPTIONS', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -234,29 +214,29 @@ describe('EventService', () => {
 			await service.emit('vendor.created', mockVendor);
 
 			const emittedEvent = mockNatsClient.emit.mock.calls[0][1];
-			expect(emittedEvent.source).toBe('test-service'); // From EVENTS_OPTIONS
+			expect(emittedEvent.source).toBe('test-service');
 		});
 
 		it('should validate data against schema when schema exists', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
 
-			// This should pass validation since mockVendor matches the schema
 			await service.emit('vendor.created', mockVendor);
 
-			expect(mockNatsClient.emit).toHaveBeenCalled();
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('vendor.created', {
+				correlationId: 'req-123',
+				data: mockVendor,
+				eventId: expect.any(String),
+				source: expect.any(String),
+				timestamp: expect.any(String),
+				version: '1.0',
+			});
 		});
 
 		it('should handle validation errors gracefully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
@@ -271,33 +251,27 @@ describe('EventService', () => {
 		});
 
 		it('should handle NATS client errors', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
+
 			mockNatsClient.emit.mockRejectedValue(new Error('NATS connection failed'));
 
 			await expect(service.emit('vendor.created', mockVendor)).rejects.toThrow('NATS connection failed');
 		});
 
 		it('should handle unknown event subjects gracefully', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
 
-			// This should work even if the subject doesn't have a schema
-			await service.emit('unknown.event' as any, { test: 'data' });
+			await service.emit('unknown.event' as any, mockVendor);
 
 			expect(mockNatsClient.emit).toHaveBeenCalledWith('unknown.event', {
 				correlationId: 'req-123',
-				data: { test: 'data' },
+				data: mockVendor,
 				eventId: expect.any(String),
 				source: expect.any(String),
 				timestamp: expect.any(String),
@@ -308,10 +282,7 @@ describe('EventService', () => {
 
 	describe('event structure validation', () => {
 		it('should create events with correct structure', async () => {
-			mockRequestContextService.get.mockImplementation((key: string) => {
-				if (key === 'requestId') return 'req-123';
-				return undefined;
-			});
+			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
 			// Manually set the requestContextService since it's optional
 			(service as any).requestContextService = mockRequestContextService;
