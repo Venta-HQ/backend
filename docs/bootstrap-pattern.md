@@ -63,7 +63,7 @@ await BootstrapService.bootstrapGrpcMicroservice({
 	main: {
 		module: LocationModule, // Includes BootstrapModule
 		package: LOCATION_PACKAGE_NAME,
-		protoPath: '../proto/src/definitions/location.proto',
+		protoPath: 'location.proto',
 		urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
 	},
 });
@@ -230,7 +230,7 @@ await BootstrapService.bootstrapGrpcMicroservice({
 	main: {
 		module: ServiceModule,
 		package: 'service-package',
-		protoPath: '../proto/src/definitions/service.proto',
+		protoPath: 'service.proto',
 		urlEnvVar: 'SERVICE_ADDRESS',
 	},
 });

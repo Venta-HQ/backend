@@ -4,6 +4,57 @@
 
 The Protocol Buffers library provides gRPC service definitions and generated TypeScript code for inter-service communication in the Venta backend system. It defines the contract between microservices and ensures type-safe communication.
 
+## Standardized Proto File Path Resolution
+
+This library includes a standardized approach for resolving proto file paths across the codebase using the `ProtoPathUtil` class.
+
+### ProtoPathUtil Usage
+
+```typescript
+import { ProtoPathUtil } from '@app/proto';
+
+// Resolve proto file by filename (recommended approach)
+const protoPath = ProtoPathUtil.resolveProtoPath('user.proto');
+// Returns: /path/to/project/libs/proto/src/definitions/user.proto (dev)
+// Returns: /path/to/project/dist/libs/proto/src/definitions/user.proto (prod)
+
+// Resolve from current working directory
+const protoPath = ProtoPathUtil.resolveFromCwd('libs/proto/src/definitions/user.proto');
+
+// Resolve from __dirname (for legacy compatibility)
+const protoPath = ProtoPathUtil.resolveFromDirname(__dirname, '../proto/src/definitions/user.proto');
+```
+
+### Best Practices
+
+1. **Use filename-only approach** for new code:
+   ```typescript
+   // ✅ Recommended
+   protoPath: 'user.proto'
+   
+   // ❌ Avoid
+   protoPath: '../proto/src/definitions/user.proto'
+   ```
+
+2. **BootstrapService automatically handles both formats**:
+   ```typescript
+   // Both work with BootstrapService
+   await BootstrapService.bootstrapGrpcMicroservice({
+     main: {
+       protoPath: 'user.proto', // ✅ Recommended
+       // OR
+       protoPath: '../proto/src/definitions/user.proto', // ✅ Legacy support
+     }
+   });
+   ```
+
+3. **GrpcInstanceModule uses standardized resolution**:
+   ```typescript
+   GrpcInstanceModule.register({
+     proto: 'user.proto', // Always use filename-only
+   });
+   ```
+
 ## What It Contains
 
 - **Service Definitions**: Protocol buffer definitions for all microservices

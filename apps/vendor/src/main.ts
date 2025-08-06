@@ -14,7 +14,7 @@ async function bootstrap() {
 				defaultUrl: 'localhost:5005',
 				module: VendorModule,
 				package: 'vendor',
-				protoPath: '../proto/src/definitions/vendor.proto',
+				protoPath: 'vendor.proto',
 				urlEnvVar: 'VENDOR_SERVICE_ADDRESS',
 			},
 		});

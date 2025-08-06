@@ -15,7 +15,7 @@ async function bootstrap() {
 				defaultUrl: 'localhost:5001',
 				module: LocationModule,
 				package: LOCATION_PACKAGE_NAME,
-				protoPath: '../proto/src/definitions/location.proto',
+				protoPath: 'location.proto',
 				urlEnvVar: 'LOCATION_SERVICE_ADDRESS',
 			},
 		});

@@ -17,7 +17,7 @@ async function bootstrap() {
 				defaultUrl: 'localhost:5000',
 				module: UserModule,
 				package: 'user',
-				protoPath: '../proto/src/definitions/user.proto',
+				protoPath: 'user.proto',
 				urlEnvVar: 'USER_SERVICE_ADDRESS',
 			},
 		});

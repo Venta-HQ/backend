@@ -1,4 +1,4 @@
-import { join } from 'path';
+import { ProtoPathUtil } from '@app/proto';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
@@ -21,7 +21,7 @@ export interface GrpcBootstrapOptions {
 	defaultUrl?: string;
 	module: any;
 	package: string;
-	protoPath: string;
+	protoPath: string; // Can be either a filename (e.g., 'vendor.proto') or a full path
 	urlEnvVar: string;
 }
 
@@ -74,7 +74,9 @@ export class BootstrapService {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				package: options.package,
-				protoPath: join(__dirname, options.protoPath),
+				protoPath: options.protoPath.includes('/')
+					? ProtoPathUtil.resolveFromDirname(__dirname, options.protoPath)
+					: ProtoPathUtil.resolveProtoPath(options.protoPath),
 				url:
 					configService?.get(options.urlEnvVar) ||
 					process.env[options.urlEnvVar] ||
