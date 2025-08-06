@@ -1,5 +1,7 @@
 import retry from 'retry';
 import { Logger } from '@nestjs/common';
+import { Observable, from, timer } from 'rxjs';
+import { retryWhen, mergeMap } from 'rxjs/operators';
 
 export interface RetryOptions {
 	backoffMultiplier?: number;
@@ -40,4 +42,40 @@ export async function retryOperation<T>(
 			}
 		});
 	});
+}
+
+/**
+ * Wraps an Observable with retry logic using the same configuration as retryOperation
+ */
+export function retryObservable<T>(
+	observable: Observable<T>,
+	description: string,
+	options: RetryOptions = {},
+): Observable<T> {
+	const logger = options.logger ?? new Logger('RetryUtil');
+	const maxRetries = options.maxRetries ?? 3;
+	const retryDelay = options.retryDelay ?? 1000;
+	const backoffMultiplier = options.backoffMultiplier ?? 2;
+
+	let attemptCount = 0;
+
+	return observable.pipe(
+		retryWhen((errors) =>
+			errors.pipe(
+				mergeMap((error) => {
+					attemptCount++;
+					logger.warn(`${description} failed (attempt ${attemptCount}):`, error);
+					
+					if (attemptCount > maxRetries) {
+						throw error; // Stop retrying
+					}
+					
+					const delay = retryDelay * Math.pow(backoffMultiplier, attemptCount - 1);
+					logger.log(`${description} retrying in ${delay}ms (attempt ${attemptCount})`);
+					
+					return timer(delay);
+				})
+			)
+		)
+	);
 }
