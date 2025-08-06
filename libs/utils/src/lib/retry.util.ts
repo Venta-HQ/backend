@@ -1,10 +1,10 @@
-import retry from 'retry';
+import { Observable, timer } from 'rxjs';
+import { retry } from 'rxjs/operators';
 import { Logger } from '@nestjs/common';
-import { Observable, from, timer } from 'rxjs';
-import { retryWhen, mergeMap } from 'rxjs/operators';
 
 export interface RetryOptions {
 	backoffMultiplier?: number;
+	delayFn?: (ms: number) => Promise<void>;
 	logger?: Logger;
 	maxRetries?: number;
 	retryDelay?: number;
@@ -19,29 +19,27 @@ export async function retryOperation<T>(
 	const maxRetries = options.maxRetries ?? 3;
 	const retryDelay = options.retryDelay ?? 1000;
 	const backoffMultiplier = options.backoffMultiplier ?? 2;
+	const delayFn = options.delayFn ?? ((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)));
 
-	const operation_retry = retry.operation({
-		factor: backoffMultiplier,
-		maxTimeout: retryDelay * Math.pow(backoffMultiplier, maxRetries),
-		minTimeout: retryDelay,
-		retries: maxRetries,
-	});
+	let lastError: any;
 
-	return new Promise((resolve, reject) => {
-		operation_retry.attempt(async (currentAttempt: number) => {
-			try {
-				logger.log(`${description} (attempt ${currentAttempt})`);
-				const result = await operation();
-				resolve(result);
-			} catch (error) {
-				logger.warn(`${description} failed (attempt ${currentAttempt}):`, error);
-				if (operation_retry.retry(error as Error)) {
-					return;
-				}
-				reject(operation_retry.mainError());
+	for (let attempt = 1; attempt <= maxRetries + 1; attempt++) {
+		try {
+			logger.log(`${description} (attempt ${attempt})`);
+			return await operation();
+		} catch (error) {
+			lastError = error;
+			logger.warn(`${description} failed (attempt ${attempt}):`, error);
+
+			if (attempt <= maxRetries) {
+				const delay = retryDelay * Math.pow(backoffMultiplier, attempt - 1);
+				logger.log(`${description} retrying in ${delay}ms (attempt ${attempt})`);
+				await delayFn(delay);
 			}
-		});
-	});
+		}
+	}
+
+	throw lastError;
 }
 
 /**
@@ -60,22 +58,17 @@ export function retryObservable<T>(
 	let attemptCount = 0;
 
 	return observable.pipe(
-		retryWhen((errors) =>
-			errors.pipe(
-				mergeMap((error) => {
-					attemptCount++;
-					logger.warn(`${description} failed (attempt ${attemptCount}):`, error);
-					
-					if (attemptCount > maxRetries) {
-						throw error; // Stop retrying
-					}
-					
-					const delay = retryDelay * Math.pow(backoffMultiplier, attemptCount - 1);
-					logger.log(`${description} retrying in ${delay}ms (attempt ${attemptCount})`);
-					
-					return timer(delay);
-				})
-			)
-		)
+		retry({
+			count: maxRetries,
+			delay: (error, retryCount) => {
+				attemptCount = retryCount;
+				logger.warn(`${description} failed (attempt ${attemptCount}):`, error);
+
+				const delay = retryDelay * Math.pow(backoffMultiplier, attemptCount - 1);
+				logger.log(`${description} retrying in ${delay}ms (attempt ${attemptCount})`);
+
+				return timer(delay);
+			},
+		}),
 	);
 }
