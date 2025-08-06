@@ -25,15 +25,10 @@ export class MetricsInterceptor implements NestInterceptor {
 		@Inject('PROMETHEUS_OPTIONS') private readonly options: { appName: string },
 	) {}
 
-	private getServiceName(): string {
-		return this.options.appName;
-	}
-
 	private initializeMetrics() {
 		if (this.metricsInitialized) return;
 
-		const serviceName = this.getServiceName();
-		this.logger.log(`Initializing metrics for service: ${serviceName}`);
+		this.logger.log(`Initializing metrics for service: ${this.options.appName}`);
 
 		// Register protocol-agnostic metrics
 		const registeredMetrics = this.prometheusService.registerMetrics([

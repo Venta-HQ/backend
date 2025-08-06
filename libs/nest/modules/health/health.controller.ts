@@ -14,7 +14,7 @@ export interface HealthControllerOptions {
 
 @Controller('health')
 export class HealthController {
-	private readonly serviceName: string;
+	private readonly appName: string;
 	private readonly additionalChecks?: () => Promise<Record<string, any>>;
 
 	constructor(
@@ -24,7 +24,7 @@ export class HealthController {
 		private microservice: MicroserviceHealthIndicator,
 		@Inject('HEALTH_OPTIONS') options: HealthControllerOptions,
 	) {
-		this.serviceName = options.appName;
+		this.appName = options.appName;
 		this.additionalChecks = options.additionalChecks;
 	}
 
@@ -76,7 +76,7 @@ export class HealthController {
 
 		return {
 			...healthResult,
-			service: this.serviceName,
+			service: this.appName,
 			uptime: process.uptime(),
 			...customData,
 		};

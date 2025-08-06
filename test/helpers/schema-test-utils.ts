@@ -8,23 +8,6 @@ export interface SchemaTestCase {
 }
 
 /**
- * Creates standardized schema validation tests
- */
-export function createSchemaValidationTests(schema: z.ZodSchema, testCases: SchemaTestCase[]) {
-	return testCases.map(({ data, expectedError, name, shouldPass }) => ({
-		name,
-		test: () => {
-			const result = schema.safeParse(data);
-			expect(result.success).toBe(shouldPass);
-
-			if (!shouldPass && expectedError) {
-				expect(result.error?.message).toContain(expectedError);
-			}
-		},
-	}));
-}
-
-/**
  * Creates basic schema validation test cases for common patterns
  */
 export function createBasicSchemaTests(schema: z.ZodSchema, requiredFields: string[], optionalFields: string[] = []) {
