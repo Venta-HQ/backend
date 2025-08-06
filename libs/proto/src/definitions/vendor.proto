@@ -1,8 +1,5 @@
 syntax = "proto3";
 
-import "google/protobuf/timestamp.proto";
-import "google/protobuf/wrappers.proto";
-
 package vendor;
 
 service VendorService {
@@ -69,9 +66,9 @@ message Vendor {
     bool open = 9;
     string primaryImage = 10;
 
-    // Metadata
-    google.protobuf.Timestamp createdAt = 11;
-    google.protobuf.Timestamp updatedAt = 12;
+    // Metadata - using strings instead of google.protobuf.Timestamp
+    string createdAt = 11;
+    string updatedAt = 12;
 }
 
 message Empty {

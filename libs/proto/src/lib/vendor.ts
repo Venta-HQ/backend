@@ -7,7 +7,6 @@
 /* eslint-disable */
 import { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { wrappers } from "protobufjs";
 import { Observable } from "rxjs";
 
 export const protobufPackage = "vendor";
@@ -63,24 +62,15 @@ export interface Vendor {
   website: string;
   open: boolean;
   primaryImage: string;
-  /** Metadata */
-  createdAt: Date | undefined;
-  updatedAt: Date | undefined;
+  /** Metadata - using strings instead of google.protobuf.Timestamp */
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Empty {
 }
 
 export const VENDOR_PACKAGE_NAME = "vendor";
-
-wrappers[".google.protobuf.Timestamp"] = {
-  fromObject(value: Date) {
-    return { seconds: value.getTime() / 1000, nanos: (value.getTime() % 1000) * 1e6 };
-  },
-  toObject(message: { seconds: number; nanos: number }) {
-    return new Date(message.seconds * 1000 + message.nanos / 1e6);
-  },
-} as any;
 
 export interface VendorServiceClient {
   getVendorById(request: VendorLookupData, metadata?: Metadata): Observable<VendorLookupByIdResponse>;

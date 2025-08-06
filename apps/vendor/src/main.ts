@@ -11,7 +11,7 @@ async function bootstrap() {
 				port: 'VENDOR_HEALTH_PORT',
 			},
 			main: {
-				defaultUrl: 'localhost:5005',
+				defaultUrl: 'localhost:5004',
 				module: VendorModule,
 				package: 'vendor',
 				protoPath: 'vendor.proto',
