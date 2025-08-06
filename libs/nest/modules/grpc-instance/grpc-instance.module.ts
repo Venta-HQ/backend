@@ -12,13 +12,13 @@ export class GrpcInstanceModule {
 		protoPackage,
 		provide,
 		serviceName,
-		url,
+		urlFactory,
 	}: {
 		proto: string;
 		protoPackage: string;
 		provide: string;
 		serviceName: string;
-		url: string;
+		urlFactory: (configService: ConfigService) => string;
 	}): DynamicModule {
 		return {
 			exports: [provide],
@@ -34,7 +34,7 @@ export class GrpcInstanceModule {
 								options: {
 									package: protoPackage,
 									protoPath: ProtoPathUtil.resolveProtoPath(proto),
-									url: configService.get(url) || url,
+									url: urlFactory(configService),
 								},
 								transport: Transport.GRPC,
 							}),

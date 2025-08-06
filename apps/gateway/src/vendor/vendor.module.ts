@@ -14,15 +14,8 @@ import { VendorController } from './vendor.controller';
 			protoPackage: VENDOR_PACKAGE_NAME,
 			provide: VENDOR_SERVICE_NAME,
 			serviceName: VENDOR_SERVICE_NAME,
-			url: 'VENDOR_SERVICE_ADDRESS',
+			urlFactory: (configService: ConfigService) => configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
 		}),
-	],
-	providers: [
-		{
-			provide: 'VENDOR_SERVICE_URL',
-			useFactory: (configService: ConfigService) => configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
-			inject: [ConfigService],
-		},
 	],
 })
 export class VendorModule {}

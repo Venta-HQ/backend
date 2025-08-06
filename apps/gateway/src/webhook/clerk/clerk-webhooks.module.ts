@@ -13,15 +13,8 @@ import { ClerkWebhooksController } from './clerk-webhooks.controller';
 			protoPackage: USER_PACKAGE_NAME,
 			provide: USER_SERVICE_NAME,
 			serviceName: USER_SERVICE_NAME,
-			url: 'USER_SERVICE_ADDRESS',
+			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
 		}),
-	],
-	providers: [
-		{
-			provide: 'USER_SERVICE_URL',
-			useFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
-			inject: [ConfigService],
-		},
 	],
 })
 export class ClerkWebhooksModule {}
