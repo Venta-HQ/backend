@@ -51,16 +51,34 @@ genReqId: (req, res) => {
 
 **💻 Implementation**:
 ```typescript
-invoke<K extends keyof T>(method: K, data: T[K]): ReturnType<T[K]> {
-  return retryOperation(async () => {
-    const metadata = new Metadata();
+invoke<K extends keyof T>(
+  method: K,
+  data: T[K] extends (...args: any[]) => any ? Parameters<T[K]>[0] : never,
+): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
+  const metadata = new Metadata();
+
+  if (this.request.id) {
+    metadata.set('requestId', this.request.id);
+  }
+
+  // Adds our custom metadata
+  if (this.service[method]) {
+    const result = (this.service[method] as (...args: any[]) => any)(data, metadata);
     
-    if (this.request.id) {
-      metadata.set('requestId', this.request.id);
+    // If the result is an Observable, add retry logic using shared utility
+    if (result && typeof result.pipe === 'function') {
+      return retryObservable(
+        result,
+        `gRPC call to ${String(method)}`,
+        { logger: this.logger }
+      ) as T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never;
     }
     
-    return (this.service[method] as any)(data, metadata);
-  });
+    return result;
+  }
+
+  // This should never happen if the method exists, but TypeScript requires a return
+  throw new Error(`Method ${String(method)} not found on service`);
 }
 ```
 
