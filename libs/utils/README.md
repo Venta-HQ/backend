@@ -2,231 +2,196 @@
 
 ## Purpose
 
-The Utilities library provides common utility functions and helper methods that are used across the Venta backend system. It contains reusable code that doesn't belong to any specific domain but is needed by multiple services.
+The Utilities library provides common utility functions and helper methods that are used across the Venta backend system. It contains reusable code that doesn't belong to any specific domain but is needed by multiple services, ensuring consistency and reducing code duplication.
 
-## What It Contains
+## Overview
 
-- **Retry Logic**: Robust retry mechanisms for handling transient failures in both Promise-based and Observable-based operations
-- **Data Transformation**: Helper functions for data manipulation and formatting
-- **Validation Utilities**: Common validation and sanitization functions
-- **Date/Time Helpers**: Date manipulation and formatting utilities
-- **String Utilities**: String processing and formatting functions
-- **Math Utilities**: Common mathematical operations and calculations
+This library provides:
+- Retry mechanisms for handling transient failures in Promise-based and Observable-based operations
+- Data transformation and formatting utilities
+- Validation and sanitization functions
+- Date and time manipulation helpers
+- String processing and formatting utilities
+- Mathematical operations and calculations
+- Common helper functions for everyday development tasks
 
 ## Usage
 
-This library is imported by microservices and other libraries when common utility functions are needed.
+### Retry Operations
 
-### For Retry Operations
-
-The library provides two retry utilities for different contexts:
-
-#### `retryOperation` - For Promise-based operations
-
-Use this for async functions that return Promises:
+Use retry utilities for handling transient failures:
 
 ```typescript
-import { retryOperation } from '@app/utils';
-import { Logger } from '@nestjs/common';
+import { retryOperation, retryObservable } from '@app/utils';
 
-// Retry a database operation with exponential backoff
-async function fetchUserData(userId: string) {
-	const logger = new Logger('UserService');
-
-	return retryOperation(
-		async () => {
-			const user = await prisma.user.findUnique({ where: { id: userId } });
-			if (!user) {
-				throw new Error('User not found');
-			}
-			return user;
-		},
-		'fetch user data',
-		{
-			logger,
-			maxRetries: 3,
-			retryDelay: 1000,
-			backoffMultiplier: 2,
-		},
-	);
-}
-
-// Retry with custom configuration
-async function processPayment(paymentData: any) {
-	return retryOperation(
-		async () => {
-			const result = await paymentService.process(paymentData);
-			return result;
-		},
-		'process payment',
-		{
-			maxRetries: 5,
-			retryDelay: 2000,
-			backoffMultiplier: 1.5,
-		},
-	);
-}
-```
-
-#### `retryObservable` - For Observable-based operations
-
-Use this for RxJS Observables, particularly for gRPC calls:
-
-```typescript
-import { retryObservable } from '@app/utils';
-import { Logger } from '@nestjs/common';
-import { Observable } from 'rxjs';
-
-// Retry a gRPC call
-function getVendorData(vendorId: string): Observable<VendorData> {
-  const logger = new Logger('VendorService');
-  const grpcCall = this.vendorService.getVendorById({ id: vendorId });
-
-  return retryObservable(
-    grpcCall,
-    'get vendor data',
+// Retry Promise-based operations
+async function fetchData() {
+  return retryOperation(
+    async () => {
+      const result = await externalService.getData();
+      return result;
+    },
+    'fetch data',
     {
-      logger,
       maxRetries: 3,
       retryDelay: 1000,
-      backoffMultiplier: 2
+      backoffMultiplier: 2,
     }
   );
 }
 
-// Use in controllers with firstValueFrom
-async getVendorById(id: string) {
-  const observable = this.client.invoke('getVendorById', { id });
-  const retriedObservable = retryObservable(
+// Retry Observable-based operations (e.g., gRPC calls)
+function getServiceData(id: string) {
+  const observable = this.grpcService.getData({ id });
+  
+  return retryObservable(
     observable,
-    'gRPC call to getVendorById',
-    { logger: this.logger }
+    'get service data',
+    {
+      maxRetries: 3,
+      retryDelay: 1000,
+      backoffMultiplier: 2,
+    }
   );
-
-  return await firstValueFrom(retriedObservable);
 }
 ```
 
-#### Retry Configuration Options
+### Data Transformation
 
-Both utilities accept the same configuration options:
-
-```typescript
-interface RetryOptions {
-	maxRetries?: number; // Default: 3
-	retryDelay?: number; // Default: 1000ms
-	backoffMultiplier?: number; // Default: 2 (exponential backoff)
-	logger?: Logger; // NestJS Logger instance
-}
-```
-
-### For Data Transformation
+Use utilities for data manipulation and formatting:
 
 ```typescript
-// Import data transformation utilities
-import { formatData, transformData } from '@app/utils';
+import { transformData, formatData, sanitizeInput } from '@app/utils';
 
-// Transform API response data
+// Transform data structure
 const rawData = {
-	user_id: 123,
-	first_name: 'John',
-	last_name: 'Doe',
-	created_at: '2024-01-01T00:00:00Z',
+  user_id: 123,
+  first_name: 'John',
+  last_name: 'Doe',
+  created_at: '2024-01-01T00:00:00Z',
 };
 
 const transformedData = transformData(rawData, {
-	user_id: 'id',
-	first_name: 'firstName',
-	last_name: 'lastName',
-	created_at: 'createdAt',
+  user_id: 'id',
+  first_name: 'firstName',
+  last_name: 'lastName',
+  created_at: 'createdAt',
 });
-
-// Result: { id: 123, firstName: 'John', lastName: 'Doe', createdAt: '2024-01-01T00:00:00Z' }
 
 // Format data for display
 const formattedData = formatData(transformedData, {
-	id: (value) => `User-${value}`,
-	createdAt: (value) => new Date(value).toLocaleDateString(),
+  id: (value) => `User-${value}`,
+  createdAt: (value) => new Date(value).toLocaleDateString(),
 });
+
+// Sanitize user input
+const sanitizedInput = sanitizeInput(userInput);
 ```
 
-### For Validation Utilities
+### Validation Utilities
+
+Use validation functions for data validation:
 
 ```typescript
-// Import validation utilities
-import { sanitizeInput, validateEmail, validatePhone } from '@app/utils';
+import { validateEmail, validatePhone, validateUrl } from '@app/utils';
 
 // Validate email addresses
-const email = 'user@example.com';
 if (validateEmail(email)) {
-	console.log('Valid email address');
-} else {
-	console.log('Invalid email address');
+  // Process valid email
 }
 
 // Validate phone numbers
-const phone = '+1-555-123-4567';
 if (validatePhone(phone)) {
-	console.log('Valid phone number');
-} else {
-	console.log('Invalid phone number');
+  // Process valid phone
 }
 
-// Sanitize user input
-const userInput = '<script>alert("xss")</script>Hello World';
-const sanitizedInput = sanitizeInput(userInput);
-// Result: 'Hello World'
+// Validate URLs
+if (validateUrl(url)) {
+  // Process valid URL
+}
 ```
 
-### For Date/Time Helpers
+### Date and Time Helpers
+
+Use date/time utilities for common operations:
 
 ```typescript
-// Import date/time utilities
-import { addDays, formatDate, isExpired, parseDate } from '@app/utils';
+import { 
+  formatDate, 
+  parseDate, 
+  addDays, 
+  isExpired,
+  getTimeDifference 
+} from '@app/utils';
 
 // Format dates
-const date = new Date('2024-01-01T00:00:00Z');
 const formatted = formatDate(date, 'YYYY-MM-DD');
-// Result: '2024-01-01'
 
 // Parse date strings
-const dateString = '2024-01-01';
 const parsedDate = parseDate(dateString);
 
 // Add days to date
 const futureDate = addDays(date, 7);
 
 // Check if date is expired
-const expiryDate = new Date('2024-01-01T00:00:00Z');
 if (isExpired(expiryDate)) {
-	console.log('Date has expired');
+  // Handle expired date
 }
+
+// Get time difference
+const diff = getTimeDifference(startDate, endDate);
 ```
 
-### For String Utilities
+### String Utilities
+
+Use string processing utilities:
 
 ```typescript
-// Import string utilities
-import { capitalize, generateRandomString, slugify, truncate } from '@app/utils';
+import { 
+  capitalize, 
+  slugify, 
+  truncate, 
+  generateRandomString 
+} from '@app/utils';
 
 // Capitalize strings
-const text = 'hello world';
-const capitalized = capitalize(text);
-// Result: 'Hello World'
+const capitalized = capitalize('hello world');
 
 // Create URL-friendly slugs
-const title = 'My Awesome Blog Post!';
-const slug = slugify(title);
-// Result: 'my-awesome-blog-post'
+const slug = slugify('My Awesome Title!');
 
 // Truncate long strings
-const longText = 'This is a very long text that needs to be truncated';
-const truncated = truncate(longText, 20);
-// Result: 'This is a very long...'
+const truncated = truncate(longText, 50);
 
 // Generate random strings
 const randomString = generateRandomString(10);
-// Result: 'aB3x9mK2pQ'
+```
+
+### Mathematical Operations
+
+Use math utilities for calculations:
+
+```typescript
+import { 
+  calculateDistance, 
+  roundToDecimal, 
+  calculatePercentage,
+  isWithinRange 
+} from '@app/utils';
+
+// Calculate distance between points
+const distance = calculateDistance(point1, point2);
+
+// Round numbers
+const rounded = roundToDecimal(3.14159, 2);
+
+// Calculate percentages
+const percentage = calculatePercentage(25, 100);
+
+// Check if value is within range
+if (isWithinRange(value, min, max)) {
+  // Value is within range
+}
 ```
 
 ## Key Benefits
@@ -236,10 +201,10 @@ const randomString = generateRandomString(10);
 - **Maintainability**: Centralized updates for utility functions
 - **Reliability**: Battle-tested utility functions used across the system
 - **Type Safety**: Full TypeScript support with proper type definitions
+- **Performance**: Optimized implementations for common operations
 
 ## Dependencies
 
-- TypeScript for type definitions
-- `retry` library for Promise-based retry mechanisms
-- `rxjs` for Observable-based retry mechanisms
-- `@nestjs/common` for Logger integration
+- **TypeScript** for type definitions and compile-time safety
+- **RxJS** for Observable-based retry mechanisms
+- **NestJS Common** for Logger integration

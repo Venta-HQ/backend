@@ -2,205 +2,162 @@
 
 ## Purpose
 
-The Protocol Buffers library provides gRPC service definitions and generated TypeScript code for inter-service communication in the Venta backend system. It defines the contract between microservices and ensures type-safe communication.
+The Protocol Buffers library provides gRPC service definitions and generated TypeScript code for inter-service communication in the Venta backend system. It defines the contract between microservices and ensures type-safe communication through standardized proto file management and path resolution.
 
-## Standardized Proto File Path Resolution
+## Overview
 
-This library includes a standardized approach for resolving proto file paths across the codebase using the `ProtoPathUtil` class.
+This library provides:
 
-### ProtoPathUtil Usage
+- Protocol buffer definitions for all microservices
+- Generated TypeScript interfaces and classes for gRPC communication
+- Type definitions for request/response structures
+- Client and server implementations for gRPC services
+- Standardized proto file path resolution utilities
+- Service contract enforcement across the system
+
+## Usage
+
+### Proto File Path Resolution
+
+Use the standardized approach for resolving proto file paths:
 
 ```typescript
 import { ProtoPathUtil } from '@app/proto';
 
-// Resolve proto file by filename (recommended approach)
+// Resolve proto file by filename (recommended)
 const protoPath = ProtoPathUtil.resolveProtoPath('user.proto');
-// Returns: /path/to/project/libs/proto/src/definitions/user.proto (dev)
-// Returns: /path/to/project/dist/libs/proto/src/definitions/user.proto (prod)
 
 // Resolve from current working directory
 const protoPath = ProtoPathUtil.resolveFromCwd('libs/proto/src/definitions/user.proto');
-
-// Resolve from __dirname (for legacy compatibility)
-const protoPath = ProtoPathUtil.resolveFromDirname(__dirname, '../proto/src/definitions/user.proto');
 ```
 
-### Best Practices
+### Service Implementation (Microservices)
 
-1. **Use filename-only approach** for new code:
-   ```typescript
-   // ✅ Recommended
-   protoPath: 'user.proto'
-   
-   // ❌ Avoid
-   protoPath: '../proto/src/definitions/user.proto'
-   ```
+Implement gRPC services using generated interfaces:
 
-2. **BootstrapService automatically handles both formats**:
-   ```typescript
-   // Both work with BootstrapService
-   await BootstrapService.bootstrapGrpcMicroservice({
-     main: {
-       protoPath: 'user.proto', // ✅ Recommended
-       // OR
-       protoPath: '../proto/src/definitions/user.proto', // ✅ Legacy support
-     }
-   });
-   ```
-
-3. **GrpcInstanceModule uses standardized resolution**:
-   ```typescript
-   GrpcInstanceModule.register({
-     proto: 'user.proto', // Always use filename-only
-   });
-   ```
-
-## What It Contains
-
-- **Service Definitions**: Protocol buffer definitions for all microservices
-- **Generated Code**: TypeScript interfaces and classes for gRPC communication
-- **Type Definitions**: Request/response types for all service methods
-- **Client/Server Code**: Generated gRPC client and server implementations
-
-## Usage
-
-This library is used by all microservices and the gateway to establish type-safe gRPC communication channels.
-
-### For Microservices (Server Implementation)
 ```typescript
-// Import generated interfaces for service implementation
-import { 
-  UserServiceController, 
-  UserServiceControllerMethods,
-  CreateUserRequest,
-  CreateUserResponse,
-  GetUserRequest,
-  GetUserResponse
+import {
+	CreateUserRequest,
+	CreateUserResponse,
+	UserServiceController,
+	UserServiceControllerMethods,
 } from '@app/proto/user';
 
 @Controller()
 @UserServiceControllerMethods()
 export class UserController implements UserServiceController {
-  async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
-    const user = await this.userService.createUser({
-      email: request.email,
-      name: request.name,
-      age: request.age
-    });
+	async createUser(request: CreateUserRequest): Promise<CreateUserResponse> {
+		const user = await this.userService.createUser({
+			email: request.email,
+			name: request.name,
+		});
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        age: user.age
-      }
-    };
-  }
-
-  async getUser(request: GetUserRequest): Promise<GetUserResponse> {
-    const user = await this.userService.getUser(request.id);
-    
-    if (!user) {
-      throw new AppError('User not found', ErrorCodes.NOT_FOUND);
-    }
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        age: user.age
-      }
-    };
-  }
+		return {
+			user: {
+				id: user.id,
+				email: user.email,
+				name: user.name,
+			},
+		};
+	}
 }
 ```
 
-### For Gateway (Client Usage)
+### Client Usage (Gateway)
+
+Use generated clients for service communication:
+
 ```typescript
-// Import generated client interfaces
-import { 
-  UserServiceClient,
-  CreateUserRequest,
-  GetUserRequest 
-} from '@app/proto/user';
+import { CreateUserRequest, GetUserRequest, UserServiceClient } from '@app/proto/user';
 
 @Injectable()
 export class UserGatewayService {
-  constructor(
-    private readonly grpcInstance: GrpcInstanceService
-  ) {}
+	constructor(private readonly grpcInstance: GrpcInstanceService) {}
 
-  async createUser(data: CreateUserRequest) {
-    const client = this.grpcInstance.getClient<UserServiceClient>('user');
-    
-    return client.createUser({
-      email: data.email,
-      name: data.name,
-      age: data.age
-    });
-  }
+	async createUser(data: CreateUserRequest) {
+		const client = this.grpcInstance.getClient<UserServiceClient>('user');
+		return client.createUser(data);
+	}
 
-  async getUser(id: string) {
-    const client = this.grpcInstance.getClient<UserServiceClient>('user');
-    
-    return client.getUser({ id });
-  }
+	async getUser(id: string) {
+		const client = this.grpcInstance.getClient<UserServiceClient>('user');
+		return client.getUser({ id });
+	}
 }
 ```
 
-### For Service Module Configuration
+### Module Configuration
+
+Configure gRPC services in your modules:
+
 ```typescript
-// Configure gRPC service in module
-import { Module } from '@nestjs/common';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import { USER_PACKAGE_NAME } from '@app/proto/user';
 
 @Module({
-  imports: [
-    ClientsModule.register([
-      {
-        name: USER_PACKAGE_NAME,
-        transport: Transport.GRPC,
-        options: {
-          package: 'user',
-          protoPath: join(__dirname, '../proto/src/definitions/user.proto'),
-          url: process.env.USER_SERVICE_ADDRESS || 'localhost:5000'
-        }
-      }
-    ])
-  ],
-  providers: [UserGatewayService],
-  exports: [UserGatewayService]
+	imports: [
+		GrpcInstanceModule.register<UserServiceClient>({
+			proto: 'user.proto',
+			protoPackage: USER_PACKAGE_NAME,
+			provide: USER_PACKAGE_NAME,
+			serviceName: USER_PACKAGE_NAME,
+			urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
+		}),
+	],
 })
 export class UserGatewayModule {}
 ```
 
-### For Type Definitions
+### Type Definitions
+
+Use generated types for type safety:
+
 ```typescript
-// Use generated types for type safety
-import { 
-  User, 
-  Vendor, 
-  Location,
-  CreateUserRequest,
-  UpdateVendorRequest 
-} from '@app/proto';
+import { CreateUserRequest, Location, UpdateVendorRequest, User, Vendor } from '@app/proto';
 
 // Type-safe request/response handling
 async function handleUserCreation(request: CreateUserRequest): Promise<User> {
-  // TypeScript will ensure type safety
-  const user = await userService.createUser(request);
-  return user;
+	const user = await userService.createUser(request);
+	return user;
 }
 
 // Type-safe vendor operations
 async function handleVendorUpdate(request: UpdateVendorRequest): Promise<Vendor> {
-  const vendor = await vendorService.updateVendor(request);
-  return vendor;
+	const vendor = await vendorService.updateVendor(request);
+	return vendor;
 }
 ```
+
+### Best Practices
+
+1. **Use filename-only approach** for proto paths:
+
+   ```typescript
+   // ✅ Recommended
+   protoPath: 'user.proto';
+
+   // ❌ Avoid
+   protoPath: '../proto/src/definitions/user.proto';
+   ```
+
+2. **Use generated interfaces** for type safety:
+
+   ```typescript
+   // ✅ Use generated types
+   import { CreateUserRequest } from '@app/proto/user';
+
+   // ❌ Avoid manual type definitions
+   interface CreateUserRequest { ... }
+   ```
+
+3. **Use service packages** for client management:
+
+   ```typescript
+   // ✅ Use package names
+   const client = this.grpcInstance.getClient<UserServiceClient>('user');
+
+   // ❌ Avoid direct client instantiation
+   const client = new UserServiceClient();
+   ```
 
 ## Key Benefits
 
@@ -208,9 +165,10 @@ async function handleVendorUpdate(request: UpdateVendorRequest): Promise<Vendor>
 - **Performance**: Efficient binary serialization for inter-service communication
 - **Consistency**: Enforced service contracts prevent breaking changes
 - **Documentation**: Self-documenting service interfaces
+- **Standardization**: Consistent proto file management across the system
 
 ## Dependencies
 
-- Protocol Buffers compiler
-- gRPC for service communication
-- TypeScript for type definitions 
+- **Protocol Buffers** for service definition and serialization
+- **gRPC** for high-performance inter-service communication
+- **TypeScript** for type definitions and compile-time safety

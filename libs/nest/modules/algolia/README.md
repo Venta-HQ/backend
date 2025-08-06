@@ -2,38 +2,43 @@
 
 ## Purpose
 
-The Algolia module provides search functionality and index management for the Venta backend system. It includes Algolia client integration, search operations, and index synchronization capabilities.
+The Algolia module provides search functionality and index management for the Venta backend system. It includes Algolia client integration, search operations, index synchronization, and advanced search capabilities for fast and scalable search functionality.
 
-## What It Contains
+## Overview
 
-- **Algolia Service**: Main search service with Algolia client integration
-- **Search Operations**: Search queries and filtering
-- **Index Management**: Index creation, updates, and deletion
-- **Data Synchronization**: Real-time index synchronization
+This module provides:
+- Algolia client integration and configuration
+- Search operations with advanced querying and filtering
+- Index management and optimization
+- Real-time index synchronization
+- Search analytics and insights
+- Type-safe search operations
 
 ## Usage
 
-This module is imported by services that need search functionality or index management capabilities.
+### Module Registration
 
-### For Services
+Register the Algolia module in your service:
+
 ```typescript
-// Import the Algolia module in your service module
 import { AlgoliaModule } from '@app/nest/modules/algolia';
 
 @Module({
-  imports: [AlgoliaModule],
+  imports: [AlgoliaModule.register()],
   // ... other module configuration
 })
-export class MyServiceModule {}
+export class YourServiceModule {}
 ```
 
-### For Search Operations
+### Service Injection
+
+Inject AlgoliaService for search operations:
+
 ```typescript
-// Inject the Algolia service in your service
 import { AlgoliaService } from '@app/nest/modules/algolia';
 
 @Injectable()
-export class MyService {
+export class YourService {
   constructor(private readonly algoliaService: AlgoliaService) {}
 
   async searchVendors(query: string) {
@@ -44,26 +49,105 @@ export class MyService {
     });
   }
 
-  async updateVendorIndex(vendorData: any) {
-    return this.algoliaService.updateRecord('vendor', vendorData.id, vendorData);
-  }
-
-  async deleteVendorFromIndex(vendorId: string) {
-    return this.algoliaService.deleteRecord('vendor', vendorId);
+  async searchUsers(query: string) {
+    return this.algoliaService.search('user', {
+      query,
+      filters: 'isActive:true',
+      hitsPerPage: 10
+    });
   }
 }
 ```
 
-### For Index Management
+### Index Management
+
+Manage search indices:
+
 ```typescript
-// Create a new index
-await this.algoliaService.createIndex('new-index');
+// Update records in index
+async updateVendorIndex(vendorData: any) {
+  return this.algoliaService.updateRecord('vendor', vendorData.id, vendorData);
+}
+
+// Delete records from index
+async deleteVendorFromIndex(vendorId: string) {
+  return this.algoliaService.deleteRecord('vendor', vendorId);
+}
+
+// Create new index
+async createNewIndex(indexName: string) {
+  return this.algoliaService.createIndex(indexName);
+}
 
 // Configure index settings
-await this.algoliaService.setIndexSettings('vendor', {
-  searchableAttributes: ['name', 'description', 'tags'],
-  attributesForFaceting: ['category', 'location']
-});
+async configureIndex(indexName: string, settings: any) {
+  return this.algoliaService.setIndexSettings(indexName, settings);
+}
+```
+
+### Advanced Search
+
+Perform advanced search operations:
+
+```typescript
+// Search with filters
+async searchWithFilters(query: string, filters: string) {
+  return this.algoliaService.search('vendor', {
+    query,
+    filters,
+    hitsPerPage: 20,
+    page: 0
+  });
+}
+
+// Search with facets
+async searchWithFacets(query: string, facets: string[]) {
+  return this.algoliaService.search('vendor', {
+    query,
+    facets,
+    hitsPerPage: 20
+  });
+}
+
+// Search with geolocation
+async searchNearby(lat: number, lng: number, radius: number) {
+  return this.algoliaService.search('vendor', {
+    aroundLatLng: `${lat},${lng}`,
+    aroundRadius: radius,
+    hitsPerPage: 20
+  });
+}
+```
+
+### Batch Operations
+
+Perform batch operations for efficiency:
+
+```typescript
+// Batch update records
+async batchUpdateVendors(vendors: any[]) {
+  return this.algoliaService.batchUpdate('vendor', vendors);
+}
+
+// Batch delete records
+async batchDeleteVendors(vendorIds: string[]) {
+  return this.algoliaService.batchDelete('vendor', vendorIds);
+}
+```
+
+### Environment Configuration
+
+Configure Algolia with environment variables:
+
+```env
+# Algolia Configuration
+ALGOLIA_APP_ID=your-algolia-app-id
+ALGOLIA_API_KEY=your-algolia-api-key
+ALGOLIA_ADMIN_API_KEY=your-algolia-admin-api-key
+
+# Index Configuration
+ALGOLIA_VENDOR_INDEX_NAME=vendors
+ALGOLIA_USER_INDEX_NAME=users
 ```
 
 ## Key Benefits
@@ -72,9 +156,12 @@ await this.algoliaService.setIndexSettings('vendor', {
 - **Real-time Updates**: Automatic index synchronization
 - **Advanced Filtering**: Complex search queries and filtering
 - **Analytics**: Search analytics and insights
+- **Type Safety**: Type-safe search operations
+- **Scalability**: Handles large datasets efficiently
+- **Flexibility**: Configurable search behavior
 
 ## Dependencies
 
-- Algolia search service
-- NestJS framework
-- TypeScript for type definitions 
+- **Algolia** for search service and index management
+- **NestJS** for module framework and dependency injection
+- **TypeScript** for type definitions 

@@ -2,64 +2,104 @@
 
 ## Purpose
 
-The NestJS Shared Library provides reusable NestJS modules, services, guards, filters, and utilities that are shared across all microservices in the Venta backend system. It encapsulates common functionality to promote code reuse and maintain consistency.
+The NestJS Shared Library provides reusable NestJS modules, services, guards, filters, and utilities that are shared across all microservices in the Venta backend system. It encapsulates common functionality to promote code reuse, maintain consistency, and provide standardized patterns for building microservices.
 
-## What It Contains
+## Overview
 
-### Core Modules
-- **Configuration Management**: Environment variable handling and validation
-- **Database Integration**: Prisma client setup and connection management
-- **Caching**: Redis integration for distributed caching
-- **Authentication**: Clerk integration for user authentication
-- **File Upload**: Cloudinary integration for file storage
-- **Search**: Algolia integration for search functionality
-- **Event System**: NATS-based event publishing and subscription
-- **Health Checks**: Service health monitoring and reporting
-
-### Guards & Filters
-- **Authentication Guards**: Request authentication and authorization
-- **Exception Filters**: Centralized error handling for HTTP, gRPC, and WebSocket contexts
-- **Validation Pipes**: Request data validation using Zod schemas
-
-### Utilities
-- **Logging**: Structured logging with request context tracking
-- **gRPC Client Management**: Reusable gRPC client instances
-- **Error Handling**: Standardized error types and codes
+This library provides:
+- Standardized modules for common functionality (database, caching, authentication, etc.)
+- Reusable guards and filters for security and validation
+- Utility services for logging, error handling, and monitoring
+- Consistent patterns for microservice development
+- Type-safe interfaces and configurations
+- Integration with external services and APIs
 
 ## Usage
 
-This library is imported by all microservices and the gateway to provide consistent functionality across the entire system.
+### Module Imports
 
-### For Microservices
+Import the modules you need in your service:
+
 ```typescript
-// Import shared modules in your service
 import { 
-  ConfigModule, 
+  BootstrapModule,
   PrismaModule, 
   RedisModule, 
   LoggerModule,
-  EventsModule 
+  EventsModule,
+  ClerkModule,
+  AlgoliaModule
 } from '@app/nest/modules';
 
 @Module({
   imports: [
-    ConfigModule,
-    PrismaModule,
-    RedisModule,
-    LoggerModule,
-    EventsModule
+    BootstrapModule.forRoot({
+      appName: 'Your Service',
+      protocol: 'grpc',
+      additionalModules: [
+        PrismaModule,
+        RedisModule,
+        EventsModule.register({ serviceName: 'Your Service' }),
+        ClerkModule.register(),
+        AlgoliaModule.register(),
+      ],
+    }),
   ],
-  controllers: [MyController],
-  providers: [MyService]
 })
-export class MyServiceModule {}
+export class YourModule {}
 ```
 
-### For Controllers
+### Service Injection
+
+Inject the services you need in your service classes:
+
 ```typescript
-// Use guards and filters in controllers
+import { 
+  LoggerService, 
+  PrismaService, 
+  RedisService,
+  EventService,
+  ClerkService,
+  AlgoliaService
+} from '@app/nest/modules';
+
+@Injectable()
+export class YourService {
+  constructor(
+    private logger: LoggerService,
+    private prisma: PrismaService,
+    private redis: RedisService,
+    private eventService: EventService,
+    private clerkService: ClerkService,
+    private algoliaService: AlgoliaService
+  ) {}
+
+  async processData(data: any) {
+    this.logger.log('Processing data', { dataId: data.id });
+    
+    // Database operations
+    const result = await this.prisma.db.yourModel.create({ data });
+    
+    // Caching
+    await this.redis.set(`data:${result.id}`, JSON.stringify(result));
+    
+    // Event publishing
+    await this.eventService.emit('data.created', { id: result.id });
+    
+    return result;
+  }
+}
+```
+
+### Guards and Filters
+
+Use guards and filters for security and validation:
+
+```typescript
 import { 
   AuthGuard, 
+  WsAuthGuard,
+  WsRateLimitGuard,
   AppExceptionFilter,
   SchemaValidatorPipe 
 } from '@app/nest';
@@ -67,68 +107,69 @@ import {
 @Controller('api')
 @UseGuards(AuthGuard)
 @UseFilters(AppExceptionFilter)
-export class MyController {
+export class YourController {
   @Post('data')
   @UsePipes(new SchemaValidatorPipe(dataSchema))
   async createData(@Body() data: CreateDataRequest) {
     return this.service.createData(data);
   }
 }
-```
 
-### For Services
-```typescript
-// Inject shared services
-import { 
-  Logger, 
-  PrismaService, 
-  RedisService,
-  EventsService 
-} from '@app/nest/modules';
-
-@Injectable()
-export class MyService {
-  constructor(
-    private readonly logger: Logger,
-    private readonly prisma: PrismaService,
-    private readonly redis: RedisService,
-    private readonly events: EventsService
-  ) {}
-
-  async processData(data: any) {
-    this.logger.log('Processing data', 'MyService');
-    
-    // Store in database
-    const result = await this.prisma.data.create({ data });
-    
-    // Cache result
-    await this.redis.set(`data:${result.id}`, JSON.stringify(result));
-    
-    // Publish event
-    await this.events.publish('data.created', { id: result.id });
-    
-    return result;
-  }
+// WebSocket guards
+@WebSocketGateway()
+@UseGuards(WsAuthGuard, WsRateLimitGuard)
+export class YourGateway {
+  // WebSocket methods
 }
 ```
 
-### For Error Handling
+### Error Handling
+
+Use standardized error handling patterns:
+
 ```typescript
-// Use standardized error handling
 import { AppError, ErrorCodes } from '@app/nest/errors';
 
 @Injectable()
-export class MyService {
-  async getUser(id: string) {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+export class YourService {
+  async getResource(id: string) {
+    const resource = await this.prisma.db.resource.findUnique({ where: { id } });
     
-    if (!user) {
-      throw new AppError('User not found', ErrorCodes.NOT_FOUND);
+    if (!resource) {
+      throw AppError.notFound(ErrorCodes.RESOURCE_NOT_FOUND, { resourceId: id });
     }
     
-    return user;
+    return resource;
+  }
+
+  async validateData(data: any) {
+    if (!data.requiredField) {
+      throw AppError.badRequest(ErrorCodes.VALIDATION_ERROR, { field: 'requiredField' });
+    }
   }
 }
+```
+
+### Configuration
+
+Configure modules with environment variables:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/venta
+
+# Redis
+REDIS_PASSWORD=your-redis-password
+
+# Authentication
+CLERK_SECRET_KEY=your-clerk-secret
+
+# Search
+ALGOLIA_APP_ID=your-algolia-app-id
+ALGOLIA_API_KEY=your-algolia-api-key
+
+# Events
+NATS_URL=nats://localhost:4222
 ```
 
 ## Key Benefits
@@ -136,14 +177,16 @@ export class MyService {
 - **Code Reuse**: Eliminates duplication across services
 - **Consistency**: Ensures uniform behavior across the system
 - **Maintainability**: Centralized updates for shared functionality
+- **Type Safety**: TypeScript interfaces for all components
 - **Reliability**: Battle-tested components used across all services
+- **Standardization**: Consistent patterns for microservice development
 
 ## Dependencies
 
-- NestJS framework
-- Prisma for database access
-- Redis for caching
-- Clerk for authentication
-- Cloudinary for file storage
-- Algolia for search
-- NATS for event messaging 
+- **NestJS** for framework and module system
+- **Prisma** for database access and ORM
+- **Redis** for caching and session management
+- **Clerk** for authentication and user management
+- **Algolia** for search functionality
+- **NATS** for event messaging and communication
+- **Cloudinary** for file storage and media processing 

@@ -152,7 +152,7 @@ describe('retryOperation', () => {
 
 			expect(operation).toHaveBeenCalledTimes(2);
 			expect(mockDelayFn).toHaveBeenCalledTimes(1);
-			
+
 			// With jitter, the delay should be between 750ms and 1250ms (±25%)
 			const actualDelay = mockDelayFn.mock.calls[0][0];
 			expect(actualDelay).toBeGreaterThanOrEqual(750);
@@ -261,9 +261,9 @@ describe('retryObservable', () => {
 		it('should return result on first attempt', async () => {
 			const observable = of('success');
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete the operation
@@ -285,9 +285,9 @@ describe('retryObservable', () => {
 				}
 			});
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete all attempts
@@ -304,9 +304,9 @@ describe('retryObservable', () => {
 			const error = new Error('Persistent failure');
 			const observable = throwError(() => error);
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete all attempts
@@ -399,9 +399,9 @@ describe('retryObservable', () => {
 				}
 			});
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete all attempts
@@ -429,9 +429,9 @@ describe('retryObservable', () => {
 		it('should handle observable that emits undefined', async () => {
 			const observable = of(undefined);
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete the operation
@@ -444,9 +444,9 @@ describe('retryObservable', () => {
 		it('should handle observable that emits null', async () => {
 			const observable = of(null);
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete the operation
@@ -460,9 +460,9 @@ describe('retryObservable', () => {
 			const stringError = 'String error';
 			const observable = throwError(() => stringError);
 
-			const resultPromise = retryObservable(observable, 'test observable', { 
+			const resultPromise = retryObservable(observable, 'test observable', {
 				jitter: false,
-				logger: mockLogger 
+				logger: mockLogger,
 			}).toPromise();
 
 			// Fast-forward time to complete all attempts

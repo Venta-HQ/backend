@@ -2,21 +2,25 @@
 
 ## Purpose
 
-The WebSocket Authentication Guard provides user authentication and session validation for WebSocket connections in the Venta backend system. It validates JWT tokens from WebSocket handshakes and ensures proper authentication for real-time connections.
+The WebSocket Authentication Guard provides user authentication and session validation for WebSocket connections in the Venta backend system. It validates JWT tokens from WebSocket handshakes and ensures proper authentication for real-time connections using Clerk integration.
 
-## What It Contains
+## Overview
 
-- **WsAuthGuard**: Main WebSocket authentication guard with JWT validation
-- **Token Extraction**: Extracts tokens from handshake auth, query params, or headers
-- **Session Management**: User session validation and caching for WebSocket connections
+This guard provides:
+- JWT token validation for WebSocket connections
+- Token extraction from handshake auth, query parameters, or headers
+- User session validation and caching for WebSocket connections
+- Automatic user context injection into WebSocket clients
+- Integration with Clerk authentication service
+- Error handling for authentication failures
 
 ## Usage
 
-This guard is used to protect WebSocket gateways that require user authentication.
+### Basic WebSocket Authentication
 
-### Basic Usage
+Protect WebSocket gateways with authentication:
+
 ```typescript
-// Import the WebSocket authentication guard
 import { WsAuthGuard } from '@app/nest/guards/ws-auth';
 
 @WebSocketGateway({ namespace: '/user' })
@@ -31,11 +35,11 @@ export class UserLocationGateway {
 }
 ```
 
-### Protecting Specific Methods
-```typescript
-// Protect specific WebSocket methods
-import { WsAuthGuard } from '@app/nest/guards/ws-auth';
+### Method-Level Protection
 
+Protect specific WebSocket methods:
+
+```typescript
 @WebSocketGateway({ namespace: '/user' })
 export class UserLocationGateway {
   @UseGuards(WsAuthGuard)
@@ -53,8 +57,10 @@ export class UserLocationGateway {
 ```
 
 ### Client Connection Examples
+
+Connect from client with authentication:
+
 ```typescript
-// Client-side connection with authentication
 import { io } from 'socket.io-client';
 
 // Using handshake auth
@@ -67,7 +73,7 @@ const socket = io('ws://localhost:5004/user', {
 // Using query parameters
 const socket = io('ws://localhost:5004/user?token=your-jwt-token');
 
-// Using headers (if supported by your client)
+// Using headers
 const socket = io('ws://localhost:5004/user', {
   extraHeaders: {
     'Authorization': 'Bearer your-jwt-token'
@@ -76,8 +82,11 @@ const socket = io('ws://localhost:5004/user', {
 ```
 
 ### Error Handling
+
+Handle authentication errors on client and server:
+
 ```typescript
-// Handle authentication errors on the client
+// Client-side error handling
 socket.on('connect_error', (error) => {
   if (error.message.includes('authentication')) {
     // Redirect to login or refresh token
@@ -85,7 +94,7 @@ socket.on('connect_error', (error) => {
   }
 });
 
-// Handle server-side authentication errors
+// Server-side error handling
 socket.on('error', (error) => {
   if (error.code === 'WS_AUTHENTICATION_FAILED') {
     // Handle authentication failure
@@ -95,8 +104,10 @@ socket.on('error', (error) => {
 ```
 
 ### Mixed Authentication
+
+Protect some methods while keeping others public:
+
 ```typescript
-// Some methods require auth, others don't
 @WebSocketGateway({ namespace: '/public' })
 export class PublicGateway {
   // Public method - no auth required
@@ -115,8 +126,10 @@ export class PublicGateway {
 ```
 
 ### Custom Authentication Logic
+
+Extend the guard for custom authentication requirements:
+
 ```typescript
-// Extend the guard for custom authentication logic
 import { WsAuthGuard } from '@app/nest/guards/ws-auth';
 
 @Injectable()
@@ -142,17 +155,17 @@ export class CustomWsAuthGuard extends WsAuthGuard {
 }
 ```
 
-## Configuration
+## Key Benefits
 
-The guard automatically integrates with:
-- **Clerk Service**: For JWT token verification
-- **Prisma Service**: For user database lookups
-- **Redis**: For user session caching
-- **Error Handling**: Uses the centralized error system
+- **Security**: Centralized WebSocket authentication
+- **Consistency**: Uniform authentication behavior across WebSocket connections
+- **Performance**: Efficient token validation and session caching
+- **Flexibility**: Configurable authentication logic
+- **Integration**: Seamless Clerk authentication integration
+- **Error Handling**: Comprehensive error handling for authentication failures
 
-## Security Considerations
+## Dependencies
 
-- Tokens are validated on every WebSocket connection
-- User sessions are cached in Redis for performance
-- Failed authentication attempts are logged for monitoring
-- Sensitive error details are not exposed to clients 
+- **NestJS** for WebSocket guard framework
+- **Clerk** for authentication service and JWT handling
+- **Redis** for session storage and caching 

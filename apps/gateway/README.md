@@ -2,35 +2,120 @@
 
 ## Purpose
 
-The Gateway service acts as the main entry point for all external HTTP requests to the Venta backend system. It provides a unified API interface, handles authentication, routes requests to appropriate microservices, and manages cross-cutting concerns like CORS, rate limiting, and request validation.
+The Gateway service serves as the main entry point for all HTTP requests to the Venta backend system. It handles request routing, authentication, rate limiting, and provides a unified API interface for external clients. This service acts as the front-facing layer that manages incoming requests and routes them to the appropriate microservices while providing cross-cutting concerns like security, monitoring, and request validation.
 
 ## Overview
 
-This service serves as the API gateway that:
-- Exposes RESTful endpoints for client applications
-- Authenticates and authorizes incoming requests
-- Routes requests to the appropriate microservices via gRPC
-- Handles file uploads and media processing
-- Manages webhook endpoints for external integrations
-- Provides unified error handling and response formatting
+This service provides:
+- Unified HTTP API gateway for all external client requests
+- Request routing and load balancing to appropriate microservices
+- Authentication and authorization with Clerk integration
+- Rate limiting and request throttling for API protection
+- Request/response transformation and validation
+- Error handling and standardized error responses
+- API documentation and OpenAPI/Swagger integration
+- Health checks and service status monitoring
+- Request logging and monitoring with metrics collection
 
 ## Key Responsibilities
 
-- **Request Routing**: Directs incoming HTTP requests to the correct microservices
-- **Authentication**: Validates user tokens and manages session state
-- **Rate Limiting**: Prevents abuse through request throttling
-- **CORS Management**: Handles cross-origin requests from web clients
-- **Request Validation**: Validates incoming request data using schemas
-- **Response Transformation**: Formats responses consistently across all endpoints
-- **Error Handling**: Provides unified error responses and logging
+- **Request Routing**: Routes incoming HTTP requests to appropriate microservices
+- **Authentication**: Validates user authentication and session management
+- **Rate Limiting**: Implements request throttling and rate limiting policies
+- **Request Validation**: Validates incoming requests and data formats
+- **Error Handling**: Provides consistent error responses and status codes
+- **Monitoring**: Tracks request metrics, performance, and health status
+- **Security**: Implements security headers, CORS, and request sanitization
+- **Load Balancing**: Distributes requests across service instances
 
 ## Architecture
 
-The gateway follows a stateless design pattern where each request is processed independently. It communicates with microservices using gRPC for efficient inter-service communication and maintains no persistent state between requests.
+The service follows an API gateway pattern, where it acts as the single entry point for all client requests and handles cross-cutting concerns before routing to appropriate microservices.
+
+### Service Structure
+
+```
+Gateway Service
+├── Controllers (HTTP)
+│   ├── User Controller - User-related HTTP endpoints
+│   ├── Vendor Controller - Vendor-related HTTP endpoints
+│   ├── Upload Controller - File upload endpoints
+│   └── Webhook Controllers - External webhook endpoints
+├── Router Configuration
+│   └── Service routing and load balancing
+└── Module Configuration
+    └── BootstrapModule - Standardized service bootstrapping
+```
+
+## Usage
+
+### Starting the Service
+
+```bash
+# Development mode
+pnpm run start:dev gateway
+
+# Production mode
+pnpm run start:prod gateway
+
+# With Docker
+docker-compose up gateway
+```
+
+### Environment Configuration
+
+```env
+# Service Configuration
+GATEWAY_SERVICE_PORT=3000
+GATEWAY_HEALTH_PORT=3010
+
+# Authentication
+CLERK_SECRET_KEY=your-clerk-secret
+CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
+
+# Rate Limiting
+GATEWAY_RATE_LIMIT_REQUESTS=100
+GATEWAY_RATE_LIMIT_WINDOW=60000
+
+# CORS
+GATEWAY_CORS_ORIGIN=http://localhost:3000
+
+# External Services
+USER_SERVICE_ADDRESS=localhost:5000
+VENDOR_SERVICE_ADDRESS=localhost:5005
+LOCATION_SERVICE_ADDRESS=localhost:5001
+
+# File Upload
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+```
+
+### Service Patterns
+
+The service follows these patterns:
+
+- **API Gateway**: Acts as the single entry point for all HTTP requests
+- **Request Routing**: Routes requests to appropriate microservices
+- **Authentication**: Validates user sessions and permissions
+- **Rate Limiting**: Implements request throttling and protection
+- **Error Handling**: Provides consistent error responses
+- **Request Validation**: Validates incoming data and formats
+- **Monitoring**: Tracks performance metrics and health status
+
+### Integration Points
+
+- **User Service**: Routes user-related requests and operations
+- **Vendor Service**: Routes vendor-related requests and operations
+- **Location Service**: Routes location-related requests and operations
+- **Clerk**: Handles authentication and user session management
+- **Cloudinary**: Manages file uploads and media processing
+- **WebSocket Gateway**: Provides real-time communication capabilities
 
 ## Dependencies
 
-- User service for authentication and user management
-- Vendor service for vendor-related operations
-- Upload service for file processing
-- External webhook services for integrations 
+- **BootstrapModule** for standardized service configuration
+- **ClerkModule** for authentication and user management
+- **RedisModule** for session management and caching
+- **ThrottlerModule** for rate limiting and request throttling
+- **RouterModule** for request routing and load balancing 

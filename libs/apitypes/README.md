@@ -2,53 +2,62 @@
 
 ## Purpose
 
-The API Types library provides centralized type definitions, schemas, and validation rules for the entire Venta backend system. It serves as the single source of truth for all data structures used across microservices.
+The API Types library provides centralized type definitions, schemas, and validation rules for the entire Venta backend system. It serves as the single source of truth for all data structures used across microservices, ensuring type safety, consistent validation, and maintainable data contracts.
 
-## What It Contains
+## Overview
 
-- **Type Definitions**: TypeScript interfaces and types for all API data structures
-- **Validation Schemas**: Zod schemas for request/response validation
-- **Shared Constants**: Common constants and enums used across services
-- **Helper Functions**: Utility functions for data transformation and validation
+This library provides:
+- TypeScript interfaces and types for all API data structures
+- Zod validation schemas for request/response validation
+- Shared constants and enums used across services
+- Helper functions for data transformation and validation
+- Event type definitions for inter-service communication
+- Consistent data contracts across all microservices
 
 ## Usage
 
-This library is imported by all microservices and the gateway to ensure consistent data structures and validation across the entire system.
+### Type Imports
 
-### For Services
+Import types and schemas in your services:
+
 ```typescript
-// Import types and schemas
 import { 
   UserCreateRequest, 
   UserResponse, 
   userCreateSchema,
   VendorData,
-  vendorSchema 
+  vendorSchema,
+  LocationUpdate,
+  locationUpdateSchema
 } from '@app/apitypes';
 
 @Injectable()
-export class UserService {
+export class YourService {
   async createUser(data: UserCreateRequest): Promise<UserResponse> {
     // Validate input data
     const validatedData = userCreateSchema.parse(data);
     
-    // Process user creation
+    // Process with type safety
     const user = await this.processUserCreation(validatedData);
     
     return user;
   }
 
-  async getVendorData(vendorId: string): Promise<VendorData> {
-    // Use vendor types for type safety
-    const vendor = await this.vendorRepository.findById(vendorId);
-    return vendorSchema.parse(vendor);
+  async updateLocation(locationData: LocationUpdate) {
+    // Validate location data
+    const validatedLocation = locationUpdateSchema.parse(locationData);
+    
+    // Process with type safety
+    return await this.locationService.update(validatedLocation);
   }
 }
 ```
 
-### For Gateway
+### Request Validation
+
+Use schemas for request validation in controllers:
+
 ```typescript
-// Import schemas for request validation
 import { 
   userCreateSchema, 
   vendorUpdateSchema,
@@ -74,43 +83,102 @@ export class VendorController {
 }
 ```
 
-### For Validation
+### Event Types
+
+Use event types for inter-service communication:
+
 ```typescript
-// Use schemas for runtime validation
-import { userCreateSchema, vendorSchema } from '@app/apitypes';
+import { 
+  UserCreatedEvent,
+  VendorUpdatedEvent,
+  LocationChangedEvent
+} from '@app/apitypes';
 
-// Validate user data
-const userData = {
-  email: 'user@example.com',
-  name: 'John Doe',
-  age: 25
-};
+@Injectable()
+export class EventHandlerService {
+  async handleUserCreated(event: UserCreatedEvent) {
+    // Type-safe event handling
+    const { userId, email, timestamp } = event;
+    await this.processUserCreation(userId, email, timestamp);
+  }
 
-try {
-  const validatedUser = userCreateSchema.parse(userData);
-  console.log('Valid user data:', validatedUser);
-} catch (error) {
-  console.error('Validation failed:', error.errors);
+  async handleVendorUpdated(event: VendorUpdatedEvent) {
+    // Type-safe vendor update handling
+    const { vendorId, changes, timestamp } = event;
+    await this.processVendorUpdate(vendorId, changes, timestamp);
+  }
 }
+```
 
-// Validate vendor data
-const vendorData = {
-  id: 'vendor-123',
-  name: 'Acme Corp',
-  description: 'A great vendor'
-};
+### Data Transformation
 
-const validatedVendor = vendorSchema.parse(vendorData);
+Use helper functions for data transformation:
+
+```typescript
+import { 
+  transformUserData,
+  transformVendorData,
+  validateLocationData
+} from '@app/apitypes';
+
+@Injectable()
+export class DataService {
+  async processUserData(rawData: any) {
+    // Transform and validate user data
+    const transformedData = transformUserData(rawData);
+    return await this.userRepository.create(transformedData);
+  }
+
+  async processVendorData(rawData: any) {
+    // Transform and validate vendor data
+    const transformedData = transformVendorData(rawData);
+    return await this.vendorRepository.create(transformedData);
+  }
+}
+```
+
+### Constants and Enums
+
+Use shared constants and enums:
+
+```typescript
+import { 
+  UserStatus,
+  VendorCategory,
+  LocationType,
+  ErrorCodes
+} from '@app/apitypes';
+
+@Injectable()
+export class ValidationService {
+  validateUserStatus(status: UserStatus) {
+    return Object.values(UserStatus).includes(status);
+  }
+
+  validateVendorCategory(category: VendorCategory) {
+    return Object.values(VendorCategory).includes(category);
+  }
+
+  throwNotFoundError(resourceType: string, id: string) {
+    throw new AppError(
+      `${resourceType} not found`, 
+      ErrorCodes.RESOURCE_NOT_FOUND,
+      { resourceId: id }
+    );
+  }
+}
 ```
 
 ## Key Benefits
 
 - **Type Safety**: Ensures consistent data structures across all services
 - **Validation**: Centralized validation rules prevent data inconsistencies
-- **Maintainability**: Single place to update data structures
-- **Documentation**: Self-documenting through TypeScript types
+- **Maintainability**: Single place to update data structures and schemas
+- **Documentation**: Self-documenting through TypeScript types and interfaces
+- **Consistency**: Uniform data contracts across all microservices
+- **Error Prevention**: Compile-time and runtime validation catch errors early
 
 ## Dependencies
 
-- Zod for schema validation
-- TypeScript for type definitions 
+- **Zod** for schema validation and runtime type checking
+- **TypeScript** for type definitions and compile-time type safety 

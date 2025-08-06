@@ -2,21 +2,26 @@
 
 ## Purpose
 
-The Schema Validator Pipe provides Zod-based request data validation for the Venta backend system. It validates incoming request data against predefined schemas and ensures data integrity across all endpoints.
+The Schema Validator Pipe provides Zod-based request data validation for the Venta backend system. It validates incoming request data against predefined schemas and ensures data integrity across all endpoints with structured error handling and type safety.
 
-## What It Contains
+## Overview
 
-- **SchemaValidatorPipe**: Main validation pipe using Zod schemas
-- **Error Handling**: Structured validation error responses
-- **Type Safety**: TypeScript integration with Zod schemas
+This pipe provides:
+- Zod-based request data validation
+- Structured validation error responses
+- TypeScript integration with Zod schemas
+- Parameter and query validation
+- Global and endpoint-specific validation
+- Custom error handling for validation failures
+- Request data sanitization and transformation
 
 ## Usage
 
-This pipe is used to validate request data in controllers and ensure data integrity.
+### Basic Validation
 
-### Basic Usage
+Apply schema validation to controller endpoints:
+
 ```typescript
-// Import the schema validator pipe
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { userCreateSchema } from '@app/apitypes';
 
@@ -31,9 +36,11 @@ export class UserController {
 }
 ```
 
-### With Different Schemas
+### Multiple Schema Validation
+
+Use different schemas for different operations:
+
 ```typescript
-// Use different schemas for different operations
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { 
   userCreateSchema, 
@@ -64,8 +71,10 @@ export class UserController {
 ```
 
 ### Parameter Validation
+
+Validate route parameters:
+
 ```typescript
-// Validate route parameters
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { z } from 'zod';
 
@@ -90,8 +99,10 @@ export class UserController {
 ```
 
 ### Query Parameter Validation
+
+Validate query parameters:
+
 ```typescript
-// Validate query parameters
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { z } from 'zod';
 
@@ -114,8 +125,10 @@ export class UserController {
 ```
 
 ### Custom Error Handling
+
+Handle validation errors with custom logic:
+
 ```typescript
-// Custom error handling for validation failures
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 
@@ -138,9 +151,11 @@ export class UserController {
 }
 ```
 
-### Global Usage
+### Global Validation
+
+Apply schema validation globally to all endpoints:
+
 ```typescript
-// Apply schema validation globally
 import { Module } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
@@ -156,15 +171,91 @@ import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 export class AppModule {}
 ```
 
+### Custom Validation Schemas
+
+Create custom validation schemas:
+
+```typescript
+import { z } from 'zod';
+
+// Custom user validation schema
+const customUserSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  age: z.number().min(18, 'Must be at least 18 years old').optional()
+});
+
+// Custom pagination schema
+const paginationSchema = z.object({
+  page: z.coerce.number().positive('Page must be positive'),
+  limit: z.coerce.number().min(1).max(100, 'Limit must be between 1 and 100'),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).default('asc')
+});
+
+// Usage
+@Controller('users')
+export class UserController {
+  @Get()
+  @UsePipes(new SchemaValidatorPipe(paginationSchema))
+  async getUsers(@Query() query: any) {
+    return this.userService.getUsers(query);
+  }
+}
+```
+
+### Validation Error Response
+
+Handle validation error responses:
+
+```typescript
+// Validation error response format
+{
+  "error": {
+    "code": "BAD_REQUEST",
+    "message": "Validation failed",
+    "statusCode": 400,
+    "details": [
+      {
+        "field": "email",
+        "message": "Invalid email format",
+        "code": "invalid_string"
+      },
+      {
+        "field": "password",
+        "message": "Password must be at least 8 characters",
+        "code": "too_small"
+      }
+    ]
+  }
+}
+```
+
+### Environment Configuration
+
+Configure validation behavior:
+
+```env
+# Validation Configuration
+VALIDATION_STRICT_MODE=true
+VALIDATION_ERROR_DETAILS=true
+VALIDATION_TRANSFORM_DATA=true
+VALIDATION_STRIP_UNKNOWN=true
+```
+
 ## Key Benefits
 
 - **Data Integrity**: Ensures valid and sanitized input data
 - **Type Safety**: Compile-time validation with TypeScript
 - **Consistency**: Uniform validation across all endpoints
 - **Error Handling**: Structured validation error responses
+- **Flexibility**: Support for custom validation schemas
+- **Performance**: Efficient validation with Zod
+- **Maintainability**: Centralized validation logic
 
 ## Dependencies
 
-- Zod for schema validation
-- NestJS framework
-- TypeScript for type definitions 
+- **Zod** for schema validation and data transformation
+- **NestJS** for pipe framework and dependency injection
+- **TypeScript** for type definitions 

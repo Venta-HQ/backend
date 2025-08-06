@@ -2,21 +2,25 @@
 
 ## Purpose
 
-The Authentication Guard provides user authentication and session validation for the Venta backend system. It validates JWT tokens, checks user sessions, and ensures proper authentication across all protected endpoints.
+The Authentication Guard provides user authentication and session validation for the Venta backend system. It validates JWT tokens, checks user sessions, and ensures proper authentication across all protected endpoints using Clerk integration.
 
-## What It Contains
+## Overview
 
-- **AuthGuard**: Main authentication guard with JWT validation
-- **Session Management**: User session validation and caching
-- **Token Verification**: JWT token verification and user lookup
+This guard provides:
+- JWT token validation and verification
+- User session management and caching
+- Automatic user context injection into requests
+- Role-based access control support
+- Session persistence and security
+- Integration with Clerk authentication service
 
 ## Usage
 
-This guard is used to protect endpoints that require user authentication.
+### Basic Authentication
 
-### Basic Usage
+Protect individual endpoints with authentication:
+
 ```typescript
-// Import the authentication guard
 import { AuthGuard } from '@app/nest/guards/auth';
 
 @Controller('users')
@@ -31,11 +35,11 @@ export class UserController {
 }
 ```
 
-### Protecting Multiple Endpoints
-```typescript
-// Protect entire controller
-import { AuthGuard } from '@app/nest/guards/auth';
+### Controller-Level Protection
 
+Protect entire controllers with authentication:
+
+```typescript
 @Controller('users')
 @UseGuards(AuthGuard)
 export class UserController {
@@ -57,10 +61,10 @@ export class UserController {
 ```
 
 ### Mixed Protection
-```typescript
-// Some endpoints protected, others public
-import { AuthGuard } from '@app/nest/guards/auth';
 
+Protect some endpoints while keeping others public:
+
+```typescript
 @Controller('users')
 export class UserController {
   // Public endpoint
@@ -89,10 +93,10 @@ export class UserController {
 ```
 
 ### Accessing User Information
-```typescript
-// Access authenticated user data
-import { AuthGuard } from '@app/nest/guards/auth';
 
+Access authenticated user data in your controllers:
+
+```typescript
 @Controller('dashboard')
 @UseGuards(AuthGuard)
 export class DashboardController {
@@ -118,8 +122,10 @@ export class DashboardController {
 ```
 
 ### Custom Authentication Logic
+
+Extend the auth guard for custom authentication requirements:
+
 ```typescript
-// Extend auth guard for custom logic
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { AuthGuard } from '@app/nest/guards/auth';
 
@@ -162,8 +168,10 @@ export class PremiumController {
 ```
 
 ### Global Authentication
+
+Apply authentication globally to all endpoints:
+
 ```typescript
-// Apply authentication globally
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from '@app/nest/guards/auth';
@@ -179,9 +187,11 @@ import { AuthGuard } from '@app/nest/guards/auth';
 export class AppModule {}
 ```
 
-### Skip Authentication for Specific Endpoints
+### Skip Authentication
+
+Skip authentication for specific endpoints:
+
 ```typescript
-// Skip authentication for specific endpoints
 import { AuthGuard } from '@app/nest/guards/auth';
 import { SkipAuth } from '@app/nest/decorators';
 
@@ -207,10 +217,11 @@ export class ApiController {
 - **Consistency**: Uniform authentication behavior
 - **Session Management**: Reliable user session handling
 - **Flexibility**: Configurable authentication logic
+- **Integration**: Seamless Clerk authentication integration
+- **Performance**: Efficient token validation and caching
 
 ## Dependencies
 
-- NestJS framework
-- JWT for token handling
-- Redis for session storage
-- Clerk for authentication service 
+- **NestJS** for guard framework and dependency injection
+- **Clerk** for authentication service and JWT handling
+- **Redis** for session storage and caching 

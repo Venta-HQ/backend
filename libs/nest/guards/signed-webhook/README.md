@@ -4,19 +4,23 @@
 
 The Signed Webhook Guard provides webhook signature verification for external integrations in the Venta backend system. It validates webhook signatures from external services like Stripe, Clerk, and other third-party providers to ensure request authenticity and security.
 
-## What It Contains
+## Overview
 
-- **SignedWebhookGuard**: Main webhook signature verification guard
-- **Signature Validation**: HMAC signature verification for webhook requests
-- **Security Protection**: Ensures webhook requests come from authorized sources
+This guard provides:
+- Webhook signature verification and validation
+- HMAC signature verification for secure webhook requests
+- Support for multiple webhook providers (Stripe, Clerk, etc.)
+- Security protection against unauthorized webhook requests
+- Custom webhook validation logic support
+- Error handling for signature verification failures
 
 ## Usage
 
-This guard is used to protect webhook endpoints and verify that requests come from legitimate external services.
+### Basic Webhook Protection
 
-### Basic Usage
+Protect webhook endpoints with signature verification:
+
 ```typescript
-// Import the signed webhook guard
 import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
 
 @Controller('webhooks')
@@ -29,11 +33,11 @@ export class WebhookController {
 }
 ```
 
-### Protecting Multiple Webhook Endpoints
-```typescript
-// Protect entire webhook controller
-import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
+### Controller-Level Protection
 
+Protect entire webhook controllers:
+
+```typescript
 @Controller('webhooks')
 @UseGuards(SignedWebhookGuard)
 export class WebhookController {
@@ -55,10 +59,10 @@ export class WebhookController {
 ```
 
 ### Mixed Protection
-```typescript
-// Some endpoints protected, others public
-import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
 
+Protect specific endpoints while leaving others public:
+
+```typescript
 @Controller('webhooks')
 export class WebhookController {
   // Public endpoint for testing
@@ -74,7 +78,7 @@ export class WebhookController {
     return this.paymentService.processStripeWebhook(data);
   }
 
-  // Protected webhook endpoint with custom logic
+  // Protected webhook with custom validation
   @Post('custom')
   @UseGuards(SignedWebhookGuard)
   async handleCustomWebhook(@Body() data: any, @Headers() headers: any) {
@@ -87,41 +91,11 @@ export class WebhookController {
 }
 ```
 
-### Accessing Webhook Data
-```typescript
-// Access webhook data and headers
-import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
-
-@Controller('webhooks')
-@UseGuards(SignedWebhookGuard)
-export class WebhookController {
-  @Post('stripe')
-  async handleStripeWebhook(@Body() data: any, @Headers() headers: any) {
-    const signature = headers['stripe-signature'];
-    const eventType = data.type;
-    const eventId = data.id;
-    
-    console.log(`Processing Stripe webhook: ${eventType} (${eventId})`);
-    
-    return this.paymentService.processStripeWebhook(data);
-  }
-
-  @Post('clerk')
-  async handleClerkWebhook(@Body() data: any, @Headers() headers: any) {
-    const svixId = headers['svix-id'];
-    const svixTimestamp = headers['svix-timestamp'];
-    const svixSignature = headers['svix-signature'];
-    
-    console.log(`Processing Clerk webhook: ${svixId} at ${svixTimestamp}`);
-    
-    return this.authService.processClerkWebhook(data);
-  }
-}
-```
-
 ### Custom Webhook Guard
+
+Extend the guard for custom validation logic:
+
 ```typescript
-// Extend signed webhook guard for custom logic
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
 
@@ -134,19 +108,19 @@ export class CustomWebhookGuard extends SignedWebhookGuard {
       return false;
     }
 
-    // Add custom logic
+    // Add custom validation logic
     const request = context.switchToHttp().getRequest();
     const body = request.body;
     const headers = request.headers;
 
-    // Check if webhook is from allowed IP addresses
+    // Check IP address restrictions
     const clientIp = request.ip;
     const allowedIps = ['192.168.1.1', '10.0.0.1'];
     if (!allowedIps.includes(clientIp)) {
       throw new AppError('Webhook from unauthorized IP', ErrorCodes.FORBIDDEN);
     }
 
-    // Check if webhook is not too old
+    // Check webhook timestamp
     const webhookTimestamp = headers['webhook-timestamp'];
     const currentTime = Date.now();
     const maxAge = 5 * 60 * 1000; // 5 minutes
@@ -157,23 +131,13 @@ export class CustomWebhookGuard extends SignedWebhookGuard {
     return true;
   }
 }
-
-// Usage
-@Controller('webhooks')
-@UseGuards(CustomWebhookGuard)
-export class CustomWebhookController {
-  @Post('custom')
-  async handleCustomWebhook(@Body() data: any, @Headers() headers: any) {
-    return this.customService.processWebhook(data);
-  }
-}
 ```
 
-### Different Webhook Providers
-```typescript
-// Handle different webhook providers with specific validation
-import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
+### Multiple Webhook Providers
 
+Handle different webhook providers with specific validation:
+
+```typescript
 @Controller('webhooks')
 export class WebhookController {
   // Stripe webhooks
@@ -196,12 +160,6 @@ export class WebhookController {
     return this.authService.processClerkUser(data);
   }
 
-  @Post('clerk/organization')
-  @UseGuards(SignedWebhookGuard)
-  async handleClerkOrganization(@Body() data: any, @Headers() headers: any) {
-    return this.authService.processClerkOrganization(data);
-  }
-
   // Custom service webhooks
   @Post('custom/analytics')
   @UseGuards(SignedWebhookGuard)
@@ -212,11 +170,10 @@ export class WebhookController {
 ```
 
 ### Error Handling
-```typescript
-// Handle webhook signature verification errors
-import { SignedWebhookGuard } from '@app/nest/guards/signed-webhook';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 
+Handle webhook signature verification errors:
+
+```typescript
 @Controller('webhooks')
 export class WebhookController {
   @Post('stripe')
@@ -226,7 +183,7 @@ export class WebhookController {
       return await this.paymentService.processStripeWebhook(data);
     } catch (error) {
       // Log webhook processing errors
-      console.error('Webhook processing failed:', error);
+      this.logger.error('Webhook processing failed', { error: error.message });
       
       // Return appropriate error response
       throw new AppError('Webhook processing failed', ErrorCodes.INTERNAL_SERVER_ERROR);
@@ -235,15 +192,33 @@ export class WebhookController {
 }
 ```
 
+### Environment Configuration
+
+Configure webhook signature verification:
+
+```env
+# Webhook Configuration
+WEBHOOK_STRIPE_SECRET=whsec_your_stripe_webhook_secret
+WEBHOOK_CLERK_SECRET=whsec_your_clerk_webhook_secret
+WEBHOOK_CUSTOM_SECRET=your_custom_webhook_secret
+
+# Security Settings
+WEBHOOK_SIGNATURE_TIMEOUT=300000
+WEBHOOK_MAX_AGE=300000
+WEBHOOK_ALLOWED_IPS=192.168.1.1,10.0.0.1
+```
+
 ## Key Benefits
 
 - **Security**: Ensures webhook requests come from authorized sources
 - **Verification**: Validates webhook signatures to prevent tampering
 - **Flexibility**: Supports multiple webhook providers and signature methods
 - **Reliability**: Prevents unauthorized webhook processing
+- **Customization**: Extensible for custom validation logic
+- **Error Handling**: Comprehensive error handling for verification failures
 
 ## Dependencies
 
-- NestJS framework
-- Crypto for signature verification
-- TypeScript for type definitions 
+- **NestJS** for guard framework and dependency injection
+- **Crypto** for signature verification and HMAC validation
+- **TypeScript** for type definitions 
