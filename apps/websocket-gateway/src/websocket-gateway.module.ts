@@ -25,7 +25,7 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 				ClerkModule.register(),
 				GrpcInstanceModule.register<LocationServiceClient>({
 					protoPackage: LOCATION_PACKAGE_NAME,
-					protoPath: join(__dirname, `../proto/src/definitions/location.proto`),
+					proto: 'location.proto',
 					provide: LOCATION_SERVICE_NAME,
 					serviceName: LOCATION_SERVICE_NAME,
 					urlEnvVar: 'LOCATION_SERVICE_ADDRESS',

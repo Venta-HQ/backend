@@ -18,8 +18,8 @@ export class ClerkController {
 		const userData = await this.clerkService.handleUserCreated(data.id);
 		if (userData && userData.id) {
 			await this.clerkService.createIntegration({
+				clerkUserId: userData.id,
 				providerId: userData.clerkId,
-				userId: userData.id,
 			});
 		}
 		return { message: 'Success' };
