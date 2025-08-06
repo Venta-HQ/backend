@@ -48,7 +48,7 @@ describe('VendorController', () => {
 			expect(vendorService.getVendorById).toHaveBeenCalledWith('vendor_123');
 			expect(result).toEqual({
 				vendor: {
-					createdAt: mockVendor.createdAt,
+					createdAt: mockVendor.createdAt.toISOString(),
 					description: 'A test vendor',
 					email: 'test@vendor.com',
 					id: 'vendor_123',
@@ -58,7 +58,7 @@ describe('VendorController', () => {
 					open: true,
 					phone: '123-456-7890',
 					primaryImage: 'https://example.com/image.jpg',
-					updatedAt: mockVendor.updatedAt,
+					updatedAt: mockVendor.updatedAt.toISOString(),
 					website: 'https://testvendor.com',
 				},
 			});
