@@ -14,8 +14,9 @@ export class EventService {
 		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
 		@Optional() private readonly requestContextService?: RequestContextService,
 		@Optional() private readonly configService?: ConfigService,
+		@Inject('EVENTS_OPTIONS') private readonly options?: { serviceName: string },
 	) {
-		this.serviceName = this.configService?.get('SERVICE_NAME') || 'unknown-service';
+		this.serviceName = this.options.serviceName;
 	}
 
 	/**

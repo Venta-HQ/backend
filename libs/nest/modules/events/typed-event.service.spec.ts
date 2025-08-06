@@ -28,6 +28,10 @@ describe('EventService', () => {
 					provide: RequestContextService,
 					useValue: mockRequestContextService,
 				},
+				{
+					provide: 'EVENTS_OPTIONS',
+					useValue: { serviceName: 'test-service' },
+				},
 			],
 		}).compile();
 
@@ -218,7 +222,7 @@ describe('EventService', () => {
 			expect(typeof eventId2).toBe('string');
 		});
 
-		it('should use service name from environment or default', async () => {
+		it('should use service name from EVENTS_OPTIONS', async () => {
 			mockRequestContextService.get.mockImplementation((key: string) => {
 				if (key === 'requestId') return 'req-123';
 				return undefined;
@@ -230,7 +234,7 @@ describe('EventService', () => {
 			await service.emit('vendor.created', mockVendor);
 
 			const emittedEvent = mockNatsClient.emit.mock.calls[0][1];
-			expect(emittedEvent.source).toBe('unknown-service'); // Default when SERVICE_NAME not set
+			expect(emittedEvent.source).toBe('test-service'); // From EVENTS_OPTIONS
 		});
 
 		it('should validate data against schema when schema exists', async () => {

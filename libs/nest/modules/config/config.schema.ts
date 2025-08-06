@@ -33,7 +33,6 @@ export const configSchema = z.object({
 	PULSE_API_KEY: z.string(),
 	REDIS_PASSWORD: z.string(),
 	REDIS_URL: z.string().url(),
-	SERVICE_NAME: z.string().optional(),
 
 	// Service URLs (for local development)
 	USER_SERVICE_ADDRESS: z.string(),
