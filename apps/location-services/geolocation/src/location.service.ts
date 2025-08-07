@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import { z } from 'zod';
 import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes';
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { LocationDomainError, LocationDomainErrorCodes } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -11,6 +11,11 @@ import { Injectable, Logger } from '@nestjs/common';
 type LocationUpdate = z.infer<typeof GrpcLocationUpdateSchema>;
 type VendorLocationRequest = z.infer<typeof GrpcVendorLocationRequestSchema>;
 type VendorLocationResponse = { vendors: Array<{ id: string; location: { lat: number; long: number } }> };
+
+interface LocationData {
+	lat: number;
+	long: number;
+}
 
 @Injectable()
 export class LocationService {
@@ -24,13 +29,20 @@ export class LocationService {
 
 	/**
 	 * Update vendor location in Redis geospatial store and publish event
-	 * @param data Location update data
-	 * @returns Empty response
+	 * Domain method for vendor location management
 	 */
 	async updateVendorLocation(data: LocationUpdate): Promise<void> {
 		if (!data.location) {
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'location' });
+			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_COORDINATES, 'Location data is required', {
+				entityId: data.entityId,
+				operation: 'update_vendor_location',
+			});
 		}
+
+		this.logger.log('Updating vendor location in geospatial store', {
+			location: `${data.location.lat}, ${data.location.long}`,
+			vendorId: data.entityId,
+		});
 
 		try {
 			// Update Redis geospatial store with retry
@@ -52,22 +64,43 @@ export class LocationService {
 				vendorId: data.entityId,
 			});
 
-			this.logger.log(`Updated vendor location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
-		} catch (e) {
-			this.logger.error(`Failed to update vendor location for ${data.entityId}:`, e);
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor location' });
+			this.logger.log('Vendor location updated successfully', {
+				location: `${data.location.lat}, ${data.location.long}`,
+				vendorId: data.entityId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to update vendor location', {
+				error,
+				location: data.location,
+				vendorId: data.entityId,
+			});
+			throw new LocationDomainError(
+				LocationDomainErrorCodes.REDIS_OPERATION_FAILED,
+				'Failed to update vendor location',
+				{
+					entityId: data.entityId,
+					operation: 'update_vendor_location',
+				},
+			);
 		}
 	}
 
 	/**
 	 * Update user location in Redis geospatial store
-	 * @param data Location update data
-	 * @returns Empty response
+	 * Domain method for user location management
 	 */
 	async updateUserLocation(data: LocationUpdate): Promise<void> {
 		if (!data.location) {
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'location' });
+			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_COORDINATES, 'Location data is required', {
+				entityId: data.entityId,
+				operation: 'update_user_location',
+			});
 		}
+
+		this.logger.log('Updating user location in geospatial store', {
+			location: `${data.location.lat}, ${data.location.long}`,
+			userId: data.entityId,
+		});
 
 		try {
 			// Update Redis geospatial store with retry
@@ -79,34 +112,54 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			await this.prisma.db.user.update({
-				data: {
+			// Publish user location update event for user management to handle
+			await this.eventService.emit('user.location.updated', {
+				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
-				where: {
-					id: data.entityId,
-				},
+				timestamp: new Date(),
+				userId: data.entityId,
 			});
 
-			this.logger.log(`Updated user location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
-		} catch (e) {
-			this.logger.error(`Failed to update user location for ${data.entityId}:`, e);
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update user location' });
+			this.logger.log('User location updated successfully', {
+				location: `${data.location.lat}, ${data.location.long}`,
+				userId: data.entityId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to update user location', {
+				error,
+				location: data.location,
+				userId: data.entityId,
+			});
+			throw new LocationDomainError(LocationDomainErrorCodes.REDIS_OPERATION_FAILED, 'Failed to update user location', {
+				entityId: data.entityId,
+				operation: 'update_user_location',
+			});
 		}
 	}
 
 	/**
 	 * Search for vendors within a bounding box
-	 * @param request Vendor location search request
-	 * @returns Vendor locations within the bounding box
+	 * Domain method for location-based vendor discovery
 	 */
 	async searchVendorLocations(request: VendorLocationRequest): Promise<VendorLocationResponse> {
 		const { neLocation, swLocation } = request;
 
 		if (!neLocation || !swLocation) {
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, { field: 'neLocation or swLocation' });
+			throw new LocationDomainError(
+				LocationDomainErrorCodes.INVALID_COORDINATES,
+				'Bounding box coordinates are required',
+				{
+					operation: 'search_vendor_locations',
+				},
+			);
 		}
+
+		this.logger.log('Searching for vendors in bounding box', {
+			neLocation: `${neLocation.lat}, ${neLocation.long}`,
+			swLocation: `${swLocation.lat}, ${swLocation.long}`,
+		});
 
 		try {
 			// Search for vendors in the bounding box with retry
@@ -137,21 +190,36 @@ export class LocationService {
 				};
 			});
 
-			this.logger.log(`Found ${vendors.length} vendors in bounding box`);
+			this.logger.log('Vendor location search completed successfully', {
+				neLocation: `${neLocation.lat}, ${neLocation.long}`,
+				swLocation: `${swLocation.lat}, ${swLocation.long}`,
+				vendorCount: vendors.length,
+			});
 
 			return { vendors };
-		} catch (e) {
-			this.logger.error('Failed to search vendor locations:', e);
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'GEO Search' });
+		} catch (error) {
+			this.logger.error('Failed to search vendor locations', {
+				error,
+				neLocation,
+				swLocation,
+			});
+			throw new LocationDomainError(
+				LocationDomainErrorCodes.PROXIMITY_SEARCH_FAILED,
+				'Failed to search vendor locations',
+				{
+					operation: 'search_vendor_locations',
+				},
+			);
 		}
 	}
 
 	/**
 	 * Get vendor location by ID
-	 * @param vendorId Vendor ID
-	 * @returns Vendor location or null
+	 * Domain method for vendor location retrieval
 	 */
-	async getVendorLocation(vendorId: string): Promise<{ lat: number; long: number } | null> {
+	async getVendorLocation(vendorId: string): Promise<LocationData | null> {
+		this.logger.log('Getting vendor location', { vendorId });
+
 		try {
 			const coordinates = await retryOperation(
 				async () => {
@@ -162,22 +230,35 @@ export class LocationService {
 			);
 
 			if (!coordinates || !coordinates[0]) {
+				this.logger.log('Vendor location not found', { vendorId });
 				return null;
 			}
 
 			const [long, lat] = coordinates[0];
-			return { lat: Number(lat), long: Number(long) };
-		} catch (e) {
-			this.logger.error(`Failed to get vendor location for ${vendorId}:`, e);
-			return null;
+			const location = { lat: Number(lat), long: Number(long) };
+
+			this.logger.log('Vendor location retrieved successfully', {
+				location: `${location.lat}, ${location.long}`,
+				vendorId,
+			});
+
+			return location;
+		} catch (error) {
+			this.logger.error('Failed to get vendor location', { error, vendorId });
+			throw new LocationDomainError(LocationDomainErrorCodes.REDIS_OPERATION_FAILED, 'Failed to get vendor location', {
+				operation: 'get_vendor_location',
+				vendorId,
+			});
 		}
 	}
 
 	/**
 	 * Remove vendor from geospatial store
-	 * @param vendorId Vendor ID
+	 * Domain method for vendor location cleanup
 	 */
 	async removeVendorLocation(vendorId: string): Promise<void> {
+		this.logger.log('Removing vendor from geospatial store', { vendorId });
+
 		try {
 			await retryOperation(
 				async () => {
@@ -187,10 +268,17 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			this.logger.log(`Removed vendor ${vendorId} from geospatial store`);
-		} catch (e) {
-			this.logger.error(`Failed to remove vendor location for ${vendorId}:`, e);
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'remove vendor location' });
+			this.logger.log('Vendor removed from geospatial store successfully', { vendorId });
+		} catch (error) {
+			this.logger.error('Failed to remove vendor location', { error, vendorId });
+			throw new LocationDomainError(
+				LocationDomainErrorCodes.REDIS_OPERATION_FAILED,
+				'Failed to remove vendor location',
+				{
+					operation: 'remove_vendor_location',
+					vendorId,
+				},
+			);
 		}
 	}
 }

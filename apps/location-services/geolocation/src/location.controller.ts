@@ -9,8 +9,8 @@ import {
 } from '@app/proto/location-services/geolocation';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { LocationService } from './location.service';
 import { LocationTrackingService } from './location-tracking.service';
+import { LocationService } from './location.service';
 
 @Controller()
 export class LocationController {

@@ -9,6 +9,11 @@ export interface VendorConnectionInfo {
 	vendorId: string;
 }
 
+interface VendorRoomMembership {
+	userId: string;
+	vendorId: string;
+}
+
 @Injectable()
 export class VendorConnectionManagerService {
 	private readonly logger = new Logger(VendorConnectionManagerService.name);
@@ -17,10 +22,11 @@ export class VendorConnectionManagerService {
 
 	/**
 	 * Register a vendor connection for location updates
-	 * @param vendorId Vendor ID
-	 * @param socketId Socket ID
+	 * Domain method for vendor connection management
 	 */
 	async registerVendor(vendorId: string, socketId: string): Promise<void> {
+		this.logger.log('Registering vendor connection for location updates', { socketId, vendorId });
+
 		try {
 			// Store vendor -> socket mapping with retry
 			await retryOperation(
@@ -40,95 +46,132 @@ export class VendorConnectionManagerService {
 				{ logger: this.logger },
 			);
 
-			this.logger.log(`Vendor ${vendorId} connected with socket ${socketId}`);
+			this.logger.log('Vendor connection registered successfully', { socketId, vendorId });
 		} catch (error) {
-			this.logger.error(`Failed to register vendor ${vendorId}:`, error);
+			this.logger.error('Failed to register vendor connection', { error, socketId, vendorId });
 			throw error;
 		}
 	}
 
 	/**
 	 * Handle vendor disconnection
-	 * @param socketId Socket ID
+	 * Domain method for vendor connection cleanup
 	 */
 	async handleDisconnect(socketId: string): Promise<void> {
+		this.logger.log('Handling vendor disconnection', { socketId });
+
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				this.logger.warn(`No vendor connection info found for socket ${socketId}`);
+				this.logger.warn('No vendor connection info found for disconnection', { socketId });
 				return;
 			}
 
 			await this.handleVendorDisconnect(connectionInfo.vendorId, socketId);
 		} catch (error) {
-			this.logger.error(`Failed to handle vendor disconnect for socket ${socketId}:`, error);
+			this.logger.error('Failed to handle vendor disconnection', { error, socketId });
 			throw error;
 		}
 	}
 
 	/**
-	 * Handle vendor disconnection
-	 * @param vendorId Vendor ID
-	 * @param socketId Socket ID
+	 * Handle vendor disconnection with cleanup
+	 * Domain method for vendor connection cleanup
 	 */
 	private async handleVendorDisconnect(vendorId: string, socketId: string): Promise<void> {
-		// Get all users in vendor's room
-		const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
+		this.logger.log('Cleaning up vendor connection', { socketId, vendorId });
 
-		// Remove vendor from geolocation store
-		await this.redis.zrem('vendor_locations', vendorId);
+		try {
+			// Get all users in vendor's room
+			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
 
-		// Clean up vendor mappings
-		await this.redis.del(`vendor:${vendorId}:socketId`);
-		await this.redis.del(`socket:${socketId}:vendorId`);
-		await this.redis.del(`room:${vendorId}:users`);
-		await this.redis.del(`vendor_connection:${socketId}`);
+			// Remove vendor from geolocation store
+			await this.redis.zrem('vendor_locations', vendorId);
 
-		// Remove vendor from all users' room lists
-		for (const userId of usersInRoom) {
-			await this.redis.srem(`user:${userId}:rooms`, vendorId);
+			// Clean up vendor mappings
+			await this.redis.del(`vendor:${vendorId}:socketId`);
+			await this.redis.del(`socket:${socketId}:vendorId`);
+			await this.redis.del(`room:${vendorId}:users`);
+			await this.redis.del(`vendor_connection:${socketId}`);
+
+			// Remove vendor from all users' room lists
+			for (const userId of usersInRoom) {
+				await this.redis.srem(`user:${userId}:rooms`, vendorId);
+			}
+
+			this.logger.log('Vendor connection cleanup completed successfully', {
+				socketId,
+				usersAffected: usersInRoom.length,
+				vendorId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to cleanup vendor connection', { error, socketId, vendorId });
+			throw error;
 		}
-
-		this.logger.log(`Vendor ${vendorId} disconnected from socket ${socketId}, affecting ${usersInRoom.length} users`);
 	}
 
 	/**
 	 * Get all users in a vendor room
-	 * @param vendorId Vendor ID
-	 * @returns Array of user IDs
+	 * Domain method for vendor room membership retrieval
 	 */
 	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
-		return await this.redis.smembers(`room:${vendorId}:users`);
+		this.logger.log('Getting vendor room user memberships', { vendorId });
+
+		try {
+			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
+
+			this.logger.log('Vendor room user memberships retrieved successfully', {
+				userCount: usersInRoom.length,
+				vendorId,
+			});
+
+			return usersInRoom;
+		} catch (error) {
+			this.logger.error('Failed to get vendor room user memberships', { error, vendorId });
+			throw error;
+		}
 	}
 
 	/**
 	 * Get connection info for a vendor socket
-	 * @param socketId Socket ID
-	 * @returns Connection info or null
+	 * Domain method for connection info retrieval
 	 */
 	async getConnectionInfo(socketId: string): Promise<VendorConnectionInfo | null> {
-		const connectionData = await this.redis.get(`vendor_connection:${socketId}`);
-		if (!connectionData) {
-			return null;
+		try {
+			const connectionData = await this.redis.get(`vendor_connection:${socketId}`);
+			if (!connectionData) {
+				return null;
+			}
+			return JSON.parse(connectionData);
+		} catch (error) {
+			this.logger.error('Failed to get vendor connection info', { error, socketId });
+			throw error;
 		}
-		return JSON.parse(connectionData);
 	}
 
 	/**
 	 * Get socket ID for a vendor
-	 * @param vendorId Vendor ID
-	 * @returns Socket ID or null
+	 * Domain method for vendor socket mapping retrieval
 	 */
 	async getVendorSocketId(vendorId: string): Promise<string | null> {
-		return await this.redis.get(`vendor:${vendorId}:socketId`);
+		try {
+			return await this.redis.get(`vendor:${vendorId}:socketId`);
+		} catch (error) {
+			this.logger.error('Failed to get vendor socket ID', { error, vendorId });
+			throw error;
+		}
 	}
 
 	/**
 	 * Get vendor ID for a socket
-	 * @param socketId Socket ID
-	 * @returns Vendor ID or null
+	 * Domain method for socket vendor mapping retrieval
 	 */
 	async getSocketVendorId(socketId: string): Promise<string | null> {
-		return await this.redis.get(`socket:${socketId}:vendorId`);
+		try {
+			return await this.redis.get(`socket:${socketId}:vendorId`);
+		} catch (error) {
+			this.logger.error('Failed to get socket vendor ID', { error, socketId });
+			throw error;
+		}
 	}
 }
