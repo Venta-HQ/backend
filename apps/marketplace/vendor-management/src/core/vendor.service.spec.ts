@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@app/nest/errors';
-import { clearMocks, data, errors, mockPrisma } from '../../../../test/helpers/test-utils';
+import { clearMocks, data, errors, mockPrisma } from '../../../../../test/helpers/test-utils';
 import { VendorService } from './vendor.service';
 
 // Mock the retry utility

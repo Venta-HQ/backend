@@ -2,12 +2,10 @@ import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { VendorLocationEventsController } from './vendor-location-events.controller';
-import { VendorController } from './vendor.controller';
-import { VendorService } from './vendor.service';
+import { CoreModule } from './core/core.module';
+import { LocationModule } from './location/location.module';
 
 @Module({
-	controllers: [VendorController, VendorLocationEventsController],
 	imports: [
 		BootstrapModule.forRoot({
 			additionalModules: [
@@ -31,7 +29,8 @@ import { VendorService } from './vendor.service';
 			protocol: 'grpc',
 		}),
 		EventsModule.register(), // No longer needs appName parameter
+		CoreModule,
+		LocationModule,
 	],
-	providers: [VendorService],
 })
-export class VendorModule {}
+export class VendorManagementModule {}

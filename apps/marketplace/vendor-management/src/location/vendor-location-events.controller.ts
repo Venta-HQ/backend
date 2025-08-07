@@ -1,7 +1,7 @@
 import { BaseEvent } from '@app/apitypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { VendorService } from './vendor.service';
+import { VendorService } from '../core/vendor.service';
 
 /**
  * NATS consumer for vendor location update events.

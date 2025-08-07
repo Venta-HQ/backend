@@ -1,6 +1,6 @@
 import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
-import { VendorModule } from './vendor.module';
+import { VendorManagementModule } from './vendor-management.module';
 
 async function bootstrap() {
 	try {
@@ -16,7 +16,7 @@ async function bootstrap() {
 			},
 			main: {
 				defaultUrl: 'localhost:5004',
-				module: VendorModule,
+				module: VendorManagementModule,
 				package: 'vendor',
 				protoPath: 'vendor.proto',
 				url: configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',

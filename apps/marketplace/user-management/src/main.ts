@@ -1,7 +1,7 @@
 import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { UserModule } from './user.module';
+import { UserManagementModule } from './user-management.module';
 
 async function bootstrap() {
 	const logger = new Logger('UserService');
@@ -19,7 +19,7 @@ async function bootstrap() {
 			},
 			main: {
 				defaultUrl: 'localhost:5000',
-				module: UserModule,
+				module: UserManagementModule,
 				package: 'user',
 				protoPath: 'user.proto',
 				url: configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
