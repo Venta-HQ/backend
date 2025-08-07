@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { BaseContextMapper } from '@app/nest/modules/contracts';
+import { Injectable, Logger } from '@nestjs/common';
+import { ValidationUtils } from '@app/utils';
 
 /**
  * Communication → Marketplace Context Mapper
@@ -7,17 +7,29 @@ import { BaseContextMapper } from '@app/nest/modules/contracts';
  * Translates data between Communication and Marketplace domains
  */
 @Injectable()
-export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
-	constructor() {
-		super('CommunicationMarketplaceContextMapper');
+export class CommunicationMarketplaceContextMapper {
+	private readonly logger = new Logger('CommunicationMarketplaceContextMapper');
+
+	/**
+	 * Validate webhook data
+	 */
+	private validateWebhookData(data: any): boolean {
+		return data && 
+			typeof data.type === 'string' && 
+			data.data && 
+			typeof data.timestamp === 'string' &&
+			typeof data.source === 'string';
 	}
 
-	getDomain(): string {
-		return 'communication';
-	}
-
-	getTargetDomain(): string {
-		return 'marketplace';
+	/**
+	 * Validate notification request data
+	 */
+	private validateNotificationRequest(data: any): boolean {
+		return data && 
+			typeof data.userId === 'string' &&
+			['email', 'sms', 'push'].includes(data.type) &&
+			typeof data.template === 'string' &&
+			typeof data.data === 'object';
 	}
 
 	/**
@@ -31,11 +43,11 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 			source: string;
 		},
 	) {
-		this.logTranslationStart('toMarketplaceWebhookEvent', { type: webhookData.type, source: webhookData.source });
-
 		try {
 			// Validate source data
-			this.validateSourceData(webhookData);
+			if (!this.validateWebhookData(webhookData)) {
+				throw new Error('Invalid webhook data');
+			}
 
 			// Transform to marketplace format
 			const marketplaceEvent = {
@@ -46,13 +58,9 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 				processedAt: new Date().toISOString(),
 			};
 
-			// Validate target data
-			this.validateTargetData(marketplaceEvent);
-
-			this.logTranslationSuccess('toMarketplaceWebhookEvent', { type: webhookData.type });
 			return marketplaceEvent;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceWebhookEvent', error, { type: webhookData.type });
+			this.logger.error('Failed to translate webhook event', error);
 			throw error;
 		}
 	}
@@ -69,11 +77,11 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 			priority?: 'low' | 'normal' | 'high';
 		},
 	) {
-		this.logTranslationStart('toCommunicationNotificationRequest', { userId: notificationRequest.userId, type: notificationRequest.type });
-
 		try {
 			// Validate source data
-			this.validateSourceData(notificationRequest);
+			if (!this.validateNotificationRequest(notificationRequest)) {
+				throw new Error('Invalid notification request data');
+			}
 
 			// Transform to communication format
 			const communicationRequest = {
@@ -85,13 +93,9 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 				scheduledAt: new Date().toISOString(),
 			};
 
-			// Validate target data
-			this.validateTargetData(communicationRequest);
-
-			this.logTranslationSuccess('toCommunicationNotificationRequest', { userId: notificationRequest.userId });
 			return communicationRequest;
 		} catch (error) {
-			this.logTranslationError('toCommunicationNotificationRequest', error, { userId: notificationRequest.userId });
+			this.logger.error('Failed to translate notification request', error);
 			throw error;
 		}
 	}
@@ -107,11 +111,11 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 			details?: Record<string, any>;
 		},
 	) {
-		this.logTranslationStart('toMarketplaceDeliveryStatus', { messageId: deliveryStatus.messageId, status: deliveryStatus.status });
-
 		try {
 			// Validate source data
-			this.validateSourceData(deliveryStatus);
+			if (!deliveryStatus?.messageId || !deliveryStatus?.status || !deliveryStatus?.timestamp) {
+				throw new Error('Invalid delivery status data');
+			}
 
 			// Transform to marketplace format
 			const marketplaceStatus = {
@@ -121,13 +125,9 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 				metadata: deliveryStatus.details || {},
 			};
 
-			// Validate target data
-			this.validateTargetData(marketplaceStatus);
-
-			this.logTranslationSuccess('toMarketplaceDeliveryStatus', { messageId: deliveryStatus.messageId });
 			return marketplaceStatus;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceDeliveryStatus', error, { messageId: deliveryStatus.messageId });
+			this.logger.error('Failed to translate delivery status', error);
 			throw error;
 		}
 	}
@@ -143,11 +143,11 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 			headers?: Record<string, string>;
 		},
 	) {
-		this.logTranslationStart('toCommunicationWebhookConfig', { url: webhookConfig.url, events: webhookConfig.events });
-
 		try {
 			// Validate source data
-			this.validateSourceData(webhookConfig);
+			if (!webhookConfig?.url || !webhookConfig?.events?.length) {
+				throw new Error('Invalid webhook configuration data');
+			}
 
 			// Transform to communication format
 			const communicationConfig = {
@@ -158,44 +158,12 @@ export class CommunicationMarketplaceContextMapper extends BaseContextMapper {
 				active: true,
 			};
 
-			// Validate target data
-			this.validateTargetData(communicationConfig);
-
-			this.logTranslationSuccess('toCommunicationWebhookConfig', { url: webhookConfig.url });
 			return communicationConfig;
 		} catch (error) {
-			this.logTranslationError('toCommunicationWebhookConfig', error, { url: webhookConfig.url });
+			this.logger.error('Failed to translate webhook configuration', error);
 			throw error;
 		}
 	}
 
-	// ============================================================================
-	// ABSTRACT METHOD IMPLEMENTATIONS
-	// ============================================================================
 
-	validateSourceData(data: any): boolean {
-		if (!data) {
-			throw this.createValidationError('Source data is required', { data });
-		}
-
-		// Additional validation based on data structure
-		if (data.type && typeof data.type !== 'string') {
-			throw this.createValidationError('Invalid type format', { data });
-		}
-
-		return true;
-	}
-
-	validateTargetData(data: any): boolean {
-		if (!data) {
-			throw this.createValidationError('Target data is required', { data });
-		}
-
-		// Additional validation based on data structure
-		if (data.eventType && typeof data.eventType !== 'string') {
-			throw this.createValidationError('Invalid event type format', { data });
-		}
-
-		return true;
-	}
 } 
