@@ -1,6 +1,6 @@
 import { Routes } from '@nestjs/core';
-import { ClerkWebhooksModule } from '../../../communication/webhooks/clerk-webhooks.module';
-import { SubscriptionWebhooksModule } from '../../../communication/webhooks/subscription-webhooks.module';
+import { ClerkWebhooksModule } from '../../../communication/webhooks/src/clerk-webhooks.module';
+import { SubscriptionWebhooksModule } from '../../../communication/webhooks/src/subscription-webhooks.module';
 import { UploadModule } from '../../file-management/src/upload/upload.module';
 import { UserModule } from './user/user.module';
 import { VendorModule } from './vendor/vendor.module';

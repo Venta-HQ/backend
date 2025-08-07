@@ -15,14 +15,14 @@ export class ClerkWebhooksController {
 		switch (event.type) {
 			case 'user.created':
 				if (event.data?.id) {
-					return this.client.invoke('handleClerkUserCreated', {
+					return this.client.invoke('handleUserCreated', {
 						id: event.data.id,
 					});
 				}
 				break;
 			case 'user.deleted':
 				if (event.data?.id) {
-					return this.client.invoke('handleClerkUserDeleted', {
+					return this.client.invoke('handleUserDeleted', {
 						id: event.data.id,
 					});
 				}

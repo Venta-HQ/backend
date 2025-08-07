@@ -3,21 +3,21 @@ import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { ClerkUserData, ClerkWebhookResponse, USER_SERVICE_NAME } from '@app/proto/user';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { ClerkService } from './clerk.service';
+import { AuthService } from './auth.service';
 
 @Controller()
-export class ClerkController {
-	private readonly logger = new Logger(ClerkController.name);
+export class AuthController {
+	private readonly logger = new Logger(AuthController.name);
 
-	constructor(private readonly clerkService: ClerkService) {}
+	constructor(private readonly authService: AuthService) {}
 
 	@GrpcMethod(USER_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
-	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
-		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
-		const userData = await this.clerkService.handleUserCreated(data.id);
+	async handleUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
+		this.logger.log(`Handling User Created Event`);
+		const userData = await this.authService.handleUserCreated(data.id);
 		if (userData && userData.id) {
-			await this.clerkService.createIntegration({
+			await this.authService.createIntegration({
 				clerkUserId: userData.id,
 				providerId: userData.clerkId,
 			});
@@ -27,10 +27,10 @@ export class ClerkController {
 
 	@GrpcMethod(USER_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
-	async handleClerkUserDeleted(data: ClerkUserData): Promise<ClerkWebhookResponse> {
-		this.logger.log(`Handling Clerk Webhook Event from Microservice`);
-		await this.clerkService.handleUserDeleted(data.id);
-		await this.clerkService.deleteIntegration({
+	async handleUserDeleted(data: ClerkUserData): Promise<ClerkWebhookResponse> {
+		this.logger.log(`Handling User Deleted Event`);
+		await this.authService.handleUserDeleted(data.id);
+		await this.authService.deleteIntegration({
 			providerId: data.id,
 		});
 		return { message: 'Success' };

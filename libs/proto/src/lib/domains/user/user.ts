@@ -61,9 +61,9 @@ export interface Empty {
 export const USER_PACKAGE_NAME = "user";
 
 export interface UserServiceClient {
-  handleClerkUserCreated(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
+  handleUserCreated(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
 
-  handleClerkUserDeleted(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
+  handleUserDeleted(request: ClerkUserData, metadata?: Metadata): Observable<ClerkWebhookResponse>;
 
   handleSubscriptionCreated(
     request: RevenueCatSubscriptionData,
@@ -74,12 +74,12 @@ export interface UserServiceClient {
 }
 
 export interface UserServiceController {
-  handleClerkUserCreated(
+  handleUserCreated(
     request: ClerkUserData,
     metadata?: Metadata,
   ): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
 
-  handleClerkUserDeleted(
+  handleUserDeleted(
     request: ClerkUserData,
     metadata?: Metadata,
   ): Promise<ClerkWebhookResponse> | Observable<ClerkWebhookResponse> | ClerkWebhookResponse;
@@ -98,8 +98,8 @@ export interface UserServiceController {
 export function UserServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "handleClerkUserCreated",
-      "handleClerkUserDeleted",
+      "handleUserCreated",
+      "handleUserDeleted",
       "handleSubscriptionCreated",
       "getUserVendors",
     ];

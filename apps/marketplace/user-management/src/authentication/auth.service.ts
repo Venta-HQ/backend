@@ -3,9 +3,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
 
 @Injectable()
-export class ClerkService {
+export class AuthService {
 	constructor(private prisma: PrismaService) {}
-	private readonly logger = new Logger(ClerkService.name);
+	private readonly logger = new Logger(AuthService.name);
 
 	async handleUserCreated(id: string) {
 		this.logger.log(`Creating user with clerkId: ${id}`);

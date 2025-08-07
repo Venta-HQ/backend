@@ -11,7 +11,7 @@ export class VendorController {
 	constructor(@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>) {}
 
 	@Get('/:id')
-	// @UseGuards(AuthGuard)
+	@UseGuards(AuthGuard)
 	async getVendorById(@Param('id') id: string) {
 		return await firstValueFrom(
 			this.client.invoke('getVendorById', { id }).pipe(

@@ -24,7 +24,7 @@
 			"@app/nest/filters": ["libs/nest/filters"],
 			"@app/nest/errors": ["libs/nest/errors"],
 			"@app/proto": ["libs/proto/src"],
-		"@app/proto/*": ["libs/proto/src/lib/*.ts"],
+			"@app/proto/*": ["libs/proto/src/lib/*.ts"],
 			"@app/apitypes": ["libs/apitypes/src"],
 			"@app/apitypes/*": ["libs/apitypes/src/*"],
 			"@app/utils": ["libs/utils/src"],

@@ -3,8 +3,8 @@ syntax = "proto3";
 package user;
 
 service UserService {
-  rpc HandleClerkUserCreated (ClerkUserData) returns (ClerkWebhookResponse) {}
-  rpc HandleClerkUserDeleted (ClerkUserData) returns (ClerkWebhookResponse) {}
+  rpc HandleUserCreated (ClerkUserData) returns (ClerkWebhookResponse) {}
+  rpc HandleUserDeleted (ClerkUserData) returns (ClerkWebhookResponse) {}
   rpc HandleSubscriptionCreated (RevenueCatSubscriptionData) returns (SubscriptionCreatedResponse) {}
   rpc GetUserVendors (UserVendorData) returns (UserVendorsResponse) {}
 }
