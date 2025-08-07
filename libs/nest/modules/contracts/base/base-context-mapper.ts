@@ -211,14 +211,14 @@ export abstract class BaseContextMapper {
 	 * Create validation error
 	 */
 	protected createValidationError(message: string, details: Record<string, any>): AppError {
-		return new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_DATA, message, details);
+		return new AppError(ErrorType.VALIDATION, ErrorCodes.VALIDATION_ERROR, message, details);
 	}
 
 	/**
 	 * Create translation error
 	 */
 	protected createTranslationError(message: string, details: Record<string, any>): AppError {
-		return new AppError(ErrorType.VALIDATION, ErrorCodes.TRANSLATION_FAILED, message, details);
+		return new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_FORMAT, message, details);
 	}
 
 	// ============================================================================

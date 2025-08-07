@@ -321,21 +321,21 @@ export abstract class BaseAntiCorruptionLayer {
 	 * Create validation error
 	 */
 	protected createValidationError(message: string, details: Record<string, any>): AppError {
-		return new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_DATA, message, details);
+		return new AppError(ErrorType.VALIDATION, ErrorCodes.VALIDATION_ERROR, message, details);
 	}
 
 	/**
 	 * Create extraction error
 	 */
 	protected createExtractionError(message: string, details: Record<string, any>): AppError {
-		return new AppError(ErrorType.VALIDATION, ErrorCodes.DATA_EXTRACTION_FAILED, message, details);
+		return new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_FORMAT, message, details);
 	}
 
 	/**
 	 * Create transformation error
 	 */
 	protected createTransformationError(message: string, details: Record<string, any>): AppError {
-		return new AppError(ErrorType.VALIDATION, ErrorCodes.TRANSFORMATION_FAILED, message, details);
+		return new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_FORMAT, message, details);
 	}
 
 	// ============================================================================
