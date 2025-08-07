@@ -1,4 +1,4 @@
-import { UserDomainError, UserDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -46,10 +46,15 @@ export class VendorService {
 			return vendors;
 		} catch (error) {
 			this.logger.error('Failed to get user vendor relationships', { error, userId });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to retrieve user vendor relationships', {
-				operation: 'get_user_vendors',
-				userId,
-			});
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.DATABASE_ERROR,
+				'Failed to retrieve user vendor relationships',
+				{
+					operation: 'get_user_vendors',
+					userId,
+				},
+			);
 		}
 	}
 
@@ -74,9 +79,9 @@ export class VendorService {
 			const isOwner = !!vendor;
 
 			this.logger.log('Vendor ownership validation completed', {
+				isOwner,
 				userId: relationship.userId,
 				vendorId: relationship.vendorId,
-				isOwner,
 			});
 
 			return isOwner;
@@ -86,7 +91,7 @@ export class VendorService {
 				userId: relationship.userId,
 				vendorId: relationship.vendorId,
 			});
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to validate vendor ownership', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to validate vendor ownership', {
 				operation: 'validate_vendor_ownership',
 				userId: relationship.userId,
 				vendorId: relationship.vendorId,

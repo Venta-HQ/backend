@@ -1,4 +1,4 @@
-import { UserDomainError, UserDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma, SubscriptionStatus } from '@prisma/client';
@@ -72,7 +72,7 @@ export class SubscriptionService {
 				error,
 				providerId: activationData.providerId,
 			});
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to activate subscription', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to activate subscription', {
 				clerkUserId: activationData.clerkUserId,
 				operation: 'activate_subscription',
 				providerId: activationData.providerId,
@@ -96,8 +96,9 @@ export class SubscriptionService {
 			this.logger.log('User created successfully from external auth provider', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to create user from external auth provider', { clerkId, error });
-			throw new UserDomainError(
-				UserDomainErrorCodes.DATABASE_ERROR,
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.DATABASE_ERROR,
 				'Failed to create user from external auth provider',
 				{
 					clerkId,
@@ -123,8 +124,9 @@ export class SubscriptionService {
 			this.logger.log('User deleted successfully from external auth provider', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user from external auth provider', { clerkId, error });
-			throw new UserDomainError(
-				UserDomainErrorCodes.DATABASE_ERROR,
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.DATABASE_ERROR,
 				'Failed to delete user from external auth provider',
 				{
 					clerkId,
@@ -164,7 +166,7 @@ export class SubscriptionService {
 			});
 		} catch (error) {
 			this.logger.error('Failed to create integration record', { clerkUserId: data.clerkUserId, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to create integration record', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create integration record', {
 				clerkUserId: data.clerkUserId,
 				operation: 'create_integration',
 			});
@@ -196,7 +198,7 @@ export class SubscriptionService {
 			});
 		} catch (error) {
 			this.logger.error('Failed to create user subscription record', { clerkUserId: data.clerkUserId, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to create user subscription record', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user subscription record', {
 				clerkUserId: data.clerkUserId,
 				operation: 'create_user_subscription',
 			});

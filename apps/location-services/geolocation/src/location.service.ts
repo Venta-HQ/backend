@@ -153,8 +153,9 @@ export class LocationService {
 		const { neLocation, swLocation } = request;
 
 		if (!neLocation || !swLocation) {
-			throw new LocationDomainError(
-				LocationDomainErrorCodes.INVALID_COORDINATES,
+			throw new AppError(
+				ErrorType.VALIDATION,
+				ErrorCodes.LOCATION_INVALID_COORDINATES,
 				'Bounding box coordinates are required',
 				{
 					operation: 'search_vendor_locations',
@@ -209,8 +210,9 @@ export class LocationService {
 				neLocation,
 				swLocation,
 			});
-			throw new LocationDomainError(
-				LocationDomainErrorCodes.PROXIMITY_SEARCH_FAILED,
+			throw new AppError(
+				ErrorType.EXTERNAL_SERVICE,
+				ErrorCodes.LOCATION_PROXIMITY_SEARCH_FAILED,
 				'Failed to search vendor locations',
 				{
 					operation: 'search_vendor_locations',
@@ -251,10 +253,15 @@ export class LocationService {
 			return location;
 		} catch (error) {
 			this.logger.error('Failed to get vendor location', { error, vendorId });
-			throw new LocationDomainError(LocationDomainErrorCodes.REDIS_OPERATION_FAILED, 'Failed to get vendor location', {
-				operation: 'get_vendor_location',
-				vendorId,
-			});
+			throw new AppError(
+				ErrorType.EXTERNAL_SERVICE,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
+				'Failed to get vendor location',
+				{
+					operation: 'get_vendor_location',
+					vendorId,
+				},
+			);
 		}
 	}
 
@@ -277,8 +284,9 @@ export class LocationService {
 			this.logger.log('Vendor removed from geospatial store successfully', { vendorId });
 		} catch (error) {
 			this.logger.error('Failed to remove vendor location', { error, vendorId });
-			throw new LocationDomainError(
-				LocationDomainErrorCodes.REDIS_OPERATION_FAILED,
+			throw new AppError(
+				ErrorType.EXTERNAL_SERVICE,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
 				'Failed to remove vendor location',
 				{
 					operation: 'remove_vendor_location',

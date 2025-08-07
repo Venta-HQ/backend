@@ -1,4 +1,4 @@
-import { VendorDomainError, VendorDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { VendorCreateData, VendorUpdateData } from '@app/proto/marketplace/vendor-management';
 import { Injectable, Logger } from '@nestjs/common';
@@ -81,7 +81,7 @@ export class VendorService {
 				ownerId: onboardingData.ownerId,
 				vendorName: onboardingData.name,
 			});
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to onboard vendor', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to onboard vendor', {
 				operation: 'onboard_vendor',
 				ownerId: onboardingData.ownerId,
 			});
@@ -108,7 +108,7 @@ export class VendorService {
 			return vendor;
 		} catch (error) {
 			this.logger.error('Failed to get vendor profile', { error, vendorId: id });
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor profile', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor profile', {
 				operation: 'get_vendor_by_id',
 				vendorId: id,
 			});
@@ -139,7 +139,7 @@ export class VendorService {
 			return vendor.id;
 		} catch (error) {
 			this.logger.error('Failed to create vendor', { error, ownerId: data.userId });
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to create vendor', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create vendor', {
 				operation: 'create_vendor',
 				ownerId: data.userId,
 			});
@@ -169,7 +169,7 @@ export class VendorService {
 			await this.eventService.emit('vendor.updated', vendor);
 		} catch (error) {
 			this.logger.error('Failed to update vendor', { error, ownerId: userId, vendorId: id });
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
 				operation: 'update_vendor',
 				ownerId: userId,
 				vendorId: id,
@@ -199,7 +199,7 @@ export class VendorService {
 			await this.eventService.emit('vendor.deleted', vendor);
 		} catch (error) {
 			this.logger.error('Failed to delete vendor', { error, ownerId: userId, vendorId: id });
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to delete vendor', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete vendor', {
 				operation: 'delete_vendor',
 				ownerId: userId,
 				vendorId: id,
@@ -236,7 +236,7 @@ export class VendorService {
 			await this.eventService.emit('vendor.updated', vendor);
 		} catch (error) {
 			this.logger.error('Failed to update vendor location in database', { error, vendorId });
-			throw new VendorDomainError(VendorDomainErrorCodes.DATABASE_ERROR, 'Failed to update vendor location', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor location', {
 				operation: 'update_vendor_location',
 				vendorId,
 			});

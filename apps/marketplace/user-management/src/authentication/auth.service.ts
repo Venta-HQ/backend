@@ -1,4 +1,4 @@
-import { UserDomainError, UserDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
@@ -57,7 +57,7 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity creation', { clerkId: id, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to handle user identity creation', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity creation', {
 				clerkId: id,
 				operation: 'handle_user_created',
 			});
@@ -94,7 +94,7 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity deletion', { clerkId: id, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to handle user identity deletion', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity deletion', {
 				clerkId: id,
 				operation: 'handle_user_deleted',
 			});
@@ -136,7 +136,7 @@ export class AuthService {
 				providerId: integrationData.providerId,
 				error,
 			});
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to create authentication integration record', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create authentication integration record', {
 				clerkUserId: integrationData.clerkUserId,
 				operation: 'create_auth_integration',
 				providerId: integrationData.providerId,
@@ -182,7 +182,7 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to delete authentication integration record', { providerId, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to delete authentication integration record', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete authentication integration record', {
 				operation: 'delete_auth_integration',
 				providerId,
 			});

@@ -1,4 +1,4 @@
-import { UserDomainError, UserDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -57,7 +57,7 @@ export class UserService {
 				error,
 				source: registrationData.source,
 			});
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to register user', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to register user', {
 				clerkId: registrationData.clerkId,
 				operation: 'register_user',
 				source: registrationData.source,
@@ -85,7 +85,7 @@ export class UserService {
 			return user;
 		} catch (error) {
 			this.logger.error('Failed to get user profile', { error, userId });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to retrieve user profile', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve user profile', {
 				operation: 'get_user_by_id',
 				userId,
 			});
@@ -120,7 +120,7 @@ export class UserService {
 			return user;
 		} catch (error) {
 			this.logger.error('Failed to update user location in database', { error, userId });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to update user location', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update user location', {
 				operation: 'update_user_location',
 				userId,
 			});
@@ -145,7 +145,7 @@ export class UserService {
 			return user;
 		} catch (error) {
 			this.logger.error('Failed to create user profile', { clerkId, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to create user profile', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user profile', {
 				clerkId,
 				operation: 'create_user_profile',
 			});
@@ -168,7 +168,7 @@ export class UserService {
 			this.logger.log('User profile and associated data deleted successfully', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user profile', { clerkId, error });
-			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to delete user profile', {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete user profile', {
 				clerkId,
 				operation: 'delete_user_profile',
 			});

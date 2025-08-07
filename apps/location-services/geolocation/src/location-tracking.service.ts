@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { LocationDomainError, LocationDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -77,13 +77,13 @@ export class LocationTrackingService {
 	 */
 	private async validateLocationData(location: LocationData): Promise<void> {
 		if (location.lat < -90 || location.lat > 90) {
-			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_LATITUDE, 'Invalid latitude value', {
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_LATITUDE, 'Invalid latitude value', {
 				lat: location.lat,
 			});
 		}
 
 		if (location.lng < -180 || location.lng > 180) {
-			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_LONGITUDE, 'Invalid longitude value', {
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_LONGITUDE, 'Invalid longitude value', {
 				lng: location.lng,
 			});
 		}
@@ -99,7 +99,7 @@ export class LocationTrackingService {
 		});
 
 		if (!vendor) {
-			throw new LocationDomainError(LocationDomainErrorCodes.LOCATION_NOT_FOUND, 'Vendor not found', { vendorId });
+			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.LOCATION_NOT_FOUND, 'Vendor not found', { vendorId });
 		}
 	}
 
@@ -113,7 +113,7 @@ export class LocationTrackingService {
 		});
 
 		if (!user) {
-			throw new LocationDomainError(LocationDomainErrorCodes.LOCATION_NOT_FOUND, 'User not found', { userId });
+			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.LOCATION_NOT_FOUND, 'User not found', { userId });
 		}
 	}
 
