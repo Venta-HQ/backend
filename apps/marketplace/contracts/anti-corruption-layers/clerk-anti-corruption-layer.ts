@@ -1,5 +1,6 @@
-import { BaseAntiCorruptionLayer } from '@app/nest/modules/contracts';
-import { Injectable } from '@nestjs/common';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { TransformationUtils } from '@app/utils';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Anti-Corruption Layer for Clerk Integration
@@ -8,25 +9,21 @@ import { Injectable } from '@nestjs/common';
  * and translates Clerk data to marketplace domain format
  */
 @Injectable()
-export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
-	constructor() {
-		super('ClerkAntiCorruptionLayer');
+export class ClerkAntiCorruptionLayer {
+	private readonly logger = new Logger('ClerkAntiCorruptionLayer');
+
+	/**
+	 * Validate Clerk user data
+	 */
+	private validateClerkUser(data: any): boolean {
+		return data && data.id && typeof data.id === 'string';
 	}
 
-	getExternalService(): string {
-		return 'clerk';
-	}
-
-	getDomain(): string {
-		return 'marketplace';
-	}
-
-	validateExternalData(data: any): boolean {
-		return this.validateExternalUser(data);
-	}
-
-	validateMarketplaceData(data: any): boolean {
-		return this.validateMarketplaceUser(data);
+	/**
+	 * Validate marketplace user data
+	 */
+	private validateMarketplaceUser(data: any): boolean {
+		return data && data.email && typeof data.email === 'string';
 	}
 
 	// ============================================================================
@@ -37,27 +34,24 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 	 * Translate Clerk user data to marketplace user format
 	 */
 	toMarketplaceUser(clerkUser: any) {
-		this.logTranslationStart('toMarketplaceUser', { clerkUserId: clerkUser?.id });
-
 		try {
-			if (!this.validateExternalData(clerkUser)) {
-				throw this.createValidationError('Invalid Clerk user data', { clerkUser });
+			if (!this.validateClerkUser(clerkUser)) {
+				throw new Error('Invalid Clerk user data');
 			}
 
 			const result = {
 				clerkId: clerkUser.id,
-				email: this.extractEmail(clerkUser),
-				firstName: this.extractFirstName(clerkUser),
-				lastName: this.extractLastName(clerkUser),
-				metadata: this.extractMetadata(clerkUser),
-				createdAt: this.extractCreatedAt(clerkUser),
-				updatedAt: this.extractUpdatedAt(clerkUser),
+				email: TransformationUtils.extractEmail(clerkUser),
+				firstName: TransformationUtils.extractString(clerkUser, ['firstName']),
+				lastName: TransformationUtils.extractString(clerkUser, ['lastName']),
+				metadata: TransformationUtils.extractMetadata(clerkUser),
+				createdAt: TransformationUtils.extractCreatedAt(clerkUser),
+				updatedAt: TransformationUtils.extractUpdatedAt(clerkUser),
 			};
 
-			this.logTranslationSuccess('toMarketplaceUser', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceUser', error, { clerkUser });
+			this.logger.error('Failed to translate Clerk user', error);
 			throw error;
 		}
 	}
@@ -66,53 +60,56 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 	 * Translate Clerk user update to marketplace format
 	 */
 	toMarketplaceUserUpdate(clerkUser: any, previousUser?: any) {
-		this.logTranslationStart('toMarketplaceUserUpdate', { clerkUserId: clerkUser?.id });
-
 		try {
-			if (!this.validateExternalData(clerkUser)) {
-				throw this.createValidationError('Invalid Clerk user data', { clerkUser });
+			if (!this.validateClerkUser(clerkUser)) {
+				throw new Error('Invalid Clerk user data');
 			}
 
 			// Extract changes by comparing with previous user
 			const changes: Record<string, any> = {};
 
 			if (previousUser) {
-				if (this.extractEmail(clerkUser) !== this.extractEmail(previousUser)) {
-					changes.email = this.extractEmail(clerkUser);
+				const currentEmail = TransformationUtils.extractEmail(clerkUser);
+				const previousEmail = TransformationUtils.extractEmail(previousUser);
+				if (currentEmail !== previousEmail) {
+					changes.email = currentEmail;
 				}
 
-				if (this.extractFirstName(clerkUser) !== this.extractFirstName(previousUser)) {
-					changes.firstName = this.extractFirstName(clerkUser);
+				const currentFirstName = TransformationUtils.extractString(clerkUser, ['firstName']);
+				const previousFirstName = TransformationUtils.extractString(previousUser, ['firstName']);
+				if (currentFirstName !== previousFirstName) {
+					changes.firstName = currentFirstName;
 				}
 
-				if (this.extractLastName(clerkUser) !== this.extractLastName(previousUser)) {
-					changes.lastName = this.extractLastName(clerkUser);
+				const currentLastName = TransformationUtils.extractString(clerkUser, ['lastName']);
+				const previousLastName = TransformationUtils.extractString(previousUser, ['lastName']);
+				if (currentLastName !== previousLastName) {
+					changes.lastName = currentLastName;
 				}
 
 				// Check for metadata changes
-				const currentMetadata = this.extractMetadata(clerkUser);
-				const previousMetadata = this.extractMetadata(previousUser);
+				const currentMetadata = TransformationUtils.extractMetadata(clerkUser);
+				const previousMetadata = TransformationUtils.extractMetadata(previousUser);
 				if (JSON.stringify(currentMetadata) !== JSON.stringify(previousMetadata)) {
 					changes.metadata = currentMetadata;
 				}
 			} else {
 				// New user - include all fields
-				changes.email = this.extractEmail(clerkUser);
-				changes.firstName = this.extractFirstName(clerkUser);
-				changes.lastName = this.extractLastName(clerkUser);
-				changes.metadata = this.extractMetadata(clerkUser);
+				changes.email = TransformationUtils.extractEmail(clerkUser);
+				changes.firstName = TransformationUtils.extractString(clerkUser, ['firstName']);
+				changes.lastName = TransformationUtils.extractString(clerkUser, ['lastName']);
+				changes.metadata = TransformationUtils.extractMetadata(clerkUser);
 			}
 
 			const result = {
 				clerkId: clerkUser.id,
 				changes,
-				updatedAt: this.extractUpdatedAt(clerkUser),
+				updatedAt: TransformationUtils.extractUpdatedAt(clerkUser),
 			};
 
-			this.logTranslationSuccess('toMarketplaceUserUpdate', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceUserUpdate', error, { clerkUser, previousUser });
+			this.logger.error('Failed to translate Clerk user update', error);
 			throw error;
 		}
 	}
@@ -121,11 +118,9 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 	 * Translate Clerk user deletion to marketplace format
 	 */
 	toMarketplaceUserDeletion(clerkUserId: string) {
-		this.logTranslationStart('toMarketplaceUserDeletion', { clerkUserId });
-
 		try {
-			if (!this.validateExternalUserId(clerkUserId)) {
-				throw this.createValidationError('Invalid Clerk user ID', { clerkUserId });
+			if (!clerkUserId || typeof clerkUserId !== 'string') {
+				throw new Error('Invalid Clerk user ID');
 			}
 
 			const result = {
@@ -133,10 +128,9 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 				deletedAt: new Date().toISOString(),
 			};
 
-			this.logTranslationSuccess('toMarketplaceUserDeletion', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceUserDeletion', error, { clerkUserId });
+			this.logger.error('Failed to translate Clerk user deletion', error);
 			throw error;
 		}
 	}
@@ -154,16 +148,10 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 		lastName?: string;
 		metadata?: Record<string, any>;
 	}) {
-		this.logger.debug('Translating marketplace user to Clerk format', {
-			email: marketplaceUser.email,
-		});
-
 		try {
 			// Validate marketplace user data
 			if (!this.validateMarketplaceUser(marketplaceUser)) {
-				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_USER_DATA, 'Invalid marketplace user data', {
-					marketplaceUser,
-				});
+				throw new Error('Invalid marketplace user data');
 			}
 
 			// Translate to Clerk format
@@ -174,16 +162,9 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 				publicMetadata: marketplaceUser.metadata || {},
 			};
 
-			this.logger.debug('Successfully translated marketplace user to Clerk format', {
-				email: marketplaceUser.email,
-			});
-
 			return clerkUser;
 		} catch (error) {
-			this.logger.error('Failed to translate marketplace user to Clerk format', error.stack, {
-				marketplaceUser,
-				error,
-			});
+			this.logger.error('Failed to translate marketplace user to Clerk format', error);
 			throw error;
 		}
 	}
@@ -200,20 +181,10 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 			metadata?: Record<string, any>;
 		},
 	) {
-		this.logger.debug('Translating marketplace user update to Clerk format', {
-			marketplaceUserId,
-			updatedFields: Object.keys(updates),
-		});
-
 		try {
 			// Validate marketplace user update data
-			if (!this.validateMarketplaceUserUpdate(updates)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_USER_UPDATE_DATA,
-					'Invalid marketplace user update data',
-					{ updates },
-				);
+			if (!updates || Object.keys(updates).length === 0) {
+				throw new Error('Invalid marketplace user update data');
 			}
 
 			// Translate to Clerk format
@@ -235,18 +206,9 @@ export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 				clerkUpdate.publicMetadata = updates.metadata;
 			}
 
-			this.logger.debug('Successfully translated marketplace user update to Clerk format', {
-				marketplaceUserId,
-				clerkUpdateFields: Object.keys(clerkUpdate),
-			});
-
 			return clerkUpdate;
 		} catch (error) {
-			this.logger.error('Failed to translate marketplace user update to Clerk format', error.stack, {
-				marketplaceUserId,
-				updates,
-				error,
-			});
+			this.logger.error('Failed to translate marketplace user update to Clerk format', error);
 			throw error;
 		}
 	}

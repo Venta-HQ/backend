@@ -4,9 +4,8 @@ import {
 	MarketplaceUserLocation,
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
-import { BaseContextMapper } from '@app/nest/modules';
 import { TransformationUtils, ValidationUtils } from '@app/utils';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Context Mapper for Marketplace ↔ Location Services communication
@@ -14,20 +13,13 @@ import { Injectable } from '@nestjs/common';
  * Translates between Marketplace domain concepts and Location Services domain concepts
  */
 @Injectable()
-export class MarketplaceLocationContextMapper extends BaseContextMapper {
-	constructor() {
-		super('MarketplaceLocationContextMapper');
-	}
+export class MarketplaceLocationContextMapper {
+	private readonly logger = new Logger('MarketplaceLocationContextMapper');
 
-	getDomain(): string {
-		return 'marketplace';
-	}
-
-	getTargetDomain(): string {
-		return 'location-services';
-	}
-
-	validateSourceData(data: any): boolean {
+	/**
+	 * Validate source data from marketplace domain
+	 */
+	private validateSourceData(data: any): boolean {
 		if (data.location) {
 			return ValidationUtils.isValidLocation(data.location);
 		}
@@ -37,7 +29,10 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 		return true;
 	}
 
-	validateTargetData(data: any): boolean {
+	/**
+	 * Validate target data from location services domain
+	 */
+	private validateTargetData(data: any): boolean {
 		// Basic validation for location services data
 		return (
 			data &&
@@ -56,11 +51,9 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 	 * Translate marketplace vendor location update to location services format
 	 */
 	toLocationServicesVendorUpdate(vendorId: string, location: { lat: number; lng: number }) {
-		this.logTranslationStart('toLocationServicesVendorUpdate', { vendorId, location });
-
 		try {
 			if (!this.validateSourceData({ location })) {
-				throw this.createValidationError('Invalid vendor location data', { vendorId, location });
+				throw new Error('Invalid vendor location data');
 			}
 
 			const result = {
@@ -72,10 +65,9 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 				source: 'marketplace',
 			};
 
-			this.logTranslationSuccess('toLocationServicesVendorUpdate', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toLocationServicesVendorUpdate', error, { vendorId, location });
+			this.logger.error('Failed to translate vendor location update', error);
 			throw error;
 		}
 	}
