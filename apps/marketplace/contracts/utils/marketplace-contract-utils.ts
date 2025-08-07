@@ -48,27 +48,6 @@ export class MarketplaceContractUtils {
 		return email;
 	}
 
-	/**
-	 * Extract first name from external service data
-	 */
-	static extractFirstName(data: any): string {
-		return TransformationUtils.extractString(data, ['firstName', 'first_name'], '');
-	}
-
-	/**
-	 * Extract last name from external service data
-	 */
-	static extractLastName(data: any): string {
-		return TransformationUtils.extractString(data, ['lastName', 'last_name'], '');
-	}
-
-	/**
-	 * Extract metadata from external service data
-	 */
-	static extractMetadata(data: any): Record<string, any> {
-		return TransformationUtils.extractMetadata(data);
-	}
-
 	// ============================================================================
 	// Marketplace-Specific Subscription Data Validation
 	// ============================================================================
@@ -94,74 +73,7 @@ export class MarketplaceContractUtils {
 		return isValid;
 	}
 
-	/**
-	 * Extract user ID from external service data
-	 */
-	static extractUserId(data: any): string {
-		return TransformationUtils.extractUserId(data);
-	}
-
-	/**
-	 * Extract product ID from external service data
-	 */
-	static extractProductId(data: any): string {
-		return TransformationUtils.extractProductId(data);
-	}
-
-	/**
-	 * Extract status from external service data
-	 */
-	static extractStatus(data: any): string {
-		return TransformationUtils.extractStatus(data);
-	}
-
-	/**
-	 * Extract transaction ID from external service data
-	 */
-	static extractTransactionId(data: any): string {
-		return TransformationUtils.extractTransactionId(data);
-	}
-
-	/**
-	 * Extract original transaction ID from external service data
-	 */
-	static extractOriginalTransactionId(data: any): string {
-		return TransformationUtils.extractOriginalTransactionId(data);
-	}
-
 	// ============================================================================
 	// Marketplace-Specific Data Sanitization
 	// ============================================================================
-
-	/**
-	 * Sanitize metadata for external APIs
-	 */
-	static sanitizeMetadata(metadata: Record<string, any>): Record<string, any> {
-		return ValidationUtils.sanitizeObject(metadata);
-	}
-
-	/**
-	 * Sanitize attributes for external APIs
-	 */
-	static sanitizeAttributes(attributes: Record<string, any>): Record<string, any> {
-		return ValidationUtils.sanitizeObject(attributes);
-	}
-
-	// ============================================================================
-	// Marketplace-Specific Timestamp Utilities
-	// ============================================================================
-
-	/**
-	 * Extract created at timestamp from external service data
-	 */
-	static extractCreatedAt(data: any): string {
-		return TransformationUtils.extractCreatedAt(data);
-	}
-
-	/**
-	 * Extract updated at timestamp from external service data
-	 */
-	static extractUpdatedAt(data: any): string {
-		return TransformationUtils.extractUpdatedAt(data);
-	}
 }

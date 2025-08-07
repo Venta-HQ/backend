@@ -239,8 +239,6 @@ export class RevenueCatAntiCorruptionLayer {
 		}
 	}
 
-
-
 	/**
 	 * Sanitize attributes for RevenueCat API
 	 */
