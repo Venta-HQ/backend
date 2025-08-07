@@ -55,8 +55,8 @@ await eventService.emit('vendor.created', {
 ### Domain-Specific Imports
 
 ```typescript
-import { VendorEventData } from '@app/eventtypes/domains/vendor';
-import { UserLocationUpdateEventData } from '@app/eventtypes/domains/user';
+import { VendorEventData } from '@app/eventtypes/domains/marketplace/vendor';
+import { UserLocationUpdateEventData } from '@app/eventtypes/domains/marketplace/user';
 ```
 
 ## Event Schema Pattern

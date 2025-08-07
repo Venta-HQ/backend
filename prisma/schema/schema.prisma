@@ -14,6 +14,6 @@ datasource db {
 }
 
 // Import domain-specific schemas
-import "domains/user/user.prisma"
-import "domains/vendor/vendor.prisma"
-import "domains/integration/integration.prisma"
+import "domains/marketplace/user/user.prisma"
+import "domains/marketplace/vendor/vendor.prisma"
+import "domains/infrastructure/integration/integration.prisma"

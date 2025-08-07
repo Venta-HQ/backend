@@ -19,17 +19,17 @@ prisma/schema/
 
 ## Domain Organization
 
-### User Domain (`domains/user/user.prisma`)
+### User Domain (`domains/marketplace/user/user.prisma`)
 - `User` model - Core user entity
 - `UserSubscription` model - User subscription management
 - `SubscriptionStatus` enum - Subscription status values
 
-### Vendor Domain (`domains/vendor/vendor.prisma`)
+### Vendor Domain (`domains/marketplace/vendor/vendor.prisma`)
 - `Vendor` model - Vendor business entity
 - Location fields for map display
 - Business details and metadata
 
-### Integration Domain (`domains/integration/integration.prisma`)
+### Integration Domain (`domains/infrastructure/integration/integration.prisma`)
 - `Integration` model - External service integrations
 - `IntegrationType` enum - Supported integration types
 

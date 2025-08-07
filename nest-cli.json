@@ -16,7 +16,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/user/user.proto"],
+				"assets": ["libs/proto/src/definitions/domains/marketplace/user-management/user-management.proto"],
 				"tsConfigPath": "apps/marketplace/user-management/tsconfig.app.json"
 			}
 		},
@@ -26,7 +26,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/vendor/vendor.proto"],
+				"assets": ["libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"],
 				"tsConfigPath": "apps/marketplace/vendor-management/tsconfig.app.json"
 			}
 		},
@@ -45,7 +45,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/location/location.proto"],
+				"assets": ["libs/proto/src/definitions/domains/location-services/geolocation/geolocation.proto"],
 				"tsConfigPath": "apps/location-services/geolocation/tsconfig.app.json"
 			}
 		},
@@ -55,7 +55,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/location/location.proto"],
+				"assets": ["libs/proto/src/definitions/domains/location-services/geolocation/geolocation.proto"],
 				"tsConfigPath": "apps/location-services/real-time/tsconfig.app.json"
 			}
 		},
@@ -66,8 +66,8 @@
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": [
-					"libs/proto/src/definitions/domains/user/user.proto",
-					"libs/proto/src/definitions/domains/vendor/vendor.proto"
+					"libs/proto/src/definitions/domains/marketplace/user-management/user-management.proto",
+					"libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"
 				],
 				"tsConfigPath": "apps/infrastructure/api-gateway/tsconfig.app.json"
 			}
