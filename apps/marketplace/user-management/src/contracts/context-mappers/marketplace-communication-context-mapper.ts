@@ -1,13 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { 
+import {
+	MarketplaceExternalSubscriptionData,
 	MarketplaceExternalUserData,
 	MarketplaceExternalUserMapping,
-	MarketplaceExternalSubscriptionData
 } from '@app/apitypes/domains/marketplace';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Context Mapper for Marketplace ↔ Communication domain
- * 
+ *
  * Translates between Marketplace domain concepts and Communication domain concepts
  * for external service integrations (Clerk, RevenueCat, etc.)
  */
@@ -29,7 +29,7 @@ export class MarketplaceCommunicationContextMapper {
 			firstName?: string;
 			lastName?: string;
 			metadata?: Record<string, any>;
-		}
+		},
 	) {
 		this.logger.debug('Translating marketplace user creation to communication format', {
 			marketplaceUserId,
@@ -59,7 +59,7 @@ export class MarketplaceCommunicationContextMapper {
 			firstName?: string;
 			lastName?: string;
 			metadata?: Record<string, any>;
-		}
+		},
 	) {
 		this.logger.debug('Translating marketplace user update to communication format', {
 			marketplaceUserId,
@@ -98,7 +98,7 @@ export class MarketplaceCommunicationContextMapper {
 			productId: string;
 			status: string;
 			metadata?: Record<string, any>;
-		}
+		},
 	) {
 		this.logger.debug('Translating marketplace subscription creation to communication format', {
 			marketplaceUserId,
@@ -120,13 +120,11 @@ export class MarketplaceCommunicationContextMapper {
 	/**
 	 * Translate marketplace external user mapping creation to communication format
 	 */
-	toCommunicationExternalMapping(
-		mapping: {
-			marketplaceUserId: string;
-			externalUserId: string;
-			service: 'clerk' | 'revenuecat';
-		}
-	) {
+	toCommunicationExternalMapping(mapping: {
+		marketplaceUserId: string;
+		externalUserId: string;
+		service: 'clerk' | 'revenuecat';
+	}) {
 		this.logger.debug('Translating marketplace external mapping to communication format', {
 			marketplaceUserId: mapping.marketplaceUserId,
 			service: mapping.service,
@@ -148,19 +146,17 @@ export class MarketplaceCommunicationContextMapper {
 	/**
 	 * Translate communication external user data to marketplace format
 	 */
-	toMarketplaceExternalUserData(
-		communicationData: {
-			externalUserId: string;
-			service: 'clerk' | 'revenuecat';
-			userData: {
-				email: string;
-				firstName?: string;
-				lastName?: string;
-				metadata?: Record<string, any>;
-			};
-			timestamp: string;
-		}
-	): MarketplaceExternalUserData {
+	toMarketplaceExternalUserData(communicationData: {
+		externalUserId: string;
+		service: 'clerk' | 'revenuecat';
+		userData: {
+			email: string;
+			firstName?: string;
+			lastName?: string;
+			metadata?: Record<string, any>;
+		};
+		timestamp: string;
+	}): MarketplaceExternalUserData {
 		this.logger.debug('Translating communication external user data to marketplace format', {
 			externalUserId: communicationData.externalUserId,
 			service: communicationData.service,
@@ -182,14 +178,12 @@ export class MarketplaceCommunicationContextMapper {
 	/**
 	 * Translate communication external user mapping to marketplace format
 	 */
-	toMarketplaceExternalUserMapping(
-		communicationData: {
-			internalUserId: string;
-			externalUserId: string;
-			service: 'clerk' | 'revenuecat';
-			timestamp: string;
-		}
-	): MarketplaceExternalUserMapping {
+	toMarketplaceExternalUserMapping(communicationData: {
+		internalUserId: string;
+		externalUserId: string;
+		service: 'clerk' | 'revenuecat';
+		timestamp: string;
+	}): MarketplaceExternalUserMapping {
 		this.logger.debug('Translating communication external mapping to marketplace format', {
 			internalUserId: communicationData.internalUserId,
 			externalUserId: communicationData.externalUserId,
@@ -207,20 +201,18 @@ export class MarketplaceCommunicationContextMapper {
 	/**
 	 * Translate communication subscription data to marketplace format
 	 */
-	toMarketplaceExternalSubscriptionData(
-		communicationData: {
-			externalSubscriptionId: string;
-			internalUserId: string;
-			service: 'revenuecat';
-			subscriptionData: {
-				productId: string;
-				transactionId: string;
-				status: string;
-				metadata?: Record<string, any>;
-			};
-			timestamp: string;
-		}
-	): MarketplaceExternalSubscriptionData {
+	toMarketplaceExternalSubscriptionData(communicationData: {
+		externalSubscriptionId: string;
+		internalUserId: string;
+		service: 'revenuecat';
+		subscriptionData: {
+			productId: string;
+			transactionId: string;
+			status: string;
+			metadata?: Record<string, any>;
+		};
+		timestamp: string;
+	}): MarketplaceExternalSubscriptionData {
 		this.logger.debug('Translating communication subscription data to marketplace format', {
 			externalSubscriptionId: communicationData.externalSubscriptionId,
 			internalUserId: communicationData.internalUserId,
@@ -249,13 +241,13 @@ export class MarketplaceCommunicationContextMapper {
 			externalUserId: string;
 			service: 'clerk' | 'revenuecat';
 			timestamp: string;
-		}>
+		}>,
 	): MarketplaceExternalUserMapping[] {
 		this.logger.debug('Translating communication user mapping list to marketplace format', {
 			count: communicationData.length,
 		});
 
-		return communicationData.map(mapping => this.toMarketplaceExternalUserMapping(mapping));
+		return communicationData.map((mapping) => this.toMarketplaceExternalUserMapping(mapping));
 	}
 
 	// ============================================================================
@@ -271,7 +263,7 @@ export class MarketplaceCommunicationContextMapper {
 		lastName?: string;
 		metadata?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			userData &&
 			typeof userData.email === 'string' &&
 			userData.email.includes('@') &&
@@ -294,7 +286,7 @@ export class MarketplaceCommunicationContextMapper {
 		status: string;
 		metadata?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			subscriptionData &&
 			typeof subscriptionData.productId === 'string' &&
 			subscriptionData.productId.length > 0 &&
@@ -313,7 +305,7 @@ export class MarketplaceCommunicationContextMapper {
 	 * Validate communication response data
 	 */
 	validateCommunicationResponse(data: any): boolean {
-		const isValid = 
+		const isValid =
 			data &&
 			typeof data.externalUserId === 'string' &&
 			typeof data.service === 'string' &&
@@ -340,4 +332,4 @@ export class MarketplaceCommunicationContextMapper {
 
 		return isValid;
 	}
-} 
+}

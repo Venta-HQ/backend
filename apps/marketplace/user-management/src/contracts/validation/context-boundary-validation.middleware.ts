@@ -1,11 +1,11 @@
-import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { Injectable, Logger, NestMiddleware } from '@nestjs/common';
 
 /**
  * Context Boundary Validation Middleware
- * 
+ *
  * Validates data crossing domain boundaries using Zod schemas
  * to ensure data integrity and prevent context violations
  */
@@ -126,12 +126,7 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 	/**
 	 * Validate context boundary based on domain and operation
 	 */
-	private validateContextBoundary(
-		domain: string,
-		operation: string,
-		body: any,
-		query: any
-	) {
+	private validateContextBoundary(domain: string, operation: string, body: any, query: any) {
 		this.logger.debug('Validating context boundary', {
 			domain,
 			operation,
@@ -185,12 +180,9 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 				if (query && query.radius) {
 					const radius = parseInt(query.radius);
 					if (isNaN(radius) || radius <= 0 || radius > 50000) {
-						throw new AppError(
-							ErrorType.VALIDATION,
-							ErrorCodes.INVALID_RADIUS,
-							'Invalid radius value',
-							{ radius: query.radius }
-						);
+						throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_RADIUS, 'Invalid radius value', {
+							radius: query.radius,
+						});
 					}
 				}
 				break;
@@ -222,12 +214,9 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 			case 'getUser':
 				if (query && query.userId) {
 					if (typeof query.userId !== 'string' || query.userId.length === 0) {
-						throw new AppError(
-							ErrorType.VALIDATION,
-							ErrorCodes.INVALID_USER_ID,
-							'Invalid user ID',
-							{ userId: query.userId }
-						);
+						throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_USER_ID, 'Invalid user ID', {
+							userId: query.userId,
+						});
 					}
 				}
 				break;
@@ -259,12 +248,9 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 			case 'getSubscription':
 				if (query && query.subscriptionId) {
 					if (typeof query.subscriptionId !== 'string' || query.subscriptionId.length === 0) {
-						throw new AppError(
-							ErrorType.VALIDATION,
-							ErrorCodes.INVALID_SUBSCRIPTION_ID,
-							'Invalid subscription ID',
-							{ subscriptionId: query.subscriptionId }
-						);
+						throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_SUBSCRIPTION_ID, 'Invalid subscription ID', {
+							subscriptionId: query.subscriptionId,
+						});
 					}
 				}
 				break;
@@ -288,12 +274,9 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 			case 'getFile':
 				if (query && query.fileId) {
 					if (typeof query.fileId !== 'string' || query.fileId.length === 0) {
-						throw new AppError(
-							ErrorType.VALIDATION,
-							ErrorCodes.INVALID_FILE_ID,
-							'Invalid file ID',
-							{ fileId: query.fileId }
-						);
+						throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_FILE_ID, 'Invalid file ID', {
+							fileId: query.fileId,
+						});
 					}
 				}
 				break;
@@ -301,12 +284,9 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 			case 'deleteFile':
 				if (query && query.fileId) {
 					if (typeof query.fileId !== 'string' || query.fileId.length === 0) {
-						throw new AppError(
-							ErrorType.VALIDATION,
-							ErrorCodes.INVALID_FILE_ID,
-							'Invalid file ID',
-							{ fileId: query.fileId }
-						);
+						throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_FILE_ID, 'Invalid file ID', {
+							fileId: query.fileId,
+						});
 					}
 				}
 				break;
@@ -326,19 +306,19 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 	private extractDomainFromRequest(req: Request): string {
 		// Extract from URL path
 		const path = req.path;
-		
+
 		if (path.includes('/location')) {
 			return 'location';
 		}
-		
+
 		if (path.includes('/user')) {
 			return 'user';
 		}
-		
+
 		if (path.includes('/subscription')) {
 			return 'subscription';
 		}
-		
+
 		if (path.includes('/file')) {
 			return 'file';
 		}
@@ -418,4 +398,4 @@ export class ContextBoundaryValidationMiddleware implements NestMiddleware {
 		// Default to unknown
 		return 'unknown';
 	}
-} 
+}

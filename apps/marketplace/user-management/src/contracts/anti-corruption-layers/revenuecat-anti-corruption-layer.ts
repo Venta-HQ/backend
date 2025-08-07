@@ -1,9 +1,9 @@
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
 
 /**
  * Anti-Corruption Layer for RevenueCat Integration
- * 
+ *
  * Protects the Marketplace domain from RevenueCat's external API changes
  * and translates RevenueCat data to marketplace domain format
  */
@@ -31,7 +31,7 @@ export class RevenueCatAntiCorruptionLayer {
 					ErrorType.VALIDATION,
 					ErrorCodes.INVALID_EXTERNAL_SUBSCRIPTION_DATA,
 					'Invalid RevenueCat subscription data',
-					{ revenueCatData }
+					{ revenueCatData },
 				);
 			}
 
@@ -81,7 +81,7 @@ export class RevenueCatAntiCorruptionLayer {
 					ErrorType.VALIDATION,
 					ErrorCodes.INVALID_EXTERNAL_EVENT_DATA,
 					'Invalid RevenueCat event data',
-					{ revenueCatEvent }
+					{ revenueCatEvent },
 				);
 			}
 
@@ -126,7 +126,7 @@ export class RevenueCatAntiCorruptionLayer {
 					ErrorType.VALIDATION,
 					ErrorCodes.INVALID_EXTERNAL_USER_DATA,
 					'Invalid RevenueCat user data',
-					{ revenueCatUser }
+					{ revenueCatUser },
 				);
 			}
 
@@ -162,11 +162,7 @@ export class RevenueCatAntiCorruptionLayer {
 	/**
 	 * Translate marketplace user to RevenueCat format for API calls
 	 */
-	toRevenueCatUser(marketplaceUser: {
-		revenueCatUserId: string;
-		email?: string;
-		attributes?: Record<string, any>;
-	}) {
+	toRevenueCatUser(marketplaceUser: { revenueCatUserId: string; email?: string; attributes?: Record<string, any> }) {
 		this.logger.debug('Translating marketplace user to RevenueCat format', {
 			revenueCatUserId: marketplaceUser.revenueCatUserId,
 		});
@@ -174,12 +170,9 @@ export class RevenueCatAntiCorruptionLayer {
 		try {
 			// Validate marketplace user data
 			if (!this.validateMarketplaceUser(marketplaceUser)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_USER_DATA,
-					'Invalid marketplace user data',
-					{ marketplaceUser }
-				);
+				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_USER_DATA, 'Invalid marketplace user data', {
+					marketplaceUser,
+				});
 			}
 
 			// Translate to RevenueCat format
@@ -219,7 +212,7 @@ export class RevenueCatAntiCorruptionLayer {
 					ErrorType.VALIDATION,
 					ErrorCodes.INVALID_USER_ATTRIBUTES,
 					'Invalid marketplace user attributes',
-					{ attributes }
+					{ attributes },
 				);
 			}
 
@@ -405,7 +398,7 @@ export class RevenueCatAntiCorruptionLayer {
 	 * Validate RevenueCat subscription data
 	 */
 	private validateRevenueCatSubscription(data: any): boolean {
-		const isValid = 
+		const isValid =
 			data &&
 			typeof data.app_user_id === 'string' &&
 			data.app_user_id.length > 0 &&
@@ -423,7 +416,7 @@ export class RevenueCatAntiCorruptionLayer {
 	 * Validate RevenueCat event data
 	 */
 	private validateRevenueCatEvent(data: any): boolean {
-		const isValid = 
+		const isValid =
 			data &&
 			typeof data.event_type === 'string' &&
 			data.event_type.length > 0 &&
@@ -441,10 +434,7 @@ export class RevenueCatAntiCorruptionLayer {
 	 * Validate RevenueCat user data
 	 */
 	private validateRevenueCatUser(data: any): boolean {
-		const isValid = 
-			data &&
-			typeof data.app_user_id === 'string' &&
-			data.app_user_id.length > 0;
+		const isValid = data && typeof data.app_user_id === 'string' && data.app_user_id.length > 0;
 
 		if (!isValid) {
 			this.logger.warn('Invalid RevenueCat user data', { data });
@@ -461,7 +451,7 @@ export class RevenueCatAntiCorruptionLayer {
 		email?: string;
 		attributes?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			marketplaceUser &&
 			typeof marketplaceUser.revenueCatUserId === 'string' &&
 			marketplaceUser.revenueCatUserId.length > 0 &&
@@ -479,10 +469,7 @@ export class RevenueCatAntiCorruptionLayer {
 	 * Validate marketplace attributes data
 	 */
 	private validateMarketplaceAttributes(attributes: Record<string, any>): boolean {
-		const isValid = 
-			attributes &&
-			typeof attributes === 'object' &&
-			!Array.isArray(attributes);
+		const isValid = attributes && typeof attributes === 'object' && !Array.isArray(attributes);
 
 		if (!isValid) {
 			this.logger.warn('Invalid marketplace attributes data', { attributes });
@@ -490,4 +477,4 @@ export class RevenueCatAntiCorruptionLayer {
 
 		return isValid;
 	}
-} 
+}

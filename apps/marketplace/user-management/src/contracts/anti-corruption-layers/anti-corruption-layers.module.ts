@@ -4,18 +4,12 @@ import { RevenueCatAntiCorruptionLayer } from './revenuecat-anti-corruption-laye
 
 /**
  * Anti-Corruption Layers Module
- * 
+ *
  * Provides anti-corruption layer services for external integrations
  * to protect the Marketplace domain from external API changes
  */
 @Module({
-	providers: [
-		ClerkAntiCorruptionLayer,
-		RevenueCatAntiCorruptionLayer,
-	],
-	exports: [
-		ClerkAntiCorruptionLayer,
-		RevenueCatAntiCorruptionLayer,
-	],
+	providers: [ClerkAntiCorruptionLayer, RevenueCatAntiCorruptionLayer],
+	exports: [ClerkAntiCorruptionLayer, RevenueCatAntiCorruptionLayer],
 })
-export class AntiCorruptionLayersModule {} 
+export class AntiCorruptionLayersModule {}

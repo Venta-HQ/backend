@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Context Mapper for Marketplace ↔ Infrastructure domain
- * 
+ *
  * Translates between Marketplace domain concepts and Infrastructure domain concepts
  * for file management, database operations, and messaging infrastructure
  */
@@ -17,15 +17,13 @@ export class MarketplaceInfrastructureContextMapper {
 	/**
 	 * Translate marketplace file upload to infrastructure format
 	 */
-	toInfrastructureFileUpload(
-		file: {
-			filename: string;
-			buffer: Buffer;
-			mimeType: string;
-			uploadedBy: string;
-			context: 'vendor_profile' | 'user_profile' | 'product_image' | 'document';
-		}
-	) {
+	toInfrastructureFileUpload(file: {
+		filename: string;
+		buffer: Buffer;
+		mimeType: string;
+		uploadedBy: string;
+		context: 'vendor_profile' | 'user_profile' | 'product_image' | 'document';
+	}) {
 		this.logger.debug('Translating marketplace file upload to infrastructure format', {
 			filename: file.filename,
 			context: file.context,
@@ -106,13 +104,7 @@ export class MarketplaceInfrastructureContextMapper {
 	/**
 	 * Translate marketplace event to infrastructure messaging format
 	 */
-	toInfrastructureEvent(
-		event: {
-			type: string;
-			data: Record<string, any>;
-			metadata?: Record<string, any>;
-		}
-	) {
+	toInfrastructureEvent(event: { type: string; data: Record<string, any>; metadata?: Record<string, any> }) {
 		this.logger.debug('Translating marketplace event to infrastructure messaging format', {
 			eventType: event.type,
 		});
@@ -164,19 +156,17 @@ export class MarketplaceInfrastructureContextMapper {
 	/**
 	 * Translate infrastructure file response to marketplace format
 	 */
-	toMarketplaceFileResponse(
-		infrastructureData: {
-			fileId: string;
-			url: string;
-			metadata: {
-				filename: string;
-				size: number;
-				mimeType: string;
-				uploadedBy: string;
-				uploadedAt: string;
-			};
-		}
-	) {
+	toMarketplaceFileResponse(infrastructureData: {
+		fileId: string;
+		url: string;
+		metadata: {
+			filename: string;
+			size: number;
+			mimeType: string;
+			uploadedBy: string;
+			uploadedAt: string;
+		};
+	}) {
 		this.logger.debug('Translating infrastructure file response to marketplace format', {
 			fileId: infrastructureData.fileId,
 		});
@@ -197,18 +187,16 @@ export class MarketplaceInfrastructureContextMapper {
 	/**
 	 * Translate infrastructure database connection response to marketplace format
 	 */
-	toMarketplaceDatabaseConnection(
-		infrastructureData: {
-			connectionId: string;
-			databaseName: string;
-			isConnected: boolean;
-			connectionDetails?: {
-				host: string;
-				port: number;
-				ssl: boolean;
-			};
-		}
-	) {
+	toMarketplaceDatabaseConnection(infrastructureData: {
+		connectionId: string;
+		databaseName: string;
+		isConnected: boolean;
+		connectionDetails?: {
+			host: string;
+			port: number;
+			ssl: boolean;
+		};
+	}) {
 		this.logger.debug('Translating infrastructure database connection to marketplace format', {
 			connectionId: infrastructureData.connectionId,
 			databaseName: infrastructureData.databaseName,
@@ -225,14 +213,12 @@ export class MarketplaceInfrastructureContextMapper {
 	/**
 	 * Translate infrastructure event to marketplace format
 	 */
-	toMarketplaceEvent(
-		infrastructureData: {
-			type: string;
-			data: Record<string, any>;
-			metadata?: Record<string, any>;
-			timestamp: string;
-		}
-	) {
+	toMarketplaceEvent(infrastructureData: {
+		type: string;
+		data: Record<string, any>;
+		metadata?: Record<string, any>;
+		timestamp: string;
+	}) {
 		this.logger.debug('Translating infrastructure event to marketplace format', {
 			eventType: infrastructureData.type,
 		});
@@ -261,7 +247,7 @@ export class MarketplaceInfrastructureContextMapper {
 			'image/svg+xml',
 		];
 
-		return compressibleTypes.some(type => mimeType.startsWith(type));
+		return compressibleTypes.some((type) => mimeType.startsWith(type));
 	}
 
 	/**
@@ -299,11 +285,7 @@ export class MarketplaceInfrastructureContextMapper {
 			'payment.failed',
 		];
 
-		const lowPriorityEvents = [
-			'user.profile_updated',
-			'vendor.profile_updated',
-			'analytics.event',
-		];
+		const lowPriorityEvents = ['user.profile_updated', 'vendor.profile_updated', 'analytics.event'];
 
 		if (highPriorityEvents.includes(eventType)) {
 			return 'high';
@@ -330,7 +312,7 @@ export class MarketplaceInfrastructureContextMapper {
 		uploadedBy: string;
 		context: 'vendor_profile' | 'user_profile' | 'product_image' | 'document';
 	}): boolean {
-		const isValid = 
+		const isValid =
 			file &&
 			typeof file.filename === 'string' &&
 			file.filename.length > 0 &&
@@ -357,7 +339,7 @@ export class MarketplaceInfrastructureContextMapper {
 		data: Record<string, any>;
 		metadata?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			event &&
 			typeof event.type === 'string' &&
 			event.type.length > 0 &&
@@ -376,7 +358,7 @@ export class MarketplaceInfrastructureContextMapper {
 	 * Validate infrastructure response data
 	 */
 	validateInfrastructureResponse(data: any): boolean {
-		const isValid = 
+		const isValid =
 			data &&
 			typeof data.fileId === 'string' &&
 			typeof data.url === 'string' &&
@@ -403,4 +385,4 @@ export class MarketplaceInfrastructureContextMapper {
 
 		return isValid;
 	}
-} 
+}

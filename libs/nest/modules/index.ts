@@ -4,6 +4,9 @@ export * from './core';
 // Data and persistence modules
 export * from './data';
 
+// Domain contracts and context mapping modules
+export * from './contracts';
+
 // External service integrations
 export * from './external';
 

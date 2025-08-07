@@ -1,9 +1,9 @@
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
 
 /**
  * Anti-Corruption Layer for Clerk Integration
- * 
+ *
  * Protects the Marketplace domain from Clerk's external API changes
  * and translates Clerk data to marketplace domain format
  */
@@ -26,12 +26,9 @@ export class ClerkAntiCorruptionLayer {
 		try {
 			// Validate Clerk user data
 			if (!this.validateClerkUser(clerkUser)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_EXTERNAL_USER_DATA,
-					'Invalid Clerk user data',
-					{ clerkUser }
-				);
+				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_DATA, 'Invalid Clerk user data', {
+					clerkUser,
+				});
 			}
 
 			// Extract and translate user data
@@ -71,12 +68,9 @@ export class ClerkAntiCorruptionLayer {
 		try {
 			// Validate Clerk user data
 			if (!this.validateClerkUser(clerkUser)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_EXTERNAL_USER_DATA,
-					'Invalid Clerk user data',
-					{ clerkUser }
-				);
+				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_DATA, 'Invalid Clerk user data', {
+					clerkUser,
+				});
 			}
 
 			// Extract changes by comparing with previous user
@@ -142,12 +136,9 @@ export class ClerkAntiCorruptionLayer {
 		try {
 			// Validate Clerk user ID
 			if (!this.validateClerkUserId(clerkUserId)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_EXTERNAL_USER_ID,
-					'Invalid Clerk user ID',
-					{ clerkUserId }
-				);
+				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_ID, 'Invalid Clerk user ID', {
+					clerkUserId,
+				});
 			}
 
 			const deletion = {
@@ -189,12 +180,9 @@ export class ClerkAntiCorruptionLayer {
 		try {
 			// Validate marketplace user data
 			if (!this.validateMarketplaceUser(marketplaceUser)) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.INVALID_USER_DATA,
-					'Invalid marketplace user data',
-					{ marketplaceUser }
-				);
+				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_USER_DATA, 'Invalid marketplace user data', {
+					marketplaceUser,
+				});
 			}
 
 			// Translate to Clerk format
@@ -222,12 +210,15 @@ export class ClerkAntiCorruptionLayer {
 	/**
 	 * Translate marketplace user update to Clerk format
 	 */
-	toClerkUserUpdate(marketplaceUserId: string, updates: {
-		email?: string;
-		firstName?: string;
-		lastName?: string;
-		metadata?: Record<string, any>;
-	}) {
+	toClerkUserUpdate(
+		marketplaceUserId: string,
+		updates: {
+			email?: string;
+			firstName?: string;
+			lastName?: string;
+			metadata?: Record<string, any>;
+		},
+	) {
 		this.logger.debug('Translating marketplace user update to Clerk format', {
 			marketplaceUserId,
 			updatedFields: Object.keys(updates),
@@ -240,7 +231,7 @@ export class ClerkAntiCorruptionLayer {
 					ErrorType.VALIDATION,
 					ErrorCodes.INVALID_USER_UPDATE_DATA,
 					'Invalid marketplace user update data',
-					{ updates }
+					{ updates },
 				);
 			}
 
@@ -312,7 +303,7 @@ export class ClerkAntiCorruptionLayer {
 			ErrorType.VALIDATION,
 			ErrorCodes.INVALID_EXTERNAL_USER_DATA,
 			'Could not extract email from Clerk user data',
-			{ clerkUser }
+			{ clerkUser },
 		);
 	}
 
@@ -359,10 +350,7 @@ export class ClerkAntiCorruptionLayer {
 	 * Validate Clerk user data
 	 */
 	private validateClerkUser(clerkUser: any): boolean {
-		const isValid = 
-			clerkUser &&
-			typeof clerkUser.id === 'string' &&
-			clerkUser.id.length > 0;
+		const isValid = clerkUser && typeof clerkUser.id === 'string' && clerkUser.id.length > 0;
 
 		if (!isValid) {
 			this.logger.warn('Invalid Clerk user data', { clerkUser });
@@ -375,10 +363,7 @@ export class ClerkAntiCorruptionLayer {
 	 * Validate Clerk user ID
 	 */
 	private validateClerkUserId(clerkUserId: string): boolean {
-		const isValid = 
-			typeof clerkUserId === 'string' &&
-			clerkUserId.length > 0 &&
-			clerkUserId.startsWith('user_');
+		const isValid = typeof clerkUserId === 'string' && clerkUserId.length > 0 && clerkUserId.startsWith('user_');
 
 		if (!isValid) {
 			this.logger.warn('Invalid Clerk user ID', { clerkUserId });
@@ -396,7 +381,7 @@ export class ClerkAntiCorruptionLayer {
 		lastName?: string;
 		metadata?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			marketplaceUser &&
 			typeof marketplaceUser.email === 'string' &&
 			marketplaceUser.email.includes('@') &&
@@ -420,7 +405,7 @@ export class ClerkAntiCorruptionLayer {
 		lastName?: string;
 		metadata?: Record<string, any>;
 	}): boolean {
-		const isValid = 
+		const isValid =
 			updates &&
 			typeof updates === 'object' &&
 			(!updates.email || (typeof updates.email === 'string' && updates.email.includes('@'))) &&
@@ -434,4 +419,4 @@ export class ClerkAntiCorruptionLayer {
 
 		return isValid;
 	}
-} 
+}
