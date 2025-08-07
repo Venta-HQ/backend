@@ -1,4 +1,5 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { TransformationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
@@ -37,16 +38,16 @@ export class RevenueCatAntiCorruptionLayer {
 
 			// Extract and translate subscription data
 			const marketplaceSubscription = {
-				revenueCatUserId: this.extractUserId(revenueCatData),
-				productId: this.extractProductId(revenueCatData),
-				status: this.extractStatus(revenueCatData),
-				transactionId: this.extractTransactionId(revenueCatData),
-				originalTransactionId: this.extractOriginalTransactionId(revenueCatData),
-				purchaseDate: this.extractPurchaseDate(revenueCatData),
-				expirationDate: this.extractExpirationDate(revenueCatData),
-				metadata: this.extractMetadata(revenueCatData),
-				platform: this.extractPlatform(revenueCatData),
-				environment: this.extractEnvironment(revenueCatData),
+				revenueCatUserId: TransformationUtils.extractUserId(revenueCatData),
+				productId: TransformationUtils.extractProductId(revenueCatData),
+				status: TransformationUtils.extractStatus(revenueCatData),
+				transactionId: TransformationUtils.extractTransactionId(revenueCatData),
+				originalTransactionId: TransformationUtils.extractOriginalTransactionId(revenueCatData),
+				purchaseDate: TransformationUtils.extractPurchaseDate(revenueCatData),
+				expirationDate: TransformationUtils.extractExpirationDate(revenueCatData),
+				metadata: TransformationUtils.extractMetadata(revenueCatData),
+				platform: TransformationUtils.extractPlatform(revenueCatData),
+				environment: TransformationUtils.extractEnvironment(revenueCatData),
 			};
 
 			this.logger.debug('Successfully translated RevenueCat subscription to marketplace format', {
@@ -87,13 +88,13 @@ export class RevenueCatAntiCorruptionLayer {
 
 			// Extract and translate event data
 			const marketplaceEvent = {
-				eventType: this.extractEventType(revenueCatEvent),
-				revenueCatUserId: this.extractUserId(revenueCatEvent),
-				productId: this.extractProductId(revenueCatEvent),
-				transactionId: this.extractTransactionId(revenueCatEvent),
-				originalTransactionId: this.extractOriginalTransactionId(revenueCatEvent),
-				timestamp: this.extractTimestamp(revenueCatEvent),
-				metadata: this.extractEventMetadata(revenueCatEvent),
+				eventType: TransformationUtils.extractEventType(revenueCatEvent),
+				revenueCatUserId: TransformationUtils.extractUserId(revenueCatEvent),
+				productId: TransformationUtils.extractProductId(revenueCatEvent),
+				transactionId: TransformationUtils.extractTransactionId(revenueCatEvent),
+				originalTransactionId: TransformationUtils.extractOriginalTransactionId(revenueCatEvent),
+				timestamp: TransformationUtils.extractTimestamp(revenueCatEvent),
+				metadata: TransformationUtils.extractMetadata(revenueCatEvent),
 			};
 
 			this.logger.debug('Successfully translated RevenueCat event to marketplace format', {
@@ -132,12 +133,12 @@ export class RevenueCatAntiCorruptionLayer {
 
 			// Extract and translate user data
 			const marketplaceUser = {
-				revenueCatUserId: this.extractUserId(revenueCatUser),
-				email: this.extractEmail(revenueCatUser),
-				attributes: this.extractAttributes(revenueCatUser),
-				subscriptions: this.extractSubscriptions(revenueCatUser),
-				createdAt: this.extractCreatedAt(revenueCatUser),
-				updatedAt: this.extractUpdatedAt(revenueCatUser),
+				revenueCatUserId: TransformationUtils.extractUserId(revenueCatUser),
+				email: TransformationUtils.extractEmail(revenueCatUser),
+				attributes: TransformationUtils.extractAttributes(revenueCatUser),
+				subscriptions: TransformationUtils.extractSubscriptions(revenueCatUser),
+				createdAt: TransformationUtils.extractCreatedAt(revenueCatUser),
+				updatedAt: TransformationUtils.extractUpdatedAt(revenueCatUser),
 			};
 
 			this.logger.debug('Successfully translated RevenueCat user to marketplace format', {
@@ -238,135 +239,7 @@ export class RevenueCatAntiCorruptionLayer {
 		}
 	}
 
-	// ============================================================================
-	// Data Extraction Methods
-	// ============================================================================
 
-	/**
-	 * Extract user ID from RevenueCat data
-	 */
-	private extractUserId(data: any): string {
-		return data.app_user_id || data.user_id || data.id;
-	}
-
-	/**
-	 * Extract product ID from RevenueCat data
-	 */
-	private extractProductId(data: any): string {
-		return data.product_id || data.productId;
-	}
-
-	/**
-	 * Extract status from RevenueCat data
-	 */
-	private extractStatus(data: any): string {
-		return data.status || data.subscription_status || 'unknown';
-	}
-
-	/**
-	 * Extract transaction ID from RevenueCat data
-	 */
-	private extractTransactionId(data: any): string {
-		return data.transaction_id || data.transactionId || '';
-	}
-
-	/**
-	 * Extract original transaction ID from RevenueCat data
-	 */
-	private extractOriginalTransactionId(data: any): string {
-		return data.original_transaction_id || data.originalTransactionId || '';
-	}
-
-	/**
-	 * Extract purchase date from RevenueCat data
-	 */
-	private extractPurchaseDate(data: any): string {
-		return data.purchase_date || data.purchaseDate || data.created_at || new Date().toISOString();
-	}
-
-	/**
-	 * Extract expiration date from RevenueCat data
-	 */
-	private extractExpirationDate(data: any): string {
-		return data.expiration_date || data.expirationDate || data.expires_at || '';
-	}
-
-	/**
-	 * Extract metadata from RevenueCat data
-	 */
-	private extractMetadata(data: any): Record<string, any> {
-		return data.metadata || data.attributes || {};
-	}
-
-	/**
-	 * Extract platform from RevenueCat data
-	 */
-	private extractPlatform(data: any): string {
-		return data.platform || data.store || 'unknown';
-	}
-
-	/**
-	 * Extract environment from RevenueCat data
-	 */
-	private extractEnvironment(data: any): string {
-		return data.environment || 'production';
-	}
-
-	/**
-	 * Extract event type from RevenueCat event data
-	 */
-	private extractEventType(data: any): string {
-		return data.event_type || data.type || 'unknown';
-	}
-
-	/**
-	 * Extract timestamp from RevenueCat event data
-	 */
-	private extractTimestamp(data: any): string {
-		return data.timestamp || data.created_at || new Date().toISOString();
-	}
-
-	/**
-	 * Extract event metadata from RevenueCat event data
-	 */
-	private extractEventMetadata(data: any): Record<string, any> {
-		return data.event_metadata || data.metadata || {};
-	}
-
-	/**
-	 * Extract email from RevenueCat user data
-	 */
-	private extractEmail(data: any): string {
-		return data.email || '';
-	}
-
-	/**
-	 * Extract attributes from RevenueCat user data
-	 */
-	private extractAttributes(data: any): Record<string, any> {
-		return data.attributes || {};
-	}
-
-	/**
-	 * Extract subscriptions from RevenueCat user data
-	 */
-	private extractSubscriptions(data: any): any[] {
-		return data.subscriptions || data.entitlements || [];
-	}
-
-	/**
-	 * Extract created at timestamp from RevenueCat user data
-	 */
-	private extractCreatedAt(data: any): string {
-		return data.created_at || data.createdAt || new Date().toISOString();
-	}
-
-	/**
-	 * Extract updated at timestamp from RevenueCat user data
-	 */
-	private extractUpdatedAt(data: any): string {
-		return data.updated_at || data.updatedAt || new Date().toISOString();
-	}
 
 	/**
 	 * Sanitize attributes for RevenueCat API

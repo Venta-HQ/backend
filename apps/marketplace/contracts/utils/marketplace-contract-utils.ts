@@ -41,19 +41,10 @@ export class MarketplaceContractUtils {
 	 * Extract email from external service data for marketplace
 	 */
 	static extractEmail(data: any): string {
-		// Handle different API versions and structures
-		const email = TransformationUtils.extractString(data, [
-			'emailAddresses.0.emailAddress',
-			'email_addresses.0.email_address',
-			'primaryEmailAddress.emailAddress',
-			'primary_email_address.email_address',
-			'email',
-		]);
-
+		const email = TransformationUtils.extractEmail(data);
 		if (!email) {
 			throw new Error('Could not extract email from external service data');
 		}
-
 		return email;
 	}
 
@@ -75,7 +66,7 @@ export class MarketplaceContractUtils {
 	 * Extract metadata from external service data
 	 */
 	static extractMetadata(data: any): Record<string, any> {
-		return TransformationUtils.extractObject(data, ['publicMetadata', 'public_metadata', 'metadata'], {});
+		return TransformationUtils.extractMetadata(data);
 	}
 
 	// ============================================================================
@@ -107,35 +98,35 @@ export class MarketplaceContractUtils {
 	 * Extract user ID from external service data
 	 */
 	static extractUserId(data: any): string {
-		return TransformationUtils.extractString(data, ['app_user_id', 'user_id', 'id'], '');
+		return TransformationUtils.extractUserId(data);
 	}
 
 	/**
 	 * Extract product ID from external service data
 	 */
 	static extractProductId(data: any): string {
-		return TransformationUtils.extractString(data, ['product_id', 'productId'], '');
+		return TransformationUtils.extractProductId(data);
 	}
 
 	/**
 	 * Extract status from external service data
 	 */
 	static extractStatus(data: any): string {
-		return TransformationUtils.extractString(data, ['status', 'subscription_status'], 'unknown');
+		return TransformationUtils.extractStatus(data);
 	}
 
 	/**
 	 * Extract transaction ID from external service data
 	 */
 	static extractTransactionId(data: any): string {
-		return TransformationUtils.extractString(data, ['transaction_id', 'transactionId'], '');
+		return TransformationUtils.extractTransactionId(data);
 	}
 
 	/**
 	 * Extract original transaction ID from external service data
 	 */
 	static extractOriginalTransactionId(data: any): string {
-		return TransformationUtils.extractString(data, ['original_transaction_id', 'originalTransactionId'], '');
+		return TransformationUtils.extractOriginalTransactionId(data);
 	}
 
 	// ============================================================================
@@ -164,13 +155,13 @@ export class MarketplaceContractUtils {
 	 * Extract created at timestamp from external service data
 	 */
 	static extractCreatedAt(data: any): string {
-		return ValidationUtils.extractTimestamp(data, 'createdAt');
+		return TransformationUtils.extractCreatedAt(data);
 	}
 
 	/**
 	 * Extract updated at timestamp from external service data
 	 */
 	static extractUpdatedAt(data: any): string {
-		return ValidationUtils.extractTimestamp(data, 'updatedAt');
+		return TransformationUtils.extractUpdatedAt(data);
 	}
 }
