@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package marketplace.user_management;
+
+service UserManagementService {
+  rpc HandleUserCreated (UserIdentityData) returns (CreateUserResponse) {}
+  rpc HandleUserDeleted (UserIdentityData) returns (CreateUserResponse) {}
+  rpc HandleSubscriptionCreated (CreateSubscriptionData) returns (CreateSubscriptionResponse) {}
+  rpc GetUserVendors (UserVendorData) returns (UserVendorsResponse) {}
+}
+
+// Service Function Types
+message UserIdentityData {
+    string id = 1;
+}
+
+message CreateUserResponse {
+    string message = 1;
+}
+
+message CreateSubscriptionData {
+    string clerkUserId = 1;
+    string providerId = 2;
+    SubscriptionProviderData data = 3;
+}
+
+message CreateSubscriptionResponse {
+    string message = 1;
+}
+
+message SubscriptionProviderData {
+    string eventId = 1;
+    string productId = 2;
+    string transactionId = 3;
+}
+
+message UserVendorData {
+    string userId = 1;
+}
+
+message UserVendorsResponse {
+    repeated UserVendor vendors = 1;
+}
+
+// Helper Types
+message UserVendor {
+    string id = 1;
+    string name = 2;
+}
+
+message Empty {
+
+} 

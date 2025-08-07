@@ -2,12 +2,12 @@ import { catchError } from 'rxjs';
 import { AuthedRequest } from '@app/apitypes';
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 
 @Controller()
 export class UserController {
-	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
+	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
 
 	@Get('/vendors')
 	@UseGuards(AuthGuard)

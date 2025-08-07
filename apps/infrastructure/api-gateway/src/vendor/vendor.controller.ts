@@ -3,12 +3,15 @@ import { AuthedRequest, CreateVendorData, CreateVendorSchema, UpdateVendorData }
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
+import {
+	VENDOR_MANAGEMENT_SERVICE_NAME,
+	VendorManagementServiceClient,
+} from '@app/proto/marketplace/vendor-management';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 
 @Controller()
 export class VendorController {
-	constructor(@Inject(VENDOR_SERVICE_NAME) private client: GrpcInstance<VendorServiceClient>) {}
+	constructor(@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>) {}
 
 	@Get('/:id')
 	@UseGuards(AuthGuard)

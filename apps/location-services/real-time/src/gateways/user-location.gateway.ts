@@ -3,7 +3,7 @@ import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apity
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import {
 	ConnectedSocket,
@@ -31,7 +31,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	private readonly logger = new Logger(UserLocationGateway.name);
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<LocationServiceClient>,
+		@Inject(GEOLOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<GeolocationServiceClient>,
 		private readonly connectionManager: UserConnectionManagerService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}

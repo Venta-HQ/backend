@@ -1,5 +1,9 @@
 import { ClerkModule, GrpcInstanceModule } from 'libs/nest/modules';
-import { VENDOR_PACKAGE_NAME, VENDOR_SERVICE_NAME, VendorServiceClient } from '@app/proto/vendor';
+import {
+	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
+	VENDOR_MANAGEMENT_SERVICE_NAME,
+	VendorManagementServiceClient,
+} from '@app/proto/marketplace/vendor-management';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VendorController } from './vendor.controller';
@@ -9,11 +13,11 @@ import { VendorController } from './vendor.controller';
 	imports: [
 		ClerkModule.register(),
 		ConfigModule,
-		GrpcInstanceModule.register<VendorServiceClient>({
+		GrpcInstanceModule.register<VendorManagementServiceClient>({
 			proto: 'vendor.proto',
-			protoPackage: VENDOR_PACKAGE_NAME,
-			provide: VENDOR_SERVICE_NAME,
-			serviceName: VENDOR_SERVICE_NAME,
+			protoPackage: MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
+			provide: VENDOR_MANAGEMENT_SERVICE_NAME,
+			serviceName: VENDOR_MANAGEMENT_SERVICE_NAME,
 			urlFactory: (configService: ConfigService) => configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
 		}),
 	],

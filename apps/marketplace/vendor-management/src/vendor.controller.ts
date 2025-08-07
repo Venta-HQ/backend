@@ -3,14 +3,14 @@ import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import {
 	Vendor,
-	VENDOR_SERVICE_NAME,
+	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorCreateData,
 	VendorCreateResponse,
+	VendorLookupByIdData,
 	VendorLookupByIdResponse,
-	VendorLookupData,
 	VendorUpdateData,
 	VendorUpdateResponse,
-} from '@app/proto/vendor';
+} from '@app/proto/marketplace/vendor-management';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
@@ -21,8 +21,8 @@ export class VendorController {
 
 	constructor(private readonly vendorService: VendorService) {}
 
-	@GrpcMethod(VENDOR_SERVICE_NAME)
-	async getVendorById(data: VendorLookupData): Promise<VendorLookupByIdResponse> {
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
+	async getVendorById(data: VendorLookupByIdData): Promise<VendorLookupByIdResponse> {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
 			if (!vendor) {
@@ -35,8 +35,10 @@ export class VendorController {
 				description: vendor.description || '',
 				email: vendor.email || '',
 				id: vendor.id,
-				lat: vendor.lat || 0,
-				long: vendor.long || 0,
+				location: {
+					lat: vendor.lat || 0,
+					long: vendor.long || 0,
+				},
 				name: vendor.name,
 				open: vendor.open,
 				phone: vendor.phone || '',
@@ -54,7 +56,7 @@ export class VendorController {
 		}
 	}
 
-	@GrpcMethod(VENDOR_SERVICE_NAME)
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorCreateDataSchema))
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
@@ -68,7 +70,7 @@ export class VendorController {
 		}
 	}
 
-	@GrpcMethod(VENDOR_SERVICE_NAME)
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {

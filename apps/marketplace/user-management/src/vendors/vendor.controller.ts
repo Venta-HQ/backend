@@ -1,5 +1,9 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { USER_SERVICE_NAME, UserVendorData, UserVendorsResponse } from '@app/proto/user';
+import {
+	USER_MANAGEMENT_SERVICE_NAME,
+	UserVendorData,
+	UserVendorsResponse,
+} from '@app/proto/marketplace/user-management';
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorService } from './vendor.service';
@@ -8,7 +12,7 @@ import { VendorService } from './vendor.service';
 export class VendorController {
 	constructor(private readonly vendorService: VendorService) {}
 
-	@GrpcMethod(USER_SERVICE_NAME)
+	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
 	async getUserVendors(data: UserVendorData): Promise<UserVendorsResponse> {
 		const vendors = await this.vendorService.getUserVendors(data.userId);
 

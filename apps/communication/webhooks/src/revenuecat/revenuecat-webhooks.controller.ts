@@ -1,12 +1,12 @@
 import { GrpcInstance } from '@app/nest/modules';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 
 @Controller()
 export class RevenueCatWebhooksController {
 	private readonly logger = new Logger(RevenueCatWebhooksController.name);
 
-	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
+	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
 
 	@Post()
 	handleRevenueCatEvent(@Body() event: any) {

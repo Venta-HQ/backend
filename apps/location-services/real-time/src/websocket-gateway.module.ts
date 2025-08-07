@@ -13,7 +13,11 @@ import {
 	PrometheusService,
 	RedisModule,
 } from '@app/nest/modules';
-import { LOCATION_PACKAGE_NAME, LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
+import {
+	GEOLOCATION_PACKAGE_NAME,
+	GEOLOCATION_SERVICE_NAME,
+	GeolocationServiceClient,
+} from '@app/proto/location-services/geolocation';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
@@ -30,11 +34,11 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 				RedisModule,
 				ClerkModule.register(),
 				ConfigModule,
-				GrpcInstanceModule.register<LocationServiceClient>({
+				GrpcInstanceModule.register<GeolocationServiceClient>({
 					proto: 'location.proto',
-					protoPackage: LOCATION_PACKAGE_NAME,
-					provide: LOCATION_SERVICE_NAME,
-					serviceName: LOCATION_SERVICE_NAME,
+					protoPackage: GEOLOCATION_PACKAGE_NAME,
+					provide: GEOLOCATION_SERVICE_NAME,
+					serviceName: GEOLOCATION_SERVICE_NAME,
 					urlFactory: (configService: ConfigService) =>
 						configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
 				}),

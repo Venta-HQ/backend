@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.1
 //   protoc               v5.29.3
-// source: domains/marketplace/vendor-management/vendor-management.proto
+// source: domains/marketplace/vendor-management.proto
 
 /* eslint-disable */
 import { Metadata } from "@grpc/grpc-js";
@@ -25,7 +25,7 @@ export interface VendorCreateResponse {
   id: string;
 }
 
-export interface VendorLookupData {
+export interface VendorLookupByIdData {
   id: string;
 }
 
@@ -93,7 +93,7 @@ export interface Empty {
 export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = "marketplace.vendor_management";
 
 export interface VendorManagementServiceClient {
-  getVendorById(request: VendorLookupData, metadata?: Metadata): Observable<VendorLookupByIdResponse>;
+  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Observable<Vendor>;
 
   createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
 
@@ -105,10 +105,7 @@ export interface VendorManagementServiceClient {
 }
 
 export interface VendorManagementServiceController {
-  getVendorById(
-    request: VendorLookupData,
-    metadata?: Metadata,
-  ): Promise<VendorLookupByIdResponse> | Observable<VendorLookupByIdResponse> | VendorLookupByIdResponse;
+  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Promise<Vendor> | Observable<Vendor> | Vendor;
 
   createVendor(
     request: VendorCreateData,

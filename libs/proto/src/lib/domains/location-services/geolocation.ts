@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v1.181.1
 //   protoc               v5.29.3
-// source: domains/location-services/geolocation/geolocation.proto
+// source: domains/location-services/geolocation.proto
 
 /* eslint-disable */
 import { Metadata } from "@grpc/grpc-js";

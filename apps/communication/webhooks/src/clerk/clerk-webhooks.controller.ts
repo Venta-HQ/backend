@@ -1,5 +1,5 @@
 import { GrpcInstance } from '@app/nest/modules';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { UserWebhookEvent } from '@clerk/clerk-sdk-node';
 import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 
@@ -7,7 +7,7 @@ import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
 export class ClerkWebhooksController {
 	private readonly logger = new Logger(ClerkWebhooksController.name);
 
-	constructor(@Inject(USER_SERVICE_NAME) private client: GrpcInstance<UserServiceClient>) {}
+	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
 
 	@Post()
 	handleClerkEvent(@Body() event: UserWebhookEvent) {

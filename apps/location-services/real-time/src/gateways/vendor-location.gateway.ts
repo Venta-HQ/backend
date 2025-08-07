@@ -4,7 +4,7 @@ import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/a
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { LOCATION_SERVICE_NAME, LocationServiceClient } from '@app/proto/location';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
@@ -34,7 +34,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	private readonly logger = new Logger(VendorLocationGateway.name);
 
 	constructor(
-		@Inject(LOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<LocationServiceClient>,
+		@Inject(GEOLOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<GeolocationServiceClient>,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: VendorConnectionManagerService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,

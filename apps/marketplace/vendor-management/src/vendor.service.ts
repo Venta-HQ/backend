@@ -1,6 +1,6 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
-import { VendorCreateData, VendorUpdateData } from '@app/proto/vendor';
+import { VendorCreateData, VendorUpdateData } from '@app/proto/marketplace/vendor-management';
 import { Injectable, Logger } from '@nestjs/common';
 
 @Injectable()

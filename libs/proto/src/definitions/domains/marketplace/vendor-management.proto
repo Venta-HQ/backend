@@ -3,7 +3,7 @@ syntax = "proto3";
 package marketplace.vendor_management;
 
 service VendorManagementService {
-  rpc GetVendorById (VendorLookupData) returns (VendorLookupByIdResponse) {}
+  rpc GetVendorById (VendorLookupByIdData) returns (Vendor) {}
   rpc CreateVendor (VendorCreateData) returns (VendorCreateResponse) {}
   rpc UpdateVendor (VendorUpdateData) returns (VendorUpdateResponse) {}
   rpc UpdateVendorLocation (VendorLocationUpdate) returns (Empty) {}
@@ -26,9 +26,9 @@ message VendorCreateResponse {
   string id = 1;
 }
 
-message VendorLookupData {
+message VendorLookupByIdData {
   string id = 1;
-} 
+}
 
 message VendorLookupByIdResponse {
   Vendor vendor = 1;
