@@ -11,6 +11,7 @@ export const APP_NAMES = {
 	GATEWAY: 'Gateway Service',
 	LOCATION: 'Location Microservice',
 	SUBSCRIPTION_WEBHOOKS: 'Subscription Webhooks Service',
+	USER: 'User Microservice',
 	VENDOR: 'Vendor Microservice',
 	WEBSOCKET_GATEWAY: 'Websocket Gateway Microservice',
 } as const;
