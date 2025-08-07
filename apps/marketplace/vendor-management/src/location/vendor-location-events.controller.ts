@@ -35,7 +35,6 @@ export class VendorLocationEventsController implements OnModuleInit {
 
 	private async handleVendorLocationUpdate(data: { data: BaseEvent; subject: string }): Promise<void> {
 		const { data: event, subject } = data;
-
 		// Correlation ID is automatically available in logs via the app-level interceptor
 		this.logger.log(`Handling ${subject} event: ${event.eventId} for vendor: ${event.data.vendorId}`);
 

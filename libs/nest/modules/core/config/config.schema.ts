@@ -10,6 +10,7 @@ export const configSchema = z.object({
 	ALLOWED_ORIGINS: z.string().optional(),
 	// Application configuration
 	APP_NAME: z.string().optional(),
+	DOMAIN: z.string().optional(), // DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
 	CLERK_SECRET_KEY: z.string(),
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),

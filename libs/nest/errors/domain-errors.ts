@@ -1,70 +1,17 @@
 import { AppError, ErrorType } from './app-error';
 
 /**
- * Base domain error class that extends AppError with domain context
+ * Generic domain error class that can be used for any domain
+ * Domain context is automatically appended by the DomainErrorInterceptor
  */
 export class DomainError extends AppError {
 	constructor(
 		code: string,
 		message: string,
 		context?: Record<string, any>,
-		public readonly domain?: string,
+		public domain?: string, // Allow setting domain (will be auto-appended by interceptor)
 	) {
 		super(ErrorType.INTERNAL, code, message, context);
-	}
-}
-
-/**
- * Location domain-specific error class
- */
-export class LocationDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'location-services');
-	}
-}
-
-/**
- * User domain-specific error class
- */
-export class UserDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'user-management');
-	}
-}
-
-/**
- * Vendor domain-specific error class
- */
-export class VendorDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'vendor-management');
-	}
-}
-
-/**
- * Marketplace domain-specific error class
- */
-export class MarketplaceDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'marketplace');
-	}
-}
-
-/**
- * Communication domain-specific error class
- */
-export class CommunicationDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'communication');
-	}
-}
-
-/**
- * Infrastructure domain-specific error class
- */
-export class InfrastructureDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'infrastructure');
 	}
 }
 

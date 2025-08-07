@@ -11,6 +11,7 @@ export interface HttpBootstrapOptions {
 		methods?: string[];
 		origin?: string | string[];
 	};
+	domain?: string; // DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
 	enableCors?: boolean;
 	host?: string;
 	module: any;
@@ -39,6 +40,7 @@ export interface HealthBootstrapOptions {
 }
 
 export interface MicroserviceBootstrapOptions {
+	domain?: string; // DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
 	health?: HealthBootstrapOptions;
 	main: GrpcBootstrapOptions | NatsBootstrapOptions;
 }
@@ -102,6 +104,11 @@ export class BootstrapService {
 	}
 
 	static async bootstrapHttp(options: HttpBootstrapOptions) {
+		// Set domain in environment if provided
+		if (options.domain) {
+			process.env.DOMAIN = options.domain;
+		}
+
 		const { app, host, port } = await this.createHttpApp(options);
 
 		this.logger.log(`Starting HTTP server on ${host}:${port}`);
@@ -146,6 +153,11 @@ export class BootstrapService {
 		const apps = [];
 
 		try {
+			// Set domain in environment if provided
+			if (options.domain) {
+				process.env.DOMAIN = options.domain;
+			}
+
 			// Bootstrap main service
 			let mainApp;
 			if ('package' in options.main) {

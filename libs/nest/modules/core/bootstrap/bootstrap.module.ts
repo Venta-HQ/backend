@@ -1,4 +1,4 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
+import { DomainErrorInterceptor, ErrorHandlingModule } from '@app/nest/errors';
 import {
 	HealthCheckModule,
 	HealthModule,
@@ -14,6 +14,7 @@ export interface BootstrapOptions {
 	additionalModules?: any[];
 	additionalProviders?: any[];
 	appName: string;
+	domain?: string; // Explicit DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
 	healthChecks?: () => Promise<Record<string, any>>;
 	protocol?: 'http' | 'grpc' | 'websocket' | 'nats';
 }
@@ -21,8 +22,11 @@ export interface BootstrapOptions {
 @Module({})
 export class BootstrapModule {
 	static forRoot(options: BootstrapOptions): DynamicModule {
-		// Set the APP_NAME environment variable for the ConfigService
+		// Set environment variables for the ConfigService
 		process.env.APP_NAME = options.appName;
+		if (options.domain) {
+			process.env.DOMAIN = options.domain;
+		}
 
 		const baseModules = [
 			ConfigModule,
@@ -44,11 +48,17 @@ export class BootstrapModule {
 				? [RequestTracingModule.register({ protocol: options.protocol })]
 				: [];
 
+		// Automatically include DomainErrorInterceptor for all apps
+		const domainErrorInterceptor = {
+			provide: 'DOMAIN_ERROR_INTERCEPTOR',
+			useClass: DomainErrorInterceptor,
+		};
+
 		return {
 			exports: baseModules,
 			imports: [...baseModules, ...httpModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
-			providers: options.additionalProviders || [],
+			providers: [domainErrorInterceptor, ...(options.additionalProviders || [])],
 		};
 	}
 }
