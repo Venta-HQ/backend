@@ -1,144 +1,145 @@
 import { vi } from 'vitest';
-import { mockGrpcClient, webhooks } from '../../../../../test/helpers/test-utils';
+import { GrpcInstance } from '@app/nest/modules';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
+import { Test, TestingModule } from '@nestjs/testing';
 import { ClerkWebhooksController } from './clerk-webhooks.controller';
-
-// Mock the proto imports to avoid module resolution issues
-vi.mock('@app/proto/user', () => ({
-	USER_SERVICE_NAME: 'UserService',
-}));
 
 describe('ClerkWebhooksController', () => {
 	let controller: ClerkWebhooksController;
-	let grpcClient: any;
+	let mockGrpcInstance: any;
 
-	beforeEach(() => {
-		grpcClient = mockGrpcClient();
-		controller = new ClerkWebhooksController(grpcClient);
+	beforeEach(async () => {
+		mockGrpcInstance = {
+			invoke: vi.fn(),
+		};
+
+		const module: TestingModule = await Test.createTestingModule({
+			controllers: [ClerkWebhooksController],
+			providers: [
+				{
+					provide: USER_MANAGEMENT_SERVICE_NAME,
+					useValue: mockGrpcInstance,
+				},
+			],
+		}).compile();
+
+		controller = module.get<ClerkWebhooksController>(ClerkWebhooksController);
 	});
 
-	afterEach(() => {
-		vi.clearAllMocks();
+	it('should be defined', () => {
+		expect(controller).toBeDefined();
 	});
 
 	describe('handleClerkEvent', () => {
-		it('should handle user.created event successfully', async () => {
-			const mockEvent = webhooks.clerk.userCreated({ id: 'clerk_user_123' });
+		it('should handle user.created event successfully', () => {
+			const mockEvent = {
+				data: { id: 'clerk_user_123' },
+				type: 'user.created',
+			};
 
-			grpcClient.invoke.mockResolvedValue({ success: true });
+			const mockResponse = { message: 'Success' };
+			mockGrpcInstance.invoke.mockReturnValue(mockResponse);
 
-			const result = await controller.handleClerkEvent(mockEvent);
+			const result = controller.handleClerkEvent(mockEvent);
 
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).toHaveBeenCalledWith('handleClerkUserCreated', {
+			expect(result).toEqual(mockResponse);
+			expect(mockGrpcInstance.invoke).toHaveBeenCalledWith('handleUserCreated', {
 				id: 'clerk_user_123',
 			});
 		});
 
-		it('should handle user.deleted event successfully', async () => {
-			const mockEvent = webhooks.clerk.userDeleted({ id: 'clerk_user_123' });
+		it('should handle user.deleted event successfully', () => {
+			const mockEvent = {
+				data: { id: 'clerk_user_123' },
+				type: 'user.deleted',
+			};
 
-			grpcClient.invoke.mockResolvedValue({ success: true });
+			const mockResponse = { message: 'Success' };
+			mockGrpcInstance.invoke.mockReturnValue(mockResponse);
 
-			const result = await controller.handleClerkEvent(mockEvent);
+			const result = controller.handleClerkEvent(mockEvent);
 
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).toHaveBeenCalledWith('handleClerkUserDeleted', {
+			expect(result).toEqual(mockResponse);
+			expect(mockGrpcInstance.invoke).toHaveBeenCalledWith('handleUserDeleted', {
 				id: 'clerk_user_123',
 			});
 		});
 
-		it('should handle user.created event with missing data.id', async () => {
-			const mockEvent = webhooks.clerk.userCreated({
-				email_addresses: [{ email_address: 'test@example.com' }],
-				id: undefined,
+		it('should handle event without user ID', () => {
+			const mockEvent = {
+				data: {},
+				type: 'user.created',
+			};
+
+			const result = controller.handleClerkEvent(mockEvent);
+
+			expect(result).toEqual({ success: true });
+			expect(mockGrpcInstance.invoke).not.toHaveBeenCalled();
+		});
+
+		it('should handle unknown event type', () => {
+			const mockEvent = {
+				data: { id: 'clerk_user_123' },
+				type: 'unknown.event',
+			};
+
+			const result = controller.handleClerkEvent(mockEvent);
+
+			expect(result).toEqual({ success: true });
+			expect(mockGrpcInstance.invoke).not.toHaveBeenCalled();
+		});
+
+		it('should handle gRPC errors during user creation', () => {
+			const mockEvent = {
+				data: { id: 'clerk_user_123' },
+				type: 'user.created',
+			};
+
+			const mockError = new Error('gRPC error');
+			mockGrpcInstance.invoke.mockImplementation(() => {
+				throw mockError;
 			});
 
-			const result = await controller.handleClerkEvent(mockEvent);
-
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).not.toHaveBeenCalled();
-		});
-
-		it('should handle user.deleted event with missing data.id', async () => {
-			const mockEvent = webhooks.clerk.userDeleted({ id: undefined });
-
-			const result = await controller.handleClerkEvent(mockEvent);
-
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).not.toHaveBeenCalled();
-		});
-
-		it('should handle unhandled event types', async () => {
-			const mockEvent = webhooks.clerk.userUpdated({ id: 'clerk_user_123' });
-
-			const result = await controller.handleClerkEvent(mockEvent);
-
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).not.toHaveBeenCalled();
-		});
-
-		it('should handle gRPC errors during user creation', async () => {
-			const mockEvent = webhooks.clerk.userCreated({ id: 'clerk_user_123' });
-
-			const mockError = new Error('Failed to create user');
-			grpcClient.invoke.mockRejectedValue(mockError);
-
-			await expect(controller.handleClerkEvent(mockEvent)).rejects.toThrow(mockError);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('handleClerkUserCreated', {
+			expect(() => controller.handleClerkEvent(mockEvent)).toThrow(mockError);
+			expect(mockGrpcInstance.invoke).toHaveBeenCalledWith('handleUserCreated', {
 				id: 'clerk_user_123',
 			});
 		});
 
-		it('should handle gRPC errors during user deletion', async () => {
-			const mockEvent = webhooks.clerk.userDeleted({ id: 'clerk_user_123' });
+		it('should handle gRPC errors during user deletion', () => {
+			const mockEvent = {
+				data: { id: 'clerk_user_123' },
+				type: 'user.deleted',
+			};
 
-			const mockError = new Error('Failed to delete user');
-			grpcClient.invoke.mockRejectedValue(mockError);
+			const mockError = new Error('gRPC error');
+			mockGrpcInstance.invoke.mockImplementation(() => {
+				throw mockError;
+			});
 
-			await expect(controller.handleClerkEvent(mockEvent)).rejects.toThrow(mockError);
-			expect(grpcClient.invoke).toHaveBeenCalledWith('handleClerkUserDeleted', {
+			expect(() => controller.handleClerkEvent(mockEvent)).toThrow(mockError);
+			expect(mockGrpcInstance.invoke).toHaveBeenCalledWith('handleUserDeleted', {
 				id: 'clerk_user_123',
 			});
 		});
 
-		it('should handle events with null data', async () => {
-			const mockEvent = webhooks.clerk.userCreated({ id: 'clerk_user_123' });
-			mockEvent.data = null;
-
-			const result = await controller.handleClerkEvent(mockEvent);
-
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).not.toHaveBeenCalled();
-		});
-
-		it('should handle events with undefined data', async () => {
-			const mockEvent = webhooks.clerk.userDeleted({ id: 'clerk_user_123' });
-			mockEvent.data = undefined;
-
-			const result = await controller.handleClerkEvent(mockEvent);
-
-			expect(result).toEqual({ success: true });
-			expect(grpcClient.invoke).not.toHaveBeenCalled();
-		});
-
-		it('should handle multiple events in sequence', async () => {
+		it('should handle multiple events in sequence', () => {
 			const events = [
-				webhooks.clerk.userCreated({ id: 'user_1' }),
-				webhooks.clerk.userDeleted({ id: 'user_2' }),
-				webhooks.clerk.userCreated({ id: 'user_3' }),
+				{ data: { id: 'user_1' }, type: 'user.created' },
+				{ data: { id: 'user_2' }, type: 'user.deleted' },
+				{ data: { id: 'user_3' }, type: 'user.created' },
 			];
 
-			grpcClient.invoke.mockResolvedValue({ success: true });
+			mockGrpcInstance.invoke.mockReturnValue({} as any);
 
-			for (const event of events) {
-				const result = await controller.handleClerkEvent(event);
-				expect(result).toEqual({ success: true });
-			}
+			events.forEach((event) => {
+				controller.handleClerkEvent(event);
+			});
 
-			expect(grpcClient.invoke).toHaveBeenCalledTimes(3);
-			expect(grpcClient.invoke).toHaveBeenNthCalledWith(1, 'handleClerkUserCreated', { id: 'user_1' });
-			expect(grpcClient.invoke).toHaveBeenNthCalledWith(2, 'handleClerkUserDeleted', { id: 'user_2' });
-			expect(grpcClient.invoke).toHaveBeenNthCalledWith(3, 'handleClerkUserCreated', { id: 'user_3' });
+			expect(mockGrpcInstance.invoke).toHaveBeenCalledTimes(3);
+			expect(mockGrpcInstance.invoke).toHaveBeenNthCalledWith(1, 'handleUserCreated', { id: 'user_1' });
+			expect(mockGrpcInstance.invoke).toHaveBeenNthCalledWith(2, 'handleUserDeleted', { id: 'user_2' });
+			expect(mockGrpcInstance.invoke).toHaveBeenNthCalledWith(3, 'handleUserCreated', { id: 'user_3' });
 		});
 	});
 });

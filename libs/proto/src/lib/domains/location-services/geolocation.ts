@@ -11,35 +11,23 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "location_services.geolocation";
 
-export interface AddressLookupRequest {
-  address: string;
-}
-
-export interface AddressLookupResponse {
-  location: Location | undefined;
-  success: boolean;
-  error: string;
-}
-
-export interface DistanceRequest {
-  from: Location | undefined;
-  to: Location | undefined;
-}
-
-export interface DistanceResponse {
-  /** in meters */
-  distance: number;
-  /** in seconds */
-  duration: number;
-}
-
-export interface CoordinateValidationRequest {
+export interface LocationUpdate {
+  entityId: string;
   location: Location | undefined;
 }
 
-export interface CoordinateValidationResponse {
-  valid: boolean;
-  error: string;
+export interface VendorLocationRequest {
+  neLocation: Location | undefined;
+  swLocation: Location | undefined;
+}
+
+export interface VendorLocationResponse {
+  vendors: VendorLocation[];
+}
+
+export interface VendorLocation {
+  id: string;
+  location: Location | undefined;
 }
 
 export interface Location {
@@ -53,36 +41,23 @@ export interface Empty {
 export const LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME = "location_services.geolocation";
 
 export interface GeolocationServiceClient {
-  getLocationByAddress(request: AddressLookupRequest, metadata?: Metadata): Observable<AddressLookupResponse>;
+  updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Observable<Empty>;
 
-  calculateDistance(request: DistanceRequest, metadata?: Metadata): Observable<DistanceResponse>;
-
-  validateCoordinates(
-    request: CoordinateValidationRequest,
-    metadata?: Metadata,
-  ): Observable<CoordinateValidationResponse>;
+  vendorLocations(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
 }
 
 export interface GeolocationServiceController {
-  getLocationByAddress(
-    request: AddressLookupRequest,
-    metadata?: Metadata,
-  ): Promise<AddressLookupResponse> | Observable<AddressLookupResponse> | AddressLookupResponse;
+  updateVendorLocation(request: LocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
-  calculateDistance(
-    request: DistanceRequest,
+  vendorLocations(
+    request: VendorLocationRequest,
     metadata?: Metadata,
-  ): Promise<DistanceResponse> | Observable<DistanceResponse> | DistanceResponse;
-
-  validateCoordinates(
-    request: CoordinateValidationRequest,
-    metadata?: Metadata,
-  ): Promise<CoordinateValidationResponse> | Observable<CoordinateValidationResponse> | CoordinateValidationResponse;
+  ): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
 }
 
 export function GeolocationServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = ["getLocationByAddress", "calculateDistance", "validateCoordinates"];
+    const grpcMethods: string[] = ["updateVendorLocation", "vendorLocations"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("GeolocationService", method)(constructor.prototype[method], method, descriptor);

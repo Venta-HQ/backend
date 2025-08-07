@@ -1,4 +1,4 @@
-import { clearMocks, data, errors, mockPrisma } from '../../../../test/helpers/test-utils';
+import { clearMocks, data, errors, mockPrisma } from '@test/helpers/test-utils';
 import { SubscriptionService } from './subscription.service';
 
 describe('SubscriptionService', () => {

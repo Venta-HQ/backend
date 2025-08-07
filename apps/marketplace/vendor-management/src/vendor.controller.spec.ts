@@ -52,8 +52,10 @@ describe('VendorController', () => {
 					description: 'A test vendor',
 					email: 'test@vendor.com',
 					id: 'vendor_123',
-					lat: 40.7128,
-					long: -74.006,
+					location: {
+						lat: 40.7128,
+						long: -74.006,
+					},
 					name: 'Test Vendor',
 					open: true,
 					phone: '123-456-7890',

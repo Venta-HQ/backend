@@ -1,22 +1,23 @@
+import { vi } from 'vitest';
 import { GrpcInstance } from '@app/nest/modules';
-import { USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RevenueCatWebhooksController } from './revenuecat-webhooks.controller';
 
 describe('RevenueCatWebhooksController', () => {
 	let controller: RevenueCatWebhooksController;
-	let mockGrpcInstance: jest.Mocked<GrpcInstance<UserServiceClient>>;
+	let mockGrpcInstance: any;
 
 	beforeEach(async () => {
 		mockGrpcInstance = {
-			invoke: jest.fn(),
-		} as any;
+			invoke: vi.fn(),
+		};
 
 		const module: TestingModule = await Test.createTestingModule({
 			controllers: [RevenueCatWebhooksController],
 			providers: [
 				{
-					provide: USER_SERVICE_NAME,
+					provide: USER_MANAGEMENT_SERVICE_NAME,
 					useValue: mockGrpcInstance,
 				},
 			],
@@ -41,7 +42,8 @@ describe('RevenueCatWebhooksController', () => {
 				},
 			};
 
-			mockGrpcInstance.invoke.mockReturnValue({} as any);
+			const mockResponse = { message: 'Success' };
+			mockGrpcInstance.invoke.mockReturnValue(mockResponse);
 
 			const result = controller.handleRevenueCatEvent(mockEvent);
 
@@ -54,7 +56,7 @@ describe('RevenueCatWebhooksController', () => {
 				},
 				providerId: 'test-transaction-id',
 			});
-			expect(result).toEqual({ success: true });
+			expect(result).toEqual(mockResponse);
 		});
 
 		it('should handle INITIAL_PURCHASE event without app_user_id', () => {

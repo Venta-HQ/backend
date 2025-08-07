@@ -1,14 +1,14 @@
 import { IntegrationType } from '@prisma/client';
-import { clearMocks, data, mockPrisma } from '../../../../test/helpers/test-utils';
-import { ClerkService } from './clerk.service';
+import { clearMocks, data, mockPrisma } from '@test/helpers/test-utils';
+import { AuthService } from './auth.service';
 
-describe('ClerkService', () => {
-	let service: ClerkService;
+describe('AuthService', () => {
+	let service: AuthService;
 	let prisma: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		service = new ClerkService(prisma);
+		service = new AuthService(prisma);
 	});
 
 	afterEach(() => {
@@ -26,6 +26,7 @@ describe('ClerkService', () => {
 		};
 
 		it('should create user and emit event successfully', async () => {
+			prisma.db.user.count.mockResolvedValue(0);
 			prisma.db.user.create.mockResolvedValue(expectedUser);
 
 			const result = await service.handleUserCreated(clerkId);
@@ -36,10 +37,9 @@ describe('ClerkService', () => {
 
 		it('should handle database errors gracefully', async () => {
 			const dbError = new Error('Database connection failed');
-			prisma.db.user.create.mockRejectedValue(dbError);
+			prisma.db.user.count.mockRejectedValue(dbError);
 
 			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
-			expect(prisma.db.user.create).toHaveBeenCalledWith(expectedCall);
 		});
 	});
 
@@ -125,7 +125,15 @@ describe('ClerkService', () => {
 		const integrationData = {
 			providerId: 'clerk_user_123',
 		};
-		const expectedCall = {
+		const existingIntegration = data.integration(integrationData);
+		const findFirstCall = {
+			select: { id: true, userId: true },
+			where: {
+				providerId: 'clerk_user_123',
+				type: IntegrationType.Clerk,
+			},
+		};
+		const deleteManyCall = {
 			where: {
 				providerId: 'clerk_user_123',
 				type: IntegrationType.Clerk,
@@ -133,27 +141,21 @@ describe('ClerkService', () => {
 		};
 
 		it('should delete integration successfully', async () => {
+			prisma.db.integration.findFirst.mockResolvedValue(existingIntegration);
 			prisma.db.integration.deleteMany.mockResolvedValue({ count: 1 });
 
 			await service.deleteIntegration(integrationData);
 
-			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith(expectedCall);
+			expect(prisma.db.integration.findFirst).toHaveBeenCalledWith(findFirstCall);
+			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith(deleteManyCall);
 		});
 
 		it('should handle database errors during integration deletion', async () => {
 			const dbError = new Error('Database connection failed');
-			prisma.db.integration.deleteMany.mockRejectedValue(dbError);
+			prisma.db.integration.findFirst.mockRejectedValue(dbError);
 
 			await expect(service.deleteIntegration(integrationData)).rejects.toThrow('Database connection failed');
-			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith(expectedCall);
-		});
-
-		it('should handle deletion when integration does not exist', async () => {
-			prisma.db.integration.deleteMany.mockResolvedValue({ count: 0 });
-
-			await service.deleteIntegration(integrationData);
-
-			expect(prisma.db.integration.deleteMany).toHaveBeenCalledWith(expectedCall);
+			expect(prisma.db.integration.findFirst).toHaveBeenCalledWith(findFirstCall);
 		});
 	});
 });

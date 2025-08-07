@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GEOLOCATION_SERVICE_NAME } from '@app/proto/location-services/geolocation';
 import { TestingModule } from '@nestjs/testing';
 import {
 	clearMocks,
@@ -13,9 +14,9 @@ import { VendorConnectionManagerService } from '../services/vendor-connection-ma
 import { VendorLocationGateway } from './vendor-location.gateway';
 
 // Mock the proto modules
-vi.mock('@app/proto/location', () => ({
-	LOCATION_SERVICE_NAME: 'LocationService',
-	LocationServiceClient: {},
+vi.mock('@app/proto/location-services/geolocation', () => ({
+	GEOLOCATION_SERVICE_NAME: 'GeolocationService',
+	GeolocationServiceClient: {},
 }));
 
 // Mock the guards - define classes inside the factory
@@ -117,7 +118,7 @@ describe('VendorLocationGateway', () => {
 			[VendorLocationGateway],
 			[],
 			[
-				createMockProvider('LocationService', mockLocationService),
+				createMockProvider(GEOLOCATION_SERVICE_NAME, mockLocationService),
 				{ provide: VendorConnectionManagerService, useValue: mockConnectionManager },
 				{ provide: UserConnectionManagerService, useValue: mockUserConnectionManager },
 				createMockProvider(WEBSOCKET_METRICS, mockDeps.websocketMetrics),
@@ -134,7 +135,9 @@ describe('VendorLocationGateway', () => {
 	});
 
 	afterEach(async () => {
-		await module.close();
+		if (module) {
+			await module.close();
+		}
 		clearMocks();
 	});
 
