@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { AppError } from '@app/nest/errors';
+import { VendorDomainError } from '@app/nest/errors/domain-errors';
 import { clearMocks, data, errors, mockPrisma } from '../../../../../test/helpers/test-utils';
 import { VendorService } from './vendor.service';
 
@@ -17,6 +17,10 @@ describe('VendorService', () => {
 
 	beforeEach(() => {
 		prisma = mockPrisma();
+		// Add missing user table methods
+		prisma.db.user = {
+			findUnique: vi.fn(),
+		};
 		eventService = {
 			emit: vi.fn(),
 		};
@@ -52,7 +56,7 @@ describe('VendorService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.vendor.findFirst.mockRejectedValue(dbError);
 
-			await expect(service.getVendorById('vendor_123')).rejects.toThrow('Database connection failed');
+			await expect(service.getVendorById('vendor_123')).rejects.toThrow(VendorDomainError);
 		});
 	});
 
@@ -68,6 +72,9 @@ describe('VendorService', () => {
 		};
 
 		it('should create vendor successfully', async () => {
+			// Mock user exists validation
+			prisma.db.user.findUnique.mockResolvedValue({ clerkId: 'clerk-123', id: 'user_123' });
+
 			const { imageUrl, ...vendorData } = data.vendor({ id: 'vendor_123' });
 			const mockVendor = {
 				...vendorData,
@@ -82,6 +89,9 @@ describe('VendorService', () => {
 
 			const result = await service.createVendor(createData);
 
+			expect(prisma.db.user.findUnique).toHaveBeenCalledWith({
+				where: { id: 'user_123' },
+			});
 			expect(prisma.db.vendor.create).toHaveBeenCalledWith({
 				data: {
 					description: 'A test vendor',
@@ -93,33 +103,20 @@ describe('VendorService', () => {
 					website: 'https://testvendor.com',
 				},
 			});
-			expect(eventService.emit).toHaveBeenCalledWith('vendor.created', {
-				createdAt: mockVendor.createdAt,
-				description: mockVendor.description,
-				email: mockVendor.email,
-				id: mockVendor.id,
-				lat: mockVendor.lat,
-				long: mockVendor.long,
-				name: mockVendor.name,
-				open: mockVendor.open,
-				phone: mockVendor.phone,
-				primaryImage: mockVendor.primaryImage,
-				updatedAt: mockVendor.updatedAt,
-				website: mockVendor.website,
-			});
+			expect(eventService.emit).toHaveBeenCalledWith('vendor.created', mockVendor);
 			expect(result).toBe('vendor_123');
 		});
 
 		it('should create vendor without imageUrl', async () => {
-			const { imageUrl, ...dataWithoutImage } = createData;
-			const { imageUrl: _, ...vendorData } = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
-			const mockVendor = {
-				...vendorData,
-				primaryImage: undefined,
-			};
+			// Mock user exists validation
+			prisma.db.user.findUnique.mockResolvedValue({ clerkId: 'clerk-123', id: 'user_123' });
+
+			const createDataWithoutImage = { ...createData };
+			delete createDataWithoutImage.imageUrl;
+			const mockVendor = data.vendor({ id: 'vendor_123' });
 			prisma.db.vendor.create.mockResolvedValue(mockVendor);
 
-			const result = await service.createVendor({ ...dataWithoutImage, imageUrl: undefined });
+			const result = await service.createVendor(createDataWithoutImage);
 
 			expect(prisma.db.vendor.create).toHaveBeenCalledWith({
 				data: {
@@ -128,7 +125,6 @@ describe('VendorService', () => {
 					name: 'Test Vendor',
 					ownerId: 'user_123',
 					phone: '123-456-7890',
-					primaryImage: undefined,
 					website: 'https://testvendor.com',
 				},
 			});
@@ -136,16 +132,34 @@ describe('VendorService', () => {
 		});
 
 		it('should handle database errors', async () => {
+			// Mock user exists validation
+			prisma.db.user.findUnique.mockResolvedValue({ clerkId: 'clerk-123', id: 'user_123' });
+
 			const dbError = errors.database('Database connection failed');
 			prisma.db.vendor.create.mockRejectedValue(dbError);
 
-			await expect(service.createVendor(createData)).rejects.toThrow('Database connection failed');
+			await expect(service.createVendor(createData)).rejects.toThrow(VendorDomainError);
+		});
+
+		it('should throw error when user does not exist', async () => {
+			prisma.db.user.findUnique.mockResolvedValue(null);
+
+			await expect(service.createVendor(createData)).rejects.toThrow(VendorDomainError);
+		});
+
+		it('should throw error when vendor name is empty', async () => {
+			// Mock user exists validation
+			prisma.db.user.findUnique.mockResolvedValue({ clerkId: 'clerk-123', id: 'user_123' });
+
+			const invalidData = { ...createData, name: '' };
+
+			await expect(service.createVendor(invalidData)).rejects.toThrow(VendorDomainError);
 		});
 	});
 
 	describe('updateVendor', () => {
 		const updateData = {
-			description: 'An updated vendor',
+			description: 'Updated vendor description',
 			email: 'updated@vendor.com',
 			imageUrl: 'https://example.com/updated-image.jpg',
 			name: 'Updated Vendor',
@@ -154,22 +168,25 @@ describe('VendorService', () => {
 		};
 
 		it('should update vendor successfully', async () => {
-			prisma.db.vendor.count.mockResolvedValue(1);
-			const { imageUrl, ...vendorData } = data.vendor({ id: 'vendor_123', ...updateData });
-			const mockVendor = {
-				...vendorData,
-				primaryImage: updateData.imageUrl, // Map imageUrl to primaryImage for database model
-			};
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+
+			const mockVendor = data.vendor({ id: 'vendor_123' });
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
 
 			await service.updateVendor('vendor_123', 'user_123', updateData);
 
-			expect(prisma.db.vendor.count).toHaveBeenCalledWith({
+			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
+				where: { id: 'vendor_123' },
+			});
+			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
 				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
 				data: {
-					description: 'An updated vendor',
+					description: 'Updated vendor description',
 					email: 'updated@vendor.com',
 					name: 'Updated Vendor',
 					phone: '987-654-3210',
@@ -178,37 +195,25 @@ describe('VendorService', () => {
 				},
 				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
-			expect(eventService.emit).toHaveBeenCalledWith('vendor.updated', {
-				createdAt: mockVendor.createdAt,
-				description: mockVendor.description,
-				email: mockVendor.email,
-				id: mockVendor.id,
-				lat: mockVendor.lat,
-				long: mockVendor.long,
-				name: mockVendor.name,
-				open: mockVendor.open,
-				phone: mockVendor.phone,
-				primaryImage: mockVendor.primaryImage,
-				updatedAt: mockVendor.updatedAt,
-				website: mockVendor.website,
-			});
+			expect(eventService.emit).toHaveBeenCalledWith('vendor.updated', mockVendor);
 		});
 
 		it('should update vendor without imageUrl', async () => {
-			const { imageUrl, ...dataWithoutImage } = updateData;
-			prisma.db.vendor.count.mockResolvedValue(1);
-			const { imageUrl: _, ...vendorData } = data.vendor({ id: 'vendor_123', ...dataWithoutImage });
-			const mockVendor = {
-				...vendorData,
-				primaryImage: undefined,
-			};
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+
+			const updateDataWithoutImage = { ...updateData };
+			delete updateDataWithoutImage.imageUrl;
+			const mockVendor = data.vendor({ id: 'vendor_123' });
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
 
-			await service.updateVendor('vendor_123', 'user_123', { ...dataWithoutImage, imageUrl: undefined });
+			await service.updateVendor('vendor_123', 'user_123', updateDataWithoutImage);
 
 			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
 				data: {
-					description: 'An updated vendor',
+					description: 'Updated vendor description',
 					email: 'updated@vendor.com',
 					name: 'Updated Vendor',
 					phone: '987-654-3210',
@@ -219,44 +224,58 @@ describe('VendorService', () => {
 		});
 
 		it('should throw not found error when vendor does not exist', async () => {
-			prisma.db.vendor.count.mockResolvedValue(0);
+			prisma.db.vendor.findFirst.mockResolvedValue(null);
 
-			await expect(service.updateVendor('vendor_123', 'user_123', updateData)).rejects.toThrow(AppError);
+			await expect(service.updateVendor('vendor_123', 'user_123', updateData)).rejects.toThrow(VendorDomainError);
 		});
 
 		it('should throw not found error when user is not the owner', async () => {
-			prisma.db.vendor.count.mockResolvedValue(0);
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation - user is not owner
+			prisma.db.vendor.findFirst.mockResolvedValueOnce(null);
 
-			await expect(service.updateVendor('vendor_123', 'different_user', updateData)).rejects.toThrow(AppError);
+			await expect(service.updateVendor('vendor_123', 'different_user', updateData)).rejects.toThrow(VendorDomainError);
 		});
 
 		it('should handle database errors', async () => {
-			prisma.db.vendor.count.mockResolvedValue(1);
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+
 			const dbError = errors.database('Database connection failed');
 			prisma.db.vendor.update.mockRejectedValue(dbError);
 
-			await expect(service.updateVendor('vendor_123', 'user_123', updateData)).rejects.toThrow(
-				'Database connection failed',
-			);
+			await expect(service.updateVendor('vendor_123', 'user_123', updateData)).rejects.toThrow(VendorDomainError);
 		});
 	});
 
 	describe('deleteVendor', () => {
-		const vendorId = 'vendor_123';
-		const userId = 'user_123';
-
 		it('should delete vendor successfully', async () => {
-			const mockVendor = data.vendor({ id: vendorId, ownerId: userId });
-			prisma.db.vendor.findFirst.mockResolvedValue(mockVendor);
+			const mockVendor = data.vendor({ id: 'vendor_123' });
+
+			// Mock the sequence of findFirst calls:
+			// 1. validateVendorExists - just needs to return something truthy
+			// 2. validateVendorOwnership - just needs to return something truthy
+			// 3. Inside deleteVendor method - this is the one that gets used for the event
+			prisma.db.vendor.findFirst
+				.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' }) // validateVendorExists
+				.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' }) // validateVendorOwnership
+				.mockResolvedValueOnce(mockVendor); // Inside deleteVendor - this one is used for event
+
 			prisma.db.vendor.delete.mockResolvedValue(mockVendor);
 
-			await service.deleteVendor(vendorId, userId);
+			await service.deleteVendor('vendor_123', 'user_123');
 
 			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
-				where: { id: vendorId, ownerId: userId },
+				where: { id: 'vendor_123' },
+			});
+			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
+				where: { id: 'vendor_123', ownerId: 'user_123' },
 			});
 			expect(prisma.db.vendor.delete).toHaveBeenCalledWith({
-				where: { id: vendorId },
+				where: { id: 'vendor_123' },
 			});
 			expect(eventService.emit).toHaveBeenCalledWith('vendor.deleted', mockVendor);
 		});
@@ -264,48 +283,86 @@ describe('VendorService', () => {
 		it('should throw not found error when vendor does not exist', async () => {
 			prisma.db.vendor.findFirst.mockResolvedValue(null);
 
-			await expect(service.deleteVendor(vendorId, userId)).rejects.toThrow(AppError);
+			await expect(service.deleteVendor('vendor_123', 'user_123')).rejects.toThrow(VendorDomainError);
 		});
 
 		it('should throw not found error when user is not the owner', async () => {
-			prisma.db.vendor.findFirst.mockResolvedValue(null);
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation - user is not owner
+			prisma.db.vendor.findFirst.mockResolvedValueOnce(null);
 
-			await expect(service.deleteVendor(vendorId, userId)).rejects.toThrow(AppError);
+			await expect(service.deleteVendor('vendor_123', 'different_user')).rejects.toThrow(VendorDomainError);
 		});
 
 		it('should handle database errors', async () => {
-			prisma.db.vendor.findFirst.mockRejectedValue(new Error('Database error'));
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
+			// Mock vendor ownership validation
+			prisma.db.vendor.findFirst.mockResolvedValueOnce({ id: 'vendor_123', ownerId: 'user_123' });
 
-			await expect(service.deleteVendor(vendorId, userId)).rejects.toThrow('Database error');
+			const dbError = errors.database('Database connection failed');
+			prisma.db.vendor.delete.mockRejectedValue(dbError);
+
+			await expect(service.deleteVendor('vendor_123', 'user_123')).rejects.toThrow(VendorDomainError);
 		});
 	});
 
 	describe('updateVendorLocation', () => {
-		const vendorId = 'vendor_123';
 		const location = { lat: 40.7128, long: -74.006 };
 
 		it('should update vendor location successfully', async () => {
-			const mockVendor = data.vendor({ id: vendorId, lat: location.lat, long: location.long });
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValue({ id: 'vendor_123', ownerId: 'user_123' });
+
+			const mockVendor = data.vendor({ id: 'vendor_123' });
 			prisma.db.vendor.update.mockResolvedValue(mockVendor);
 
-			await service.updateVendorLocation(vendorId, location);
+			await service.updateVendorLocation('vendor_123', location);
 
+			expect(prisma.db.vendor.findFirst).toHaveBeenCalledWith({
+				where: { id: 'vendor_123' },
+			});
 			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
 				data: {
 					lat: location.lat,
 					long: location.long,
 				},
 				where: {
-					id: vendorId,
+					id: 'vendor_123',
 				},
 			});
 			expect(eventService.emit).toHaveBeenCalledWith('vendor.updated', mockVendor);
 		});
 
 		it('should handle database errors', async () => {
-			prisma.db.vendor.update.mockRejectedValue(new Error('Database error'));
+			// Mock vendor exists validation
+			prisma.db.vendor.findFirst.mockResolvedValue({ id: 'vendor_123', ownerId: 'user_123' });
 
-			await expect(service.updateVendorLocation(vendorId, location)).rejects.toThrow(AppError);
+			const dbError = errors.database('Database connection failed');
+			prisma.db.vendor.update.mockRejectedValue(dbError);
+
+			await expect(service.updateVendorLocation('vendor_123', location)).rejects.toThrow(VendorDomainError);
+		});
+
+		it('should throw error when vendor does not exist', async () => {
+			prisma.db.vendor.findFirst.mockResolvedValue(null);
+
+			await expect(service.updateVendorLocation('vendor_123', location)).rejects.toThrow(VendorDomainError);
+		});
+
+		it('should throw error for invalid latitude', async () => {
+			const invalidLocation = { lat: 100, long: -74.006 }; // Invalid latitude > 90
+			prisma.db.vendor.findFirst.mockResolvedValue({ id: 'vendor_123', ownerId: 'user_123' });
+
+			await expect(service.updateVendorLocation('vendor_123', invalidLocation)).rejects.toThrow(VendorDomainError);
+		});
+
+		it('should throw error for invalid longitude', async () => {
+			const invalidLocation = { lat: 40.7128, long: 200 }; // Invalid longitude > 180
+			prisma.db.vendor.findFirst.mockResolvedValue({ id: 'vendor_123', ownerId: 'user_123' });
+
+			await expect(service.updateVendorLocation('vendor_123', invalidLocation)).rejects.toThrow(VendorDomainError);
 		});
 	});
 });
