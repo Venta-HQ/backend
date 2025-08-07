@@ -198,6 +198,7 @@ docker-compose logs -f
 - **[Deployment Guide](docs/deployment-guide.md)** - Containerization and deployment procedures
 - **[Metrics Instrumentation](docs/metrics-instrumentation-guide.md)** - Monitoring and observability
 - **[Request ID Propagation](docs/request-id-propagation.md)** - Distributed tracing
+- **[Infrastructure Cost Analysis](docs/infrastructure-cost-analysis.md)** - Kubernetes deployment costs and scaling
 
 ### 📖 Quick Reference
 

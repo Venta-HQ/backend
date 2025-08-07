@@ -6,6 +6,7 @@
  */
 export const APP_NAMES = {
 	ALGOLIA_SYNC: 'Algolia Sync Service',
+	FILE_MANAGEMENT: 'File Management Service',
 	GATEWAY: 'Gateway Service',
 	LOCATION: 'Location Microservice',
 	USER: 'User Microservice',
