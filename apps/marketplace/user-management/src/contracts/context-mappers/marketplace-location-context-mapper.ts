@@ -4,7 +4,8 @@ import {
 	MarketplaceUserLocation,
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { BaseContextMapper } from '@app/nest/modules/contracts';
 
 /**
  * Context Mapper for Marketplace ↔ Location Services communication
@@ -12,8 +13,32 @@ import { Injectable, Logger } from '@nestjs/common';
  * Translates between Marketplace domain concepts and Location Services domain concepts
  */
 @Injectable()
-export class MarketplaceLocationContextMapper {
-	private readonly logger = new Logger(MarketplaceLocationContextMapper.name);
+export class MarketplaceLocationContextMapper extends BaseContextMapper {
+	constructor() {
+		super('MarketplaceLocationContextMapper');
+	}
+
+	getDomain(): string {
+		return 'marketplace';
+	}
+
+	getTargetDomain(): string {
+		return 'location-services';
+	}
+
+	validateSourceData(data: any): boolean {
+		if (data.location) {
+			return this.validateLocation(data.location);
+		}
+		if (data.bounds) {
+			return this.validateBounds(data.bounds);
+		}
+		return true;
+	}
+
+	validateTargetData(data: any): boolean {
+		return this.validateLocationServicesResponse(data);
+	}
 
 	// ============================================================================
 	// Marketplace → Location Services Translation
@@ -23,81 +48,93 @@ export class MarketplaceLocationContextMapper {
 	 * Translate marketplace vendor location update to location services format
 	 */
 	toLocationServicesVendorUpdate(vendorId: string, location: { lat: number; lng: number }) {
-		this.logger.debug('Translating marketplace vendor location to location services format', {
-			vendorId,
-			location,
-		});
+		this.logTranslationStart('toLocationServicesVendorUpdate', { vendorId, location });
 
-		return {
-			entityId: vendorId, // Location Services uses 'entityId'
-			coordinates: {
-				latitude: location.lat,
-				longitude: location.lng,
-			},
-			trackingStatus: 'active',
-			accuracy: 5.0, // Default accuracy
-			lastUpdateTime: new Date().toISOString(),
-			source: 'marketplace',
-		};
+		try {
+			if (!this.validateSourceData({ location })) {
+				throw this.createValidationError('Invalid vendor location data', { vendorId, location });
+			}
+
+			const result = {
+				entityId: vendorId, // Location Services uses 'entityId'
+				coordinates: this.transformLocationToLatLng(location),
+				trackingStatus: 'active',
+				accuracy: 5.0, // Default accuracy
+				lastUpdateTime: new Date().toISOString(),
+				source: 'marketplace',
+			};
+
+			this.logTranslationSuccess('toLocationServicesVendorUpdate', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toLocationServicesVendorUpdate', error, { vendorId, location });
+			throw error;
+		}
 	}
 
 	/**
 	 * Translate marketplace user location update to location services format
 	 */
 	toLocationServicesUserUpdate(userId: string, location: { lat: number; lng: number }) {
-		this.logger.debug('Translating marketplace user location to location services format', {
-			userId,
-			location,
-		});
+		this.logTranslationStart('toLocationServicesUserUpdate', { userId, location });
 
-		return {
-			entityId: userId, // Location Services uses 'entityId'
-			coordinates: {
-				latitude: location.lat,
-				longitude: location.lng,
-			},
-			trackingStatus: 'active',
-			accuracy: 5.0, // Default accuracy
-			lastUpdateTime: new Date().toISOString(),
-			source: 'marketplace',
-		};
+		try {
+			if (!this.validateSourceData({ location })) {
+				throw this.createValidationError('Invalid user location data', { userId, location });
+			}
+
+			const result = {
+				entityId: userId, // Location Services uses 'entityId'
+				coordinates: this.transformLocationToLatLng(location),
+				trackingStatus: 'active',
+				accuracy: 5.0, // Default accuracy
+				lastUpdateTime: new Date().toISOString(),
+				source: 'marketplace',
+			};
+
+			this.logTranslationSuccess('toLocationServicesUserUpdate', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toLocationServicesUserUpdate', error, { userId, location });
+			throw error;
+		}
 	}
 
 	/**
 	 * Translate marketplace location bounds to location services format
 	 */
 	toLocationServicesBounds(bounds: MarketplaceLocationBounds) {
-		this.logger.debug('Translating marketplace bounds to location services format', {
-			bounds,
-		});
+		this.logTranslationStart('toLocationServicesBounds', { bounds });
 
-		return {
-			northEast: {
-				latitude: bounds.northEast.lat,
-				longitude: bounds.northEast.lng,
-			},
-			southWest: {
-				latitude: bounds.southWest.lat,
-				longitude: bounds.southWest.lng,
-			},
-		};
+		try {
+			if (!this.validateSourceData({ bounds })) {
+				throw this.createValidationError('Invalid bounds data', { bounds });
+			}
+
+			const result = this.transformBounds(bounds);
+
+			this.logTranslationSuccess('toLocationServicesBounds', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toLocationServicesBounds', error, { bounds });
+			throw error;
+		}
 	}
 
 	/**
 	 * Translate marketplace radius search to location services format
 	 */
 	toLocationServicesRadiusSearch(center: { lat: number; lng: number }, radiusInMeters: number) {
-		this.logger.debug('Translating marketplace radius search to location services format', {
-			center,
-			radiusInMeters,
-		});
+		this.logTranslationStart('toLocationServicesRadiusSearch', { center, radiusInMeters });
 
-		return {
-			center: {
-				latitude: center.lat,
-				longitude: center.lng,
-			},
-			radiusInMeters,
+		try {
+			if (!this.validateSourceData({ location: center })) {
+				throw this.createValidationError('Invalid center location data', { center, radiusInMeters });
+			}
+
+			const result = {
+				center: this.transformLocationToLatLng(center),
+				radiusInMeters,
 			entityType: 'vendor', // Location Services needs to know entity type
 		};
 	}
@@ -115,19 +152,26 @@ export class MarketplaceLocationContextMapper {
 		lastUpdateTime: string;
 		accuracy?: number;
 	}): MarketplaceVendorLocation {
-		this.logger.debug('Translating location services vendor location to marketplace format', {
-			entityId: locationServicesData.entityId,
-		});
+		this.logTranslationStart('toMarketplaceVendorLocation', { entityId: locationServicesData.entityId });
 
-		return {
-			vendorId: locationServicesData.entityId, // Marketplace uses 'vendorId'
-			location: {
-				lat: locationServicesData.coordinates.latitude,
-				lng: locationServicesData.coordinates.longitude,
-			},
-			lastUpdated: locationServicesData.lastUpdateTime,
-			accuracy: locationServicesData.accuracy || 5.0,
-		};
+		try {
+			if (!this.validateTargetData(locationServicesData)) {
+				throw this.createValidationError('Invalid location services vendor data', { locationServicesData });
+			}
+
+			const result = {
+				vendorId: locationServicesData.entityId, // Marketplace uses 'vendorId'
+				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				lastUpdated: locationServicesData.lastUpdateTime,
+				accuracy: locationServicesData.accuracy || 5.0,
+			};
+
+			this.logTranslationSuccess('toMarketplaceVendorLocation', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toMarketplaceVendorLocation', error, { locationServicesData });
+			throw error;
+		}
 	}
 
 	/**
@@ -139,19 +183,26 @@ export class MarketplaceLocationContextMapper {
 		lastUpdateTime: string;
 		accuracy?: number;
 	}): MarketplaceUserLocation {
-		this.logger.debug('Translating location services user location to marketplace format', {
-			entityId: locationServicesData.entityId,
-		});
+		this.logTranslationStart('toMarketplaceUserLocation', { entityId: locationServicesData.entityId });
 
-		return {
-			userId: locationServicesData.entityId, // Marketplace uses 'userId'
-			location: {
-				lat: locationServicesData.coordinates.latitude,
-				lng: locationServicesData.coordinates.longitude,
-			},
-			lastUpdated: locationServicesData.lastUpdateTime,
-			accuracy: locationServicesData.accuracy || 5.0,
-		};
+		try {
+			if (!this.validateTargetData(locationServicesData)) {
+				throw this.createValidationError('Invalid location services user data', { locationServicesData });
+			}
+
+			const result = {
+				userId: locationServicesData.entityId, // Marketplace uses 'userId'
+				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				lastUpdated: locationServicesData.lastUpdateTime,
+				accuracy: locationServicesData.accuracy || 5.0,
+			};
+
+			this.logTranslationSuccess('toMarketplaceUserLocation', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toMarketplaceUserLocation', error, { locationServicesData });
+			throw error;
+		}
 	}
 
 	/**
@@ -163,20 +214,29 @@ export class MarketplaceLocationContextMapper {
 		coordinates: { latitude: number; longitude: number };
 		timestamp: string;
 	}): MarketplaceLocationUpdate {
-		this.logger.debug('Translating location services update to marketplace format', {
+		this.logTranslationStart('toMarketplaceLocationUpdate', { 
 			entityId: locationServicesData.entityId,
 			entityType: locationServicesData.entityType,
 		});
 
-		return {
-			entityId: locationServicesData.entityId,
-			entityType: locationServicesData.entityType,
-			location: {
-				lat: locationServicesData.coordinates.latitude,
-				lng: locationServicesData.coordinates.longitude,
-			},
-			timestamp: locationServicesData.timestamp,
-		};
+		try {
+			if (!this.validateTargetData(locationServicesData)) {
+				throw this.createValidationError('Invalid location services update data', { locationServicesData });
+			}
+
+			const result = {
+				entityId: locationServicesData.entityId,
+				entityType: locationServicesData.entityType,
+				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				timestamp: locationServicesData.timestamp,
+			};
+
+			this.logTranslationSuccess('toMarketplaceLocationUpdate', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toMarketplaceLocationUpdate', error, { locationServicesData });
+			throw error;
+		}
 	}
 
 	/**
@@ -190,68 +250,18 @@ export class MarketplaceLocationContextMapper {
 			accuracy?: number;
 		}>,
 	): MarketplaceVendorLocation[] {
-		this.logger.debug('Translating location services vendor list to marketplace format', {
-			count: locationServicesData.length,
-		});
+		this.logTranslationStart('toMarketplaceVendorLocationList', { count: locationServicesData.length });
 
-		return locationServicesData.map((vendor) => this.toMarketplaceVendorLocation(vendor));
-	}
+		try {
+			const result = locationServicesData.map((vendor) => this.toMarketplaceVendorLocation(vendor));
 
-	// ============================================================================
-	// Validation Methods
-	// ============================================================================
-
-	/**
-	 * Validate marketplace location data before translation
-	 */
-	validateMarketplaceLocation(location: { lat: number; lng: number }): boolean {
-		const isValid =
-			typeof location.lat === 'number' &&
-			location.lat >= -90 &&
-			location.lat <= 90 &&
-			typeof location.lng === 'number' &&
-			location.lng >= -180 &&
-			location.lng <= 180;
-
-		if (!isValid) {
-			this.logger.warn('Invalid marketplace location data', { location });
+			this.logTranslationSuccess('toMarketplaceVendorLocationList', { count: result.length });
+			return result;
+		} catch (error) {
+			this.logTranslationError('toMarketplaceVendorLocationList', error, { locationServicesData });
+			throw error;
 		}
-
-		return isValid;
 	}
 
-	/**
-	 * Validate marketplace bounds data before translation
-	 */
-	validateMarketplaceBounds(bounds: MarketplaceLocationBounds): boolean {
-		const isValid =
-			this.validateMarketplaceLocation(bounds.northEast) &&
-			this.validateMarketplaceLocation(bounds.southWest) &&
-			bounds.northEast.lat > bounds.southWest.lat &&
-			bounds.northEast.lng > bounds.southWest.lng;
 
-		if (!isValid) {
-			this.logger.warn('Invalid marketplace bounds data', { bounds });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate location services response data
-	 */
-	validateLocationServicesResponse(data: any): boolean {
-		const isValid =
-			data &&
-			typeof data.entityId === 'string' &&
-			data.coordinates &&
-			typeof data.coordinates.latitude === 'number' &&
-			typeof data.coordinates.longitude === 'number';
-
-		if (!isValid) {
-			this.logger.warn('Invalid location services response data', { data });
-		}
-
-		return isValid;
-	}
 }

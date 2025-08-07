@@ -1,5 +1,5 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { Injectable, Logger } from '@nestjs/common';
+import { BaseAntiCorruptionLayer } from '@app/nest/modules/contracts';
+import { Injectable } from '@nestjs/common';
 
 /**
  * Anti-Corruption Layer for Clerk Integration
@@ -8,8 +8,26 @@ import { Injectable, Logger } from '@nestjs/common';
  * and translates Clerk data to marketplace domain format
  */
 @Injectable()
-export class ClerkAntiCorruptionLayer {
-	private readonly logger = new Logger(ClerkAntiCorruptionLayer.name);
+export class ClerkAntiCorruptionLayer extends BaseAntiCorruptionLayer {
+	constructor() {
+		super('ClerkAntiCorruptionLayer');
+	}
+
+	getExternalService(): string {
+		return 'clerk';
+	}
+
+	getDomain(): string {
+		return 'marketplace';
+	}
+
+	validateExternalData(data: any): boolean {
+		return this.validateExternalUser(data);
+	}
+
+	validateMarketplaceData(data: any): boolean {
+		return this.validateMarketplaceUser(data);
+	}
 
 	// ============================================================================
 	// Clerk → Marketplace Translation
@@ -19,20 +37,14 @@ export class ClerkAntiCorruptionLayer {
 	 * Translate Clerk user data to marketplace user format
 	 */
 	toMarketplaceUser(clerkUser: any) {
-		this.logger.debug('Translating Clerk user to marketplace format', {
-			clerkUserId: clerkUser?.id,
-		});
+		this.logTranslationStart('toMarketplaceUser', { clerkUserId: clerkUser?.id });
 
 		try {
-			// Validate Clerk user data
-			if (!this.validateClerkUser(clerkUser)) {
-				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_DATA, 'Invalid Clerk user data', {
-					clerkUser,
-				});
+			if (!this.validateExternalData(clerkUser)) {
+				throw this.createValidationError('Invalid Clerk user data', { clerkUser });
 			}
 
-			// Extract and translate user data
-			const marketplaceUser = {
+			const result = {
 				clerkId: clerkUser.id,
 				email: this.extractEmail(clerkUser),
 				firstName: this.extractFirstName(clerkUser),
@@ -42,17 +54,10 @@ export class ClerkAntiCorruptionLayer {
 				updatedAt: this.extractUpdatedAt(clerkUser),
 			};
 
-			this.logger.debug('Successfully translated Clerk user to marketplace format', {
-				clerkUserId: clerkUser.id,
-				email: marketplaceUser.email,
-			});
-
-			return marketplaceUser;
+			this.logTranslationSuccess('toMarketplaceUser', result);
+			return result;
 		} catch (error) {
-			this.logger.error('Failed to translate Clerk user to marketplace format', error.stack, {
-				clerkUser,
-				error,
-			});
+			this.logTranslationError('toMarketplaceUser', error, { clerkUser });
 			throw error;
 		}
 	}
@@ -61,16 +66,11 @@ export class ClerkAntiCorruptionLayer {
 	 * Translate Clerk user update to marketplace format
 	 */
 	toMarketplaceUserUpdate(clerkUser: any, previousUser?: any) {
-		this.logger.debug('Translating Clerk user update to marketplace format', {
-			clerkUserId: clerkUser?.id,
-		});
+		this.logTranslationStart('toMarketplaceUserUpdate', { clerkUserId: clerkUser?.id });
 
 		try {
-			// Validate Clerk user data
-			if (!this.validateClerkUser(clerkUser)) {
-				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_DATA, 'Invalid Clerk user data', {
-					clerkUser,
-				});
+			if (!this.validateExternalData(clerkUser)) {
+				throw this.createValidationError('Invalid Clerk user data', { clerkUser });
 			}
 
 			// Extract changes by comparing with previous user
@@ -103,24 +103,16 @@ export class ClerkAntiCorruptionLayer {
 				changes.metadata = this.extractMetadata(clerkUser);
 			}
 
-			const update = {
+			const result = {
 				clerkId: clerkUser.id,
 				changes,
 				updatedAt: this.extractUpdatedAt(clerkUser),
 			};
 
-			this.logger.debug('Successfully translated Clerk user update to marketplace format', {
-				clerkUserId: clerkUser.id,
-				changedFields: Object.keys(changes),
-			});
-
-			return update;
+			this.logTranslationSuccess('toMarketplaceUserUpdate', result);
+			return result;
 		} catch (error) {
-			this.logger.error('Failed to translate Clerk user update to marketplace format', error.stack, {
-				clerkUser,
-				previousUser,
-				error,
-			});
+			this.logTranslationError('toMarketplaceUserUpdate', error, { clerkUser, previousUser });
 			throw error;
 		}
 	}
@@ -129,33 +121,22 @@ export class ClerkAntiCorruptionLayer {
 	 * Translate Clerk user deletion to marketplace format
 	 */
 	toMarketplaceUserDeletion(clerkUserId: string) {
-		this.logger.debug('Translating Clerk user deletion to marketplace format', {
-			clerkUserId,
-		});
+		this.logTranslationStart('toMarketplaceUserDeletion', { clerkUserId });
 
 		try {
-			// Validate Clerk user ID
-			if (!this.validateClerkUserId(clerkUserId)) {
-				throw new AppError(ErrorType.VALIDATION, ErrorCodes.INVALID_EXTERNAL_USER_ID, 'Invalid Clerk user ID', {
-					clerkUserId,
-				});
+			if (!this.validateExternalUserId(clerkUserId)) {
+				throw this.createValidationError('Invalid Clerk user ID', { clerkUserId });
 			}
 
-			const deletion = {
+			const result = {
 				clerkId: clerkUserId,
 				deletedAt: new Date().toISOString(),
 			};
 
-			this.logger.debug('Successfully translated Clerk user deletion to marketplace format', {
-				clerkUserId,
-			});
-
-			return deletion;
+			this.logTranslationSuccess('toMarketplaceUserDeletion', result);
+			return result;
 		} catch (error) {
-			this.logger.error('Failed to translate Clerk user deletion to marketplace format', error.stack, {
-				clerkUserId,
-				error,
-			});
+			this.logTranslationError('toMarketplaceUserDeletion', error, { clerkUserId });
 			throw error;
 		}
 	}
@@ -268,155 +249,5 @@ export class ClerkAntiCorruptionLayer {
 			});
 			throw error;
 		}
-	}
-
-	// ============================================================================
-	// Data Extraction Methods
-	// ============================================================================
-
-	/**
-	 * Extract email from Clerk user data
-	 */
-	private extractEmail(clerkUser: any): string {
-		// Handle different Clerk API versions and structures
-		if (clerkUser.emailAddresses && clerkUser.emailAddresses.length > 0) {
-			return clerkUser.emailAddresses[0].emailAddress;
-		}
-
-		if (clerkUser.email_addresses && clerkUser.email_addresses.length > 0) {
-			return clerkUser.email_addresses[0].email_address;
-		}
-
-		if (clerkUser.primaryEmailAddress) {
-			return clerkUser.primaryEmailAddress.emailAddress;
-		}
-
-		if (clerkUser.primary_email_address) {
-			return clerkUser.primary_email_address.email_address;
-		}
-
-		if (clerkUser.email) {
-			return clerkUser.email;
-		}
-
-		throw new AppError(
-			ErrorType.VALIDATION,
-			ErrorCodes.INVALID_EXTERNAL_USER_DATA,
-			'Could not extract email from Clerk user data',
-			{ clerkUser },
-		);
-	}
-
-	/**
-	 * Extract first name from Clerk user data
-	 */
-	private extractFirstName(clerkUser: any): string {
-		return clerkUser.firstName || clerkUser.first_name || '';
-	}
-
-	/**
-	 * Extract last name from Clerk user data
-	 */
-	private extractLastName(clerkUser: any): string {
-		return clerkUser.lastName || clerkUser.last_name || '';
-	}
-
-	/**
-	 * Extract metadata from Clerk user data
-	 */
-	private extractMetadata(clerkUser: any): Record<string, any> {
-		return clerkUser.publicMetadata || clerkUser.public_metadata || {};
-	}
-
-	/**
-	 * Extract created at timestamp from Clerk user data
-	 */
-	private extractCreatedAt(clerkUser: any): string {
-		return clerkUser.createdAt || clerkUser.created_at || new Date().toISOString();
-	}
-
-	/**
-	 * Extract updated at timestamp from Clerk user data
-	 */
-	private extractUpdatedAt(clerkUser: any): string {
-		return clerkUser.updatedAt || clerkUser.updated_at || new Date().toISOString();
-	}
-
-	// ============================================================================
-	// Validation Methods
-	// ============================================================================
-
-	/**
-	 * Validate Clerk user data
-	 */
-	private validateClerkUser(clerkUser: any): boolean {
-		const isValid = clerkUser && typeof clerkUser.id === 'string' && clerkUser.id.length > 0;
-
-		if (!isValid) {
-			this.logger.warn('Invalid Clerk user data', { clerkUser });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate Clerk user ID
-	 */
-	private validateClerkUserId(clerkUserId: string): boolean {
-		const isValid = typeof clerkUserId === 'string' && clerkUserId.length > 0 && clerkUserId.startsWith('user_');
-
-		if (!isValid) {
-			this.logger.warn('Invalid Clerk user ID', { clerkUserId });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate marketplace user data
-	 */
-	private validateMarketplaceUser(marketplaceUser: {
-		email: string;
-		firstName?: string;
-		lastName?: string;
-		metadata?: Record<string, any>;
-	}): boolean {
-		const isValid =
-			marketplaceUser &&
-			typeof marketplaceUser.email === 'string' &&
-			marketplaceUser.email.includes('@') &&
-			(!marketplaceUser.firstName || typeof marketplaceUser.firstName === 'string') &&
-			(!marketplaceUser.lastName || typeof marketplaceUser.lastName === 'string') &&
-			(!marketplaceUser.metadata || typeof marketplaceUser.metadata === 'object');
-
-		if (!isValid) {
-			this.logger.warn('Invalid marketplace user data', { marketplaceUser });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate marketplace user update data
-	 */
-	private validateMarketplaceUserUpdate(updates: {
-		email?: string;
-		firstName?: string;
-		lastName?: string;
-		metadata?: Record<string, any>;
-	}): boolean {
-		const isValid =
-			updates &&
-			typeof updates === 'object' &&
-			(!updates.email || (typeof updates.email === 'string' && updates.email.includes('@'))) &&
-			(!updates.firstName || typeof updates.firstName === 'string') &&
-			(!updates.lastName || typeof updates.lastName === 'string') &&
-			(!updates.metadata || typeof updates.metadata === 'object');
-
-		if (!isValid) {
-			this.logger.warn('Invalid marketplace user update data', { updates });
-		}
-
-		return isValid;
 	}
 }
