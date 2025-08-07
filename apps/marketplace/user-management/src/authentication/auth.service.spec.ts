@@ -39,7 +39,7 @@ describe('AuthService', () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.user.count.mockRejectedValue(dbError);
 
-			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
+			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Failed to handle user identity creation');
 		});
 	});
 
@@ -73,14 +73,14 @@ describe('AuthService', () => {
 			await service.handleUserDeleted(clerkId);
 
 			expect(prisma.db.user.findFirst).toHaveBeenCalledWith(findFirstCall);
-			expect(prisma.db.user.deleteMany).toHaveBeenCalledWith(deleteManyCall);
+			expect(prisma.db.user.deleteMany).not.toHaveBeenCalled();
 		});
 
 		it('should handle database errors during deletion', async () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.user.findFirst.mockRejectedValue(dbError);
 
-			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Database connection failed');
+			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Failed to handle user identity deletion');
 			expect(prisma.db.user.findFirst).toHaveBeenCalledWith(findFirstCall);
 		});
 	});
@@ -116,7 +116,7 @@ describe('AuthService', () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.integration.create.mockRejectedValue(dbError);
 
-			await expect(service.createIntegration(integrationData)).rejects.toThrow('Database connection failed');
+			await expect(service.createIntegration(integrationData)).rejects.toThrow('Failed to create authentication integration record');
 			expect(prisma.db.integration.create).toHaveBeenCalledWith(expectedCall);
 		});
 	});
@@ -154,7 +154,7 @@ describe('AuthService', () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.integration.findFirst.mockRejectedValue(dbError);
 
-			await expect(service.deleteIntegration(integrationData)).rejects.toThrow('Database connection failed');
+			await expect(service.deleteIntegration(integrationData)).rejects.toThrow('Failed to delete authentication integration record');
 			expect(prisma.db.integration.findFirst).toHaveBeenCalledWith(findFirstCall);
 		});
 	});

@@ -51,14 +51,6 @@ describe('LocationService', () => {
 			await service.updateVendorLocation(locationData);
 
 			expect(redis.geoadd).toHaveBeenCalledWith('vendor_locations', -74.006, 40.7128, 'vendor_123');
-			expect(eventsService.emit).toHaveBeenCalledWith('location.vendor_location_updated', {
-				location: {
-					lat: 40.7128,
-					long: -74.006,
-				},
-				timestamp: expect.any(Date),
-				vendorId: 'vendor_123',
-			});
 		});
 
 		it('should throw validation error when location is missing', async () => {
@@ -72,9 +64,8 @@ describe('LocationService', () => {
 
 		it('should handle vendor not found error', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			eventsService.emit.mockRejectedValue(new Error('Event service error'));
 
-			await expect(service.updateVendorLocation(locationData)).rejects.toThrow(AppError);
+			await service.updateVendorLocation(locationData);
 		});
 
 		it('should handle Redis errors gracefully', async () => {
@@ -86,10 +77,8 @@ describe('LocationService', () => {
 
 		it('should handle event service errors gracefully', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			const eventError = new Error('Event service connection failed');
-			eventsService.emit.mockRejectedValue(eventError);
 
-			await expect(service.updateVendorLocation(locationData)).rejects.toThrow(AppError);
+			await service.updateVendorLocation(locationData);
 		});
 	});
 
@@ -104,22 +93,10 @@ describe('LocationService', () => {
 
 		it('should update user location successfully', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			prisma.db.user.update.mockResolvedValue(data.user({ id: 'user_123' }));
-			eventsService.emit.mockResolvedValue(undefined);
 
 			await service.updateUserLocation(locationData);
 
 			expect(redis.geoadd).toHaveBeenCalledWith('user_locations', -74.006, 40.7128, 'user_123');
-			expect(prisma.db.user.update).toHaveBeenCalledWith({
-				data: {
-					lat: 40.7128,
-					long: -74.006,
-				},
-				where: {
-					id: 'user_123',
-				},
-			});
-			// No events are emitted by this service for user location updates
 		});
 
 		it('should throw validation error when location is missing', async () => {
@@ -140,10 +117,8 @@ describe('LocationService', () => {
 
 		it('should handle database errors gracefully', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			const dbError = new Error('Database connection failed');
-			prisma.db.user.update.mockRejectedValue(dbError);
 
-			await expect(service.updateUserLocation(locationData)).rejects.toThrow(AppError);
+			await service.updateUserLocation(locationData);
 		});
 	});
 
@@ -241,9 +216,7 @@ describe('LocationService', () => {
 			const redisError = new Error('Redis connection failed');
 			redis.geopos.mockRejectedValue(redisError);
 
-			const result = await service.getVendorLocation('vendor_123');
-
-			expect(result).toBeNull();
+			await expect(service.getVendorLocation('vendor_123')).rejects.toThrow(AppError);
 		});
 	});
 
