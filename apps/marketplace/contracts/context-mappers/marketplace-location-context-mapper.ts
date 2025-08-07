@@ -5,7 +5,7 @@ import {
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
 import { Injectable } from '@nestjs/common';
-import { BaseContextMapper } from '@app/nest/modules/contracts';
+import { BaseContextMapper, ContractUtils } from '@app/nest/modules/contracts';
 
 /**
  * Context Mapper for Marketplace ↔ Location Services communication
@@ -28,10 +28,10 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 	validateSourceData(data: any): boolean {
 		if (data.location) {
-			return this.validateLocation(data.location);
+			return ContractUtils.validateLocation(data.location);
 		}
 		if (data.bounds) {
-			return this.validateBounds(data.bounds);
+			return ContractUtils.validateBounds(data.bounds);
 		}
 		return true;
 	}
@@ -57,7 +57,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: vendorId, // Location Services uses 'entityId'
-				coordinates: this.transformLocationToLatLng(location),
+				coordinates: ContractUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),
@@ -85,7 +85,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: userId, // Location Services uses 'entityId'
-				coordinates: this.transformLocationToLatLng(location),
+				coordinates: ContractUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),
@@ -111,7 +111,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 				throw this.createValidationError('Invalid bounds data', { bounds });
 			}
 
-			const result = this.transformBounds(bounds);
+			const result = ContractUtils.transformBounds(bounds);
 
 			this.logTranslationSuccess('toLocationServicesBounds', result);
 			return result;
@@ -133,7 +133,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			}
 
 			const result = {
-				center: this.transformLocationToLatLng(center),
+				center: ContractUtils.transformLocationToLatLng(center),
 				radiusInMeters,
 			entityType: 'vendor', // Location Services needs to know entity type
 		};
@@ -161,7 +161,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				vendorId: locationServicesData.entityId, // Marketplace uses 'vendorId'
-				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				lastUpdated: locationServicesData.lastUpdateTime,
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
@@ -192,7 +192,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				userId: locationServicesData.entityId, // Marketplace uses 'userId'
-				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				lastUpdated: locationServicesData.lastUpdateTime,
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
@@ -227,7 +227,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			const result = {
 				entityId: locationServicesData.entityId,
 				entityType: locationServicesData.entityType,
-				location: this.transformLatLngToLocation(locationServicesData.coordinates),
+				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				timestamp: locationServicesData.timestamp,
 			};
 
