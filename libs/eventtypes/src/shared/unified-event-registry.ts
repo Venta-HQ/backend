@@ -1,5 +1,5 @@
-import { userEventSchemas, UserEventDataMap } from '../domains/user/user.events';
-import { vendorEventSchemas, VendorEventDataMap } from '../domains/vendor/vendor.events';
+import { userEventSchemas, UserEventDataMap } from '../domains/marketplace/user/user.events';
+import { vendorEventSchemas, VendorEventDataMap } from '../domains/marketplace/vendor/vendor.events';
 
 /**
  * Combine all domain event schemas
