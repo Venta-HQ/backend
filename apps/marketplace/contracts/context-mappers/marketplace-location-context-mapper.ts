@@ -4,7 +4,7 @@ import {
 	MarketplaceUserLocation,
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
-import { BaseContextMapper } from '@app/nest/modules/contracts';
+import { BaseContextMapper } from '@app/nest/modules';
 import { TransformationUtils, ValidationUtils } from '@app/utils';
 import { Injectable } from '@nestjs/common';
 
@@ -93,7 +93,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: userId, // Location Services uses 'entityId'
-				coordinates: LocationContractUtils.transformLocationToLatLng(location),
+				coordinates: TransformationUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),
@@ -119,7 +119,10 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 				throw this.createValidationError('Invalid bounds data', { bounds });
 			}
 
-			const result = LocationContractUtils.transformBounds(bounds);
+			const result = TransformationUtils.transformBounds({
+				southWest: bounds.swLocation,
+				northEast: bounds.neLocation,
+			});
 
 			this.logTranslationSuccess('toLocationServicesBounds', result);
 			return result;
@@ -141,7 +144,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			}
 
 			const result = {
-				center: LocationContractUtils.transformLocationToLatLng(center),
+				center: TransformationUtils.transformLocationToLatLng(center),
 				radiusInMeters,
 				entityType: 'vendor', // Location Services needs to know entity type
 			};
@@ -176,7 +179,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				vendorId: locationServicesData.entityId, // Marketplace uses 'vendorId'
-				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
+				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				lastUpdated: locationServicesData.lastUpdateTime,
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
@@ -207,7 +210,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				userId: locationServicesData.entityId, // Marketplace uses 'userId'
-				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
+				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				lastUpdated: locationServicesData.lastUpdateTime,
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
@@ -242,7 +245,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			const result = {
 				entityId: locationServicesData.entityId,
 				entityType: locationServicesData.entityType,
-				location: ContractUtils.transformLatLngToLocation(locationServicesData.coordinates),
+				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
 				timestamp: locationServicesData.timestamp,
 			};
 
