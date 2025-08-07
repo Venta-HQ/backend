@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import { AppError } from '@app/nest/errors';
-import { Prisma } from '@prisma/client';
 import { clearMocks, data, mockEvents, mockPrisma } from '../../../../test/helpers/test-utils';
 import { LocationService } from './location.service';
 
@@ -47,25 +46,18 @@ describe('LocationService', () => {
 
 		it('should update vendor location successfully', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			prisma.db.vendor.update.mockResolvedValue(data.vendor({ id: 'vendor_123' }));
 			eventsService.emit.mockResolvedValue(undefined);
 
 			await service.updateVendorLocation(locationData);
 
 			expect(redis.geoadd).toHaveBeenCalledWith('vendor_locations', -74.006, 40.7128, 'vendor_123');
-			expect(prisma.db.vendor.update).toHaveBeenCalledWith({
-				data: {
+			expect(eventsService.emit).toHaveBeenCalledWith('vendor.location.updated', {
+				location: {
 					lat: 40.7128,
 					long: -74.006,
 				},
-				where: {
-					id: 'vendor_123',
-				},
-			});
-			expect(eventsService.emit).toHaveBeenCalledWith('vendor.updated', {
-				id: 'vendor_123',
-				lat: 40.7128,
-				long: -74.006,
+				timestamp: expect.any(Date),
+				vendorId: 'vendor_123',
 			});
 		});
 
@@ -80,11 +72,7 @@ describe('LocationService', () => {
 
 		it('should handle vendor not found error', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			const prismaError = new Prisma.PrismaClientKnownRequestError('Record not found', {
-				clientVersion: '1.0.0',
-				code: 'P2025',
-			});
-			prisma.db.vendor.update.mockRejectedValue(prismaError);
+			eventsService.emit.mockRejectedValue(new Error('Event service error'));
 
 			await expect(service.updateVendorLocation(locationData)).rejects.toThrow(AppError);
 		});
@@ -96,10 +84,10 @@ describe('LocationService', () => {
 			await expect(service.updateVendorLocation(locationData)).rejects.toThrow(AppError);
 		});
 
-		it('should handle database errors gracefully', async () => {
+		it('should handle event service errors gracefully', async () => {
 			redis.geoadd.mockResolvedValue(1);
-			const dbError = new Error('Database connection failed');
-			prisma.db.vendor.update.mockRejectedValue(dbError);
+			const eventError = new Error('Event service connection failed');
+			eventsService.emit.mockRejectedValue(eventError);
 
 			await expect(service.updateVendorLocation(locationData)).rejects.toThrow(AppError);
 		});

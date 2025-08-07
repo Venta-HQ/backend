@@ -1,4 +1,4 @@
-import { VendorEventData, vendorEventSchemas } from '../../domains/vendor/vendor.events';
+import { VendorEventData, VendorLocationUpdateEventData, vendorEventSchemas } from '../../domains/vendor/vendor.events';
 
 /**
  * Combine all domain event schemas
@@ -25,4 +25,5 @@ export type EventDataMap = {
 	'vendor.created': VendorEventData;
 	'vendor.deleted': VendorEventData;
 	'vendor.updated': VendorEventData;
+	'vendor.location.updated': VendorLocationUpdateEventData;
 };

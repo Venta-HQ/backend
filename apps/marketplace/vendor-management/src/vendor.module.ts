@@ -2,11 +2,12 @@ import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { VendorLocationEventsController } from './vendor-location-events.controller';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
 
 @Module({
-	controllers: [VendorController],
+	controllers: [VendorController, VendorLocationEventsController],
 	imports: [
 		BootstrapModule.forRoot({
 			additionalModules: [

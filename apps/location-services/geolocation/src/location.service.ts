@@ -1,11 +1,16 @@
 import Redis from 'ioredis';
+import { z } from 'zod';
+import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
-import { LocationUpdate, VendorLocationRequest, VendorLocationResponse } from '@app/proto/location';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+
+// Type definitions for the service
+type LocationUpdate = z.infer<typeof GrpcLocationUpdateSchema>;
+type VendorLocationRequest = z.infer<typeof GrpcVendorLocationRequestSchema>;
+type VendorLocationResponse = { vendors: Array<{ id: string; location: { lat: number; long: number } }> };
 
 @Injectable()
 export class LocationService {
@@ -18,7 +23,7 @@ export class LocationService {
 	) {}
 
 	/**
-	 * Update vendor location in both Redis geospatial store and database
+	 * Update vendor location in Redis geospatial store and publish event
 	 * @param data Location update data
 	 * @returns Empty response
 	 */
@@ -37,31 +42,18 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			// Update database
-			await this.prisma.db.vendor.update({
-				data: {
+			// Publish location update event for vendor management to handle
+			await this.eventService.emit('vendor.location.updated', {
+				location: {
 					lat: data.location.lat,
 					long: data.location.long,
 				},
-				where: {
-					id: data.entityId,
-				},
-			});
-
-			// Publish location update event using EventService
-			await this.eventService.emit('vendor.updated', {
-				id: data.entityId,
-				lat: data.location.lat,
-				long: data.location.long,
+				timestamp: new Date(),
+				vendorId: data.entityId,
 			});
 
 			this.logger.log(`Updated vendor location: ${data.entityId} at (${data.location.lat}, ${data.location.long})`);
 		} catch (e) {
-			if (e instanceof Prisma.PrismaClientKnownRequestError) {
-				if (e.code === 'P2025') {
-					throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, { vendorId: data.entityId });
-				}
-			}
 			this.logger.error(`Failed to update vendor location for ${data.entityId}:`, e);
 			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor location' });
 		}

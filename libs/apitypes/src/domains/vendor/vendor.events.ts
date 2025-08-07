@@ -24,8 +24,24 @@ export const vendorEventDataSchema = z.object({
 export type VendorEventData = z.infer<typeof vendorEventDataSchema> &
 	Required<Pick<z.infer<typeof vendorEventDataSchema>, 'id'>>;
 
+/**
+ * Vendor location update event schema
+ * Used when vendor location is updated via location service
+ */
+export const vendorLocationUpdateEventDataSchema = z.object({
+	vendorId: z.string(),
+	location: z.object({
+		lat: z.number(),
+		long: z.number(),
+	}),
+	timestamp: z.date(),
+});
+
+export type VendorLocationUpdateEventData = z.infer<typeof vendorLocationUpdateEventDataSchema>;
+
 export const vendorEventSchemas = {
 	'vendor.created': vendorEventDataSchema,
 	'vendor.deleted': vendorEventDataSchema,
 	'vendor.updated': vendorEventDataSchema,
+	'vendor.location.updated': vendorLocationUpdateEventDataSchema,
 } as const;

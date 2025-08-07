@@ -66,4 +66,34 @@ export class VendorService {
 		});
 		await this.eventService.emit('vendor.deleted', vendor);
 	}
+
+	/**
+	 * Update vendor location from location service events
+	 * This method is called when the location service publishes a vendor.location.updated event
+	 * It doesn't require user authorization since it's a system-level operation
+	 */
+	async updateVendorLocation(vendorId: string, location: { lat: number; long: number }) {
+		this.logger.log(`Updating vendor location from location service: ${vendorId}`);
+
+		try {
+			// Update vendor location in database
+			const vendor = await this.prisma.db.vendor.update({
+				data: {
+					lat: location.lat,
+					long: location.long,
+				},
+				where: {
+					id: vendorId,
+				},
+			});
+
+			// Publish vendor updated event for other services (like search-discovery)
+			await this.eventService.emit('vendor.updated', vendor);
+
+			this.logger.log(`Updated vendor location in database: ${vendorId} at (${location.lat}, ${location.long})`);
+		} catch (e) {
+			this.logger.error(`Failed to update vendor location in database for ${vendorId}:`, e);
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, { operation: 'update vendor location in database' });
+		}
+	}
 }
