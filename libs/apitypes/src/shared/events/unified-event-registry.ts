@@ -25,6 +25,6 @@ export type EventDataMap = {
 	// Vendor events
 	'vendor.created': VendorEventData;
 	'vendor.deleted': VendorEventData;
-	'vendor.updated': VendorEventData;
 	'vendor.location.updated': VendorLocationUpdateEventData;
+	'vendor.updated': VendorEventData;
 };
