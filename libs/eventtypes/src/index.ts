@@ -1,10 +1,6 @@
-// Main exports from unified event registry
-export {
-	ALL_EVENT_SCHEMAS,
-	AvailableEventSubjects,
-	EventDataMap,
-} from './shared/unified-event-registry';
+// Domain exports
+export * from './domains/user';
+export * from './domains/vendor';
 
-// Domain-specific exports
-export * from './domains/user/user.events';
-export * from './domains/vendor/vendor.events'; 
+// Shared exports (includes unified event registry and base types)
+export * from './shared';

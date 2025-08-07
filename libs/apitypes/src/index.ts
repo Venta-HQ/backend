@@ -5,5 +5,4 @@ export * from './domains/location';
 export * from './domains/subscription';
 
 // Shared exports
-export * from './shared/events';
 export * from './shared/helpers';

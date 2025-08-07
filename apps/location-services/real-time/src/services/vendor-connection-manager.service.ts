@@ -9,11 +9,6 @@ export interface VendorConnectionInfo {
 	vendorId: string;
 }
 
-interface VendorRoomMembership {
-	userId: string;
-	vendorId: string;
-}
-
 @Injectable()
 export class VendorConnectionManagerService {
 	private readonly logger = new Logger(VendorConnectionManagerService.name);

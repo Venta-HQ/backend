@@ -69,7 +69,10 @@ export class VendorService {
 			});
 
 			// Domain event - vendor created (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.created', vendor);
+			await this.eventService.emit('vendor.created', {
+				id: '123',
+				lat: 1,
+			});
 
 			return vendor.id;
 		} catch (error) {
