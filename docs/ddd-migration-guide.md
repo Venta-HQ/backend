@@ -1,25 +1,35 @@
-# Domain-Driven Design (DDD) Migration Guide
+# Domain-Driven Design Migration Guide
 
-This document provides a comprehensive overview of our completed DDD migration, including the approach taken, patterns implemented, and lessons learned.
+## Overview
 
-## Migration Overview
+This guide outlines our comprehensive migration to Domain-Driven Design (DDD) architecture. We're transforming our monolithic structure into a clean, bounded context-based system with clear domain boundaries and type-safe communication.
 
-We successfully transitioned from a technical-focused architecture to a domain-driven design that aligns with business capabilities and improves team scalability. The migration is planned across five phases, with the first three phases completed and the remaining phases ready for implementation.
+## 🎯 **Migration Strategy: Unified Patterns**
 
-## ✅ Completed Migration
+We've decided to use **unified patterns** across the entire system:
 
-### Phase 1: Domain Separation
+- **Domain Contracts** for all inter-domain communication
+- **Context Mappings** for all data translation between domains
+- **No mixing** of direct gRPC calls with domain contracts
 
-**Status**: ✅ COMPLETE
+This ensures consistency, maintainability, and clear boundaries throughout the system.
 
-**Objective**: Establish clear domain boundaries and organize code by business capabilities.
+---
 
-**Key Achievements**:
+## 📊 **Migration Status**
 
-- Separated services by business domains (marketplace, location-services, communication, infrastructure)
-- Established clear domain boundaries with explicit domain configuration
-- Created domain-specific modules and services
-- Implemented consistent naming patterns across all domains
+### ✅ **Phase 1: Domain Separation - COMPLETE**
+
+**Status**: ✅ COMPLETE  
+**Date**: Completed in previous iterations  
+**Scope**: Initial domain separation and service boundaries
+
+**Completed Tasks**:
+
+- ✅ Separated services by business domains (marketplace, location-services, communication, infrastructure)
+- ✅ Established clear domain boundaries
+- ✅ Created domain-specific modules and services
+- ✅ Implemented basic domain separation patterns
 
 **Patterns Implemented**:
 
@@ -38,19 +48,19 @@ const app = await BootstrapService.bootstrapNatsMicroservice({
 });
 ```
 
-### Phase 2: Event Schema Standardization
+### ✅ **Phase 2: Event Schema Standardization - COMPLETE**
 
-**Status**: ✅ COMPLETE
+**Status**: ✅ COMPLETE  
+**Date**: Completed in previous iterations  
+**Scope**: Standardized event schemas and validation
 
-**Objective**: Standardize event schemas and validation across all domains.
+**Completed Tasks**:
 
-**Key Achievements**:
-
-- Implemented Zod-based event schemas for type safety
-- Created centralized `eventtypes` library for event management
-- Standardized event validation patterns
-- Established type-safe event emission
-- Implemented unified event registry
+- ✅ Implemented Zod-based event schemas for type safety
+- ✅ Created centralized `eventtypes` library for event management
+- ✅ Standardized event validation patterns
+- ✅ Established type-safe event emission
+- ✅ Implemented unified event registry
 
 **Patterns Implemented**:
 
@@ -65,23 +75,34 @@ export const vendorEventSchemas = {
 			lng: z.number().min(-180).max(180),
 		}),
 		timestamp: z.string().default(() => new Date().toISOString()),
-	}),
-} as const satisfies EnforceValidDomainEvents<'marketplace'>;
+	}) as const satisfies EnforceValidDomainEvents<'marketplace'>,
+} as const;
 ```
 
-### Phase 3: Domain Events with Rich Context
+### ✅ **Phase 3: Domain Events with Rich Context - COMPLETE**
 
-**Status**: ✅ COMPLETE
+**Status**: ✅ COMPLETE  
+**Date**: December 2024  
+**Scope**: Transition to domain events with automatic business context
 
-**Objective**: Transform events to domain-driven naming with automatic business context.
+**Completed Tasks**:
 
-**Key Achievements**:
+- ✅ **DDD Event Naming**: Migrated all events to domain-based naming (`marketplace.vendor_onboarded`, `location.vendor_location_updated`)
+- ✅ **Automatic Context Extraction**: Enhanced `EventService` to automatically extract business identifiers from Zod schemas
+- ✅ **Type-Based Validation**: Implemented compile-time validation for event patterns using TypeScript template literal types
+- ✅ **Schema-Driven Business Context**: Events now automatically include relevant business identifiers (vendorId, userId, etc.)
+- ✅ **Simplified API**: Maintained existing `eventService.emit()` pattern while adding automatic context
+- ✅ **Event Structure Refactoring**: Updated `BaseEvent` to use `context`, `meta`, and `data` structure
+- ✅ **Comprehensive Cleanup**: Removed theoretical/unused domains and schemas
+- ✅ **Logging Standardization**: Fixed and standardized all logging patterns across the codebase
 
-- Migrated all events to domain-based naming (`marketplace.vendor.onboarded`)
-- Enhanced `EventService` with automatic context extraction
-- Implemented type-based validation for event patterns
-- Standardized logging patterns across the codebase
-- Removed theoretical/unused domains and schemas
+**Key Improvements**:
+
+- **Event Naming**: `vendor.onboarded` → `marketplace.vendor.onboarded`
+- **Automatic Context**: No more manual business context extraction
+- **Type Safety**: Compile-time validation of event patterns
+- **Cleaner Schemas**: Removed unused fields, added missing ones
+- **Structured Logging**: All logs now include proper structured data and stack traces
 
 **Patterns Implemented**:
 
@@ -105,243 +126,506 @@ const event: BaseEvent = {
 };
 ```
 
-### Phase 4: Bounded Contexts
+### ✅ **Phase 4: Bounded Contexts - IN PROGRESS**
 
-**Status**: ⏳ PENDING
+**Status**: ✅ Week 1 Complete  
+**Date**: December 2024  
+**Scope**: Implement bounded context boundaries with context mappings and domain contracts
 
-**Objective**: Define clear bounded contexts and implement context mapping between domains.
+**Migration Strategy**: **Unified Patterns**
 
-**Planned Achievements**:
+- **Domain Contracts** for all inter-domain communication
+- **Context Mappings** for all data translation between domains
+- **No mixing** of direct gRPC calls with domain contracts
 
-- Establish explicit bounded context boundaries for each domain
-- Implement context mapping patterns between domains
-- Define domain interfaces and contracts
-- Optimize domain structure for team ownership and scalability
-- Validate context boundaries through integration testing
+**Completed Tasks**:
+
+- ✅ **Define Bounded Contexts**: Established clear boundaries for each domain
+- ✅ **Context Mapping Strategy**: Defined mapping between different bounded contexts
+- ✅ **Domain Interface Contracts**: Defined explicit contracts between bounded contexts
+- ✅ **Bounded Context Communication Guide**: Created comprehensive guide explaining why domain contracts are necessary
+- ✅ **Context Mapping Reorganization**: Reorganized files to follow domain-specific patterns
+- 🔲 **Context Mapping Implementation**: Implement mapping services and anti-corruption layers
+- 🔲 **Domain Boundaries**: Establish explicit interfaces between domains
+- 🔲 **Team Ownership**: Optimize domain structure for team scalability
+- 🔲 **Integration Testing**: Validate context boundaries and interfaces
+- 🔲 **Documentation**: Update team documentation and training materials
+
+**Detailed Implementation Plan**:
+
+#### ✅ **Week 1: Define Bounded Context Boundaries - COMPLETE**
+
+- ✅ **Context Boundary Analysis**: Analyze current domain interactions and identify context boundaries
+  - ✅ Document current domain structure and interactions
+  - ✅ Identify shared concepts and context mappings
+  - ✅ Create team ownership matrix for each bounded context
+- ✅ **Context Mapping Strategy**: Define how concepts map between different bounded contexts
+  - ✅ Establish translation patterns for cross-context communication
+  - ✅ Define anti-corruption layer specifications
+  - ✅ Create context mapping interfaces
+- ✅ **Domain Interface Contracts**: Define explicit contracts between bounded contexts
+  - ✅ Create domain interface definitions
+  - ✅ Define contract schemas for cross-domain communication
+  - ✅ Specify integration points
+
+#### **Week 2: Implement Context Mapping**
+
+- **Context Mapping Services**: Implement context mapping services for each domain
+  - Create `MarketplaceLocationContextMapper` for vendor/user location translation
+  - Create `MarketplaceCommunicationContextMapper` for external service integration
+  - Create `LocationMarketplaceContextMapper` for business data translation
+  - Implement efficient translation with minimal overhead (<5ms)
+- **Anti-Corruption Layers**: Implement anti-corruption layers for external integrations
+  - Create anti-corruption layer for Clerk webhook integrations
+  - Create anti-corruption layer for RevenueCat webhook integrations
+  - Implement external API translation patterns with type safety
+  - Develop data transformation utilities with validation
+- **Context Validation**: Implement validation for context boundaries
+  - Create context boundary validation middleware using Zod schemas
+  - Implement cross-context data validation with clear error messages
+  - Add error handling for context violations with proper logging
+  - Create validation utilities for contract compliance
+
+#### **Week 3: Implement Domain Contracts**
+
+- **Domain Contract Implementation**: Implement domain contract interfaces with gRPC
+  - Create `LocationContractImpl` implementing `MarketplaceLocationContract`
+  - Create `CommunicationContractImpl` implementing `MarketplaceCommunicationContract`
+  - Create `InfrastructureContractImpl` implementing `MarketplaceInfrastructureContract`
+  - Implement contract-level error handling and retry logic
+- **Contract Testing**: Create comprehensive testing for all contracts
+  - Write unit tests for contract implementations
+  - Create integration tests for contract interactions
+  - Implement contract-level metrics and monitoring
+  - Add performance benchmarks for contract calls
+- **Contract Documentation**: Document all contract interfaces and implementations
+  - Create JSDoc documentation for all contract methods
+  - Document error scenarios and handling
+  - Create usage examples and best practices
+  - Document performance characteristics and limitations
+
+#### **Week 4: Testing & Validation**
+
+- Write comprehensive tests for contracts and mappings
+- Implement contract-level metrics and monitoring
+- Validate performance and error handling
+
+#### **Week 5: Documentation & Training**
+
+- Create implementation guides
+- Document best practices
+- Train team on new patterns
+
+#### **Week 6: Migration & Cleanup**
+
+- Migrate existing services to use contracts
+- Remove direct gRPC dependencies
+- Clean up legacy code
+
+**Success Metrics**:
+
+**Technical Metrics**:
+
+- **Contract Coverage**: 100% of inter-domain communication uses domain contracts
+- **Type Safety**: 0 compile-time errors from contract violations
+- **Test Coverage**: >90% coverage for all contracts and mappings
+- **Performance**: <5ms overhead for contract translation
+- **Error Rate**: <1% context-related errors in production
+
+**Business Metrics**:
+
+- **Development Velocity**: Faster feature development due to clear boundaries
+- **Bug Reduction**: Fewer integration bugs due to type safety
+- **Team Productivity**: Independent domain development without coordination overhead
+- **Code Quality**: Consistent patterns reduce cognitive load and maintenance burden
+
+**Risk Mitigation**:
+
+**Technical Risks**:
+
+- **Performance Overhead**: Monitor contract translation times and optimize
+- **Complexity**: Start with simple contracts and evolve gradually
+- **Breaking Changes**: Use semantic versioning for contracts
+
+**Team Risks**:
+
+- **Learning Curve**: Provide comprehensive training and examples
+- **Resistance to Change**: Demonstrate clear benefits with metrics
+- **Inconsistent Implementation**: Establish clear guidelines and code reviews
+
+### ⏳ **Phase 5: Advanced DDD Patterns - PENDING**
+
+**Status**: ⏳ PENDING  
+**Date**: Not yet started  
+**Scope**: Implement advanced DDD patterns for complex business logic
+
+**Planned Tasks**:
+
+- 🔲 **Aggregates**: Implement aggregate patterns for complex business entities
+- 🔲 **Domain Repositories**: Add repository patterns for data access
+- 🔲 **Value Objects**: Implement value objects for business concepts
+- 🔲 **Domain Specifications**: Add specification patterns for complex queries
+- 🔲 **Domain Services**: Enhance domain services with advanced patterns
+- 🔲 **Event Sourcing**: Consider event sourcing for audit trails and business history
 
 **Implementation Strategy**:
 
-```typescript
-// Example: Context mapping between marketplace and location domains
-export interface LocationContextMapping {
-	// Map marketplace vendor concepts to location domain
-	vendorLocation: {
-		marketplaceVendorId: string;
-		locationCoordinates: { lat: number; lng: number };
-		locationDomain: 'vendor_location';
-	};
-
-	// Map marketplace user concepts to location domain
-	userLocation: {
-		marketplaceUserId: string;
-		locationCoordinates: { lat: number; lng: number };
-		locationDomain: 'user_location';
-	};
-}
-```
-
-### Phase 5: Advanced DDD Patterns
-
-**Status**: ⏳ PENDING
-
-**Objective**: Implement advanced DDD patterns for complex business logic and data access.
-
-**Planned Achievements**:
-
-- Implement aggregate patterns for complex business entities
-- Add domain repositories for data access patterns
-- Create value objects for business concepts
-- Implement domain specifications for complex queries
-- Consider event sourcing for audit trails and business history
-
-**Implementation Strategy**:
-
-```typescript
-// Example: Aggregate pattern for Vendor
-export class VendorAggregate {
-	private constructor(
-		private readonly vendor: Vendor,
-		private readonly events: VendorEvent[] = [],
-	) {}
-
-	static create(onboardingData: VendorOnboardingData): VendorAggregate {
-		const vendor = new Vendor(onboardingData);
-		const event = new VendorOnboardedEvent(vendor.id, onboardingData);
-
-		return new VendorAggregate(vendor, [event]);
-	}
-
-	updateLocation(location: Location): VendorAggregate {
-		const updatedVendor = this.vendor.withLocation(location);
-		const event = new VendorLocationUpdatedEvent(this.vendor.id, location);
-
-		return new VendorAggregate(updatedVendor, [...this.events, event]);
-	}
-
-	getUncommittedEvents(): VendorEvent[] {
-		return this.events;
-	}
-}
-```
-
-## 🏗️ Architecture Patterns
-
-### Domain Organization
-
-```
-apps/
-├── marketplace/
-│   ├── user-management/     # User domain
-│   ├── vendor-management/   # Vendor domain
-│   └── search-discovery/    # Search domain
-├── location-services/       # Location domain
-└── communication/          # Communication domain
-```
-
-### Event Patterns
-
-```typescript
-// DDD Event Naming Convention
-'marketplace.vendor.onboarded'; // Domain.Subdomain.Action
-'location.vendor.location_updated'; // Domain.Subdomain.Action
-'marketplace.user.registered'; // Domain.Subdomain.Action
-```
-
-### Service Patterns
-
-```typescript
-// Domain Service with Business Logic
-export class VendorService {
-	async onboardVendor(onboardingData: VendorOnboardingData): Promise<string> {
-		// Business logic with domain context
-		const vendor = await this.prisma.db.vendor.create({
-			data: onboardingData,
-		});
-
-		// Emit domain event with automatic context
-		await this.eventService.emit('marketplace.vendor_onboarded', {
-			vendorId: vendor.id,
-			ownerId: vendor.ownerId,
-			location: onboardingData.location,
-		});
-
-		return vendor.id;
-	}
-}
-```
-
-### Logging Patterns
-
-```typescript
-// Structured logging with business context
-this.logger.log('Vendor onboarded successfully', {
-	vendorId,
-	ownerId,
-	location,
-});
-
-this.logger.error('Failed to onboard vendor', error.stack, {
-	error,
-	vendorId,
-	ownerId,
-});
-```
-
-## 🎯 Benefits Achieved
-
-### Business Alignment
-
-- **Domain-driven organization** reflects business structure
-- **Business terminology** used throughout codebase
-- **Domain experts** can understand and contribute to code
-- **Clear domain boundaries** established
-
-### Team Scalability
-
-- **Independent domain teams** can work in parallel
-- **Clear ownership** of domain-specific code
-- **Reduced coupling** between domains
-- **Consistent patterns** across all domains
-
-### Technical Excellence
-
-- **Type safety** with compile-time validation
-- **Structured logging** with rich context
-- **Centralized event management** with `eventtypes` library
-- **Unified error handling** with domain context
-- **Clean, maintainable code** with consistent patterns
-
-## 📊 Migration Metrics
-
-### Code Quality
-
-- **Event Schemas**: 8 domain events with automatic context
-- **Services**: 4 domain-aligned microservices
-- **Logging**: 100% standardized with structured data
-- **Type Safety**: Compile-time validation for all event patterns
-
-### Business Impact
-
-- **Domain Alignment**: 100% of events use business terminology
-- **Context Extraction**: Automatic business context in all events
-- **Observability**: Rich logging context for debugging
-- **Maintainability**: Consistent patterns reduce cognitive load
-
-## 🚀 Implementation Lessons
-
-### What Worked Well
-
-1. **Gradual Migration**: Phased approach prevented disruption
-2. **Type Safety**: TypeScript template literal types for compile-time validation
-3. **Existing Patterns**: Maintained `eventService.emit()` approach as preferred
-4. **Centralized Management**: `eventtypes` library provides single source of truth
-5. **Structured Logging**: Automatic context extraction improves debugging
-
-### Key Decisions
-
-1. **Pragmatic DDD**: Focused on business benefits without over-engineering
-2. **Backward Compatibility**: Removed in Phase 3 for cleaner implementation
-3. **Type-Based Validation**: Chose compile-time validation over runtime checks
-4. **Schema-Driven Context**: Automatic context extraction from Zod schemas
-5. **Unified Logging**: Standardized all logging patterns across codebase
-
-### Best Practices Established
-
-1. **Domain Configuration**: Explicit domain declaration in all services
-2. **Event Naming**: Consistent `domain.subdomain_action` pattern
-3. **Context Extraction**: Automatic business context from schemas
-4. **Error Handling**: Unified `AppError` with domain context
-5. **Logging**: Structured data with business context and stack traces
-
-## 📚 Documentation
-
-### Related Documents
-
-- [DDD Migration Status](./ddd-migration-status.md) - Current migration status
-- [Event Pattern Enforcement](./event-pattern-enforcement.md) - Event validation patterns
-- [Error Handling Guide](./error-handling-guide.md) - Unified error handling patterns
-- [Logging Standards](./logging-standards.md) - Structured logging patterns
-
-### Code Examples
-
-- [Event Schemas](../libs/eventtypes/src/domains/) - Domain event definitions
-- [Service Patterns](../apps/marketplace/vendor-management/src/core/) - Domain service examples
-- [Bootstrap Configuration](../libs/nest/modules/core/bootstrap/) - Domain configuration examples
-
-## 🎉 Migration Complete
-
-The DDD migration has been successfully completed, achieving all objectives:
-
-- ✅ **Business Alignment**: Code reflects business capabilities
-- ✅ **Team Scalability**: Clear domain boundaries enable parallel development
-- ✅ **Type Safety**: Compile-time validation prevents runtime errors
-- ✅ **Observability**: Rich context and structured logging improve debugging
-- ✅ **Maintainability**: Clean, consistent patterns across the codebase
-
-The architecture now provides a solid foundation for future feature development and team growth.
+- **Week 1**: Identify candidates for aggregates and value objects
+- **Week 2**: Implement aggregate patterns for vendor and user entities
+- **Week 3**: Add domain repositories for data access patterns
+- **Week 4**: Implement value objects for business concepts
+- **Week 5**: Add domain specifications for complex queries
+- **Week 6**: Consider event sourcing for audit trails
 
 ---
 
-**Migration Status**: 🎉 **COMPLETE**  
-**Last Updated**: December 2024  
-**Next Review**: As needed for new features or architectural changes
+## 📋 **Making Domain Contracts & Context Mappings Manageable**
+
+### **🎯 When to Use Domain Contracts**
+
+**ALWAYS use domain contracts for:**
+
+- ✅ **Inter-domain communication** (Marketplace ↔ Location Services)
+- ✅ **Complex business logic** that spans multiple domains
+- ✅ **External service integration** (Clerk, RevenueCat, Algolia)
+- ✅ **Cross-cutting concerns** (file uploads, database operations)
+
+**NEVER use direct gRPC for:**
+
+- ❌ **Inter-domain communication** (creates tight coupling)
+- ❌ **Business logic** (violates domain boundaries)
+- ❌ **External integrations** (hard to test and maintain)
+
+### **🔧 Implementation Guidelines**
+
+#### **1. Keep Contracts Simple and Focused**
+
+```typescript
+// ✅ Good: Simple, focused contract
+interface MarketplaceLocationContract {
+	updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void>;
+	getVendorLocation(vendorId: string): Promise<{ lat: number; lng: number } | null>;
+	getVendorsInArea(bounds: LocationBounds): Promise<VendorLocation[]>;
+}
+
+// ❌ Bad: Overly complex contract
+interface MarketplaceLocationContract {
+	updateVendorLocation(vendorId: string, location: any, options?: any, metadata?: any): Promise<any>;
+	getVendorLocation(vendorId: string, includeHistory?: boolean, accuracy?: number): Promise<any>;
+	// ... 20 more methods
+}
+```
+
+#### **2. Use Domain-Specific Naming**
+
+```typescript
+// ✅ Good: Domain-specific names
+interface MarketplaceLocationContract {
+	updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void>;
+}
+
+interface LocationMarketplaceContract {
+	getVendorBusinessData(vendorId: string): Promise<VendorBusinessData | null>;
+}
+
+// ❌ Bad: Generic names
+interface LocationContract {
+	updateLocation(entityId: string, coordinates: any): Promise<void>;
+}
+```
+
+#### **3. Implement Contracts Efficiently**
+
+```typescript
+// ✅ Good: Clean implementation with translation
+@Injectable()
+export class LocationContractImpl implements MarketplaceLocationContract {
+	constructor(
+		private locationGrpcClient: LocationServiceClient,
+		private contextMapper: MarketplaceLocationContextMapper,
+	) {}
+
+	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
+		// 1. Translate using context mapping
+		const grpcRequest = this.contextMapper.toGrpcRequest(vendorId, location);
+
+		// 2. Call gRPC service
+		await this.locationGrpcClient.updateLocation(grpcRequest);
+	}
+}
+
+// ❌ Bad: Complex implementation
+@Injectable()
+export class LocationContractImpl implements MarketplaceLocationContract {
+	async updateVendorLocation(vendorId: string, location: any): Promise<void> {
+		// Complex business logic mixed with transport logic
+		const request = {
+			entityId: vendorId,
+			coordinates: location,
+			trackingStatus: 'active',
+			accuracy: 5.0,
+			lastUpdateTime: new Date().toISOString(),
+			metadata: { /* complex metadata */ },
+			options: { /* complex options */ },
+		};
+		await this.locationGrpcClient.updateLocation(request);
+	}
+}
+```
+
+### **📁 File Organization Strategy**
+
+#### **Domain-Specific Organization**
+
+```
+libs/apitypes/src/domains/
+├── marketplace/
+│   ├── context-mapping.types.ts    # Marketplace → Other domains
+│   ├── domain-contracts.types.ts   # What Marketplace can call
+│   └── index.ts                    # Clean exports
+├── location-services/
+│   ├── context-mapping.types.ts    # Location → Other domains
+│   ├── domain-contracts.types.ts   # What Location can call
+│   └── index.ts                    # Clean exports
+└── communication/
+    ├── context-mapping.types.ts    # Communication → Other domains
+    ├── domain-contracts.types.ts   # What Communication can call
+    └── index.ts                    # Clean exports
+```
+
+#### **Implementation Organization**
+
+```
+apps/marketplace/src/
+├── contracts/
+│   ├── location/
+│   │   ├── location-contract.impl.ts    # Implements MarketplaceLocationContract
+│   │   └── location-context-mapper.ts   # Translates data
+│   └── communication/
+│       ├── communication-contract.impl.ts
+│       └── communication-context-mapper.ts
+└── services/
+    └── vendor.service.ts              # Uses contracts
+```
+
+### **🧪 Testing Strategy**
+
+#### **Contract Testing**
+
+```typescript
+// Test the contract implementation
+describe('LocationContractImpl', () => {
+	let contract: MarketplaceLocationContract;
+	let mockGrpcClient: jest.Mocked<LocationServiceClient>;
+	let mockContextMapper: jest.Mocked<MarketplaceLocationContextMapper>;
+
+	beforeEach(() => {
+		mockGrpcClient = createMockGrpcClient();
+		mockContextMapper = createMockContextMapper();
+		contract = new LocationContractImpl(mockGrpcClient, mockContextMapper);
+	});
+
+	it('should update vendor location', async () => {
+		// Arrange
+		const vendorId = 'vendor-123';
+		const location = { lat: 40.7128, lng: -74.006 };
+		const grpcRequest = { entityId: vendorId, coordinates: location };
+
+		mockContextMapper.toGrpcRequest.mockReturnValue(grpcRequest);
+		mockGrpcClient.updateLocation.mockResolvedValue({});
+
+		// Act
+		await contract.updateVendorLocation(vendorId, location);
+
+		// Assert
+		expect(mockContextMapper.toGrpcRequest).toHaveBeenCalledWith(vendorId, location);
+		expect(mockGrpcClient.updateLocation).toHaveBeenCalledWith(grpcRequest);
+	});
+});
+```
+
+#### **Service Testing**
+
+```typescript
+// Test the service using the contract
+describe('VendorService', () => {
+	let service: VendorService;
+	let mockLocationContract: jest.Mocked<MarketplaceLocationContract>;
+
+	beforeEach(() => {
+		mockLocationContract = createMockLocationContract();
+		service = new VendorService(mockLocationContract);
+	});
+
+	it('should update vendor location through contract', async () => {
+		// Arrange
+		const vendorId = 'vendor-123';
+		const location = { lat: 40.7128, lng: -74.006 };
+
+		// Act
+		await service.updateVendorLocation(vendorId, location);
+
+		// Assert
+		expect(mockLocationContract.updateVendorLocation).toHaveBeenCalledWith(vendorId, location);
+	});
+});
+```
+
+### **🚀 Performance Considerations**
+
+#### **1. Minimize Translation Overhead**
+
+```typescript
+// ✅ Good: Efficient translation
+@Injectable()
+export class MarketplaceLocationContextMapper {
+	toGrpcRequest(vendorId: string, location: { lat: number; lng: number }) {
+		return {
+			entityId: vendorId,
+			coordinates: location, // Direct assignment, no deep cloning
+			trackingStatus: 'active',
+			timestamp: new Date().toISOString(),
+		};
+	}
+}
+
+// ❌ Bad: Expensive translation
+@Injectable()
+export class MarketplaceLocationContextMapper {
+	toGrpcRequest(vendorId: string, location: any) {
+		return {
+			entityId: vendorId,
+			coordinates: JSON.parse(JSON.stringify(location)), // Expensive deep clone
+			trackingStatus: 'active',
+			timestamp: new Date().toISOString(),
+			metadata: this.generateComplexMetadata(location), // Expensive operation
+			validation: this.validateLocation(location), // Expensive validation
+		};
+	}
+}
+```
+
+#### **2. Use Connection Pooling**
+
+```typescript
+// ✅ Good: Reuse gRPC connections
+@Injectable()
+export class LocationContractImpl implements MarketplaceLocationContract {
+	constructor(
+		private locationGrpcClient: LocationServiceClient, // Injected, reused
+		private contextMapper: MarketplaceLocationContextMapper,
+	) {}
+
+	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
+		const request = this.contextMapper.toGrpcRequest(vendorId, location);
+		await this.locationGrpcClient.updateLocation(request); // Reuses connection
+	}
+}
+```
+
+### **📊 Monitoring and Observability**
+
+#### **Contract-Level Metrics**
+
+```typescript
+@Injectable()
+export class LocationContractImpl implements MarketplaceLocationContract {
+	constructor(
+		private locationGrpcClient: LocationServiceClient,
+		private contextMapper: MarketplaceLocationContextMapper,
+		private metricsService: MetricsService,
+	) {}
+
+	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
+		const startTime = Date.now();
+
+		try {
+			const request = this.contextMapper.toGrpcRequest(vendorId, location);
+			await this.locationGrpcClient.updateLocation(request);
+
+			// Record success metrics
+			this.metricsService.recordContractCall('marketplace.location.updateVendorLocation', {
+				success: true,
+				duration: Date.now() - startTime,
+			});
+		} catch (error) {
+			// Record error metrics
+			this.metricsService.recordContractCall('marketplace.location.updateVendorLocation', {
+				success: false,
+				duration: Date.now() - startTime,
+				error: error.message,
+			});
+			throw error;
+		}
+	}
+}
+```
+
+---
+
+## 🎯 **Key Benefits of This Approach**
+
+### **1. Unified Patterns**
+
+- **Consistency**: Same patterns across all domains
+- **Predictability**: Developers know what to expect
+- **Maintainability**: Easier to understand and modify
+
+### **2. Clear Boundaries**
+
+- **Domain Ownership**: Each domain owns its data and logic
+- **Independent Evolution**: Domains can change without affecting others
+- **Team Autonomy**: Teams can work independently
+
+### **3. Type Safety**
+
+- **Compile-Time Validation**: Catch errors before runtime
+- **IntelliSense Support**: Better developer experience
+- **Refactoring Safety**: Safe to change contract implementations
+
+### **4. Testability**
+
+- **Easy Mocking**: Mock contracts instead of entire services
+- **Isolated Testing**: Test domains independently
+- **Clear Test Boundaries**: Know exactly what to test
+
+### **5. Performance**
+
+- **Connection Reuse**: Efficient gRPC connection pooling
+- **Minimal Overhead**: Optimized translation and validation
+- **Monitoring**: Clear metrics for performance tracking
+
+---
+
+## 📚 **Implementation Resources**
+
+### **Documentation**
+
+- [Domain Contracts Guide](./domain-contracts-guide.md) - Detailed guide on contracts and mappings
+- [DDD Best Practices](./ddd-best-practices.md) - General DDD patterns
+
+### **Code Examples**
+
+- `libs/apitypes/src/domains/` - Contract and mapping type definitions
+- `apps/marketplace/src/contracts/` - Contract implementations
+- `test/contracts/` - Contract testing examples
+
+### **Tools and Libraries**
+
+- **TypeScript**: For type safety and compile-time validation
+- **Zod**: For schema validation and context mapping
+- **gRPC**: For efficient inter-service communication
+- **NATS**: For event-driven communication
+- **Jest**: For contract and mapping testing
+
+---
+
+## 🚀 **Next Steps**
+
+1. **Review Week 1 Deliverables**: Ensure all boundaries and contracts are properly defined
+2. **Begin Week 2**: Start implementing context mapping services
+3. **Set Up Monitoring**: Implement contract-level metrics and observability
+4. **Train Team**: Ensure all developers understand the new patterns
+5. **Plan Migration**: Prepare for gradual migration of existing services
+
+This unified approach ensures we have consistent, maintainable, and type-safe communication between all domains while keeping the implementation manageable and performant.

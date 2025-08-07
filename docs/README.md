@@ -6,44 +6,39 @@ Welcome to the Venta Backend documentation! This comprehensive guide covers ever
 
 ### 🏗️ Architecture & Design
 
-- **[Architecture Overview](./architecture-overview.md)** - High-level system architecture and design patterns
+- **[DDD Migration Guide](./ddd-migration-guide.md)** - Complete Domain-Driven Design migration strategy and implementation
+- **[DDD Migration Status](./ddd-migration-status.md)** - Current progress and next steps for DDD implementation
+- **[Domain Contracts Guide](./domain-contracts-guide.md)** - Comprehensive guide on domain contracts and context mappings
 - **[Development Guide](./development-guide.md)** - Setup, development workflow, and coding standards
 - **[Deployment Guide](./deployment-guide.md)** - Production deployment and infrastructure management
-- **[Naming Conventions](./naming-conventions.md)** - Consistent naming patterns across the codebase
-
-
-- **[Testing Strategy](./testing-strategy.md)** - Comprehensive testing approach and guidelines
-- **[Metrics Instrumentation Guide](./metrics-instrumentation-guide.md)** - Observability and monitoring setup
-- **[Request ID Propagation](./request-id-propagation.md)** - Distributed tracing and request correlation
+- **[DDD Best Practices](./ddd-best-practices.md)** - Domain-Driven Design patterns and guidelines
 
 ### 🔄 Event-Driven Architecture
 
-- **[Comprehensive NATS Guide](./nats-comprehensive-guide.md)** - Complete guide to NATS subjects, streams, and queue groups for autoscaling microservices
-- **[Event System](./event-system.md)** - Type-safe event system with automatic intellisense
-
-### 🚀 Application Patterns
-
-- **[Bootstrap Pattern](./bootstrap-pattern.md)** - Standardized application bootstrapping patterns
+- **[Event Pattern Enforcement](./event-pattern-enforcement.md)** - Type-safe event naming and domain boundary enforcement
+- **[Testing Strategy](./testing-strategy.md)** - Comprehensive testing approach and guidelines
+- **[Unified Error Handling](./unified-error-handling.md)** - Consistent error handling across the system
 
 ## 🎯 Quick Start
 
 ### For Developers
 
 1. **Setup**: Follow the [Development Guide](./development-guide.md) to get your local environment running
-2. **Architecture**: Understand the system design in the [Architecture Overview](./architecture-overview.md)
-3. **Testing**: Review the [Testing Strategy](./testing-strategy.md) for best practices
+2. **Architecture**: Understand the DDD approach in the [DDD Migration Guide](./ddd-migration-guide.md)
+3. **Domain Communication**: Learn about domain contracts in the [Domain Contracts Guide](./domain-contracts-guide.md)
+4. **Testing**: Review the [Testing Strategy](./testing-strategy.md) for best practices
 
 ### For DevOps
 
 1. **Deployment**: Use the [Deployment Guide](./deployment-guide.md) for production deployments
-2. **Monitoring**: Set up observability with the [Metrics Instrumentation Guide](./metrics-instrumentation-guide.md)
-3. **Tracing**: Configure distributed tracing with [Request ID Propagation](./request-id-propagation.md)
+2. **Architecture**: Review the [DDD Migration Status](./ddd-migration-status.md) for current implementation state
+3. **Error Handling**: Understand the [Unified Error Handling](./unified-error-handling.md) approach
 
-### For API Consumers
+### For Domain Teams
 
-1. **Documentation**: Review the architecture and development guides for integration details
-2. **Events**: Understand the [Event System](./event-system.md) for real-time updates
-3. **NATS**: Learn about message patterns in the [NATS Guide](./nats-comprehensive-guide.md)
+1. **Domain Contracts**: Review the [Domain Contracts Guide](./domain-contracts-guide.md) for implementation patterns
+2. **Event Patterns**: Understand the [Event Pattern Enforcement](./event-pattern-enforcement.md) for consistent event naming
+3. **Best Practices**: Follow the [DDD Best Practices](./ddd-best-practices.md) for domain modeling
 
 ## 🔧 System Overview
 
