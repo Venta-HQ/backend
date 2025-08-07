@@ -18,6 +18,9 @@ export const VendorLocationUpdateDataSchema = z.object({
 	vendorId: z.string(),
 });
 
+// Type export for VendorLocationUpdateData
+export type VendorLocationUpdateData = z.infer<typeof VendorLocationUpdateDataSchema>;
+
 export const UpdateUserLocationDataSchema = z.object({
 	neLocation: z.object({
 		lat: z.number(),
@@ -29,6 +32,9 @@ export const UpdateUserLocationDataSchema = z.object({
 	}),
 	userId: z.string().optional(),
 });
+
+// Type export for UpdateUserLocationData
+export type UpdateUserLocationData = z.infer<typeof UpdateUserLocationDataSchema>;
 
 // gRPC schemas for location service
 export const GrpcLocationSchema = z.object({
