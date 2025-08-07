@@ -2,7 +2,7 @@ import { APP_NAMES, BootstrapModule, GrpcInstanceModule } from '@app/nest/module
 import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClerkWebhooksController } from './clerk/clerk-webhooks.controller';
+import { ClerkWebhooksController } from './clerk-webhooks.controller';
 
 @Module({
 	controllers: [ClerkWebhooksController],

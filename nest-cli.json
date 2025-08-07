@@ -81,6 +81,15 @@
 				"tsConfigPath": "apps/infrastructure/file-management/tsconfig.app.json"
 			}
 		},
+		"webhooks": {
+			"type": "application",
+			"root": "apps/communication/webhooks",
+			"entryFile": "src/main",
+			"sourceRoot": "./",
+			"compilerOptions": {
+				"tsConfigPath": "apps/communication/webhooks/tsconfig.app.json"
+			}
+		},
 		"nest/modules": {
 			"type": "library",
 			"root": "libs/nest/modules/",
