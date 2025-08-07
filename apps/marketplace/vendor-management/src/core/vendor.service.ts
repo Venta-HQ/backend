@@ -1,30 +1,23 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
-import { VendorCreateData, VendorUpdateData } from '@app/proto/marketplace/vendor-management';
 import { Injectable, Logger } from '@nestjs/common';
 
-interface VendorLocationData {
-	lat: number;
-	long: number;
-}
-
-interface VendorProfile {
-	createdAt: Date;
-	description?: string;
-	id: string;
-	lat?: number;
-	long?: number;
-	name: string;
-	ownerId: string;
-	primaryImage?: string;
-	updatedAt: Date;
-}
-
-interface VendorOnboardingData {
+export interface VendorOnboardingData {
 	description?: string;
 	email?: string;
+	location?: { lat: number; lng: number };
 	name: string;
 	ownerId: string;
+	phone?: string;
+	primaryImage?: string;
+	source?: 'web_registration' | 'mobile_app' | 'admin';
+	website?: string;
+}
+
+export interface UpdateVendorData {
+	description?: string;
+	email?: string;
+	name?: string;
 	phone?: string;
 	primaryImage?: string;
 	website?: string;
@@ -68,10 +61,12 @@ export class VendorService {
 				vendorName: onboardingData.name,
 			});
 
-			// Domain event - vendor created (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.created', {
-				id: '123',
-				lat: 1,
+			// Emit DDD domain event with rich business context
+			await this.eventService.emit('marketplace.vendor_onboarded', {
+				location: onboardingData.location || { lat: 0, lng: 0 },
+				ownerId: onboardingData.ownerId,
+				vendorId: vendor.id,
+				// timestamp automatically added by schema default
 			});
 
 			return vendor.id;
@@ -89,153 +84,133 @@ export class VendorService {
 	}
 
 	/**
-	 * Get vendor by ID
+	 * Update vendor profile
+	 * Domain method for vendor profile updates with business logic
 	 */
-	async getVendorById(id: string): Promise<VendorProfile | null> {
-		this.logger.log('Getting vendor profile', { vendorId: id });
+	async updateVendor(vendorId: string, updateData: UpdateVendorData): Promise<any> {
+		this.logger.log('Updating vendor profile', { updateData, vendorId });
 
 		try {
-			const vendor = await this.prisma.db.vendor.findFirst({
-				where: { id },
+			const vendor = await this.prisma.db.vendor.update({
+				data: updateData,
+				where: { id: vendorId },
+			});
+
+			// Emit DDD domain event with business context
+			await this.eventService.emit('marketplace.vendor_profile_updated', {
+				ownerId: vendor.ownerId,
+				updatedFields: Object.keys(updateData),
+				vendorId: vendor.id,
+				// timestamp automatically added by schema default
+			});
+
+			return vendor;
+		} catch (error) {
+			this.logger.error('Failed to update vendor', { error, vendorId });
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
+				operation: 'update_vendor',
+				vendorId,
+			});
+		}
+	}
+
+	/**
+	 * Delete vendor
+	 * Domain method for vendor deactivation with business logic
+	 */
+	async deleteVendor(vendorId: string): Promise<void> {
+		this.logger.log('Deactivating vendor', { vendorId });
+
+		try {
+			const vendor = await this.prisma.db.vendor.delete({
+				where: { id: vendorId },
+			});
+
+			// Emit DDD domain event with business context
+			await this.eventService.emit('marketplace.vendor_deactivated', {
+				ownerId: vendor.ownerId,
+				vendorId: vendor.id,
+				// timestamp automatically added by schema default
+			});
+		} catch (error) {
+			this.logger.error('Failed to deactivate vendor', { error, vendorId });
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to deactivate vendor', {
+				operation: 'delete_vendor',
+				vendorId,
+			});
+		}
+	}
+
+	/**
+	 * Get vendor by ID
+	 * Domain method for vendor retrieval
+	 */
+	async getVendorById(vendorId: string): Promise<any> {
+		this.logger.log('Retrieving vendor by ID', { vendorId });
+
+		try {
+			const vendor = await this.prisma.db.vendor.findUnique({
+				where: { id: vendorId },
 			});
 
 			if (!vendor) {
-				this.logger.log('Vendor not found', { vendorId: id });
-				return null;
+				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
+					vendorId,
+				});
 			}
 
-			this.logger.log('Vendor profile retrieved successfully', { vendorId: id });
 			return vendor;
 		} catch (error) {
-			this.logger.error('Failed to get vendor profile', { error, vendorId: id });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor profile', {
+			if (error instanceof AppError) {
+				throw error;
+			}
+			this.logger.error('Failed to retrieve vendor', { error, vendorId });
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor', {
 				operation: 'get_vendor_by_id',
-				vendorId: id,
-			});
-		}
-	}
-
-	/**
-	 * Create vendor (legacy method - use onboardVendor for new vendors)
-	 */
-	async createVendor(data: VendorCreateData): Promise<string> {
-		this.logger.log('Creating new vendor', { ownerId: data.userId });
-
-		try {
-			const { imageUrl, userId, ...rest } = data;
-			const vendor = await this.prisma.db.vendor.create({
-				data: {
-					...rest,
-					ownerId: userId,
-					primaryImage: imageUrl,
-				},
-			});
-
-			this.logger.log('Vendor created successfully', { ownerId: userId, vendorId: vendor.id });
-
-			// Domain event - vendor created (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.created', vendor);
-
-			return vendor.id;
-		} catch (error) {
-			this.logger.error('Failed to create vendor', { error, ownerId: data.userId });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create vendor', {
-				operation: 'create_vendor',
-				ownerId: data.userId,
-			});
-		}
-	}
-
-	/**
-	 * Update vendor profile
-	 */
-	async updateVendor(id: string, userId: string, data: Omit<VendorUpdateData, 'id' | 'userId'>): Promise<void> {
-		this.logger.log('Updating vendor profile', { ownerId: userId, vendorId: id });
-
-		try {
-			const { imageUrl, ...updateData } = data;
-
-			const vendor = await this.prisma.db.vendor.update({
-				data: {
-					...updateData,
-					...(imageUrl ? { primaryImage: imageUrl } : {}),
-				},
-				where: { id, ownerId: userId },
-			});
-
-			this.logger.log('Vendor profile updated successfully', { ownerId: userId, vendorId: id });
-
-			// Domain event - vendor updated (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.updated', vendor);
-		} catch (error) {
-			this.logger.error('Failed to update vendor', { error, ownerId: userId, vendorId: id });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
-				operation: 'update_vendor',
-				ownerId: userId,
-				vendorId: id,
-			});
-		}
-	}
-
-	/**
-	 * Delete vendor and all associated data
-	 * Domain method for vendor deletion with cleanup
-	 */
-	async deleteVendor(id: string, userId: string): Promise<void> {
-		this.logger.log('Starting vendor deletion process', { ownerId: userId, vendorId: id });
-
-		try {
-			const vendor = await this.prisma.db.vendor.findFirst({
-				where: { id, ownerId: userId },
-			});
-
-			await this.prisma.db.vendor.delete({
-				where: { id },
-			});
-
-			this.logger.log('Vendor and associated data deleted successfully', { ownerId: userId, vendorId: id });
-
-			// Domain event - vendor deleted (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.deleted', vendor);
-		} catch (error) {
-			this.logger.error('Failed to delete vendor', { error, ownerId: userId, vendorId: id });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete vendor', {
-				operation: 'delete_vendor',
-				ownerId: userId,
-				vendorId: id,
-			});
-		}
-	}
-
-	/**
-	 * Update vendor location from location service events
-	 * This method is called when the location service publishes a vendor.location.updated event
-	 * It doesn't require user authorization since it's a system-level operation
-	 */
-	async updateVendorLocation(vendorId: string, location: VendorLocationData): Promise<void> {
-		this.logger.log('Updating vendor location from location service', { location, vendorId });
-
-		try {
-			// Update vendor location in database
-			const vendor = await this.prisma.db.vendor.update({
-				data: {
-					lat: location.lat,
-					long: location.long,
-				},
-				where: {
-					id: vendorId,
-				},
-			});
-
-			this.logger.log('Vendor location updated successfully', {
-				location: `${location.lat}, ${location.long}`,
 				vendorId,
 			});
+		}
+	}
 
-			// Domain event - vendor updated (this event is actually used by search-discovery)
-			await this.eventService.emit('vendor.updated', vendor);
+	/**
+	 * Get all vendors
+	 * Domain method for vendor listing
+	 */
+	async getAllVendors(): Promise<any[]> {
+		this.logger.log('Retrieving all vendors');
+
+		try {
+			const vendors = await this.prisma.db.vendor.findMany();
+			return vendors;
 		} catch (error) {
-			this.logger.error('Failed to update vendor location in database', { error, vendorId });
+			this.logger.error('Failed to retrieve vendors', { error });
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendors', {
+				operation: 'get_all_vendors',
+			});
+		}
+	}
+
+	/**
+	 * Update vendor location
+	 * Domain method for vendor location updates
+	 */
+	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
+		this.logger.log('Updating vendor location', { location, vendorId });
+
+		try {
+			await this.prisma.db.vendor.update({
+				data: { lat: location.lat, long: location.lng },
+				where: { id: vendorId },
+			});
+
+			// Emit DDD domain event with business context
+			await this.eventService.emit('location.vendor_location_updated', {
+				location: { lat: location.lat, lng: location.lng },
+				vendorId,
+				// movementType and businessHours automatically determined by schema defaults
+			});
+		} catch (error) {
+			this.logger.error('Failed to update vendor location', { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor location', {
 				operation: 'update_vendor_location',
 				vendorId,

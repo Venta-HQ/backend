@@ -1,13 +1,31 @@
-import { AvailableEventSubjects, BaseEvent } from '@app/eventtypes';
 import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
-interface VendorData {
-	[name: string]: unknown;
-	id: string;
-	lat?: number;
-	long?: number;
+interface DDDVendorOnboardedData {
+	location: { lat: number; lng: number };
+	ownerId: string;
+	timestamp: string;
+	vendorId: string;
+}
+
+interface DDDVendorProfileUpdatedData {
+	ownerId: string;
+	timestamp: string;
+	updatedFields: string[];
+	vendorId: string;
+}
+
+interface DDDVendorDeactivatedData {
+	ownerId: string;
+	timestamp: string;
+	vendorId: string;
+}
+
+interface DDDVendorLocationUpdatedData {
+	location: { lat: number; lng: number };
+	timestamp: string;
+	vendorId: string;
 }
 
 @Injectable()
@@ -17,104 +35,82 @@ export class AlgoliaSyncService {
 	constructor(private readonly algoliaService: AlgoliaService) {}
 
 	/**
-	 * Process vendor events and sync to Algolia
-	 * Events are already validated by the event system, so we focus on business logic
+	 * Handle DDD vendor onboarding event
 	 */
-	async processVendorEvent(event: BaseEvent, subject: AvailableEventSubjects): Promise<void> {
-		const { data: vendor, eventId } = event;
-
-		this.logger.log(`Processing ${subject} event: ${eventId} for vendor: ${vendor.id}`);
-
-		try {
-			switch (subject) {
-				case 'vendor.created':
-					await this.handleVendorCreated(vendor);
-					break;
-				case 'vendor.updated':
-					await this.handleVendorUpdated(vendor);
-					break;
-				case 'vendor.deleted':
-					await this.handleVendorDeleted(vendor);
-					break;
-				default:
-					this.logger.warn(`Unknown vendor event: ${subject}`);
-			}
-		} catch (error) {
-			this.logger.error(`Failed to process ${subject} event: ${eventId} for vendor: ${vendor.id}`, error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Handle vendor creation in Algolia
-	 */
-	private async handleVendorCreated(vendor: VendorData): Promise<void> {
-		this.logger.log(`Creating vendor in Algolia: ${vendor.id}`);
+	async indexNewVendor(data: DDDVendorOnboardedData): Promise<void> {
+		this.logger.log(`Indexing new vendor in Algolia: ${data.vendorId}`);
 
 		await retryOperation(
 			() =>
 				this.algoliaService.createObject('vendor', {
-					...vendor,
-					...(vendor.lat && vendor.long
-						? ({
-								_geoloc: {
-									lat: vendor.lat,
-									lng: vendor.long,
-								},
-							} as any)
-						: {}),
+					_geoloc: {
+						lat: data.location.lat,
+						lng: data.location.lng,
+					},
+					objectID: data.vendorId,
 				} as any),
-			`Creating vendor in Algolia: ${vendor.id}`,
+			`Indexing new vendor in Algolia: ${data.vendorId}`,
 			{ logger: this.logger },
 		);
 
-		this.logger.log(`Successfully created vendor in Algolia: ${vendor.id}`);
+		this.logger.log(`Successfully indexed new vendor in Algolia: ${data.vendorId}`);
 	}
 
 	/**
-	 * Handle vendor update in Algolia
+	 * Handle DDD vendor profile update event
 	 */
-	private async handleVendorUpdated(vendor: VendorData): Promise<void> {
-		this.logger.log(`Updating vendor in Algolia: ${vendor.id}`);
-
-		const { lat, long, ...justVendor } = vendor;
+	async updateVendorIndex(data: DDDVendorProfileUpdatedData): Promise<void> {
+		this.logger.log(`Updating vendor index in Algolia: ${data.vendorId}`, {
+			updatedFields: data.updatedFields,
+		});
 
 		await retryOperation(
 			() =>
-				this.algoliaService.updateObject(
-					'vendor',
-					vendor.id as string,
-					{
-						...justVendor,
-						...(lat && long
-							? ({
-									_geoloc: {
-										lat,
-										lng: long,
-									},
-								} as any)
-							: {}),
-					} as any,
-				),
-			`Updating vendor in Algolia: ${vendor.id}`,
+				this.algoliaService.updateObject('vendor', data.vendorId, {
+					lastUpdated: data.timestamp,
+					updatedFields: data.updatedFields,
+				} as any),
+			`Updating vendor index in Algolia: ${data.vendorId}`,
 			{ logger: this.logger },
 		);
 
-		this.logger.log(`Successfully updated vendor in Algolia: ${vendor.id}`);
+		this.logger.log(`Successfully updated vendor index in Algolia: ${data.vendorId}`);
 	}
 
 	/**
-	 * Handle vendor deletion in Algolia
+	 * Handle DDD vendor deactivation event
 	 */
-	private async handleVendorDeleted(vendor: VendorData): Promise<void> {
-		this.logger.log(`Deleting vendor from Algolia: ${vendor.id}`);
+	async removeVendorFromIndex(data: DDDVendorDeactivatedData): Promise<void> {
+		this.logger.log(`Removing vendor from Algolia index: ${data.vendorId}`);
 
 		await retryOperation(
-			() => this.algoliaService.deleteObject('vendor', vendor.id as string),
-			`Deleting vendor from Algolia: ${vendor.id}`,
+			() => this.algoliaService.deleteObject('vendor', data.vendorId),
+			`Removing vendor from Algolia index: ${data.vendorId}`,
 			{ logger: this.logger },
 		);
 
-		this.logger.log(`Successfully deleted vendor from Algolia: ${vendor.id}`);
+		this.logger.log(`Successfully removed vendor from Algolia index: ${data.vendorId}`);
+	}
+
+	/**
+	 * Handle DDD vendor location update event
+	 */
+	async updateVendorLocation(data: DDDVendorLocationUpdatedData): Promise<void> {
+		this.logger.log(`Updating vendor location in Algolia: ${data.vendorId}`);
+
+		await retryOperation(
+			() =>
+				this.algoliaService.updateObject('vendor', data.vendorId, {
+					_geoloc: {
+						lat: data.location.lat,
+						lng: data.location.lng,
+					},
+					lastLocationUpdate: data.timestamp,
+				} as any),
+			`Updating vendor location in Algolia: ${data.vendorId}`,
+			{ logger: this.logger },
+		);
+
+		this.logger.log(`Successfully updated vendor location in Algolia: ${data.vendorId}`);
 	}
 }

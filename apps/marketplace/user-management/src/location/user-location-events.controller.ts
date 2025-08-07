@@ -22,27 +22,37 @@ export class UserLocationEventsController implements OnModuleInit {
 	) {}
 
 	async onModuleInit() {
-		// Set up queue subscription for user location update events
-		// This ensures only ONE instance processes each event
+		// Subscribe to DDD location domain events
 		this.natsQueueService.subscribeToQueue(
-			'user.location.updated', // Specific event for location updates
-			'user-location-update-workers', // Queue group name - all instances share this
+			'location.user_location_updated', // DDD domain event for location updates
+			'user-location-update-workers',
 			this.handleUserLocationUpdate.bind(this),
 		);
 
-		this.logger.log('User location events controller initialized with queue groups');
+		this.logger.log('User location events controller initialized with DDD event patterns');
 	}
 
 	private async handleUserLocationUpdate(data: { data: BaseEvent; subject: string }): Promise<void> {
 		const { data: event, subject } = data;
 
-		// Correlation ID is automatically available in logs via the app-level interceptor
-		this.logger.log(`Handling ${subject} event: ${event.eventId} for user: ${event.data.userId}`);
+		// Enhanced logging with domain context
+		this.logger.log(`Handling user location event: ${subject}`, {
+			context: event.context,
+			domain: event.meta.domain,
+			eventId: event.meta.eventId,
+			subdomain: event.meta.subdomain,
+			userId: event.data.userId,
+		});
 
 		try {
 			await this.userService.updateUserLocation(event.data.userId, event.data.location);
 		} catch (error) {
-			this.logger.error(`Failed to handle ${subject} event: ${event.eventId} for user ${event.data.userId}:`, error);
+			this.logger.error(`Failed to handle user location event: ${subject}`, {
+				context: event.context,
+				error,
+				eventId: event.meta.eventId,
+				userId: event.data.userId,
+			});
 			throw error;
 		}
 	}

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
-import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap, EventMetadata } from '@app/eventtypes';
+import { z } from 'zod';
+import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap } from '@app/eventtypes';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
@@ -20,35 +21,87 @@ export class EventService {
 	}
 
 	/**
-	 * Emit an event with automatic schema validation based on subject
+	 * Emit an event with automatic schema validation and domain context
 	 */
-	async emit<TSubject extends AvailableEventSubjects>(
-		subject: TSubject,
-		data: EventDataMap[TSubject],
-		metadata?: EventMetadata,
-	): Promise<void> {
+	async emit<TSubject extends AvailableEventSubjects>(subject: TSubject, data: EventDataMap[TSubject]): Promise<void> {
 		try {
 			// Get schema from the unified schemas object
-			const schema = ALL_EVENT_SCHEMAS[subject];
+			const schema = ALL_EVENT_SCHEMAS[subject] as z.ZodSchema;
 			const validatedData = schema ? schema.parse(data) : data;
 
-			// Create standardized event
+			// Extract context from schema metadata
+			const context = this.extractContextFromSchema(schema, validatedData);
+
+			// Create standardized event with automatic domain context
 			const event: BaseEvent = {
-				correlationId: metadata?.correlationId || this.requestContextService?.getRequestId(),
+				context: context,
+				meta: {
+					correlationId: this.requestContextService?.getRequestId(),
+					domain: this.extractDomainFromSubject(subject),
+					eventId: randomUUID(),
+					source: this.appName,
+					subdomain: this.extractSubdomainFromSubject(subject),
+					timestamp: new Date().toISOString(),
+					version: '1.0',
+				},
 				data: validatedData,
-				eventId: randomUUID(),
-				source: metadata?.source || this.appName,
-				timestamp: new Date().toISOString(),
-				version: metadata?.version || '1.0',
 			};
 
 			// Emit event
 			await this.natsClient.emit(subject, event);
 
-			this.logger.log(`Emitted ${subject} event: ${event.eventId}`);
+			this.logger.log(`Emitted domain event: ${subject}`, {
+				context: event.context,
+				domain: event.meta.domain,
+				eventId: event.meta.eventId,
+				subdomain: event.meta.subdomain,
+			});
 		} catch (error) {
-			this.logger.error(`Failed to emit ${subject} event:`, error);
+			this.logger.error(`Failed to emit domain event: ${subject}`, error);
 			throw error;
 		}
+	}
+
+	private extractDomainFromSubject(subject: string): string {
+		return subject.split('.')[0]; // 'marketplace.user_registered' -> 'marketplace'
+	}
+
+	private extractSubdomainFromSubject(subject: string): string | undefined {
+		const parts = subject.split('.');
+		return parts.length > 2 ? parts[1] : undefined;
+	}
+
+	/**
+	 * Extract context from schema metadata
+	 * Schema-driven approach that's type-safe and explicit
+	 */
+	private extractContextFromSchema(schema: z.ZodSchema, data: any): Record<string, any> | undefined {
+		// Check if schema has context metadata
+		const contextConfig = (schema as any)._context;
+
+		const context: Record<string, any> = {};
+
+		// Always include requestId and sessionId for correlation
+		const requestId = this.requestContextService?.getRequestId();
+		if (requestId) {
+			context.requestId = requestId;
+		}
+
+		// Extract fields marked as context from schema
+		if (contextConfig?.fields) {
+			for (const field of contextConfig.fields) {
+				if (data[field]) {
+					context[field] = data[field];
+				}
+			}
+		}
+
+		// Use custom extraction function if provided
+		if (contextConfig?.extract) {
+			const customContext = contextConfig.extract(data);
+			Object.assign(context, customContext);
+		}
+
+		return Object.keys(context).length > 0 ? context : undefined;
 	}
 }

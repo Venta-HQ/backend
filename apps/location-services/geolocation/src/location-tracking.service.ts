@@ -1,8 +1,6 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
-import { retryOperation } from '@app/utils';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
 interface LocationData {
@@ -15,9 +13,9 @@ export class LocationTrackingService {
 	private readonly logger = new Logger(LocationTrackingService.name);
 
 	constructor(
-		@InjectRedis() private readonly redis: Redis,
-		private readonly prisma: PrismaService,
-		private readonly eventService: EventService,
+		private prisma: PrismaService,
+		private eventService: EventService,
+		private redis: Redis,
 	) {}
 
 	/**
@@ -33,14 +31,10 @@ export class LocationTrackingService {
 		// Domain logic
 		await this.storeVendorLocation(vendorId, location);
 
-		// Domain events - using the existing event that's actually consumed
-		await this.eventService.emit('vendor.location.updated', {
-			location: {
-				lat: location.lat,
-				long: location.lng,
-			},
-			timestamp: new Date(),
+		// Emit DDD domain event with business context
+		await this.eventService.emit('location.vendor_location_updated', {
 			vendorId,
+			location: { lat: location.lat, lng: location.lng },
 		});
 
 		this.logger.log('Vendor location updated successfully', { vendorId });
@@ -59,87 +53,133 @@ export class LocationTrackingService {
 		// Domain logic - only handle Redis operations
 		await this.storeUserLocation(userId, location);
 
-		// Domain events - let user domain handle its own database updates
-		await this.eventService.emit('user.location.updated', {
-			location: {
-				lat: location.lat,
-				long: location.lng,
-			},
-			timestamp: new Date(),
+		// Emit DDD domain event with business context
+		await this.eventService.emit('location.user_location_updated', {
 			userId,
+			location: { lat: location.lat, lng: location.lng },
 		});
 
 		this.logger.log('User location updated successfully', { userId });
 	}
 
 	/**
-	 * Validate location coordinates according to domain rules
+	 * Find nearby vendors using geospatial queries
+	 */
+	async findNearbyVendors(userLocation: LocationData, radius: number = 5000): Promise<any[]> {
+		this.logger.log('Finding nearby vendors', { userLocation, radius });
+
+		try {
+			const nearbyVendors = await this.redis.georadius(
+				'vendor_locations',
+				userLocation.lng,
+				userLocation.lat,
+				radius,
+				'm',
+				'WITHCOORD',
+				'WITHDIST',
+			);
+
+			return this.formatNearbyVendors(nearbyVendors);
+		} catch (error) {
+			this.logger.error('Failed to find nearby vendors', { error, userLocation, radius });
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.LOCATION_PROXIMITY_SEARCH_FAILED,
+				'Failed to find nearby vendors',
+				{ userLocation, radius },
+			);
+		}
+	}
+
+	/**
+	 * Store vendor location in Redis for geospatial queries
+	 */
+	private async storeVendorLocation(vendorId: string, location: LocationData): Promise<void> {
+		try {
+			await this.redis.geoadd('vendor_locations', location.lng, location.lat, vendorId);
+			this.logger.log('Vendor location stored in Redis', { vendorId });
+		} catch (error) {
+			this.logger.error('Failed to store vendor location in Redis', { error, vendorId });
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
+				'Failed to store vendor location',
+				{ vendorId, location },
+			);
+		}
+	}
+
+	/**
+	 * Store user location in Redis for geospatial queries
+	 */
+	private async storeUserLocation(userId: string, location: LocationData): Promise<void> {
+		try {
+			await this.redis.geoadd('user_locations', location.lng, location.lat, userId);
+			this.logger.log('User location stored in Redis', { userId });
+		} catch (error) {
+			this.logger.error('Failed to store user location in Redis', { error, userId });
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
+				'Failed to store user location',
+				{ userId, location },
+			);
+		}
+	}
+
+	/**
+	 * Validate location data
 	 */
 	private async validateLocationData(location: LocationData): Promise<void> {
 		if (location.lat < -90 || location.lat > 90) {
-			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_LATITUDE, 'Invalid latitude value', {
-				lat: location.lat,
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Invalid latitude value', {
+				latitude: location.lat,
 			});
 		}
-
 		if (location.lng < -180 || location.lng > 180) {
-			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_LONGITUDE, 'Invalid longitude value', {
-				lng: location.lng,
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Invalid longitude value', {
+				longitude: location.lng,
 			});
 		}
 	}
 
 	/**
-	 * Validate that vendor exists in the system
+	 * Validate vendor exists
 	 */
 	private async validateVendorExists(vendorId: string): Promise<void> {
 		const vendor = await this.prisma.db.vendor.findUnique({
-			select: { id: true },
 			where: { id: vendorId },
 		});
 
 		if (!vendor) {
-			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.LOCATION_NOT_FOUND, 'Vendor not found', { vendorId });
+			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', { vendorId });
 		}
 	}
 
 	/**
-	 * Validate that user exists in the system
+	 * Validate user exists
 	 */
 	private async validateUserExists(userId: string): Promise<void> {
 		const user = await this.prisma.db.user.findUnique({
-			select: { id: true },
 			where: { id: userId },
 		});
 
 		if (!user) {
-			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.LOCATION_NOT_FOUND, 'User not found', { userId });
+			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.USER_NOT_FOUND, 'User not found', { userId });
 		}
 	}
 
 	/**
-	 * Store vendor location in Redis geospatial store
+	 * Format nearby vendors from Redis response
 	 */
-	private async storeVendorLocation(vendorId: string, location: LocationData): Promise<void> {
-		await retryOperation(
-			async () => {
-				await this.redis.geoadd('vendor_locations', location.lng, location.lat, vendorId);
+	private formatNearbyVendors(redisResponse: any[]): any[] {
+		return redisResponse.map((item: any) => ({
+			vendorId: item[0],
+			distance: parseFloat(item[1]),
+			coordinates: {
+				lat: parseFloat(item[2][1]),
+				lng: parseFloat(item[2][0]),
 			},
-			'Update vendor location in Redis',
-			{ logger: this.logger },
-		);
-	}
-
-	/**
-	 * Store user location in Redis geospatial store
-	 */
-	private async storeUserLocation(userId: string, location: LocationData): Promise<void> {
-		await retryOperation(
-			async () => {
-				await this.redis.geoadd('user_locations', location.lng, location.lat, userId);
-			},
-			'Update user location in Redis',
-			{ logger: this.logger },
-		);
+		}));
 	}
 }

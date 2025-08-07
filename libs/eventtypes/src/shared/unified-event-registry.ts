@@ -1,15 +1,16 @@
-import { userEventSchemas, UserEventDataMap } from '../domains/marketplace/user/user.events';
-import { vendorEventSchemas, VendorEventDataMap } from '../domains/marketplace/vendor/vendor.events';
+import { LocationEventDataMap, locationEventSchemas } from '../domains/location-services/location.events';
+import { VendorEventDataMap, vendorEventSchemas } from '../domains/marketplace/vendor/vendor.events';
 
 /**
  * Combine all domain event schemas
  * This provides intellisense for all available events
  */
 export const ALL_EVENT_SCHEMAS = {
-	...userEventSchemas,
 	...vendorEventSchemas,
+	...locationEventSchemas,
 	// Add other domain schemas here as they're created:
-	// ...locationEventSchemas,
+	// ...communicationEventSchemas,
+	// ...infrastructureEventSchemas,
 } as const;
 
 /**
@@ -23,4 +24,22 @@ export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
  * This provides type safety for the second parameter of emit
  * Combines all domain event data mappings
  */
-export type EventDataMap = UserEventDataMap & VendorEventDataMap; 
+export type EventDataMap = VendorEventDataMap & LocationEventDataMap;
+
+/**
+ * Get all event names for a specific domain
+ */
+export function getEventsForDomain(domain: string): AvailableEventSubjects[] {
+	return Object.keys(ALL_EVENT_SCHEMAS).filter((eventName) =>
+		eventName.startsWith(`${domain}.`),
+	) as AvailableEventSubjects[];
+}
+
+/**
+ * Get all event names for a specific subdomain
+ */
+export function getEventsForSubdomain(domain: string, subdomain: string): AvailableEventSubjects[] {
+	return Object.keys(ALL_EVENT_SCHEMAS).filter((eventName) =>
+		eventName.startsWith(`${domain}.${subdomain}_`),
+	) as AvailableEventSubjects[];
+}

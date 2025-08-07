@@ -1,4 +1,4 @@
-import { AvailableEventSubjects, BaseEvent } from '@app/eventtypes';
+import { BaseEvent } from '@app/eventtypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AlgoliaSyncService } from './algolia-sync.service';
@@ -22,27 +22,83 @@ export class AlgoliaSyncController implements OnModuleInit {
 	) {}
 
 	async onModuleInit() {
-		// Set up queue subscriptions for all vendor events
-		// This ensures only ONE instance processes each event
+		// Subscribe to marketplace domain events
 		this.natsQueueService.subscribeToQueue(
-			'vendor.>', // Wildcard pattern for all vendor events
-			'algolia-sync-workers', // Queue group name - all instances share this
-			this.handleVendorEvent.bind(this),
+			'marketplace.vendor_>', // Wildcard for marketplace vendor events
+			'algolia-sync-workers',
+			this.handleMarketplaceVendorEvent.bind(this),
 		);
 
-		this.logger.log('Algolia sync controller initialized with queue groups');
+		// Subscribe to location domain events
+		this.natsQueueService.subscribeToQueue(
+			'location.vendor_>', // Wildcard for location vendor events
+			'algolia-sync-workers',
+			this.handleLocationVendorEvent.bind(this),
+		);
+
+		this.logger.log('Algolia sync controller initialized with DDD event patterns');
 	}
 
-	private async handleVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
+	private async handleMarketplaceVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
 		const { data: event, subject } = data;
 
-		// Correlation ID is automatically available in logs via the app-level interceptor
-		this.logger.log(`Handling ${subject} event: ${event.eventId} for vendor: ${event.data.id}`);
+		// Enhanced logging with domain context
+		this.logger.log(`Handling marketplace vendor event: ${subject}`, {
+			context: event.context,
+			domain: event.meta.domain,
+			eventId: event.meta.eventId,
+			subdomain: event.meta.subdomain,
+			vendorId: event.data.vendorId,
+		});
 
 		try {
-			await this.algoliaSyncService.processVendorEvent(event, subject as AvailableEventSubjects);
+			switch (subject) {
+				case 'marketplace.vendor_onboarded':
+					await this.algoliaSyncService.indexNewVendor(event.data);
+					break;
+				case 'marketplace.vendor_profile_updated':
+					await this.algoliaSyncService.updateVendorIndex(event.data);
+					break;
+				case 'marketplace.vendor_deactivated':
+					await this.algoliaSyncService.removeVendorFromIndex(event.data);
+					break;
+				default:
+					this.logger.warn(`Unhandled marketplace vendor event: ${subject}`);
+			}
 		} catch (error) {
-			this.logger.error(`Failed to handle ${subject} event: ${event.eventId} for vendor ${event.data.id}:`, error);
+			this.logger.error(`Failed to handle marketplace vendor event: ${subject}`, {
+				context: event.context,
+				error,
+				eventId: event.meta.eventId,
+			});
+			throw error;
+		}
+	}
+
+	private async handleLocationVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
+		const { data: event, subject } = data;
+
+		// Enhanced logging with domain context
+		this.logger.log(`Handling location vendor event: ${subject}`, {
+			context: event.context,
+			domain: event.meta.domain,
+			eventId: event.meta.eventId,
+			subdomain: event.meta.subdomain,
+			vendorId: event.data.vendorId,
+		});
+
+		try {
+			if (subject === 'location.vendor_location_updated') {
+				await this.algoliaSyncService.updateVendorLocation(event.data);
+			} else {
+				this.logger.warn(`Unhandled location vendor event: ${subject}`);
+			}
+		} catch (error) {
+			this.logger.error(`Failed to handle location vendor event: ${subject}`, {
+				context: event.context,
+				error,
+				eventId: event.meta.eventId,
+			});
 			throw error;
 		}
 	}
