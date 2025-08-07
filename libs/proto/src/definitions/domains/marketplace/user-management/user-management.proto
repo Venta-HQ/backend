@@ -9,22 +9,20 @@ service UserService {
   rpc GetUserVendors (UserVendorData) returns (UserVendorsResponse) {}
 }
 
-
-
 // Service Function Types
+
+message ClerkUserData {
+    string id = 1;
+}
 
 message ClerkWebhookResponse {
     string message = 1;
 }
 
-message ClerkUserData {
-    string id = 1;
-} 
-
 message RevenueCatSubscriptionData {
     string clerkUserId = 1;
     string providerId = 2;
-    RevenueCatProviderData data = 3;
+    string data = 3; // JSON string
 }
 
 message SubscriptionCreatedResponse {
@@ -45,18 +43,6 @@ message UserVendor {
     string name = 2;
 }
 
-message ClerkWebhookEvent {
-    string type = 1;
-    string object = 2;
-    ClerkUserData event = 3;
-}
-
-message RevenueCatProviderData {
-    string transactionId = 1;
-    string eventId = 2;
-    string productId = 3;
-}
-
 message Empty {
 
-}
+} 

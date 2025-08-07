@@ -1,6 +1,9 @@
 syntax = "proto3";
 
 // Import domain-specific protocol buffers
-import public "domains/user/user.proto";
-import public "domains/location/location.proto";
-import public "domains/vendor/vendor.proto";
+// Marketplace domain
+import public "domains/marketplace/user-management/user-management.proto";
+import public "domains/marketplace/vendor-management/vendor-management.proto";
+
+// Location services domain
+import public "domains/location-services/geolocation/geolocation.proto";

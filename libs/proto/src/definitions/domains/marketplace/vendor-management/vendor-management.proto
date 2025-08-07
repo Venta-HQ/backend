@@ -1,11 +1,13 @@
 syntax = "proto3";
 
-package vendor;
+package marketplace.vendor_management;
 
-service VendorService {
+service VendorManagementService {
   rpc GetVendorById (VendorLookupData) returns (VendorLookupByIdResponse) {}
   rpc CreateVendor (VendorCreateData) returns (VendorCreateResponse) {}
   rpc UpdateVendor (VendorUpdateData) returns (VendorUpdateResponse) {}
+  rpc UpdateVendorLocation (VendorLocationUpdate) returns (Empty) {}
+  rpc GetVendorsInArea (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
 // Service Function Types
@@ -48,29 +50,49 @@ message VendorUpdateResponse {
   bool success = 2;
 }
 
+// Vendor Location Operations
+
+message VendorLocationUpdate {
+    string vendorId = 1;
+    Location location = 2;
+}
+
+message VendorLocationRequest {
+    Location swLocation = 1;
+    Location neLocation = 2;
+}
+
+message VendorLocationResponse {
+    repeated Vendor vendors = 1;
+}
+
 // Helper Types
 
 message Vendor {
     string id = 1;
 
     // These lat/long values are used to show locations on the map without subscription to live location
-    float lat = 2;
-    float long = 3;
+    Location location = 2;
 
     // General details
-    string name = 4;       
-    string description = 5;
-    string phone = 6;
-    string email = 7;
-    string website = 8;
-    bool open = 9;
-    string primaryImage = 10;
+    string name = 3;       
+    string description = 4;
+    string phone = 5;
+    string email = 6;
+    string website = 7;
+    bool open = 8;
+    string primaryImage = 9;
 
     // Metadata - using strings instead of google.protobuf.Timestamp
-    string createdAt = 11;
-    string updatedAt = 12;
+    string createdAt = 10;
+    string updatedAt = 11;
+}
+
+message Location {
+    double long = 1;
+    double lat = 2;
 }
 
 message Empty {
 
-}
+} 

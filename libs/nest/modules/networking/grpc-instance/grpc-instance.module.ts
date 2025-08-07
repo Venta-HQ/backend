@@ -1,4 +1,4 @@
-import { ProtoPathUtil } from '@app/proto';
+import { ProtoPathUtil } from '@app/utils';
 import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';

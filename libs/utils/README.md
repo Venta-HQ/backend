@@ -7,7 +7,9 @@ The Utilities library provides common utility functions and helper methods that 
 ## Overview
 
 This library provides:
+
 - Retry mechanisms for handling transient failures in Promise-based and Observable-based operations
+- Proto file path resolution utilities for gRPC service configuration
 - Data transformation and formatting utilities
 - Validation and sanitization functions
 - Date and time manipulation helpers
@@ -17,42 +19,52 @@ This library provides:
 
 ## Usage
 
+### Proto Path Resolution
+
+Use proto path utilities for standardized gRPC service configuration:
+
+```typescript
+import { ProtoPathUtil } from '@app/utils';
+
+// Resolve proto file paths relative to the proto library
+const protoPath = ProtoPathUtil.resolveProtoPath('domains/user/user.proto');
+
+// Resolve proto file paths from a specific directory
+const customProtoPath = ProtoPathUtil.resolveFromDirname(__dirname, 'custom.proto');
+```
+
 ### Retry Operations
 
 Use retry utilities for handling transient failures:
 
 ```typescript
-import { retryOperation, retryObservable } from '@app/utils';
+import { retryObservable, retryOperation } from '@app/utils';
 
 // Retry Promise-based operations
 async function fetchData() {
-  return retryOperation(
-    async () => {
-      const result = await externalService.getData();
-      return result;
-    },
-    'fetch data',
-    {
-      maxRetries: 3,
-      retryDelay: 1000,
-      backoffMultiplier: 2,
-    }
-  );
+	return retryOperation(
+		async () => {
+			const result = await externalService.getData();
+			return result;
+		},
+		'fetch data',
+		{
+			maxRetries: 3,
+			retryDelay: 1000,
+			backoffMultiplier: 2,
+		},
+	);
 }
 
 // Retry Observable-based operations (e.g., gRPC calls)
 function getServiceData(id: string) {
-  const observable = this.grpcService.getData({ id });
-  
-  return retryObservable(
-    observable,
-    'get service data',
-    {
-      maxRetries: 3,
-      retryDelay: 1000,
-      backoffMultiplier: 2,
-    }
-  );
+	const observable = this.grpcService.getData({ id });
+
+	return retryObservable(observable, 'get service data', {
+		maxRetries: 3,
+		retryDelay: 1000,
+		backoffMultiplier: 2,
+	});
 }
 ```
 
@@ -61,27 +73,27 @@ function getServiceData(id: string) {
 Use utilities for data manipulation and formatting:
 
 ```typescript
-import { transformData, formatData, sanitizeInput } from '@app/utils';
+import { formatData, sanitizeInput, transformData } from '@app/utils';
 
 // Transform data structure
 const rawData = {
-  user_id: 123,
-  first_name: 'John',
-  last_name: 'Doe',
-  created_at: '2024-01-01T00:00:00Z',
+	user_id: 123,
+	first_name: 'John',
+	last_name: 'Doe',
+	created_at: '2024-01-01T00:00:00Z',
 };
 
 const transformedData = transformData(rawData, {
-  user_id: 'id',
-  first_name: 'firstName',
-  last_name: 'lastName',
-  created_at: 'createdAt',
+	user_id: 'id',
+	first_name: 'firstName',
+	last_name: 'lastName',
+	created_at: 'createdAt',
 });
 
 // Format data for display
 const formattedData = formatData(transformedData, {
-  id: (value) => `User-${value}`,
-  createdAt: (value) => new Date(value).toLocaleDateString(),
+	id: (value) => `User-${value}`,
+	createdAt: (value) => new Date(value).toLocaleDateString(),
 });
 
 // Sanitize user input
@@ -97,17 +109,17 @@ import { validateEmail, validatePhone, validateUrl } from '@app/utils';
 
 // Validate email addresses
 if (validateEmail(email)) {
-  // Process valid email
+	// Process valid email
 }
 
 // Validate phone numbers
 if (validatePhone(phone)) {
-  // Process valid phone
+	// Process valid phone
 }
 
 // Validate URLs
 if (validateUrl(url)) {
-  // Process valid URL
+	// Process valid URL
 }
 ```
 
@@ -116,13 +128,7 @@ if (validateUrl(url)) {
 Use date/time utilities for common operations:
 
 ```typescript
-import { 
-  formatDate, 
-  parseDate, 
-  addDays, 
-  isExpired,
-  getTimeDifference 
-} from '@app/utils';
+import { addDays, formatDate, getTimeDifference, isExpired, parseDate } from '@app/utils';
 
 // Format dates
 const formatted = formatDate(date, 'YYYY-MM-DD');
@@ -135,7 +141,7 @@ const futureDate = addDays(date, 7);
 
 // Check if date is expired
 if (isExpired(expiryDate)) {
-  // Handle expired date
+	// Handle expired date
 }
 
 // Get time difference
@@ -147,12 +153,7 @@ const diff = getTimeDifference(startDate, endDate);
 Use string processing utilities:
 
 ```typescript
-import { 
-  capitalize, 
-  slugify, 
-  truncate, 
-  generateRandomString 
-} from '@app/utils';
+import { capitalize, generateRandomString, slugify, truncate } from '@app/utils';
 
 // Capitalize strings
 const capitalized = capitalize('hello world');
@@ -172,12 +173,7 @@ const randomString = generateRandomString(10);
 Use math utilities for calculations:
 
 ```typescript
-import { 
-  calculateDistance, 
-  roundToDecimal, 
-  calculatePercentage,
-  isWithinRange 
-} from '@app/utils';
+import { calculateDistance, calculatePercentage, isWithinRange, roundToDecimal } from '@app/utils';
 
 // Calculate distance between points
 const distance = calculateDistance(point1, point2);
@@ -190,7 +186,7 @@ const percentage = calculatePercentage(25, 100);
 
 // Check if value is within range
 if (isWithinRange(value, min, max)) {
-  // Value is within range
+	// Value is within range
 }
 ```
 

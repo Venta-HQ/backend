@@ -7,6 +7,7 @@ The Protocol Buffers library provides gRPC service definitions and generated Typ
 ## Overview
 
 This library provides:
+
 - **Domain-specific service definitions** organized by business domain
 - **Generated TypeScript types** for type-safe gRPC communication
 - **Service contracts** that define the API between microservices
@@ -22,17 +23,18 @@ libs/proto/src/
 ├── definitions/
 │   ├── index.proto              # Main proto file with imports
 │   └── domains/
-│       ├── user/
-│       │   └── user.proto       # User service definitions
-│       ├── vendor/
-│       │   └── vendor.proto     # Vendor service definitions
-│       └── location/
-│           └── location.proto   # Location service definitions
+│       ├── marketplace/
+│       │   ├── user-management/
+│       │   │   └── user-management.proto  # User management service definitions
+│       │   └── vendor-management/
+│       │       └── vendor-management.proto # Vendor management service definitions
+│       └── location-services/
+│           └── geolocation/
+│               └── geolocation.proto      # Geolocation service definitions
 ├── lib/
 │   ├── google/                  # Google protobuf types
-│   ├── location.ts              # Generated location types
-│   ├── user.ts                  # Generated user types
-│   ├── vendor.ts                # Generated vendor types
+│   ├── marketplace/             # Generated marketplace types
+│   ├── location-services/       # Generated location services types
 │   └── index.ts                 # Main export file
 └── index.ts                     # Library entry point
 ```
@@ -40,10 +42,23 @@ libs/proto/src/
 ### Domain Organization
 
 Each domain contains:
+
 - **Service definitions**: gRPC service interfaces
 - **Message types**: Request/response message structures
 - **Enums**: Domain-specific enumerations
 - **Comments**: Documentation for each service and message
+
+### Domain Boundaries
+
+**Marketplace Domain:**
+
+- **User Management**: User authentication, profiles, subscriptions, and user-vendor relationships
+- **Vendor Management**: Vendor CRUD operations and vendor location management within the marketplace context
+
+**Location Services Domain:**
+
+- **Geolocation**: Pure location services like address geocoding, distance calculations, and coordinate validation
+- **No vendor-specific logic**: Location services are domain-agnostic and can be used by any service
 
 ### Import Structure
 
@@ -53,9 +68,12 @@ The main `index.proto` file imports all domain-specific proto files:
 syntax = "proto3";
 
 // Import domain-specific protocol buffers
-import public "domains/user/user.proto";
-import public "domains/location/location.proto";
-import public "domains/vendor/vendor.proto";
+// Marketplace domain
+import public "domains/marketplace/user-management/user-management.proto";
+import public "domains/marketplace/vendor-management/vendor-management.proto";
+
+// Location services domain
+import public "domains/location-services/geolocation/geolocation.proto";
 ```
 
 ## Usage
@@ -63,19 +81,18 @@ import public "domains/vendor/vendor.proto";
 ### Importing Generated Types
 
 ```typescript
-import { 
-  UserServiceClient,
-  UserCreateRequest,
-  UserResponse,
-  USER_PACKAGE_NAME,
-  USER_SERVICE_NAME
-} from '@app/proto/user';
+import {
+	CreateUserData,
+	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
+	MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
+	UserCreatedResponse,
+	UserManagementServiceClient,
+} from '@app/proto/marketplace/user-management';
 
 // Use in gRPC client configuration
-const client = new UserServiceClient();
-const request: UserCreateRequest = {
-  email: 'user@example.com',
-  name: 'John Doe'
+const client = new UserManagementServiceClient();
+const request: CreateUserData = {
+	id: 'user-123',
 };
 ```
 
@@ -83,19 +100,23 @@ const request: UserCreateRequest = {
 
 ```typescript
 import { GrpcInstanceModule } from '@app/nest/modules';
-import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
+import {
+	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
+	MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
+	UserManagementServiceClient,
+} from '@app/proto/marketplace/user-management';
 
 @Module({
-  imports: [
-    GrpcInstanceModule.register<UserServiceClient>({
-      proto: 'domains/user/user.proto',
-      protoPackage: USER_PACKAGE_NAME,
-      provide: USER_SERVICE_NAME,
-      serviceName: USER_SERVICE_NAME,
-      urlFactory: (configService: ConfigService) => 
-        configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
-    }),
-  ],
+	imports: [
+		GrpcInstanceModule.register<UserManagementServiceClient>({
+			proto: 'domains/marketplace/user-management/user-management.proto',
+			protoPackage: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
+			provide: MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
+			serviceName: MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
+			urlFactory: (configService: ConfigService) =>
+				configService.get('USER_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5000',
+		}),
+	],
 })
 export class YourModule {}
 ```

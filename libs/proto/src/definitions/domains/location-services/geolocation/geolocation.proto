@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package location_services.geolocation;
+
+service GeolocationService {
+  rpc GetLocationByAddress (AddressLookupRequest) returns (AddressLookupResponse) {}
+  rpc CalculateDistance (DistanceRequest) returns (DistanceResponse) {}
+  rpc ValidateCoordinates (CoordinateValidationRequest) returns (CoordinateValidationResponse) {}
+}
+
+// Service Function Types
+
+message AddressLookupRequest {
+    string address = 1;
+}
+
+message AddressLookupResponse {
+    Location location = 1;
+    bool success = 2;
+    string error = 3;
+}
+
+message DistanceRequest {
+    Location from = 1;
+    Location to = 2;
+}
+
+message DistanceResponse {
+    double distance = 1; // in meters
+    double duration = 2; // in seconds
+}
+
+message CoordinateValidationRequest {
+    Location location = 1;
+}
+
+message CoordinateValidationResponse {
+    bool valid = 1;
+    string error = 2;
+}
+
+// Helper Types
+
+message Location {
+    double long = 1;
+    double lat = 2;
+}
+
+message Empty {
+
+} 
