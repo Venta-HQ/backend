@@ -1,4 +1,4 @@
-import { AvailableEventSubjects, BaseEvent } from '@app/apitypes';
+import { AvailableEventSubjects, BaseEvent } from '@app/eventtypes';
 import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';

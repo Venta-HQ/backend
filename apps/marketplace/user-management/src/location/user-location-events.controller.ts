@@ -1,4 +1,4 @@
-import { BaseEvent } from '@app/apitypes';
+import { BaseEvent } from '@app/eventtypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { UserService } from '../core/user.service';

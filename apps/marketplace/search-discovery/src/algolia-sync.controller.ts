@@ -1,4 +1,4 @@
-import { AvailableEventSubjects, BaseEvent } from '@app/apitypes';
+import { AvailableEventSubjects, BaseEvent } from '@app/eventtypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AlgoliaSyncService } from './algolia-sync.service';
