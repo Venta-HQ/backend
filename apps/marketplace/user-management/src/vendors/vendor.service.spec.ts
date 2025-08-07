@@ -67,7 +67,7 @@ describe('VendorService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.vendor.findMany.mockRejectedValue(dbError);
 
-			await expect(service.getUserVendors(userId)).rejects.toThrow('Database connection failed');
+			await expect(service.getUserVendors(userId)).rejects.toThrow('Failed to retrieve user vendor relationships');
 			expect(prisma.db.vendor.findMany).toHaveBeenCalledWith({
 				select: {
 					id: true,

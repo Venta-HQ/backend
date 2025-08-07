@@ -64,7 +64,7 @@ describe('SubscriptionService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.integration.create.mockRejectedValue(dbError);
 
-			await expect(service.createIntegration(integrationData)).rejects.toThrow('Database connection failed');
+			await expect(service.createIntegration(integrationData)).rejects.toThrow('Failed to create integration record');
 			expect(prisma.db.integration.create).toHaveBeenCalledWith({
 				data: {
 					data: integrationData.data,
@@ -118,7 +118,9 @@ describe('SubscriptionService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.userSubscription.create.mockRejectedValue(dbError);
 
-			await expect(service.createUserSubscription(subscriptionData)).rejects.toThrow('Database connection failed');
+			await expect(service.createUserSubscription(subscriptionData)).rejects.toThrow(
+				'Failed to create user subscription record',
+			);
 			expect(prisma.db.userSubscription.create).toHaveBeenCalledWith({
 				data: {
 					status: 'Active',
@@ -137,16 +139,10 @@ describe('SubscriptionService', () => {
 			const clerkId = 'clerk_user_123';
 			const expectedUser = data.user({ clerkId });
 
-			prisma.db.user.count.mockResolvedValue(0);
 			prisma.db.user.create.mockResolvedValue(expectedUser);
 
 			await service.handleUserCreated(clerkId);
 
-			expect(prisma.db.user.count).toHaveBeenCalledWith({
-				where: {
-					clerkId: 'clerk_user_123',
-				},
-			});
 			expect(prisma.db.user.create).toHaveBeenCalledWith({
 				data: {
 					clerkId: 'clerk_user_123',
@@ -157,26 +153,14 @@ describe('SubscriptionService', () => {
 		it('should not create user when user already exists', async () => {
 			const clerkId = 'clerk_user_123';
 
-			prisma.db.user.count.mockResolvedValue(1);
+			// Mock the unique constraint violation error
+			const uniqueConstraintError = new Error('Unique constraint failed');
+			(uniqueConstraintError as any).code = 'P2002';
+			prisma.db.user.create.mockRejectedValue(uniqueConstraintError);
 
-			await service.handleUserCreated(clerkId);
-
-			expect(prisma.db.user.count).toHaveBeenCalledWith({
-				where: {
-					clerkId: 'clerk_user_123',
-				},
-			});
-			expect(prisma.db.user.create).not.toHaveBeenCalled();
-		});
-
-		it('should handle database errors during user count check', async () => {
-			const clerkId = 'clerk_user_123';
-			const dbError = errors.database('Database connection failed');
-			prisma.db.user.count.mockRejectedValue(dbError);
-
-			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
-			expect(prisma.db.user.count).toHaveBeenCalledWith({
-				where: {
+			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Failed to create user from external auth provider');
+			expect(prisma.db.user.create).toHaveBeenCalledWith({
+				data: {
 					clerkId: 'clerk_user_123',
 				},
 			});
@@ -186,15 +170,9 @@ describe('SubscriptionService', () => {
 			const clerkId = 'clerk_user_123';
 			const dbError = errors.database('Database connection failed');
 
-			prisma.db.user.count.mockResolvedValue(0);
 			prisma.db.user.create.mockRejectedValue(dbError);
 
-			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Database connection failed');
-			expect(prisma.db.user.count).toHaveBeenCalledWith({
-				where: {
-					clerkId: 'clerk_user_123',
-				},
-			});
+			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Failed to create user from external auth provider');
 			expect(prisma.db.user.create).toHaveBeenCalledWith({
 				data: {
 					clerkId: 'clerk_user_123',
@@ -223,7 +201,7 @@ describe('SubscriptionService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.user.deleteMany.mockRejectedValue(dbError);
 
-			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Database connection failed');
+			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Failed to delete user from external auth provider');
 			expect(prisma.db.user.deleteMany).toHaveBeenCalledWith({
 				where: {
 					clerkId: 'clerk_user_123',
