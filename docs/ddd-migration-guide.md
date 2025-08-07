@@ -967,6 +967,147 @@ export class VendorManagementController {
 
 ## 🚀 Next Steps
 
+## 📦 Kubernetes Deployment Strategy
+
+### **Service Deployment Configuration**
+
+The DDD-aligned architecture supports efficient Kubernetes deployment with domain-based resource allocation:
+
+```yaml
+# Kubernetes deployment strategy for DDD domains
+deployments:
+  # Marketplace Domain
+  marketplace:
+    user-management: { replicas: 3, resources: { cpu: '500m', memory: '1Gi' } }
+    vendor-management: { replicas: 3, resources: { cpu: '500m', memory: '1Gi' } }
+    search-discovery: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+
+  # Location Services Domain
+  location-services:
+    geolocation: { replicas: 3, resources: { cpu: '1', memory: '2Gi' } }
+    real-time: { replicas: 5, resources: { cpu: '1', memory: '2Gi' } }
+
+  # Communication Domain
+  communication:
+    webhooks: { replicas: 2, resources: { cpu: '250m', memory: '512Mi' } }
+
+  # Infrastructure Domain
+  infrastructure:
+    api-gateway: { replicas: 5, resources: { cpu: '500m', memory: '1Gi' } }
+    file-management: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+```
+
+### **Domain-Based Scaling Strategy**
+
+#### **Horizontal Scaling by Domain**
+
+- **Marketplace Services**: Scale based on user activity and vendor operations
+- **Location Services**: Scale based on real-time location tracking demand
+- **Communication Services**: Scale based on webhook and notification volume
+- **Infrastructure Services**: Scale based on overall system load
+
+#### **Resource Allocation by Domain**
+
+- **CPU-Intensive**: Location services (geospatial calculations)
+- **Memory-Intensive**: Real-time services (WebSocket connections)
+- **I/O-Intensive**: File management and database operations
+- **Network-Intensive**: API gateway and communication services
+
+### **Domain-Specific Deployment Considerations**
+
+#### **Marketplace Domain**
+- **High Availability**: Critical for business operations
+- **Data Consistency**: Strong consistency for user and vendor data
+- **Scaling**: Auto-scaling based on user activity patterns
+
+#### **Location Services Domain**
+- **Real-time Performance**: Low latency for location updates
+- **Geographic Distribution**: Multi-region deployment for global coverage
+- **Stateful Services**: Redis clustering for location data
+
+#### **Communication Domain**
+- **Reliability**: High reliability for webhook processing
+- **Queue Management**: NATS clustering for event processing
+- **Retry Logic**: Robust retry mechanisms for external integrations
+
+#### **Infrastructure Domain**
+- **Load Balancing**: Intelligent routing and load distribution
+- **Security**: TLS termination and authentication
+- **Monitoring**: Comprehensive observability and alerting
+
+### **Future Service Deployment Strategy**
+
+As the architecture evolves to include all planned domains:
+
+```yaml
+# Complete deployment strategy (future vision)
+deployments:
+  # Marketplace Domain
+  marketplace:
+    user-management: { replicas: 3, resources: { cpu: '500m', memory: '1Gi' } }
+    vendor-management: { replicas: 3, resources: { cpu: '500m', memory: '1Gi' } }
+    search-discovery: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    reviews-ratings: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    favorites-bookmarks: { replicas: 2, resources: { cpu: '250m', memory: '512Mi' } }
+    loyalty-programs: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+
+  # Location Services Domain
+  location-services:
+    geolocation: { replicas: 3, resources: { cpu: '1', memory: '2Gi' } }
+    proximity: { replicas: 3, resources: { cpu: '1', memory: '2Gi' } }
+    real-time: { replicas: 5, resources: { cpu: '1', memory: '2Gi' } }
+    geofencing: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    location-analytics: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+
+  # Communication Domain
+  communication:
+    notifications: { replicas: 3, resources: { cpu: '500m', memory: '1Gi' } }
+    messaging: { replicas: 3, resources: { cpu: '1', memory: '2Gi' } }
+    email-service: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    webhooks: { replicas: 2, resources: { cpu: '250m', memory: '512Mi' } }
+    chat-support: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+
+  # Payments & Billing Domain
+  payments-billing:
+    payment-processing: { replicas: 3, resources: { cpu: '1', memory: '2Gi' } }
+    subscription-management: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    billing-invoicing: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    revenue-tracking: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    fraud-detection: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+
+  # Analytics & Insights Domain
+  analytics-insights:
+    business-analytics: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    user-analytics: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    location-analytics: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    reporting: { replicas: 2, resources: { cpu: '1', memory: '2Gi' } }
+    data-warehouse: { replicas: 3, resources: { cpu: '2', memory: '4Gi' } }
+
+  # Events & Promotions Domain
+  events-promotions:
+    event-management: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    promotion-engine: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    location-advertising: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    coupon-management: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    event-discovery: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+
+  # Infrastructure Domain
+  infrastructure:
+    api-gateway: { replicas: 5, resources: { cpu: '500m', memory: '1Gi' } }
+    file-management: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    monitoring: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    configuration: { replicas: 2, resources: { cpu: '250m', memory: '512Mi' } }
+    security: { replicas: 2, resources: { cpu: '500m', memory: '1Gi' } }
+    deployment: { replicas: 1, resources: { cpu: '250m', memory: '512Mi' } }
+```
+
+### **Benefits of Domain-Based Deployment**
+
+- **Resource Optimization**: Allocate resources based on domain-specific needs
+- **Independent Scaling**: Scale domains independently based on business demand
+- **Team Ownership**: Each domain team can manage their own deployment configuration
+- **Cost Management**: Optimize costs by domain-specific resource allocation
+- **Performance Tuning**: Domain-specific performance optimization strategies
 ### **Immediate Actions**
 
 1. **Complete Domain Organization**: Finish moving services to domain structure
