@@ -25,7 +25,7 @@ export class VendorLocationEventsController implements OnModuleInit {
 		// Set up queue subscription for vendor location update events
 		// This ensures only ONE instance processes each event
 		this.natsQueueService.subscribeToQueue(
-			'location.vendor_location_updated', // DDD domain event for location updates
+			'location.vendor.location_updated', // DDD domain event for location updates
 			'vendor-location-update-workers', // Queue group name - all instances share this
 			this.handleVendorLocationUpdate.bind(this),
 		);

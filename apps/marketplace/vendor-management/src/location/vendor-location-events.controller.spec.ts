@@ -22,7 +22,7 @@ describe('VendorLocationEventsController', () => {
 			await controller.onModuleInit();
 
 			expect(natsQueueService.subscribeToQueue).toHaveBeenCalledWith(
-				'location.vendor_location_updated',
+				'location.vendor.location_updated',
 				'vendor-location-update-workers',
 				expect.any(Function),
 			);
@@ -47,7 +47,7 @@ describe('VendorLocationEventsController', () => {
 						},
 					},
 				},
-				subject: 'location.vendor_location_updated',
+				subject: 'location.vendor.location_updated',
 			};
 
 			vendorService.updateVendorLocation.mockResolvedValue(undefined);
@@ -58,7 +58,7 @@ describe('VendorLocationEventsController', () => {
 				'vendor-123',
 				{
 					lat: 40.7128,
-					long: -74.006,
+					lng: -74.006,
 				},
 			);
 		});
@@ -80,7 +80,7 @@ describe('VendorLocationEventsController', () => {
 						},
 					},
 				},
-				subject: 'location.vendor_location_updated',
+				subject: 'location.vendor.location_updated',
 			};
 
 			const error = new Error('Service error');

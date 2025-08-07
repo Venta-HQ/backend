@@ -31,13 +31,13 @@ libs/eventtypes/src/
 
 ### Event Naming Convention
 
-Events follow the pattern: `domain.subdomain_action`
+Events follow the pattern: `domain.subdomain.action`
 
 ```typescript
 // Examples
-'marketplace.vendor_onboarded'     // Domain: marketplace, Subdomain: vendor, Action: onboarded
-'location.vendor_location_updated' // Domain: location, Subdomain: vendor, Action: location_updated
-'marketplace.user_registered'      // Domain: marketplace, Subdomain: user, Action: registered
+'marketplace.vendor.onboarded'     // Domain: marketplace, Subdomain: vendor, Action: onboarded
+'location.vendor.location_updated' // Domain: location, Subdomain: vendor, Action: location_updated
+'marketplace.user.registered'      // Domain: marketplace, Subdomain: user, Action: registered
 ```
 
 ## Usage
@@ -136,7 +136,7 @@ Events automatically extract business context from their schemas:
 
 ```typescript
 // Schema with context configuration
-'marketplace.vendor_onboarded': createEventSchema({
+'marketplace.vendor.onboarded': createEventSchema({
   vendorId: z.string(),
   ownerId: z.string(),
   // ... other fields
@@ -158,12 +158,12 @@ The library enforces event patterns at compile-time using TypeScript template li
 
 ```typescript
 // ✅ Valid - will compile
-'marketplace.vendor_onboarded'
-'location.vendor_location_updated'
+'marketplace.vendor.onboarded'
+'location.vendor.location_updated'
 
 // ❌ Invalid - will cause compile-time error
 'invalid.event_name'           // Invalid domain
-'marketplace.invalid_action'   // Invalid subdomain
+'marketplace.invalid.action'   // Invalid subdomain
 'vendor.onboarded'             // Missing domain prefix
 ```
 

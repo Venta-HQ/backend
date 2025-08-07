@@ -22,16 +22,16 @@ export class AlgoliaSyncController implements OnModuleInit {
 	) {}
 
 	async onModuleInit() {
-		// Subscribe to marketplace domain events
+		// Listen for marketplace vendor events
 		this.natsQueueService.subscribeToQueue(
-			'marketplace.vendor_>', // Wildcard for marketplace vendor events
+			'marketplace.vendor.>', // Wildcard for marketplace vendor events
 			'algolia-sync-workers',
 			this.handleMarketplaceVendorEvent.bind(this),
 		);
 
-		// Subscribe to location domain events
+		// Listen for location vendor events
 		this.natsQueueService.subscribeToQueue(
-			'location.vendor_>', // Wildcard for location vendor events
+			'location.vendor.>', // Wildcard for location vendor events
 			'algolia-sync-workers',
 			this.handleLocationVendorEvent.bind(this),
 		);
@@ -53,13 +53,13 @@ export class AlgoliaSyncController implements OnModuleInit {
 
 		try {
 			switch (subject) {
-				case 'marketplace.vendor_onboarded':
+				case 'marketplace.vendor.onboarded':
 					await this.algoliaSyncService.indexNewVendor(event.data);
 					break;
-				case 'marketplace.vendor_profile_updated':
+				case 'marketplace.vendor.profile_updated':
 					await this.algoliaSyncService.updateVendorIndex(event.data);
 					break;
-				case 'marketplace.vendor_deactivated':
+				case 'marketplace.vendor.deactivated':
 					await this.algoliaSyncService.removeVendorFromIndex(event.data);
 					break;
 				default:
@@ -88,7 +88,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 		});
 
 		try {
-			if (subject === 'location.vendor_location_updated') {
+			if (subject === 'location.vendor.location_updated') {
 				await this.algoliaSyncService.updateVendorLocation(event.data);
 			} else {
 				this.logger.warn(`Unhandled location vendor event: ${subject}`);

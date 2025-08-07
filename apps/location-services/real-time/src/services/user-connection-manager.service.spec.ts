@@ -105,7 +105,7 @@ describe('UserConnectionManagerService', () => {
 		it('should add user to vendor room successfully', async () => {
 			redis.sadd.mockResolvedValue(1);
 
-			await service.addUserToVendorRoom('user-123', 'vendor-456');
+			await service.addUserToVendorRoom({ userId: 'user-123', vendorId: 'vendor-456' });
 
 			expect(redis.sadd).toHaveBeenCalledWith('user:user-123:rooms', 'vendor-456');
 			expect(redis.sadd).toHaveBeenCalledWith('room:vendor-456:users', 'user-123');
@@ -115,7 +115,9 @@ describe('UserConnectionManagerService', () => {
 			const redisError = new Error('Redis connection failed');
 			redis.sadd.mockRejectedValue(redisError);
 
-			await expect(service.addUserToVendorRoom('user-123', 'vendor-456')).rejects.toThrow('Redis connection failed');
+			await expect(service.addUserToVendorRoom({ userId: 'user-123', vendorId: 'vendor-456' })).rejects.toThrow(
+				'Redis connection failed',
+			);
 		});
 	});
 
@@ -123,7 +125,7 @@ describe('UserConnectionManagerService', () => {
 		it('should remove user from vendor room successfully', async () => {
 			redis.srem.mockResolvedValue(1);
 
-			await service.removeUserFromVendorRoom('user-123', 'vendor-456');
+			await service.removeUserFromVendorRoom({ userId: 'user-123', vendorId: 'vendor-456' });
 
 			expect(redis.srem).toHaveBeenCalledWith('user:user-123:rooms', 'vendor-456');
 			expect(redis.srem).toHaveBeenCalledWith('room:vendor-456:users', 'user-123');
@@ -133,7 +135,7 @@ describe('UserConnectionManagerService', () => {
 			const redisError = new Error('Redis connection failed');
 			redis.srem.mockRejectedValue(redisError);
 
-			await expect(service.removeUserFromVendorRoom('user-123', 'vendor-456')).rejects.toThrow(
+			await expect(service.removeUserFromVendorRoom({ userId: 'user-123', vendorId: 'vendor-456' })).rejects.toThrow(
 				'Redis connection failed',
 			);
 		});

@@ -31,10 +31,10 @@ export class LocationTrackingService {
 		// Domain logic
 		await this.storeVendorLocation(vendorId, location);
 
-		// Emit DDD domain event with business context
-		await this.eventService.emit('location.vendor_location_updated', {
-			vendorId,
+		// Emit location update event
+		await this.eventService.emit('location.vendor.location_updated', {
 			location: { lat: location.lat, lng: location.lng },
+			vendorId,
 		});
 
 		this.logger.log('Vendor location updated successfully', { vendorId });
@@ -54,7 +54,7 @@ export class LocationTrackingService {
 		await this.storeUserLocation(userId, location);
 
 		// Emit DDD domain event with business context
-		await this.eventService.emit('location.user_location_updated', {
+		await this.eventService.emit('location.user.location_updated', {
 			userId,
 			location: { lat: location.lat, lng: location.lng },
 		});

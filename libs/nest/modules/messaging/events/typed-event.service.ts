@@ -63,12 +63,12 @@ export class EventService {
 	}
 
 	private extractDomainFromSubject(subject: string): string {
-		return subject.split('.')[0]; // 'marketplace.user_registered' -> 'marketplace'
+		return subject.split('.')[0]; // 'marketplace.vendor.onboarded' -> 'marketplace'
 	}
 
 	private extractSubdomainFromSubject(subject: string): string | undefined {
 		const parts = subject.split('.');
-		return parts.length > 2 ? parts[1] : undefined;
+		return parts.length > 2 ? parts[1] : undefined; // 'marketplace.vendor.onboarded' -> 'vendor'
 	}
 
 	/**
@@ -77,7 +77,7 @@ export class EventService {
 	 */
 	private extractContextFromSchema(schema: z.ZodSchema, data: any): Record<string, any> | undefined {
 		// Check if schema has context metadata
-		const contextConfig = (schema as any)._context;
+		const contextConfig = schema ? (schema as any)._context : undefined;
 
 		const context: Record<string, any> = {};
 

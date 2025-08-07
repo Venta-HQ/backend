@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createBasicSchemaTests, createOptionalFieldTests } from '../../../../../test/helpers/schema-test-utils';
+import { createBasicSchemaTests, createOptionalFieldTests } from '@test/helpers/schema-test-utils';
 import {
 	GrpcLocationSchema,
 	GrpcLocationUpdateSchema,

@@ -2,9 +2,9 @@ import { z } from 'zod';
 import { createEventSchema } from '../../../shared/base.types';
 import { EnforceValidDomainEvents } from '../../../shared/event-schema-types';
 
-// Type-safe event schemas - TypeScript will error if you use invalid event names
+// Vendor domain events with type enforcement
 export const vendorEventSchemas = {
-	'marketplace.vendor_onboarded': createEventSchema({
+	'marketplace.vendor.onboarded': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
 		location: z.object({
@@ -14,14 +14,13 @@ export const vendorEventSchemas = {
 		timestamp: z.string().default(() => new Date().toISOString()),
 	}).withContext(['vendorId', 'ownerId']),
 
-	'marketplace.vendor_profile_updated': createEventSchema({
+	'marketplace.vendor.profile_updated': createEventSchema({
 		vendorId: z.string(),
-		ownerId: z.string(),
 		updatedFields: z.array(z.string()),
 		timestamp: z.string().default(() => new Date().toISOString()),
-	}).withContext(['vendorId', 'ownerId']),
+	}).withContext(['vendorId']),
 
-	'marketplace.vendor_deactivated': createEventSchema({
+	'marketplace.vendor.deactivated': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
 		timestamp: z.string().default(() => new Date().toISOString()),

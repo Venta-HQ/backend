@@ -38,6 +38,6 @@ export function getEventsForDomain(domain: string): AvailableEventSubjects[] {
  */
 export function getEventsForSubdomain(domain: string, subdomain: string): AvailableEventSubjects[] {
 	return Object.keys(ALL_EVENT_SCHEMAS).filter((eventName) =>
-		eventName.startsWith(`${domain}.${subdomain}_`),
+		eventName.startsWith(`${domain}.${subdomain}.`),
 	) as AvailableEventSubjects[];
 }

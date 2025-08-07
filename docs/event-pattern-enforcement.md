@@ -8,14 +8,14 @@ We use **type-based validation** to enforce event naming patterns at compile-tim
 
 ## 🎯 Event Naming Convention
 
-### Pattern: `domain.subdomain_action`
+### Pattern: `domain.subdomain.action`
 
 ```typescript
 // ✅ Valid DDD Event Names
-'marketplace.vendor_onboarded'; // Domain: marketplace, Subdomain: vendor, Action: onboarded
-'location.vendor_location_updated'; // Domain: location, Subdomain: vendor, Action: location_updated
-'marketplace.user_registered'; // Domain: marketplace, Subdomain: user, Action: registered
-'location.user_location_updated'; // Domain: location, Subdomain: user, Action: location_updated
+'marketplace.vendor.onboarded'; // Domain: marketplace, Subdomain: vendor, Action: onboarded
+'location.vendor.location_updated'; // Domain: location, Subdomain: vendor, Action: location_updated
+'marketplace.user.registered'; // Domain: marketplace, Subdomain: user, Action: registered
+'location.user.location_updated'; // Domain: location, Subdomain: user, Action: location_updated
 ```
 
 ### Domain Structure
@@ -37,7 +37,7 @@ We use TypeScript template literal types to enforce event patterns at compile-ti
 ```typescript
 // Type definition for valid event names
 type ValidEventNamePattern<TDomain extends keyof typeof DOMAIN_SUBDOMAINS> =
-	`${TDomain}.${DOMAIN_SUBDOMAINS[TDomain][number]}_${string}`;
+	`${TDomain}.${DOMAIN_SUBDOMAINS[TDomain][number]}.${string}`;
 
 // Enforce valid domain events
 type EnforceValidDomainEvents<TDomain extends keyof typeof DOMAIN_SUBDOMAINS> = {
@@ -50,7 +50,7 @@ type EnforceValidDomainEvents<TDomain extends keyof typeof DOMAIN_SUBDOMAINS> = 
 ```typescript
 // ✅ Correct: Type-safe event schema
 export const vendorEventSchemas = {
-	'marketplace.vendor_onboarded': createEventSchema({
+	'marketplace.vendor.onboarded': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
 		location: z.object({
@@ -68,7 +68,7 @@ export const vendorEventSchemas = {
 // ❌ This will cause a compile-time error
 export const invalidEventSchemas = {
 	'invalid.event_name': z.object({}), // Type error: not a valid event pattern
-	'marketplace.invalid_action': z.object({}), // Type error: invalid subdomain
+	'marketplace.invalid.action': z.object({}), // Type error: invalid subdomain
 } as const satisfies EnforceValidDomainEvents<'marketplace'>;
 ```
 
@@ -163,13 +163,13 @@ await this.eventService.emit('marketplace.vendor_onboarded', {
 
 ```typescript
 // ✅ All of these are valid and will compile
-'marketplace.vendor_onboarded';
-'marketplace.vendor_profile_updated';
-'marketplace.vendor_deactivated';
-'location.vendor_location_updated';
-'location.user_location_updated';
-'marketplace.user_registered';
-'marketplace.user_profile_updated';
+'marketplace.vendor.onboarded';
+'marketplace.vendor.profile_updated';
+'marketplace.vendor.deactivated';
+'location.vendor.location_updated';
+'location.user.location_updated';
+'marketplace.user.registered';
+'marketplace.user.profile_updated';
 ```
 
 ### Invalid Event Patterns
@@ -177,7 +177,7 @@ await this.eventService.emit('marketplace.vendor_onboarded', {
 ```typescript
 // ❌ These will cause compile-time errors
 'invalid.event_name'; // Invalid domain
-'marketplace.invalid_action'; // Invalid subdomain
+'marketplace.invalid.action'; // Invalid subdomain
 'location.vendor.invalid'; // Wrong pattern
 'vendor.onboarded'; // Missing domain prefix
 ```

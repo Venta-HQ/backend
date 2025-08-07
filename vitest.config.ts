@@ -5,6 +5,7 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@app/apitypes': resolve(__dirname, './libs/apitypes/src'),
+			'@app/eventtypes': resolve(__dirname, './libs/eventtypes/src'),
 			'@app/nest/errors': resolve(__dirname, './libs/nest/errors'),
 			'@app/nest/filters': resolve(__dirname, './libs/nest/filters'),
 			'@app/nest/guards': resolve(__dirname, './libs/nest/guards'),

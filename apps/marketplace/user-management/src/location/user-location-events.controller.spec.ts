@@ -23,7 +23,7 @@ describe('UserLocationEventsController', () => {
 			await controller.onModuleInit();
 
 			expect(mockNatsQueueService.subscribeToQueue).toHaveBeenCalledWith(
-				'location.user_location_updated',
+				'location.user.location_updated',
 				'user-location-update-workers',
 				expect.any(Function),
 			);
@@ -50,7 +50,7 @@ describe('UserLocationEventsController', () => {
 					},
 				},
 			},
-			subject: 'location.user_location_updated',
+			subject: 'location.user.location_updated',
 		};
 
 		it('should handle user location update event successfully', async () => {
@@ -60,7 +60,7 @@ describe('UserLocationEventsController', () => {
 
 			expect(mockUserService.updateUserLocation).toHaveBeenCalledWith('user-123', {
 				lat: 40.7128,
-				long: -74.006,
+				lng: -74.006,
 			});
 		});
 

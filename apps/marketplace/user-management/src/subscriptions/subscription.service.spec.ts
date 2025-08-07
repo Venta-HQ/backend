@@ -158,7 +158,9 @@ describe('SubscriptionService', () => {
 			(uniqueConstraintError as any).code = 'P2002';
 			prisma.db.user.create.mockRejectedValue(uniqueConstraintError);
 
-			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Failed to create user from external auth provider');
+			await expect(service.handleUserCreated(clerkId)).rejects.toThrow(
+				'Failed to create user from external auth provider',
+			);
 			expect(prisma.db.user.create).toHaveBeenCalledWith({
 				data: {
 					clerkId: 'clerk_user_123',
@@ -172,7 +174,9 @@ describe('SubscriptionService', () => {
 
 			prisma.db.user.create.mockRejectedValue(dbError);
 
-			await expect(service.handleUserCreated(clerkId)).rejects.toThrow('Failed to create user from external auth provider');
+			await expect(service.handleUserCreated(clerkId)).rejects.toThrow(
+				'Failed to create user from external auth provider',
+			);
 			expect(prisma.db.user.create).toHaveBeenCalledWith({
 				data: {
 					clerkId: 'clerk_user_123',
@@ -201,7 +205,9 @@ describe('SubscriptionService', () => {
 			const dbError = errors.database('Database connection failed');
 			prisma.db.user.deleteMany.mockRejectedValue(dbError);
 
-			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Failed to delete user from external auth provider');
+			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow(
+				'Failed to delete user from external auth provider',
+			);
 			expect(prisma.db.user.deleteMany).toHaveBeenCalledWith({
 				where: {
 					clerkId: 'clerk_user_123',

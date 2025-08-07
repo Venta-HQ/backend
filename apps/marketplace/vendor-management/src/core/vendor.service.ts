@@ -62,7 +62,7 @@ export class VendorService {
 			});
 
 			// Emit DDD domain event with rich business context
-			await this.eventService.emit('marketplace.vendor_onboarded', {
+			await this.eventService.emit('marketplace.vendor.onboarded', {
 				location: onboardingData.location || { lat: 0, lng: 0 },
 				ownerId: onboardingData.ownerId,
 				vendorId: vendor.id,
@@ -97,8 +97,7 @@ export class VendorService {
 			});
 
 			// Emit DDD domain event with business context
-			await this.eventService.emit('marketplace.vendor_profile_updated', {
-				ownerId: vendor.ownerId,
+			await this.eventService.emit('marketplace.vendor.profile_updated', {
 				updatedFields: Object.keys(updateData),
 				vendorId: vendor.id,
 				// timestamp automatically added by schema default
@@ -127,7 +126,7 @@ export class VendorService {
 			});
 
 			// Emit DDD domain event with business context
-			await this.eventService.emit('marketplace.vendor_deactivated', {
+			await this.eventService.emit('marketplace.vendor.deactivated', {
 				ownerId: vendor.ownerId,
 				vendorId: vendor.id,
 				// timestamp automatically added by schema default
@@ -200,7 +199,7 @@ export class VendorService {
 			});
 
 			// Emit DDD domain event with business context
-			await this.eventService.emit('location.vendor_location_updated', {
+			await this.eventService.emit('location.vendor.location_updated', {
 				location: { lat: location.lat, lng: location.lng },
 				vendorId,
 			});

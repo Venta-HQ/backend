@@ -2,22 +2,23 @@ import { z } from 'zod';
 import { createEventSchema } from '../../shared/base.types';
 import { EnforceValidDomainEvents } from '../../shared/event-schema-types';
 
-const baseLocationSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
-
-// Type-safe location event schemas - TypeScript will error if you use invalid event names
+// Location domain events with type enforcement
 export const locationEventSchemas = {
-	'location.vendor_location_updated': createEventSchema({
+	'location.vendor.location_updated': createEventSchema({
 		vendorId: z.string(),
-		location: baseLocationSchema,
+		location: z.object({
+			lat: z.number().min(-90).max(90),
+			lng: z.number().min(-180).max(180),
+		}),
 		timestamp: z.string().default(() => new Date().toISOString()),
 	}).withContext(['vendorId']),
 
-	'location.user_location_updated': createEventSchema({
+	'location.user.location_updated': createEventSchema({
 		userId: z.string(),
-		location: baseLocationSchema,
+		location: z.object({
+			lat: z.number().min(-90).max(90),
+			lng: z.number().min(-180).max(180),
+		}),
 		timestamp: z.string().default(() => new Date().toISOString()),
 	}).withContext(['userId']),
 } as const satisfies EnforceValidDomainEvents<'location'>;

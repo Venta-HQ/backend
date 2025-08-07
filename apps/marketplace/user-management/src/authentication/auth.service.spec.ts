@@ -116,7 +116,9 @@ describe('AuthService', () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.integration.create.mockRejectedValue(dbError);
 
-			await expect(service.createIntegration(integrationData)).rejects.toThrow('Failed to create authentication integration record');
+			await expect(service.createIntegration(integrationData)).rejects.toThrow(
+				'Failed to create authentication integration record',
+			);
 			expect(prisma.db.integration.create).toHaveBeenCalledWith(expectedCall);
 		});
 	});
@@ -154,7 +156,9 @@ describe('AuthService', () => {
 			const dbError = new Error('Database connection failed');
 			prisma.db.integration.findFirst.mockRejectedValue(dbError);
 
-			await expect(service.deleteIntegration(integrationData)).rejects.toThrow('Failed to delete authentication integration record');
+			await expect(service.deleteIntegration(integrationData)).rejects.toThrow(
+				'Failed to delete authentication integration record',
+			);
 			expect(prisma.db.integration.findFirst).toHaveBeenCalledWith(findFirstCall);
 		});
 	});

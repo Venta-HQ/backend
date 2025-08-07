@@ -84,13 +84,10 @@ describe('VendorService', () => {
 					website: onboardingData.website || '',
 				},
 			});
-			expect(mockEventService.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
-				vendorId: 'vendor-123',
+			expect(mockEventService.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
+				location: { lat: 0, lng: 0 },
 				ownerId: onboardingData.ownerId,
-				location: {
-					lat: 0,
-					lng: 0,
-				},
+				vendorId: 'vendor-123',
 			});
 			expect(result).toBe('vendor-123');
 		});
@@ -116,7 +113,7 @@ describe('VendorService', () => {
 				where: { id: vendorId },
 				data: updateData,
 			});
-			expect(mockEventService.emit).toHaveBeenCalledWith('marketplace.vendor_profile_updated', {
+			expect(mockEventService.emit).toHaveBeenCalledWith('marketplace.vendor.profile_updated', {
 				vendorId,
 				updatedFields: ['name'],
 			});

@@ -19,8 +19,9 @@ export type ValidSubdomain<TDomain extends ValidDomain> = (typeof DOMAIN_SUBDOMA
 /**
  * Type that generates all valid event name patterns for a domain
  * Enforces domain and subdomain boundaries, but allows any action
+ * Pattern: domain.subdomain.action (e.g., marketplace.vendor.onboarded)
  */
-export type ValidEventNamePattern<TDomain extends ValidDomain> = `${TDomain}.${ValidSubdomain<TDomain>}_${string}`;
+export type ValidEventNamePattern<TDomain extends ValidDomain> = `${TDomain}.${ValidSubdomain<TDomain>}.${string}`;
 
 /**
  * Union of all valid event names across all domains

@@ -43,31 +43,34 @@ describe('EventService', () => {
 			timestamp: new Date('2024-01-01').toISOString(),
 		};
 
-		it('should emit marketplace.vendor_onboarded event successfully', async () => {
-			mockRequestContextService.getRequestId.mockReturnValue('req-123');
+		it('should emit marketplace.vendor.onboarded event successfully', async () => {
+			const mockVendorData = {
+				vendorId: 'vendor-123',
+				ownerId: 'user-456',
+				location: { lat: 40.7128, lng: -74.006 },
+			};
 
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
-					requestId: 'req-123',
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
 				data: mockVendorData,
 				meta: {
-					correlationId: 'req-123',
+					correlationId: 'test-request-id',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
 			});
 		});
 
-		it('should emit marketplace.vendor_profile_updated event successfully', async () => {
+		it('should emit marketplace.vendor.profile_updated event successfully', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue('req-456');
 
 			const updateData = {
@@ -77,9 +80,9 @@ describe('EventService', () => {
 				timestamp: new Date('2024-01-01').toISOString(),
 			};
 
-			await service.emit('marketplace.vendor_profile_updated', updateData);
+			await service.emit('marketplace.vendor.profile_updated', updateData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_profile_updated', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.profile_updated', {
 				context: {
 					requestId: 'req-456',
 					vendorId: 'vendor-123',
@@ -98,7 +101,7 @@ describe('EventService', () => {
 			});
 		});
 
-		it('should emit marketplace.vendor_deactivated event successfully', async () => {
+		it('should emit marketplace.vendor.deactivated event successfully', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue('req-789');
 
 			const deactivateData = {
@@ -107,9 +110,9 @@ describe('EventService', () => {
 				timestamp: new Date('2024-01-01').toISOString(),
 			};
 
-			await service.emit('marketplace.vendor_deactivated', deactivateData);
+			await service.emit('marketplace.vendor.deactivated', deactivateData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_deactivated', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.deactivated', {
 				context: {
 					requestId: 'req-789',
 					vendorId: 'vendor-123',
@@ -131,9 +134,9 @@ describe('EventService', () => {
 		it('should use correlationId from metadata when provided', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue('req-123');
 
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
 					requestId: 'req-123',
 					vendorId: 'vendor-123',
@@ -155,9 +158,9 @@ describe('EventService', () => {
 		it('should fallback to request context correlationId when metadata not provided', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue('req-context-id');
 
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
 					requestId: 'req-context-id',
 					vendorId: 'vendor-123',
@@ -179,9 +182,9 @@ describe('EventService', () => {
 		it('should handle undefined request context gracefully', async () => {
 			mockRequestContextService.getRequestId.mockReturnValue(undefined);
 
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
@@ -200,8 +203,8 @@ describe('EventService', () => {
 		});
 
 		it('should generate unique event IDs for each emission', async () => {
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
 			const calls = mockNatsClient.emit.mock.calls;
 			const eventId1 = calls[0][1].meta.eventId;
@@ -215,7 +218,7 @@ describe('EventService', () => {
 		it('should use service name from ConfigService', async () => {
 			mockConfigService.get.mockReturnValue('test-service');
 
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
 			const emittedEvent = mockNatsClient.emit.mock.calls[0][1];
 			expect(emittedEvent.meta.source).toBe('test-service');
@@ -223,9 +226,9 @@ describe('EventService', () => {
 
 		it('should validate data against schema when schema exists', async () => {
 			// The service automatically validates against schemas, so we just test that it works
-			await service.emit('marketplace.vendor_onboarded', mockVendorData);
+			await service.emit('marketplace.vendor.onboarded', mockVendorData);
 
-			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor_onboarded', {
+			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
 					requestId: 'req-123',
 					vendorId: 'vendor-123',
@@ -250,14 +253,14 @@ describe('EventService', () => {
 				// Missing required ownerId field
 			};
 
-			await expect(service.emit('marketplace.vendor_onboarded', invalidData as any)).rejects.toThrow();
+			await expect(service.emit('marketplace.vendor.onboarded', invalidData as any)).rejects.toThrow();
 		});
 
 		it('should handle NATS client errors', async () => {
 			const error = new Error('NATS connection failed');
 			mockNatsClient.emit.mockRejectedValue(error);
 
-			await expect(service.emit('marketplace.vendor_onboarded', mockVendorData)).rejects.toThrow(
+			await expect(service.emit('marketplace.vendor.onboarded', mockVendorData)).rejects.toThrow(
 				'NATS connection failed',
 			);
 		});
@@ -295,7 +298,7 @@ describe('EventService', () => {
 				timestamp: new Date('2024-01-01').toISOString(),
 			};
 
-			await service.emit('marketplace.vendor_onboarded' as any, testData);
+			await service.emit('marketplace.vendor.onboarded' as any, testData);
 
 			const emittedEvent = mockNatsClient.emit.mock.calls[0][1];
 

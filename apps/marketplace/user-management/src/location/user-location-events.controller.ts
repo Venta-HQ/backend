@@ -22,9 +22,9 @@ export class UserLocationEventsController implements OnModuleInit {
 	) {}
 
 	async onModuleInit() {
-		// Subscribe to DDD location domain events
+		// Subscribe to location domain events for user location updates
 		this.natsQueueService.subscribeToQueue(
-			'location.user_location_updated', // DDD domain event for location updates
+			'location.user.location_updated', // DDD domain event for location updates
 			'user-location-update-workers',
 			this.handleUserLocationUpdate.bind(this),
 		);
