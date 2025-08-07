@@ -313,7 +313,7 @@ export class VendorEventsController {
 ### **Service Structure**
 
 ```
-apps/marketplace/user-management/
+apps/marketplace/services/user-management/
 ├── src/
 │   ├── core/                    # Core domain logic
 │   │   ├── user.service.ts

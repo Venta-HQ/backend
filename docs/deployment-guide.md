@@ -177,7 +177,7 @@ version: '3.8'
 services:
   # Infrastructure Domain
   api-gateway:
-    build: ./apps/infrastructure/api-gateway
+    build: ./apps/infrastructure/services/api-gateway
     environment:
       - DOMAIN=infrastructure
       - NODE_ENV=production
@@ -189,7 +189,7 @@ services:
       - nats
 
   file-management:
-    build: ./apps/infrastructure/file-management
+    build: ./apps/infrastructure/services/file-management
     environment:
       - DOMAIN=infrastructure
       - NODE_ENV=production
@@ -200,7 +200,7 @@ services:
 
   # Marketplace Domain
   user-management:
-    build: ./apps/marketplace/user-management
+    build: ./apps/marketplace/services/user-management
     environment:
       - DOMAIN=marketplace
       - NODE_ENV=production
@@ -211,7 +211,7 @@ services:
       - nats
 
   vendor-management:
-    build: ./apps/marketplace/vendor-management
+    build: ./apps/marketplace/services/vendor-management
     environment:
       - DOMAIN=marketplace
       - NODE_ENV=production
@@ -222,7 +222,7 @@ services:
       - nats
 
   search-discovery:
-    build: ./apps/marketplace/search-discovery
+    build: ./apps/marketplace/services/search-discovery
     environment:
       - DOMAIN=marketplace
       - NODE_ENV=production
@@ -233,7 +233,7 @@ services:
 
   # Location Services Domain
   geolocation:
-    build: ./apps/location-services/geolocation
+    build: ./apps/location-services/services/geolocation
     environment:
       - DOMAIN=location-services
       - NODE_ENV=production
@@ -245,7 +245,7 @@ services:
       - nats
 
   real-time:
-    build: ./apps/location-services/real-time
+    build: ./apps/location-services/services/real-time
     environment:
       - DOMAIN=location-services
       - NODE_ENV=production
@@ -257,7 +257,7 @@ services:
 
   # Communication Domain
   webhooks:
-    build: ./apps/communication/webhooks
+    build: ./apps/communication/services/webhooks
     environment:
       - DOMAIN=communication
       - NODE_ENV=production
@@ -296,7 +296,7 @@ volumes:
 Each service has a domain-aware Dockerfile:
 
 ```dockerfile
-# apps/marketplace/user-management/Dockerfile
+# apps/marketplace/services/user-management/Dockerfile
 FROM node:18-alpine
 
 WORKDIR /app
@@ -463,9 +463,9 @@ jobs:
     
     - name: Build Marketplace Services
       run: |
-        docker build -t venta/user-management:latest ./apps/marketplace/user-management
-        docker build -t venta/vendor-management:latest ./apps/marketplace/vendor-management
-        docker build -t venta/search-discovery:latest ./apps/marketplace/search-discovery
+        docker build -t venta/user-management:latest ./apps/marketplace/services/user-management
+docker build -t venta/vendor-management:latest ./apps/marketplace/services/vendor-management
+docker build -t venta/search-discovery:latest ./apps/marketplace/services/search-discovery
     
     - name: Deploy to Marketplace Namespace
       run: |
@@ -481,8 +481,8 @@ jobs:
     
     - name: Build Location Services
       run: |
-        docker build -t venta/geolocation:latest ./apps/location-services/geolocation
-        docker build -t venta/real-time:latest ./apps/location-services/real-time
+        docker build -t venta/geolocation:latest ./apps/location-services/services/geolocation
+docker build -t venta/real-time:latest ./apps/location-services/services/real-time
     
     - name: Deploy to Location Services Namespace
       run: |

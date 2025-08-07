@@ -247,14 +247,14 @@ export class AppExceptionFilter implements ExceptionFilter {
 Each service is configured with its DDD domain:
 
 ```typescript
-// apps/marketplace/user-management/src/main.ts
+// apps/marketplace/services/user-management/src/main.ts
 await BootstrapService.bootstrapGrpcMicroservice({
   app,
   domain: 'marketplace', // Explicit DDD domain
   appName: APP_NAMES.USER_MANAGEMENT,
 });
 
-// apps/location-services/geolocation/src/main.ts
+// apps/location-services/services/geolocation/src/main.ts
 await BootstrapService.bootstrapGrpcMicroservice({
   app,
   domain: 'location-services', // Explicit DDD domain

@@ -352,8 +352,8 @@ describe('Marketplace Contracts Integration', () => {
 
 ### **Before (Service-Specific)**
 ```
-apps/marketplace/user-management/src/contracts/
-apps/marketplace/vendor-management/src/contracts/
+apps/marketplace/services/user-management/src/contracts/
+apps/marketplace/services/vendor-management/src/contracts/
 ```
 
 ### **After (Domain-Focused)**
