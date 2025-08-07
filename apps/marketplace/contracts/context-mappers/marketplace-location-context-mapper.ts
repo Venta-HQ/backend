@@ -5,8 +5,8 @@ import {
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
 import { BaseContextMapper } from '@app/nest/modules/contracts';
+import { TransformationUtils, ValidationUtils } from '@app/utils';
 import { Injectable } from '@nestjs/common';
-import { LocationContractUtils } from '../../../location-services/contracts/utils/location-contract-utils';
 
 /**
  * Context Mapper for Marketplace ↔ Location Services communication
@@ -29,16 +29,23 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 	validateSourceData(data: any): boolean {
 		if (data.location) {
-			return LocationContractUtils.validateLocation(data.location);
+			return ValidationUtils.isValidLocation(data.location);
 		}
 		if (data.bounds) {
-			return LocationContractUtils.validateBounds(data.bounds);
+			return ValidationUtils.isValidBounds(data.bounds);
 		}
 		return true;
 	}
 
 	validateTargetData(data: any): boolean {
-		return LocationContractUtils.validateEntityData(data);
+		// Basic validation for location services data
+		return (
+			data &&
+			ValidationUtils.isValidString(data.entityId) &&
+			data.coordinates &&
+			typeof data.coordinates.latitude === 'number' &&
+			typeof data.coordinates.longitude === 'number'
+		);
 	}
 
 	// ============================================================================
@@ -58,7 +65,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: vendorId, // Location Services uses 'entityId'
-				coordinates: LocationContractUtils.transformLocationToLatLng(location),
+				coordinates: TransformationUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),

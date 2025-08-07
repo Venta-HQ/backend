@@ -1,8 +1,9 @@
+import { TransformationUtils, ValidationUtils } from '@app/utils';
 import { Logger } from '@nestjs/common';
 
 /**
  * Marketplace Contract Utilities
- * 
+ *
  * Domain-specific utilities for marketplace contract operations.
  * Contains validation and transformation logic specific to the marketplace domain.
  */
@@ -10,7 +11,7 @@ export class MarketplaceContractUtils {
 	private static logger = new Logger('MarketplaceContractUtils');
 
 	// ============================================================================
-	// User Data Validation & Transformation
+	// Marketplace-Specific User Data Validation
 	// ============================================================================
 
 	/**
@@ -24,11 +25,10 @@ export class MarketplaceContractUtils {
 	}): boolean {
 		const isValid =
 			userData &&
-			typeof userData.email === 'string' &&
-			userData.email.includes('@') &&
-			(!userData.firstName || typeof userData.firstName === 'string') &&
-			(!userData.lastName || typeof userData.lastName === 'string') &&
-			(!userData.metadata || typeof userData.metadata === 'object');
+			ValidationUtils.isValidEmail(userData.email) &&
+			(!userData.firstName || ValidationUtils.isValidString(userData.firstName)) &&
+			(!userData.lastName || ValidationUtils.isValidString(userData.lastName)) &&
+			(!userData.metadata || ValidationUtils.isValidObject(userData.metadata));
 
 		if (!isValid) {
 			this.logger.warn('Invalid marketplace user data', { userData });
@@ -42,52 +42,44 @@ export class MarketplaceContractUtils {
 	 */
 	static extractEmail(data: any): string {
 		// Handle different API versions and structures
-		if (data.emailAddresses && data.emailAddresses.length > 0) {
-			return data.emailAddresses[0].emailAddress;
+		const email = TransformationUtils.extractString(data, [
+			'emailAddresses.0.emailAddress',
+			'email_addresses.0.email_address',
+			'primaryEmailAddress.emailAddress',
+			'primary_email_address.email_address',
+			'email',
+		]);
+
+		if (!email) {
+			throw new Error('Could not extract email from external service data');
 		}
 
-		if (data.email_addresses && data.email_addresses.length > 0) {
-			return data.email_addresses[0].email_address;
-		}
-
-		if (data.primaryEmailAddress) {
-			return data.primaryEmailAddress.emailAddress;
-		}
-
-		if (data.primary_email_address) {
-			return data.primary_email_address.email_address;
-		}
-
-		if (data.email) {
-			return data.email;
-		}
-
-		throw new Error('Could not extract email from external service data');
+		return email;
 	}
 
 	/**
 	 * Extract first name from external service data
 	 */
 	static extractFirstName(data: any): string {
-		return data.firstName || data.first_name || '';
+		return TransformationUtils.extractString(data, ['firstName', 'first_name'], '');
 	}
 
 	/**
 	 * Extract last name from external service data
 	 */
 	static extractLastName(data: any): string {
-		return data.lastName || data.last_name || '';
+		return TransformationUtils.extractString(data, ['lastName', 'last_name'], '');
 	}
 
 	/**
 	 * Extract metadata from external service data
 	 */
 	static extractMetadata(data: any): Record<string, any> {
-		return data.publicMetadata || data.public_metadata || data.metadata || {};
+		return TransformationUtils.extractObject(data, ['publicMetadata', 'public_metadata', 'metadata'], {});
 	}
 
 	// ============================================================================
-	// Subscription Data Validation & Transformation
+	// Marketplace-Specific Subscription Data Validation
 	// ============================================================================
 
 	/**
@@ -100,11 +92,9 @@ export class MarketplaceContractUtils {
 	}): boolean {
 		const isValid =
 			subscriptionData &&
-			typeof subscriptionData.productId === 'string' &&
-			subscriptionData.productId.length > 0 &&
-			typeof subscriptionData.status === 'string' &&
-			subscriptionData.status.length > 0 &&
-			(!subscriptionData.metadata || typeof subscriptionData.metadata === 'object');
+			ValidationUtils.isValidString(subscriptionData.productId) &&
+			ValidationUtils.isValidString(subscriptionData.status) &&
+			(!subscriptionData.metadata || ValidationUtils.isValidObject(subscriptionData.metadata));
 
 		if (!isValid) {
 			this.logger.warn('Invalid marketplace subscription data', { subscriptionData });
@@ -117,94 +107,70 @@ export class MarketplaceContractUtils {
 	 * Extract user ID from external service data
 	 */
 	static extractUserId(data: any): string {
-		return data.app_user_id || data.user_id || data.id || '';
+		return TransformationUtils.extractString(data, ['app_user_id', 'user_id', 'id'], '');
 	}
 
 	/**
 	 * Extract product ID from external service data
 	 */
 	static extractProductId(data: any): string {
-		return data.product_id || data.productId || '';
+		return TransformationUtils.extractString(data, ['product_id', 'productId'], '');
 	}
 
 	/**
 	 * Extract status from external service data
 	 */
 	static extractStatus(data: any): string {
-		return data.status || data.subscription_status || 'unknown';
+		return TransformationUtils.extractString(data, ['status', 'subscription_status'], 'unknown');
 	}
 
 	/**
 	 * Extract transaction ID from external service data
 	 */
 	static extractTransactionId(data: any): string {
-		return data.transaction_id || data.transactionId || '';
+		return TransformationUtils.extractString(data, ['transaction_id', 'transactionId'], '');
 	}
 
 	/**
 	 * Extract original transaction ID from external service data
 	 */
 	static extractOriginalTransactionId(data: any): string {
-		return data.original_transaction_id || data.originalTransactionId || '';
+		return TransformationUtils.extractString(data, ['original_transaction_id', 'originalTransactionId'], '');
 	}
 
 	// ============================================================================
-	// Data Sanitization
+	// Marketplace-Specific Data Sanitization
 	// ============================================================================
 
 	/**
 	 * Sanitize metadata for external APIs
 	 */
 	static sanitizeMetadata(metadata: Record<string, any>): Record<string, any> {
-		const sanitized: Record<string, any> = {};
-
-		for (const [key, value] of Object.entries(metadata)) {
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-				sanitized[key] = value;
-			} else if (value === null || value === undefined) {
-				continue;
-			} else {
-				sanitized[key] = JSON.stringify(value);
-			}
-		}
-
-		return sanitized;
+		return ValidationUtils.sanitizeObject(metadata);
 	}
 
 	/**
 	 * Sanitize attributes for external APIs
 	 */
 	static sanitizeAttributes(attributes: Record<string, any>): Record<string, any> {
-		const sanitized: Record<string, any> = {};
-
-		for (const [key, value] of Object.entries(attributes)) {
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-				sanitized[key] = value;
-			} else if (value === null || value === undefined) {
-				continue;
-			} else {
-				sanitized[key] = JSON.stringify(value);
-			}
-		}
-
-		return sanitized;
+		return ValidationUtils.sanitizeObject(attributes);
 	}
 
 	// ============================================================================
-	// Timestamp Utilities
+	// Marketplace-Specific Timestamp Utilities
 	// ============================================================================
 
 	/**
 	 * Extract created at timestamp from external service data
 	 */
 	static extractCreatedAt(data: any): string {
-		return data.createdAt || data.created_at || new Date().toISOString();
+		return ValidationUtils.extractTimestamp(data, 'createdAt');
 	}
 
 	/**
 	 * Extract updated at timestamp from external service data
 	 */
 	static extractUpdatedAt(data: any): string {
-		return data.updatedAt || data.updated_at || new Date().toISOString();
+		return ValidationUtils.extractTimestamp(data, 'updatedAt');
 	}
-} 
+}
