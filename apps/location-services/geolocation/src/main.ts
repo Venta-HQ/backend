@@ -10,7 +10,7 @@ async function bootstrap() {
 
 		// Bootstrap gRPC microservice with health checks
 		await BootstrapService.bootstrapGrpcMicroservice({
-			domain: 'location', // DDD domain for location services
+			domain: 'location-services', // DDD domain for location services
 			health: {
 				host: '0.0.0.0',
 				module: HealthCheckModule,
