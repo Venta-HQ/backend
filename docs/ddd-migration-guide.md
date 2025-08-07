@@ -178,6 +178,88 @@ export class UserModule {}
 export class UserManagementModule {}
 ```
 
+#### **Step 4: Establish Consistent gRPC Patterns**
+
+**Pattern: Subdomain modules define their own dependencies**
+
+```typescript
+// ✅ Correct: Subdomain module defines its own gRPC connection
+@Module({
+	controllers: [ClerkWebhooksController],
+	imports: [
+		ConfigModule,
+		GrpcInstanceModule.register<UserServiceClient>({
+			proto: 'user.proto',
+			protoPackage: USER_PACKAGE_NAME,
+			provide: USER_SERVICE_NAME,
+			serviceName: USER_SERVICE_NAME,
+			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
+		}),
+	],
+})
+export class ClerkWebhooksModule {}
+
+// ✅ Correct: Root module only handles app-level infrastructure
+@Module({
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.CLERK_WEBHOOKS,
+			protocol: 'http',
+		}),
+		ClerkWebhooksModule,
+		RevenueCatWebhooksModule,
+	],
+})
+export class WebhooksModule {}
+```
+
+**Consistent Patterns Established:**
+
+- **Subdomain modules** define their own gRPC connections
+- **Root modules** only handle app-level infrastructure (BootstrapModule, ConfigModule)
+- **Controllers** use dependencies from their own modules
+- **No dependency inversion** where subdomains depend on root-level infrastructure
+
+#### **Step 5: Domain-Specific Naming and Organization**
+
+**User Management Subdomain Organization:**
+
+```typescript
+// ✅ Organized into clear subdomains with generic naming
+apps/marketplace/user-management/src/
+├── authentication/           # Generic auth handling (not Clerk-specific)
+│   ├── auth.controller.ts    # Handles user creation/deletion
+│   ├── auth.service.ts       # Business logic for auth
+│   └── auth.module.ts        # Auth subdomain module
+├── subscriptions/            # Subscription management (not RevenueCat-specific)
+│   ├── subscription.controller.ts
+│   ├── subscription.service.ts
+│   └── subscription.module.ts
+└── vendors/                  # User-vendor relationships
+    ├── vendor.controller.ts
+    ├── vendor.service.ts
+    └── vendor.module.ts
+```
+
+**Webhook Service Specific Naming:**
+
+```typescript
+// ✅ Specific naming for external integrations
+apps/communication/webhooks/src/
+├── clerk/                    # Clerk-specific webhook handling
+│   ├── clerk-webhooks.controller.ts
+│   └── clerk-webhooks.module.ts
+└── revenuecat/               # RevenueCat-specific webhook handling
+    ├── revenuecat-webhooks.controller.ts
+    └── revenuecat-webhooks.module.ts
+```
+
+**Naming Principles:**
+
+- **Generic domain names** for internal business logic (authentication, subscriptions, vendors)
+- **Specific provider names** for external integrations (clerk, revenuecat)
+- **Clear separation** between domain logic and external adapters
+
 ## 🎯 Phase 2: Domain Services
 
 ### **Enhance Existing Services with Domain Context**

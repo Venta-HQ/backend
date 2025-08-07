@@ -2,10 +2,10 @@ import { GrpcInstanceModule } from '@app/nest/modules';
 import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClerkWebhooksController } from './clerk-webhooks.controller';
+import { RevenueCatWebhooksController } from './revenuecat-webhooks.controller';
 
 @Module({
-	controllers: [ClerkWebhooksController],
+	controllers: [RevenueCatWebhooksController],
 	imports: [
 		ConfigModule,
 		GrpcInstanceModule.register<UserServiceClient>({
@@ -17,4 +17,4 @@ import { ClerkWebhooksController } from './clerk-webhooks.controller';
 		}),
 	],
 })
-export class ClerkWebhooksModule {}
+export class RevenueCatWebhooksModule {}

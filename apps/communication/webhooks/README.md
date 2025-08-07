@@ -22,11 +22,12 @@ This microservice provides:
 apps/communication/webhooks/
 ├── src/
 │   ├── clerk/
-│   │   └── clerk-webhooks.controller.ts    # Clerk webhook handler
-│   ├── subscription/
-│   │   └── subscription-webhooks.controller.ts  # RevenueCat webhook handler
-│   ├── clerk-webhooks.module.ts            # Clerk webhook module
-│   └── subscription-webhooks.module.ts     # RevenueCat webhook module
+│   │   ├── clerk-webhooks.controller.ts    # Clerk webhook handler
+│   │   └── clerk-webhooks.module.ts        # Clerk webhook module
+│   ├── revenuecat/
+│   │   ├── revenuecat-webhooks.controller.ts  # RevenueCat webhook handler
+│   │   └── revenuecat-webhooks.module.ts      # RevenueCat webhook module
+│   └── webhooks.module.ts                  # Main webhooks module
 ├── tsconfig.app.json                       # TypeScript configuration
 └── README.md                               # This file
 ```
@@ -105,7 +106,7 @@ pnpm run build
 - `POST /webhook/clerk` - Handles Clerk authentication events
 
 ### **RevenueCat Webhooks**
-- `POST /webhook/subscription` - Handles RevenueCat subscription events
+- `POST /webhook/revenuecat` - Handles RevenueCat subscription events
 
 ## Integration Points
 
