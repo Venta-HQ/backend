@@ -51,19 +51,30 @@
 
 #### **Phase 3: Domain Events** 🔄 IN PROGRESS
 
-- **Enhance existing event system** with domain semantics
-- **Domain-specific event schemas** with business context
-- **Improved event naming** with domain prefixes
-- **Enhanced event data** with business information
+- **Transform event names** from technical to domain-driven naming
+- **Enhance event schemas** with rich business context and smart defaults
+- **Maintain existing patterns** - keep `eventService.emit()` approach unchanged
+- **Update event handlers** to listen for new DDD event names
 
 **Planned Work:**
 
-- [ ] Enhance vendor events with domain context (`marketplace.vendor_onboarded`, `marketplace.vendor_profile_updated`)
-- [ ] Enhance user events with domain context (`marketplace.user_registered`, `marketplace.user_profile_updated`)
-- [ ] Enhance location events with domain context (`location.vendor_location_updated`, `location.user_location_updated`)
-- [ ] Update event schemas with business-specific data structures
-- [ ] Implement domain-specific event validation and error handling
-- [ ] Update event consumers to handle enhanced domain events
+- [ ] **Update vendor event schemas** with DDD names (`marketplace.vendor_onboarded`, `marketplace.vendor_profile_updated`, `location.vendor_location_updated`)
+- [ ] **Update user event schemas** with DDD names (`marketplace.user_registered`, `marketplace.user_profile_updated`, `location.user_location_updated`)
+- [ ] **Update vendor service** to emit DDD events while keeping existing `eventService.emit()` pattern
+- [ ] **Update location service** to emit DDD events while keeping existing `eventService.emit()` pattern
+- [ ] **Update event handlers** to listen for new DDD event names (Algolia sync, user location handlers)
+- [ ] **Update unified event registry** with new DDD event schemas
+- [ ] **Add smart defaults** to event schemas (timestamps, business logic defaults)
+- [ ] **Maintain backward compatibility** during transition period
+
+**Key Principles:**
+
+- ✅ **Keep existing patterns**: Maintain `eventService.emit()` approach exactly as is
+- ✅ **DDD event naming**: Transform from `vendor.created` to `marketplace.vendor_onboarded`
+- ✅ **Rich business context**: Events contain business meaning, not just technical data
+- ✅ **Smart defaults**: Reduce boilerplate with automatic timestamps and business logic
+- ✅ **Gradual migration**: Update one domain at a time without breaking changes
+- ✅ **Type safety**: Full TypeScript support maintained throughout
 
 ### 📋 Remaining Phases
 
@@ -134,10 +145,19 @@
 
 ## 🚀 Next Steps
 
-1. **Complete Phase 3** - Enhance domain events with business context
+1. **Complete Phase 3** - Transform event names to DDD format while maintaining existing patterns
 2. **Begin Phase 4** - Define bounded contexts and context mapping
 3. **Plan Phase 5** - Implement advanced DDD patterns as needed
 4. **Continuous improvement** - Refine patterns based on team feedback
+
+**Phase 3 Implementation Strategy:**
+
+- **Week 1**: Update event schemas with DDD names and business context
+- **Week 2**: Update services to emit DDD events (keeping existing `eventService.emit()` pattern)
+- **Week 3**: Update event handlers to listen for new DDD event names
+- **Week 4**: Update unified event registry and add smart defaults
+- **Week 5**: Testing and validation of new DDD event system
+- **Week 6**: Documentation updates and team training
 
 ## 📝 Notes
 
@@ -149,3 +169,5 @@
 - **Error handling consolidation** completed with unified `AppError` approach
 - **Event management** centralized with new `eventtypes` library
 - **Domain structure** aligned across all libraries and applications
+- **Phase 3 approach** maintains existing `eventService.emit()` patterns while achieving DDD goals
+- **Pragmatic DDD** - achieving business benefits without over-engineering technical implementation

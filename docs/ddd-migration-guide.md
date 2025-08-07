@@ -354,15 +354,15 @@ export const ErrorCodes = {
 	VALIDATION_ERROR: 'VALIDATION_ERROR',
 	DATABASE_ERROR: 'DATABASE_ERROR',
 	EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
-	
+
 	// User domain errors
 	USER_NOT_FOUND: 'USER_NOT_FOUND',
 	USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
-	
+
 	// Vendor domain errors
 	VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND',
 	VENDOR_ALREADY_EXISTS: 'VENDOR_ALREADY_EXISTS',
-	
+
 	// Location domain errors
 	LOCATION_INVALID_COORDINATES: 'LOCATION_INVALID_COORDINATES',
 	LOCATION_NOT_FOUND: 'LOCATION_NOT_FOUND',
@@ -382,7 +382,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 	catch(exception: unknown, host: ArgumentsHost) {
 		const appError = this.convertToAppError(exception);
 		this.addDomainContext(appError); // Automatically adds domain context
-		
+
 		// Format response based on protocol (HTTP/gRPC/WebSocket)
 		return this.formatResponse(appError, host);
 	}
@@ -414,7 +414,7 @@ export const userEventSchemas = {
 } as const;
 
 export type UserEventDataMap = {
-	'user.location.updated': z.infer<typeof userEventSchemas['user.location.updated']>;
+	'user.location.updated': z.infer<(typeof userEventSchemas)['user.location.updated']>;
 };
 
 // libs/eventtypes/src/shared/unified-event-registry.ts
@@ -461,65 +461,67 @@ async function bootstrap() {
 ✅ **Added explicit domain configuration** to all applications
 ✅ **Updated domain folder structure** across all libraries
 ✅ **Enhanced logging** with business context and domain semantics
-		public readonly domain?: string,
-	) {
-		super(code, message, context);
-	}
+public readonly domain?: string,
+) {
+super(code, message, context);
+}
 }
 
 // Domain-specific error classes
 export class UserDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'user-management');
-	}
+constructor(code: string, message: string, context?: Record<string, any>) {
+super(code, message, context, 'user-management');
+}
 }
 
 export class VendorDomainError extends DomainError {
-	constructor(code: string, message: string, context?: Record<string, any>) {
-		super(code, message, context, 'vendor-management');
-	}
+constructor(code: string, message: string, context?: Record<string, any>) {
+super(code, message, context, 'vendor-management');
+}
 }
 
 // Domain error codes
 export const UserDomainErrorCodes = {
-	ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
-	INVALID_CREDENTIALS: 'USER_INVALID_CREDENTIALS',
-	PROFILE_INCOMPLETE: 'USER_PROFILE_INCOMPLETE',
+ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
+INVALID_CREDENTIALS: 'USER_INVALID_CREDENTIALS',
+PROFILE_INCOMPLETE: 'USER_PROFILE_INCOMPLETE',
 } as const;
 
 export const VendorDomainErrorCodes = {
-	ALREADY_EXISTS: 'VENDOR_ALREADY_EXISTS',
-	INVALID_LOCATION: 'VENDOR_INVALID_LOCATION',
-	INSUFFICIENT_PERMISSIONS: 'VENDOR_INSUFFICIENT_PERMISSIONS',
+ALREADY_EXISTS: 'VENDOR_ALREADY_EXISTS',
+INVALID_LOCATION: 'VENDOR_INVALID_LOCATION',
+INSUFFICIENT_PERMISSIONS: 'VENDOR_INSUFFICIENT_PERMISSIONS',
 } as const;
-```
+
+````
 
 ## 🔄 Phase 3: Domain Events
 
-### **Enhance Existing Event System with Domain Semantics**
+### **Transform Event Names to Domain-Driven Format**
 
-#### **Current Event Pattern**
+#### **Current Event Pattern (Technical)**
 
 ```typescript
-// Technical events
+// Technical events with minimal business context
 await this.eventService.emit('user.created', { userId: '123' });
 await this.eventService.emit('vendor.updated', { vendorId: '456' });
-```
+await this.eventService.emit('vendor.location.updated', { vendorId: '456', location: { lat: 40.7128, long: -74.006 } });
+````
 
-#### **Enhanced Domain Event Pattern**
+#### **Enhanced Domain Event Pattern (Business-Focused)**
 
 ```typescript
-// Domain events with business context
+// Domain events with rich business context - same emit pattern!
 await this.eventService.emit('marketplace.user_registered', {
 	userId: '123',
 	email: 'user@example.com',
-	source: 'web_registration',
+	registrationSource: 'web_registration',
 	preferences: {
-		notificationSettings: { email: true, push: true },
+		notificationSettings: { email: true, push: true, sms: false },
 		searchRadius: 5000,
 		favoriteCategories: ['food', 'retail'],
 	},
-	timestamp: new Date(),
+	// timestamp automatically added by schema default
 });
 
 await this.eventService.emit('marketplace.vendor_onboarded', {
@@ -528,38 +530,53 @@ await this.eventService.emit('marketplace.vendor_onboarded', {
 	location: { lat: 40.7128, lng: -74.006 },
 	ownerId: '123',
 	services: ['dine_in', 'delivery', 'takeout'],
-	timestamp: new Date(),
+	onboardingSource: 'web_registration',
+	// timestamp automatically added by schema default
 });
 
 await this.eventService.emit('location.vendor_location_updated', {
 	vendorId: '456',
 	location: { lat: 40.7128, lng: -74.006 },
 	accuracy: 10,
-	timestamp: new Date(),
+	movementType: 'stationary', // automatically determined
+	businessHours: true, // automatically determined
+	// timestamp automatically added by schema default
 });
 ```
 
-### **Domain Event Registry**
+**Key Benefits:**
+
+- ✅ **Same emission pattern**: Keep existing `eventService.emit()` approach
+- ✅ **Rich business context**: Events contain business meaning, not just technical data
+- ✅ **Smart defaults**: Automatic timestamps and business logic
+- ✅ **Type safety**: Full TypeScript support maintained
+- ✅ **Domain boundaries**: Clear separation between marketplace and location domains
+
+### **Domain Event Registry with Smart Defaults**
 
 #### **Enhanced Event Registry**
 
 ```typescript
-// libs/apitypes/src/domains/marketplace/marketplace.events.ts
+// libs/eventtypes/src/domains/marketplace/marketplace.events.ts
 export const marketplaceEventSchemas = {
 	'marketplace.user_registered': z.object({
 		userId: z.string(),
 		email: z.string().email(),
-		source: z.enum(['web_registration', 'mobile_app', 'admin']),
-		preferences: z.object({
-			notificationSettings: z.object({
-				email: z.boolean(),
-				push: z.boolean(),
-				sms: z.boolean(),
-			}),
-			searchRadius: z.number(),
-			favoriteCategories: z.array(z.string()),
-		}),
-		timestamp: z.date(),
+		registrationSource: z.enum(['web_registration', 'mobile_app', 'admin']).default('web_registration'),
+		preferences: z
+			.object({
+				notificationSettings: z
+					.object({
+						email: z.boolean().default(true),
+						push: z.boolean().default(true),
+						sms: z.boolean().default(false),
+					})
+					.default({}),
+				searchRadius: z.number().default(5000),
+				favoriteCategories: z.array(z.string()).default([]),
+			})
+			.default({}),
+		timestamp: z.date().default(() => new Date()),
 	}),
 
 	'marketplace.vendor_onboarded': z.object({
@@ -570,18 +587,20 @@ export const marketplaceEventSchemas = {
 			lng: z.number(),
 		}),
 		ownerId: z.string(),
-		services: z.array(z.string()),
-		timestamp: z.date(),
+		services: z.array(z.string()).default([]),
+		onboardingSource: z.enum(['web_registration', 'mobile_app', 'admin']).default('web_registration'),
+		timestamp: z.date().default(() => new Date()),
 	}),
 
 	'marketplace.vendor_profile_updated': z.object({
 		vendorId: z.string(),
 		updatedFields: z.array(z.string()),
-		timestamp: z.date(),
+		businessImpact: z.enum(['low', 'medium', 'high']).default('low'),
+		timestamp: z.date().default(() => new Date()),
 	}),
 } as const;
 
-// libs/apitypes/src/domains/location/location.events.ts
+// libs/eventtypes/src/domains/location-services/location.events.ts
 export const locationEventSchemas = {
 	'location.vendor_location_updated': z.object({
 		vendorId: z.string(),
@@ -590,7 +609,12 @@ export const locationEventSchemas = {
 			lng: z.number(),
 		}),
 		accuracy: z.number().optional(),
-		timestamp: z.date(),
+		movementType: z.enum(['stationary', 'moving', 'significant_move']).default('stationary'),
+		businessHours: z.boolean().default(() => {
+			const hour = new Date().getHours();
+			return hour >= 6 && hour <= 22;
+		}),
+		timestamp: z.date().default(() => new Date()),
 	}),
 
 	'location.user_location_updated': z.object({
@@ -600,7 +624,8 @@ export const locationEventSchemas = {
 			lng: z.number(),
 		}),
 		accuracy: z.number().optional(),
-		timestamp: z.date(),
+		activityType: z.enum(['passive', 'active_search', 'navigation']).default('passive'),
+		timestamp: z.date().default(() => new Date()),
 	}),
 
 	'location.proximity_alert': z.object({
@@ -611,62 +636,107 @@ export const locationEventSchemas = {
 			lat: z.number(),
 			lng: z.number(),
 		}),
-		timestamp: z.date(),
+		alertType: z.enum(['nearby_vendor', 'favorite_vendor', 'recommended_vendor']),
+		timestamp: z.date().default(() => new Date()),
 	}),
 } as const;
 ```
+
+**Smart Defaults Benefits:**
+
+- ✅ **Automatic timestamps**: No need to manually add `timestamp: new Date()`
+- ✅ **Business logic defaults**: `businessHours`, `movementType`, `activityType` automatically determined
+- ✅ **Reduced boilerplate**: Common patterns pre-filled
+- ✅ **Consistent data**: All events have the same base structure
 
 ### **Unified Domain Event Registry**
 
 #### **Enhanced Unified Registry**
 
 ```typescript
-// libs/apitypes/src/shared/events/unified-domain-event-registry.ts
-import { locationEventSchemas } from '../../domains/location/location.events';
-import { marketplaceEventSchemas } from '../../domains/marketplace/marketplace.events';
+// libs/eventtypes/src/shared/unified-event-registry.ts
+import { LocationEventDataMap, locationEventSchemas } from '../domains/location-services';
+import { MarketplaceEventDataMap, marketplaceEventSchemas } from '../domains/marketplace';
 
-export const ALL_DOMAIN_EVENT_SCHEMAS = {
+export const ALL_EVENT_SCHEMAS = {
 	...marketplaceEventSchemas,
 	...locationEventSchemas,
 } as const;
 
-export type AvailableDomainEventSubjects = keyof typeof ALL_DOMAIN_EVENT_SCHEMAS;
+export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
+export type EventDataMap = MarketplaceEventDataMap & LocationEventDataMap;
 
-// Enhanced event service with domain context
+// Enhanced existing EventService with automatic domain context
 @Injectable()
-export class DomainEventService {
-	async emitDomainEvent<TSubject extends AvailableDomainEventSubjects>(
+export class EventService {
+	async emit<TSubject extends AvailableEventSubjects>(
 		subject: TSubject,
 		data: EventDataMap[TSubject],
 		metadata?: EventMetadata,
 	): Promise<void> {
-		// Domain-specific validation
-		const schema = ALL_DOMAIN_EVENT_SCHEMAS[subject];
+		// Get schema and validate with smart defaults
+		const schema = ALL_EVENT_SCHEMAS[subject];
 		const validatedData = schema ? schema.parse(data) : data;
 
-		// Enhanced event with domain context
-		const event: DomainEvent = {
+		// Create enhanced event with automatic domain context
+		const event: BaseEvent = {
 			correlationId: metadata?.correlationId || this.requestContextService?.getRequestId(),
 			data: validatedData,
 			eventId: randomUUID(),
 			source: metadata?.source || this.appName,
 			timestamp: new Date().toISOString(),
 			version: metadata?.version || '1.0',
+			// Automatic domain context
 			domain: this.extractDomainFromSubject(subject),
+			subdomain: this.extractSubdomainFromSubject(subject),
+			businessContext: this.extractBusinessContext(subject, validatedData),
 		};
 
 		await this.natsClient.emit(subject, event);
 		this.logger.log(`Emitted domain event: ${subject}`, {
 			eventId: event.eventId,
 			domain: event.domain,
+			subdomain: event.subdomain,
+			businessContext: event.businessContext,
 		});
 	}
 
 	private extractDomainFromSubject(subject: string): string {
 		return subject.split('.')[0]; // 'marketplace.user_registered' -> 'marketplace'
 	}
+
+	private extractSubdomainFromSubject(subject: string): string | undefined {
+		const parts = subject.split('.');
+		return parts.length > 2 ? parts[1] : undefined;
+	}
+
+	private extractBusinessContext(subject: string, data: any): any {
+		const context: any = {};
+
+		// Smart extraction based on domain
+		if (subject.startsWith('marketplace.')) {
+			if (data.userId) context.userId = data.userId;
+			if (data.vendorId) context.vendorId = data.vendorId;
+			if (data.ownerId) context.userId = data.ownerId;
+		}
+
+		if (subject.startsWith('location.')) {
+			if (data.userId) context.userId = data.userId;
+			if (data.vendorId) context.vendorId = data.vendorId;
+		}
+
+		return Object.keys(context).length > 0 ? context : undefined;
+	}
 }
 ```
+
+**Key Improvements:**
+
+- ✅ **Keep existing pattern**: Same `eventService.emit()` method
+- ✅ **Automatic domain context**: Domain/subdomain extracted from event names
+- ✅ **Smart business context**: User/vendor IDs automatically detected
+- ✅ **Enhanced logging**: Rich context in all event logs
+- ✅ **Backward compatible**: Works with existing event handlers
 
 ## 🏛️ Phase 4: Bounded Contexts
 
@@ -920,10 +990,12 @@ export class VendorManagementController {
 
 ### **Phase 3: Domain Events (Weeks 5-6)**
 
-- [ ] Create domain event schemas
-- [ ] Enhance event service with domain context
-- [ ] Update existing event emissions
-- [ ] Add domain event validation
+- [ ] **Update event schemas** with DDD names and smart defaults
+- [ ] **Update services** to emit DDD events (keeping existing `eventService.emit()` pattern)
+- [ ] **Update event handlers** to listen for new DDD event names
+- [ ] **Update unified event registry** with new DDD event schemas
+- [ ] **Add automatic domain context** to EventService
+- [ ] **Test and validate** new DDD event system
 
 ### **Phase 4: Bounded Contexts (Weeks 7-8)**
 
@@ -1016,21 +1088,25 @@ deployments:
 ### **Domain-Specific Deployment Considerations**
 
 #### **Marketplace Domain**
+
 - **High Availability**: Critical for business operations
 - **Data Consistency**: Strong consistency for user and vendor data
 - **Scaling**: Auto-scaling based on user activity patterns
 
 #### **Location Services Domain**
+
 - **Real-time Performance**: Low latency for location updates
 - **Geographic Distribution**: Multi-region deployment for global coverage
 - **Stateful Services**: Redis clustering for location data
 
 #### **Communication Domain**
+
 - **Reliability**: High reliability for webhook processing
 - **Queue Management**: NATS clustering for event processing
 - **Retry Logic**: Robust retry mechanisms for external integrations
 
 #### **Infrastructure Domain**
+
 - **Load Balancing**: Intelligent routing and load distribution
 - **Security**: TLS termination and authentication
 - **Monitoring**: Comprehensive observability and alerting
@@ -1108,6 +1184,7 @@ deployments:
 - **Team Ownership**: Each domain team can manage their own deployment configuration
 - **Cost Management**: Optimize costs by domain-specific resource allocation
 - **Performance Tuning**: Domain-specific performance optimization strategies
+
 ### **Immediate Actions**
 
 1. **Complete Domain Organization**: Finish moving services to domain structure
