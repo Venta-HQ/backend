@@ -20,18 +20,10 @@ export const ALL_EVENT_SCHEMAS = {
 export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
 
 /**
- * Utility type to infer Zod schema types while preserving required fields
- * This ensures that required fields in the schema remain required in the inferred type
- */
-type InferRequired<T> = {
-	[K in keyof T]-?: T[K];
-};
-
-/**
  * Type mapping from subject to data type
  * This provides type safety for the second parameter of emit
- * Auto-inferred from ALL_EVENT_SCHEMAS while preserving required fields
+ * Auto-inferred from ALL_EVENT_SCHEMAS - optional fields remain optional as defined in schema
  */
 export type EventDataMap = {
-	[K in AvailableEventSubjects]: InferRequired<z.infer<(typeof ALL_EVENT_SCHEMAS)[K]>>;
+	[K in AvailableEventSubjects]: z.infer<(typeof ALL_EVENT_SCHEMAS)[K]>;
 };
