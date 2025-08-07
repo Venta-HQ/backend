@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 import { VendorController } from './vendor.controller';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
 
 // Simple clearMocks function
 const clearMocks = () => {
@@ -72,8 +71,7 @@ describe('VendorController', () => {
 		});
 
 		it('should return undefined vendor when not found', async () => {
-			const notFoundError = new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found');
-			vendorService.getVendorById.mockRejectedValue(notFoundError);
+			vendorService.getVendorById.mockResolvedValue(null);
 
 			const result = await controller.getVendorById({ id: 'vendor_123' });
 

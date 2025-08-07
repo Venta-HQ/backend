@@ -26,6 +26,10 @@ export class VendorController {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
 
+			if (!vendor) {
+				return { vendor: undefined };
+			}
+
 			// Convert Prisma vendor to proto Vendor type
 			const protoVendor: Vendor = {
 				createdAt: vendor.createdAt.toISOString(),
@@ -46,11 +50,6 @@ export class VendorController {
 
 			return { vendor: protoVendor };
 		} catch (e) {
-			// Handle vendor not found case gracefully for backward compatibility
-			if (e instanceof AppError && e.code === ErrorCodes.VENDOR_NOT_FOUND) {
-				return { vendor: undefined };
-			}
-
 			this.logger.error(`Error looking up vendor with id`, {
 				id: data.id,
 			});

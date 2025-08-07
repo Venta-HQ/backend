@@ -145,7 +145,7 @@ export class VendorService {
 	 * Get vendor by ID
 	 * Domain method for vendor retrieval
 	 */
-	async getVendorById(vendorId: string): Promise<any> {
+	async getVendorById(vendorId: string): Promise<any | null> {
 		this.logger.log('Retrieving vendor by ID', { vendorId });
 
 		try {
@@ -154,16 +154,12 @@ export class VendorService {
 			});
 
 			if (!vendor) {
-				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
-					vendorId,
-				});
+				this.logger.log('Vendor not found', { vendorId });
+				return null;
 			}
 
 			return vendor;
 		} catch (error) {
-			if (error instanceof AppError) {
-				throw error;
-			}
 			this.logger.error('Failed to retrieve vendor', error.stack, { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor', {
 				operation: 'get_vendor_by_id',
@@ -207,7 +203,6 @@ export class VendorService {
 			await this.eventService.emit('location.vendor_location_updated', {
 				location: { lat: location.lat, lng: location.lng },
 				vendorId,
-	
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', error.stack, { error, vendorId });
