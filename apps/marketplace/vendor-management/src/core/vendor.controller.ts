@@ -25,9 +25,6 @@ export class VendorController {
 	async getVendorById(data: VendorLookupByIdData): Promise<VendorLookupByIdResponse> {
 		try {
 			const vendor = await this.vendorService.getVendorById(data.id);
-			if (!vendor) {
-				return { vendor: undefined };
-			}
 
 			// Convert Prisma vendor to proto Vendor type
 			const protoVendor: Vendor = {
@@ -60,7 +57,18 @@ export class VendorController {
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorCreateDataSchema))
 	async createVendor(data: VendorCreateData): Promise<VendorCreateResponse> {
 		try {
-			const id = await this.vendorService.createVendor(data);
+			// Convert gRPC data to service onboarding data
+			const onboardingData = {
+				description: data.description,
+				email: data.email,
+				name: data.name,
+				ownerId: data.userId,
+				phone: data.phone,
+				primaryImage: data.imageUrl,
+				website: data.website,
+			};
+
+			const id = await this.vendorService.onboardVendor(onboardingData);
 			return { id };
 		} catch (e) {
 			this.logger.error(`Error creating vendor with data`, {
@@ -74,7 +82,17 @@ export class VendorController {
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorUpdateDataSchema))
 	async updateVendor(data: VendorUpdateData): Promise<VendorUpdateResponse> {
 		try {
-			await this.vendorService.updateVendor(data.id, data.userId, data);
+			// Convert gRPC data to service update data
+			const updateData = {
+				description: data.description,
+				email: data.email,
+				name: data.name,
+				phone: data.phone,
+				primaryImage: data.imageUrl,
+				website: data.website,
+			};
+
+			await this.vendorService.updateVendor(data.id, updateData);
 			return { message: 'Vendor updated successfully', success: true };
 		} catch (e) {
 			this.logger.error(`Error updating vendor with data`, {
