@@ -1,18 +1,13 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER } from '@nestjs/core';
 import { AppExceptionFilter } from './app-exception.filter';
-import { DomainErrorInterceptor } from './domain-error.interceptor';
 
 @Module({
-	exports: [DomainErrorInterceptor],
+	exports: [],
 	providers: [
 		{
 			provide: APP_FILTER,
 			useClass: AppExceptionFilter,
-		},
-		{
-			provide: APP_INTERCEPTOR,
-			useClass: DomainErrorInterceptor,
 		},
 	],
 })

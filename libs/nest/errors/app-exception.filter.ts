@@ -1,16 +1,22 @@
 import { Response } from 'express';
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
 import { AppError, ErrorType } from './app-error';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
+	constructor(private readonly configService: ConfigService) {}
+
 	catch(exception: unknown, host: ArgumentsHost) {
 		const contextType = host.getType();
 
 		// Convert to AppError if it's not already
 		const appError = this.convertToAppError(exception, host);
+
+		// Add domain context to all errors for better debugging and monitoring
+		this.addDomainContext(appError);
 
 		switch (contextType) {
 			case 'http':
@@ -21,6 +27,14 @@ export class AppExceptionFilter implements ExceptionFilter {
 				return this.handleWsException(appError, host);
 			default:
 				throw appError;
+		}
+	}
+
+	private addDomainContext(error: AppError): void {
+		// Add domain context to all errors for better debugging and monitoring
+		const domain = this.configService.get<string>('DOMAIN');
+		if (domain && !(error as any).domain) {
+			(error as any).domain = domain;
 		}
 	}
 

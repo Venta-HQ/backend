@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 import { z } from 'zod';
 import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes';
-import { LocationDomainError, LocationDomainErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
@@ -33,7 +33,7 @@ export class LocationService {
 	 */
 	async updateVendorLocation(data: LocationUpdate): Promise<void> {
 		if (!data.location) {
-			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_COORDINATES, 'Location data is required', {
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Location data is required', {
 				entityId: data.entityId,
 				operation: 'update_vendor_location',
 			});
@@ -74,8 +74,9 @@ export class LocationService {
 				location: data.location,
 				vendorId: data.entityId,
 			});
-			throw new LocationDomainError(
-				LocationDomainErrorCodes.REDIS_OPERATION_FAILED,
+			throw new AppError(
+				ErrorType.EXTERNAL_SERVICE,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
 				'Failed to update vendor location',
 				{
 					entityId: data.entityId,
@@ -91,7 +92,7 @@ export class LocationService {
 	 */
 	async updateUserLocation(data: LocationUpdate): Promise<void> {
 		if (!data.location) {
-			throw new LocationDomainError(LocationDomainErrorCodes.INVALID_COORDINATES, 'Location data is required', {
+			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Location data is required', {
 				entityId: data.entityId,
 				operation: 'update_user_location',
 			});
@@ -132,10 +133,15 @@ export class LocationService {
 				location: data.location,
 				userId: data.entityId,
 			});
-			throw new LocationDomainError(LocationDomainErrorCodes.REDIS_OPERATION_FAILED, 'Failed to update user location', {
-				entityId: data.entityId,
-				operation: 'update_user_location',
-			});
+			throw new AppError(
+				ErrorType.EXTERNAL_SERVICE,
+				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
+				'Failed to update user location',
+				{
+					entityId: data.entityId,
+					operation: 'update_user_location',
+				},
+			);
 		}
 	}
 
