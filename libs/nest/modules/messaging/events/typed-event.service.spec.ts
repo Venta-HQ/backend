@@ -54,12 +54,16 @@ describe('EventService', () => {
 
 			expect(mockNatsClient.emit).toHaveBeenCalledWith('marketplace.vendor.onboarded', {
 				context: {
+					requestId: 'req-123',
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: mockVendorData,
+				data: {
+					...mockVendorData,
+					timestamp: expect.any(String),
+				},
 				meta: {
-					correlationId: 'test-request-id',
+					correlationId: 'req-123',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
@@ -75,7 +79,6 @@ describe('EventService', () => {
 
 			const updateData = {
 				vendorId: 'vendor-123',
-				ownerId: 'user-456',
 				updatedFields: ['name', 'description'],
 				timestamp: new Date('2024-01-01').toISOString(),
 			};
@@ -86,15 +89,17 @@ describe('EventService', () => {
 				context: {
 					requestId: 'req-456',
 					vendorId: 'vendor-123',
-					ownerId: 'user-456',
 				},
-				data: updateData,
+				data: {
+					...updateData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-456',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -118,13 +123,16 @@ describe('EventService', () => {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: deactivateData,
+				data: {
+					...deactivateData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-789',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -142,13 +150,16 @@ describe('EventService', () => {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: mockVendorData,
+				data: {
+					...mockVendorData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-123',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -166,13 +177,16 @@ describe('EventService', () => {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: mockVendorData,
+				data: {
+					...mockVendorData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-context-id',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -189,13 +203,16 @@ describe('EventService', () => {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: mockVendorData,
+				data: {
+					...mockVendorData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: undefined,
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -234,13 +251,16 @@ describe('EventService', () => {
 					vendorId: 'vendor-123',
 					ownerId: 'user-456',
 				},
-				data: mockVendorData,
+				data: {
+					...mockVendorData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-123',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
@@ -288,8 +308,8 @@ describe('EventService', () => {
 
 	describe('event structure validation', () => {
 		it('should create events with correct structure', async () => {
-			const testData = { 
-				vendorId: 'test', 
+			const testData = {
+				vendorId: 'test',
 				ownerId: 'user',
 				location: {
 					lat: 40.7128,
@@ -308,13 +328,16 @@ describe('EventService', () => {
 					vendorId: 'test',
 					ownerId: 'user',
 				},
-				data: testData,
+				data: {
+					...testData,
+					timestamp: expect.any(String),
+				},
 				meta: {
 					correlationId: 'req-123',
 					domain: 'marketplace',
 					eventId: expect.any(String),
 					source: 'test-service',
-					subdomain: undefined,
+					subdomain: 'vendor',
 					timestamp: expect.any(String),
 					version: '1.0',
 				},
