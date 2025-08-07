@@ -6,10 +6,11 @@
  */
 export const APP_NAMES = {
 	ALGOLIA_SYNC: 'Algolia Sync Service',
+	CLERK_WEBHOOKS: 'Clerk Webhooks Service',
 	FILE_MANAGEMENT: 'File Management Service',
 	GATEWAY: 'Gateway Service',
 	LOCATION: 'Location Microservice',
-	USER: 'User Microservice',
+	SUBSCRIPTION_WEBHOOKS: 'Subscription Webhooks Service',
 	VENDOR: 'Vendor Microservice',
 	WEBSOCKET_GATEWAY: 'Websocket Gateway Microservice',
 } as const;

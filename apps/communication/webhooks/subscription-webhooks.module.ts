@@ -1,4 +1,4 @@
-import { GrpcInstanceModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, GrpcInstanceModule } from '@app/nest/modules';
 import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -7,7 +7,10 @@ import { SubscriptionWebhooksController } from './webhook/subscription/subscript
 @Module({
 	controllers: [SubscriptionWebhooksController],
 	imports: [
-		ConfigModule,
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.SUBSCRIPTION_WEBHOOKS,
+			protocol: 'http',
+		}),
 		GrpcInstanceModule.register<UserServiceClient>({
 			proto: 'user.proto',
 			protoPackage: USER_PACKAGE_NAME,

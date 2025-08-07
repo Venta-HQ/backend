@@ -10,16 +10,6 @@
 	"monorepo": true,
 	"root": "apps/infrastructure/api-gateway",
 	"projects": {
-		"user-management": {
-			"type": "application",
-			"root": "apps/marketplace/user-management",
-			"entryFile": "src/main",
-			"sourceRoot": "./",
-			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/user/user.proto"],
-				"tsConfigPath": "apps/marketplace/user-management/tsconfig.app.json"
-			}
-		},
 		"vendor-management": {
 			"type": "application",
 			"root": "apps/marketplace/vendor-management",
