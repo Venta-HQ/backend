@@ -32,26 +32,34 @@ RUN pnpm i
 COPY . .
 
 RUN pnpm run prisma:generate
-RUN pnpm build file-management
 
-FROM node:bullseye-slim AS production
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+# Build stage
+FROM node:bullseye AS build
 
+RUN npm install -g pnpm
 WORKDIR /usr/src/app
 
 COPY package.json ./
 COPY pnpm-lock.yaml ./
-COPY prisma ./prisma
+RUN pnpm i
 
-RUN npm i -g pnpm
+COPY . .
+RUN pnpm run prisma:generate
+RUN pnpm run build:webhooks
+
+# Production stage
+FROM node:bullseye AS production
+
+RUN npm install -g pnpm
+WORKDIR /usr/src/app
+
+COPY package.json ./
+COPY pnpm-lock.yaml ./
 RUN pnpm i --prod
 
-COPY --from=development /usr/src/app/dist/apps/infrastructure/file-management/src ./dist
-COPY --from=development /usr/src/app/dist/apps/infrastructure/file-management/proto ./proto
+COPY --from=build /usr/src/app/dist ./dist
+COPY --from=build /usr/src/app/node_modules/.prisma ./node_modules/.prisma
 
-RUN pnpm run prisma:generate
+EXPOSE 3006
 
-EXPOSE 3005
-
-CMD ["node","dist/main.js"] 
+CMD ["node", "dist/apps/communication/services/webhooks/src/main.js"] 

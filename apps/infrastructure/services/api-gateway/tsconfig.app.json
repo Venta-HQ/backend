@@ -2,7 +2,7 @@
 	"extends": "../../../tsconfig.json",
 	"compilerOptions": {
 		"declaration": false,
-		"outDir": "../../../dist/apps/infrastructure/file-management"
+		"outDir": "../../../../dist/apps/infrastructure/services/api-gateway"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

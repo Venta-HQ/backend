@@ -19,7 +19,7 @@ This microservice provides:
 
 ### **Service Structure**
 ```
-apps/communication/webhooks/
+apps/communication/services/webhooks/
 ├── src/
 │   ├── clerk/
 │   │   ├── clerk-webhooks.controller.ts    # Clerk webhook handler
@@ -78,7 +78,7 @@ External Service (Clerk/RevenueCat)
 pnpm run start:webhooks
 
 # Or directly
-cd apps/communication/webhooks
+cd apps/communication/services/webhooks
 pnpm run start
 ```
 

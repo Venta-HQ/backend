@@ -364,9 +364,9 @@ kubectl get services
 
 ### Service Documentation
 
-- [Vendor Management](apps/marketplace/vendor-management/README.md)
-- [Location Services](apps/location-services/geolocation/README.md)
-- [User Management](apps/marketplace/user-management/README.md)
+- [Vendor Management](apps/marketplace/services/vendor-management/README.md)
+- [Location Services](apps/location-services/services/geolocation/README.md)
+- [User Management](apps/marketplace/services/user-management/README.md)
 
 ### Library Documentation
 
