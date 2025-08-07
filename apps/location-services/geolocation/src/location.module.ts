@@ -1,5 +1,6 @@
 import { APP_NAMES, BootstrapModule, EventsModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { LocationTrackingService } from './location-tracking.service';
 import { LocationController } from './location.controller';
 import { LocationService } from './location.service';
 
@@ -13,6 +14,6 @@ import { LocationService } from './location.service';
 		}),
 		EventsModule.register(), // No longer needs appName parameter
 	],
-	providers: [LocationService],
+	providers: [LocationService, LocationTrackingService],
 })
 export class LocationModule {}
