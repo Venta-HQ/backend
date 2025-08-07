@@ -81,7 +81,7 @@ export class LocationTrackingService {
 
 			return this.formatNearbyVendors(nearbyVendors);
 		} catch (error) {
-			this.logger.error('Failed to find nearby vendors', { error, userLocation, radius });
+			this.logger.error('Failed to find nearby vendors', error.stack, { error, userLocation, radius });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.LOCATION_PROXIMITY_SEARCH_FAILED,
@@ -99,7 +99,7 @@ export class LocationTrackingService {
 			await this.redis.geoadd('vendor_locations', location.lng, location.lat, vendorId);
 			this.logger.log('Vendor location stored in Redis', { vendorId });
 		} catch (error) {
-			this.logger.error('Failed to store vendor location in Redis', { error, vendorId });
+			this.logger.error('Failed to store vendor location in Redis', error.stack, { error, vendorId });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
@@ -117,7 +117,7 @@ export class LocationTrackingService {
 			await this.redis.geoadd('user_locations', location.lng, location.lat, userId);
 			this.logger.log('User location stored in Redis', { userId });
 		} catch (error) {
-			this.logger.error('Failed to store user location in Redis', { error, userId });
+			this.logger.error('Failed to store user location in Redis', error.stack, { error, userId });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,

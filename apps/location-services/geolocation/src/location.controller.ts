@@ -24,7 +24,7 @@ export class LocationController {
 	@GrpcMethod(LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateSchema))
 	async updateVendorLocation(data: LocationUpdate): Promise<Empty> {
-		this.logger.log(`Updating vendor location for vendor: ${data.entityId}`);
+		this.logger.log(`Updating vendor location for vendor: ${data.entityId}`, { vendorId: data.entityId });
 
 		// Use the new domain service for enhanced functionality
 		if (data.location) {
@@ -40,14 +40,17 @@ export class LocationController {
 	@GrpcMethod(LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcVendorLocationRequestSchema))
 	async vendorLocations(request: VendorLocationRequest): Promise<VendorLocationResponse> {
-		this.logger.log(`Searching vendor locations in bounding box`);
+		this.logger.log(`Searching vendor locations in bounding box`, {
+			neLocation: request.neLocation,
+			swLocation: request.swLocation,
+		});
 		return await this.locationService.searchVendorLocations(request);
 	}
 
 	@GrpcMethod(LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME)
 	@UsePipes(new SchemaValidatorPipe(GrpcLocationUpdateSchema))
 	async updateUserLocation(data: LocationUpdate): Promise<Empty> {
-		this.logger.log(`Updating user location for user: ${data.entityId}`);
+		this.logger.log(`Updating user location for user: ${data.entityId}`, { userId: data.entityId });
 
 		if (data.location) {
 			await this.locationTrackingService.updateUserLocation(data.entityId, {

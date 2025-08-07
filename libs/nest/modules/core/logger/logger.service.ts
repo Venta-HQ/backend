@@ -5,6 +5,7 @@ import { LokiTransportService } from './loki-transport.service';
 
 interface LogData {
 	context?: string;
+	data?: Record<string, any>;
 	level: 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 	message: string;
 	requestId?: string;
@@ -53,10 +54,12 @@ export class Logger implements LoggerService {
 	private createLogData(
 		message: string,
 		level: 'log' | 'error' | 'warn' | 'debug' | 'verbose',
+		data?: Record<string, any>,
 		context?: string,
 	): LogData {
 		return {
 			context: context || this.context,
+			data,
 			level,
 			message,
 			requestId: this.getRequestId(),
@@ -86,32 +89,32 @@ export class Logger implements LoggerService {
 		}
 	}
 
-	log(message: string, context?: string): void {
-		const logData = this.createLogData(message, 'log', context);
+	log(message: string, data?: Record<string, any>, context?: string): void {
+		const logData = this.createLogData(message, 'log', data, context);
 		this.logToConsole(logData);
 		this.lokiTransport?.sendLog(logData);
 	}
 
-	error(message: string, trace?: string, context?: string): void {
-		const logData = this.createLogData(message, 'error', context);
+	error(message: string, trace?: string, data?: Record<string, any>, context?: string): void {
+		const logData = this.createLogData(message, 'error', data, context);
 		this.logToConsole(logData, trace);
 		this.lokiTransport?.sendLog(logData);
 	}
 
-	warn(message: string, context?: string): void {
-		const logData = this.createLogData(message, 'warn', context);
+	warn(message: string, data?: Record<string, any>, context?: string): void {
+		const logData = this.createLogData(message, 'warn', data, context);
 		this.logToConsole(logData);
 		this.lokiTransport?.sendLog(logData);
 	}
 
-	debug(message: string, context?: string): void {
-		const logData = this.createLogData(message, 'debug', context);
+	debug(message: string, data?: Record<string, any>, context?: string): void {
+		const logData = this.createLogData(message, 'debug', data, context);
 		this.logToConsole(logData);
 		this.lokiTransport?.sendLog(logData);
 	}
 
-	verbose(message: string, context?: string): void {
-		const logData = this.createLogData(message, 'verbose', context);
+	verbose(message: string, data?: Record<string, any>, context?: string): void {
+		const logData = this.createLogData(message, 'verbose', data, context);
 		this.logToConsole(logData);
 		this.lokiTransport?.sendLog(logData);
 	}

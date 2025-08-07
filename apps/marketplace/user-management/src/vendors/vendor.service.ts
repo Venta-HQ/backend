@@ -45,7 +45,7 @@ export class VendorService {
 
 			return vendors;
 		} catch (error) {
-			this.logger.error('Failed to get user vendor relationships', { error, userId });
+			this.logger.error('Failed to get user vendor relationships', error.stack, { error, userId });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.DATABASE_ERROR,
@@ -86,7 +86,7 @@ export class VendorService {
 
 			return isOwner;
 		} catch (error) {
-			this.logger.error('Failed to validate vendor ownership', {
+			this.logger.error('Failed to validate vendor ownership', error.stack, {
 				error,
 				userId: relationship.userId,
 				vendorId: relationship.vendorId,

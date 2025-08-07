@@ -56,7 +56,7 @@ export class AuthService {
 				});
 			}
 		} catch (error) {
-			this.logger.error('Failed to handle user identity creation', { clerkId: id, error });
+			this.logger.error('Failed to handle user identity creation', error.stack, { clerkId: id, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity creation', {
 				clerkId: id,
 				operation: 'handle_user_created',
@@ -93,7 +93,7 @@ export class AuthService {
 				this.logger.log('User identity not found for deletion', { clerkId: id });
 			}
 		} catch (error) {
-			this.logger.error('Failed to handle user identity deletion', { clerkId: id, error });
+			this.logger.error('Failed to handle user identity deletion', error.stack, { clerkId: id, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity deletion', {
 				clerkId: id,
 				operation: 'handle_user_deleted',
@@ -131,7 +131,7 @@ export class AuthService {
 				providerId: integrationData.providerId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to create authentication integration record', {
+			this.logger.error('Failed to create authentication integration record', error.stack, {
 				clerkUserId: integrationData.clerkUserId,
 				providerId: integrationData.providerId,
 				error,
@@ -181,7 +181,7 @@ export class AuthService {
 				this.logger.log('Authentication integration record not found for deletion', { providerId });
 			}
 		} catch (error) {
-			this.logger.error('Failed to delete authentication integration record', { providerId, error });
+			this.logger.error('Failed to delete authentication integration record', error.stack, { providerId, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete authentication integration record', {
 				operation: 'delete_auth_integration',
 				providerId,

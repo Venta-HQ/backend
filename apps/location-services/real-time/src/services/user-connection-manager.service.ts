@@ -48,7 +48,7 @@ export class UserConnectionManagerService {
 
 			this.logger.log('User connection registered successfully', { socketId, userId });
 		} catch (error) {
-			this.logger.error('Failed to register user connection', { error, socketId, userId });
+			this.logger.error('Failed to register user connection', error.stack, { error, socketId, userId });
 			throw error;
 		}
 	}
@@ -69,7 +69,7 @@ export class UserConnectionManagerService {
 
 			await this.handleUserDisconnect(connectionInfo.userId, socketId);
 		} catch (error) {
-			this.logger.error('Failed to handle user disconnection', { error, socketId });
+			this.logger.error('Failed to handle user disconnection', error.stack, { error, socketId });
 			throw error;
 		}
 	}
@@ -100,7 +100,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to cleanup user connection', { error, socketId, userId });
+			this.logger.error('Failed to cleanup user connection', error.stack, { error, socketId, userId });
 			throw error;
 		}
 	}
@@ -178,7 +178,7 @@ export class UserConnectionManagerService {
 
 			return vendorRooms;
 		} catch (error) {
-			this.logger.error('Failed to get user vendor room memberships', { error, userId });
+			this.logger.error('Failed to get user vendor room memberships', error.stack, { error, userId });
 			throw error;
 		}
 	}
@@ -195,7 +195,7 @@ export class UserConnectionManagerService {
 			}
 			return JSON.parse(connectionData);
 		} catch (error) {
-			this.logger.error('Failed to get connection info', { error, socketId });
+			this.logger.error('Failed to get connection info', error.stack, { error, socketId });
 			throw error;
 		}
 	}
@@ -208,7 +208,7 @@ export class UserConnectionManagerService {
 		try {
 			return await this.redis.get(`user:${userId}:socketId`);
 		} catch (error) {
-			this.logger.error('Failed to get user socket ID', { error, userId });
+			this.logger.error('Failed to get user socket ID', error.stack, { error, userId });
 			throw error;
 		}
 	}
@@ -221,7 +221,7 @@ export class UserConnectionManagerService {
 		try {
 			return await this.redis.get(`socket:${socketId}:userId`);
 		} catch (error) {
-			this.logger.error('Failed to get socket user ID', { error, socketId });
+			this.logger.error('Failed to get socket user ID', error.stack, { error, socketId });
 			throw error;
 		}
 	}

@@ -138,7 +138,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 			this.logger.debug(`User ${userId} location updated, now tracking ${vendorIds.length} vendors`);
 		} catch (error) {
-			this.logger.error(`Failed to update user location for ${userId}:`, error);
+			this.logger.error(`Failed to update user location for ${userId}:`, error.stack, { error, userId });
 			socket.emit('error', { message: 'Failed to update location' });
 		}
 	}

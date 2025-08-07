@@ -125,7 +125,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 
 			this.logger.debug(`Vendor ${vendorId} location updated: lat=${data.lat}, long=${data.long}`);
 		} catch (error) {
-			this.logger.error(`Failed to update vendor location for ${vendorId}:`, error);
+			this.logger.error(`Failed to update vendor location for ${vendorId}:`, error.stack, { error, vendorId });
 			socket.emit('error', { message: 'Failed to update location' });
 		}
 	}

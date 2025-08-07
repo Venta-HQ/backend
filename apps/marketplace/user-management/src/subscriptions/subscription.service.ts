@@ -95,7 +95,7 @@ export class SubscriptionService {
 
 			this.logger.log('User created successfully from external auth provider', { clerkId });
 		} catch (error) {
-			this.logger.error('Failed to create user from external auth provider', { clerkId, error });
+			this.logger.error('Failed to create user from external auth provider', error.stack, { clerkId, error });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.DATABASE_ERROR,
@@ -123,7 +123,7 @@ export class SubscriptionService {
 
 			this.logger.log('User deleted successfully from external auth provider', { clerkId });
 		} catch (error) {
-			this.logger.error('Failed to delete user from external auth provider', { clerkId, error });
+			this.logger.error('Failed to delete user from external auth provider', error.stack, { clerkId, error });
 			throw new AppError(
 				ErrorType.INTERNAL,
 				ErrorCodes.DATABASE_ERROR,
@@ -165,7 +165,7 @@ export class SubscriptionService {
 				providerId: data.providerId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to create integration record', { clerkUserId: data.clerkUserId, error });
+			this.logger.error('Failed to create integration record', error.stack, { clerkUserId: data.clerkUserId, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create integration record', {
 				clerkUserId: data.clerkUserId,
 				operation: 'create_integration',
@@ -197,7 +197,7 @@ export class SubscriptionService {
 				clerkUserId: data.clerkUserId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to create user subscription record', { clerkUserId: data.clerkUserId, error });
+			this.logger.error('Failed to create user subscription record', error.stack, { clerkUserId: data.clerkUserId, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user subscription record', {
 				clerkUserId: data.clerkUserId,
 				operation: 'create_user_subscription',

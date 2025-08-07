@@ -68,9 +68,9 @@ export class AuthGuard implements CanActivate {
 		} catch (error) {
 			// Log the specific error for debugging but don't expose it to the client
 			if (error instanceof Error) {
-				this.logger.error(`Authentication failed: ${error.message}`, error.stack);
+				this.logger.error(`Authentication failed: ${error.message}`, error.stack, { error });
 			} else {
-				this.logger.error('Authentication failed with unknown error', error);
+				this.logger.error('Authentication failed with unknown error', error.stack, { error });
 			}
 			throw AppError.authentication(ErrorCodes.UNAUTHORIZED);
 		}

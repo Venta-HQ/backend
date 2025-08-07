@@ -181,14 +181,14 @@ export class BootstrapService {
 			this.logger.log(`Successfully bootstrapped ${apps.length} service(s)`);
 			return apps;
 		} catch (error) {
-			this.logger.error('Failed to bootstrap services:', error);
+			this.logger.error('Failed to bootstrap services:', error.stack, { error });
 
 			// Cleanup any started apps
 			for (const app of apps) {
 				try {
 					await app.close();
 				} catch (closeError) {
-					this.logger.error('Error closing app during cleanup:', closeError);
+					this.logger.error('Error closing app during cleanup:', closeError.stack, { error: closeError });
 				}
 			}
 
@@ -205,7 +205,7 @@ export class BootstrapService {
 					await app.close();
 					this.logger.log('Service closed successfully');
 				} catch (error) {
-					this.logger.error('Error closing service:', error);
+					this.logger.error('Error closing service:', error.stack, { error });
 				}
 			}
 

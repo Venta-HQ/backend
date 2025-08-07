@@ -42,7 +42,7 @@ export class WsRateLimitGuard implements CanActivate {
 			if (error instanceof WsException) {
 				throw error;
 			}
-			this.logger.error('Rate limit check failed', error);
+			this.logger.error('Rate limit check failed', error.stack, { error, userId });
 			return true; // Allow on error to prevent blocking legitimate requests
 		}
 	}

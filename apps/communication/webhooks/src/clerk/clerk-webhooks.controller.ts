@@ -11,7 +11,7 @@ export class ClerkWebhooksController {
 
 	@Post()
 	handleClerkEvent(@Body() event: UserWebhookEvent) {
-		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`);
+		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`, { eventType: event.type, eventId: event.data?.id });
 		switch (event.type) {
 			case 'user.created':
 				if (event.data?.id) {
@@ -28,7 +28,7 @@ export class ClerkWebhooksController {
 				}
 				break;
 			default:
-				this.logger.warn('Unhandled Event Type');
+				this.logger.warn('Unhandled Event Type', { eventType: event.type, eventId: event.data?.id });
 		}
 		return { success: true };
 	}

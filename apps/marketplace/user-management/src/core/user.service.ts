@@ -84,7 +84,7 @@ export class UserService {
 			this.logger.log('User profile retrieved successfully', { userId });
 			return user;
 		} catch (error) {
-			this.logger.error('Failed to get user profile', { error, userId });
+			this.logger.error('Failed to get user profile', error.stack, { error, userId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve user profile', {
 				operation: 'get_user_by_id',
 				userId,
@@ -119,7 +119,7 @@ export class UserService {
 
 			return user;
 		} catch (error) {
-			this.logger.error('Failed to update user location in database', { error, userId });
+			this.logger.error('Failed to update user location in database', error.stack, { error, userId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update user location', {
 				operation: 'update_user_location',
 				userId,
@@ -144,7 +144,7 @@ export class UserService {
 
 			return user;
 		} catch (error) {
-			this.logger.error('Failed to create user profile', { clerkId, error });
+			this.logger.error('Failed to create user profile', error.stack, { clerkId, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user profile', {
 				clerkId,
 				operation: 'create_user_profile',
@@ -167,7 +167,7 @@ export class UserService {
 
 			this.logger.log('User profile and associated data deleted successfully', { clerkId });
 		} catch (error) {
-			this.logger.error('Failed to delete user profile', { clerkId, error });
+			this.logger.error('Failed to delete user profile', error.stack, { clerkId, error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete user profile', {
 				clerkId,
 				operation: 'delete_user_profile',

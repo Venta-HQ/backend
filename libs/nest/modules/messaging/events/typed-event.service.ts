@@ -57,7 +57,7 @@ export class EventService {
 				subdomain: event.meta.subdomain,
 			});
 		} catch (error) {
-			this.logger.error(`Failed to emit domain event: ${subject}`, error);
+			this.logger.error(`Failed to emit domain event: ${subject}`, error.stack, { error, subject });
 			throw error;
 		}
 	}

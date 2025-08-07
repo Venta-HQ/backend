@@ -28,7 +28,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 			this.nc = await connect({ servers: natsUrl });
 			this.logger.log(`Connected to NATS server: ${natsUrl}`);
 		} catch (error) {
-			this.logger.error('Failed to connect to NATS server:', error);
+			this.logger.error('Failed to connect to NATS server:', error.stack, { error, natsUrl });
 			throw error;
 		}
 	}
@@ -67,7 +67,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 					// Messages are automatically acknowledged
 					this.logger.log(`Successfully processed message: ${subject}`);
 				} catch (error) {
-					this.logger.error(`Error processing message ${subject}:`, error);
+					this.logger.error(`Error processing message ${subject}:`, error.stack, { error, subject, queueGroup });
 					// In regular subscriptions, we can't NAK - just log the error
 				}
 			}
@@ -99,7 +99,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 			await this.nc.publish(subject, message);
 			this.logger.log(`Published message to ${subject}`);
 		} catch (error) {
-			this.logger.error(`Failed to publish message to ${subject}:`, error);
+			this.logger.error(`Failed to publish message to ${subject}:`, error.stack, { error, subject });
 			throw error;
 		}
 	}

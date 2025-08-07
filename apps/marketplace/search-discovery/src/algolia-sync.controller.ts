@@ -66,7 +66,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 					this.logger.warn(`Unhandled marketplace vendor event: ${subject}`);
 			}
 		} catch (error) {
-			this.logger.error(`Failed to handle marketplace vendor event: ${subject}`, {
+			this.logger.error(`Failed to handle marketplace vendor event: ${subject}`, error.stack, {
 				context: event.context,
 				error,
 				eventId: event.meta.eventId,
@@ -94,7 +94,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 				this.logger.warn(`Unhandled location vendor event: ${subject}`);
 			}
 		} catch (error) {
-			this.logger.error(`Failed to handle location vendor event: ${subject}`, {
+			this.logger.error(`Failed to handle location vendor event: ${subject}`, error.stack, {
 				context: event.context,
 				error,
 				eventId: event.meta.eventId,

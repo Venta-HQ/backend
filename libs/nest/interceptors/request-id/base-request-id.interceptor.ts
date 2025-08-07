@@ -47,7 +47,7 @@ export abstract class BaseRequestIdInterceptor {
 				}),
 			);
 		} catch (error) {
-			this.logger.error(`Error in ${this.extractor.getProtocolName()} request ID interceptor`, error);
+			this.logger.error(`Error in ${this.extractor.getProtocolName()} request ID interceptor`, error.stack, { error });
 			// Ensure context is cleared even if interceptor fails
 			this.requestContextService.clear();
 			return next.handle();

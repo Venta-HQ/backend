@@ -236,7 +236,7 @@ export class LocationService {
 
 			return location;
 		} catch (error) {
-			this.logger.error('Failed to get vendor location', { error, vendorId });
+			this.logger.error('Failed to get vendor location', error.stack, { error, vendorId });
 			throw new AppError(
 				ErrorType.EXTERNAL_SERVICE,
 				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
@@ -267,7 +267,7 @@ export class LocationService {
 
 			this.logger.log('Vendor removed from geospatial store successfully', { vendorId });
 		} catch (error) {
-			this.logger.error('Failed to remove vendor location', { error, vendorId });
+			this.logger.error('Failed to remove vendor location', error.stack, { error, vendorId });
 			throw new AppError(
 				ErrorType.EXTERNAL_SERVICE,
 				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,

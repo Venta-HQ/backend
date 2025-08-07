@@ -10,7 +10,10 @@ export class RevenueCatWebhooksController {
 
 	@Post()
 	handleRevenueCatEvent(@Body() event: any) {
-		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`);
+		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
+			eventType: event.event.type,
+			eventId: event.event.id,
+		});
 		switch (event.event.type) {
 			case 'INITIAL_PURCHASE':
 				if (event.event.app_user_id) {
@@ -26,7 +29,7 @@ export class RevenueCatWebhooksController {
 				}
 				break;
 			default:
-				this.logger.warn('Unhandled Event Type');
+				this.logger.warn('Unhandled Event Type', { eventType: event.event.type, eventId: event.event.id });
 		}
 		return { success: true };
 	}

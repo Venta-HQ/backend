@@ -106,7 +106,7 @@ export class VendorService {
 
 			return vendor;
 		} catch (error) {
-			this.logger.error('Failed to update vendor', { error, vendorId });
+			this.logger.error('Failed to update vendor', error.stack, { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
 				operation: 'update_vendor',
 				vendorId,
@@ -133,7 +133,7 @@ export class VendorService {
 				// timestamp automatically added by schema default
 			});
 		} catch (error) {
-			this.logger.error('Failed to deactivate vendor', { error, vendorId });
+			this.logger.error('Failed to deactivate vendor', error.stack, { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to deactivate vendor', {
 				operation: 'delete_vendor',
 				vendorId,
@@ -164,7 +164,7 @@ export class VendorService {
 			if (error instanceof AppError) {
 				throw error;
 			}
-			this.logger.error('Failed to retrieve vendor', { error, vendorId });
+			this.logger.error('Failed to retrieve vendor', error.stack, { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendor', {
 				operation: 'get_vendor_by_id',
 				vendorId,
@@ -183,7 +183,7 @@ export class VendorService {
 			const vendors = await this.prisma.db.vendor.findMany();
 			return vendors;
 		} catch (error) {
-			this.logger.error('Failed to retrieve vendors', { error });
+			this.logger.error('Failed to retrieve vendors', error.stack, { error });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve vendors', {
 				operation: 'get_all_vendors',
 			});
@@ -210,7 +210,7 @@ export class VendorService {
 	
 			});
 		} catch (error) {
-			this.logger.error('Failed to update vendor location', { error, vendorId });
+			this.logger.error('Failed to update vendor location', error.stack, { error, vendorId });
 			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor location', {
 				operation: 'update_vendor_location',
 				vendorId,

@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 interface LogEntry {
 	app: string;
 	context?: string;
+	data?: Record<string, any>;
 	level: 'log' | 'error' | 'warn' | 'debug' | 'verbose';
 	message: string;
 	requestId?: string;

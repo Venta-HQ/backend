@@ -43,7 +43,7 @@ export class VendorConnectionManagerService {
 
 			this.logger.log('Vendor connection registered successfully', { socketId, vendorId });
 		} catch (error) {
-			this.logger.error('Failed to register vendor connection', { error, socketId, vendorId });
+			this.logger.error('Failed to register vendor connection', error.stack, { error, socketId, vendorId });
 			throw error;
 		}
 	}
@@ -64,7 +64,7 @@ export class VendorConnectionManagerService {
 
 			await this.handleVendorDisconnect(connectionInfo.vendorId, socketId);
 		} catch (error) {
-			this.logger.error('Failed to handle vendor disconnection', { error, socketId });
+			this.logger.error('Failed to handle vendor disconnection', error.stack, { error, socketId });
 			throw error;
 		}
 	}
@@ -100,7 +100,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to cleanup vendor connection', { error, socketId, vendorId });
+			this.logger.error('Failed to cleanup vendor connection', error.stack, { error, socketId, vendorId });
 			throw error;
 		}
 	}
@@ -122,7 +122,7 @@ export class VendorConnectionManagerService {
 
 			return usersInRoom;
 		} catch (error) {
-			this.logger.error('Failed to get vendor room user memberships', { error, vendorId });
+			this.logger.error('Failed to get vendor room user memberships', error.stack, { error, vendorId });
 			throw error;
 		}
 	}
@@ -139,7 +139,7 @@ export class VendorConnectionManagerService {
 			}
 			return JSON.parse(connectionData);
 		} catch (error) {
-			this.logger.error('Failed to get vendor connection info', { error, socketId });
+			this.logger.error('Failed to get vendor connection info', error.stack, { error, socketId });
 			throw error;
 		}
 	}
@@ -152,7 +152,7 @@ export class VendorConnectionManagerService {
 		try {
 			return await this.redis.get(`vendor:${vendorId}:socketId`);
 		} catch (error) {
-			this.logger.error('Failed to get vendor socket ID', { error, vendorId });
+			this.logger.error('Failed to get vendor socket ID', error.stack, { error, vendorId });
 			throw error;
 		}
 	}
@@ -165,7 +165,7 @@ export class VendorConnectionManagerService {
 		try {
 			return await this.redis.get(`socket:${socketId}:vendorId`);
 		} catch (error) {
-			this.logger.error('Failed to get socket vendor ID', { error, socketId });
+			this.logger.error('Failed to get socket vendor ID', error.stack, { error, socketId });
 			throw error;
 		}
 	}
