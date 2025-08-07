@@ -76,11 +76,9 @@ export class MarketplaceLocationContextMapper {
 	 * Translate marketplace user location update to location services format
 	 */
 	toLocationServicesUserUpdate(userId: string, location: { lat: number; lng: number }) {
-		this.logTranslationStart('toLocationServicesUserUpdate', { userId, location });
-
 		try {
 			if (!this.validateSourceData({ location })) {
-				throw this.createValidationError('Invalid user location data', { userId, location });
+				throw new Error('Invalid user location data');
 			}
 
 			const result = {
@@ -92,10 +90,9 @@ export class MarketplaceLocationContextMapper {
 				source: 'marketplace',
 			};
 
-			this.logTranslationSuccess('toLocationServicesUserUpdate', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toLocationServicesUserUpdate', error, { userId, location });
+			this.logger.error('Failed to translate user location update', error);
 			throw error;
 		}
 	}
@@ -104,11 +101,9 @@ export class MarketplaceLocationContextMapper {
 	 * Translate marketplace location bounds to location services format
 	 */
 	toLocationServicesBounds(bounds: MarketplaceLocationBounds) {
-		this.logTranslationStart('toLocationServicesBounds', { bounds });
-
 		try {
 			if (!this.validateSourceData({ bounds })) {
-				throw this.createValidationError('Invalid bounds data', { bounds });
+				throw new Error('Invalid bounds data');
 			}
 
 			const result = TransformationUtils.transformBounds({
@@ -116,10 +111,9 @@ export class MarketplaceLocationContextMapper {
 				northEast: bounds.neLocation,
 			});
 
-			this.logTranslationSuccess('toLocationServicesBounds', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toLocationServicesBounds', error, { bounds });
+			this.logger.error('Failed to translate location bounds', error);
 			throw error;
 		}
 	}
@@ -128,11 +122,9 @@ export class MarketplaceLocationContextMapper {
 	 * Translate marketplace radius search to location services format
 	 */
 	toLocationServicesRadiusSearch(center: { lat: number; lng: number }, radiusInMeters: number) {
-		this.logTranslationStart('toLocationServicesRadiusSearch', { center, radiusInMeters });
-
 		try {
 			if (!this.validateSourceData({ location: center })) {
-				throw this.createValidationError('Invalid center location data', { center, radiusInMeters });
+				throw new Error('Invalid center location data');
 			}
 
 			const result = {
@@ -141,10 +133,9 @@ export class MarketplaceLocationContextMapper {
 				entityType: 'vendor', // Location Services needs to know entity type
 			};
 
-			this.logTranslationSuccess('toLocationServicesRadiusSearch', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toLocationServicesRadiusSearch', error, { center, radiusInMeters });
+			this.logger.error('Failed to translate radius search', error);
 			throw error;
 		}
 	}
@@ -162,11 +153,9 @@ export class MarketplaceLocationContextMapper {
 		lastUpdateTime: string;
 		accuracy?: number;
 	}): MarketplaceVendorLocation {
-		this.logTranslationStart('toMarketplaceVendorLocation', { entityId: locationServicesData.entityId });
-
 		try {
 			if (!this.validateTargetData(locationServicesData)) {
-				throw this.createValidationError('Invalid location services vendor data', { locationServicesData });
+				throw new Error('Invalid location services vendor data');
 			}
 
 			const result = {
@@ -176,10 +165,9 @@ export class MarketplaceLocationContextMapper {
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
 
-			this.logTranslationSuccess('toMarketplaceVendorLocation', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceVendorLocation', error, { locationServicesData });
+			this.logger.error('Failed to translate vendor location', error);
 			throw error;
 		}
 	}
@@ -193,11 +181,9 @@ export class MarketplaceLocationContextMapper {
 		lastUpdateTime: string;
 		accuracy?: number;
 	}): MarketplaceUserLocation {
-		this.logTranslationStart('toMarketplaceUserLocation', { entityId: locationServicesData.entityId });
-
 		try {
 			if (!this.validateTargetData(locationServicesData)) {
-				throw this.createValidationError('Invalid location services user data', { locationServicesData });
+				throw new Error('Invalid location services user data');
 			}
 
 			const result = {
@@ -207,10 +193,9 @@ export class MarketplaceLocationContextMapper {
 				accuracy: locationServicesData.accuracy || 5.0,
 			};
 
-			this.logTranslationSuccess('toMarketplaceUserLocation', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceUserLocation', error, { locationServicesData });
+			this.logger.error('Failed to translate user location', error);
 			throw error;
 		}
 	}
@@ -224,14 +209,9 @@ export class MarketplaceLocationContextMapper {
 		coordinates: { latitude: number; longitude: number };
 		timestamp: string;
 	}): MarketplaceLocationUpdate {
-		this.logTranslationStart('toMarketplaceLocationUpdate', {
-			entityId: locationServicesData.entityId,
-			entityType: locationServicesData.entityType,
-		});
-
 		try {
 			if (!this.validateTargetData(locationServicesData)) {
-				throw this.createValidationError('Invalid location services update data', { locationServicesData });
+				throw new Error('Invalid location services update data');
 			}
 
 			const result = {
@@ -241,10 +221,9 @@ export class MarketplaceLocationContextMapper {
 				timestamp: locationServicesData.timestamp,
 			};
 
-			this.logTranslationSuccess('toMarketplaceLocationUpdate', result);
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceLocationUpdate', error, { locationServicesData });
+			this.logger.error('Failed to translate location update', error);
 			throw error;
 		}
 	}
@@ -260,15 +239,11 @@ export class MarketplaceLocationContextMapper {
 			accuracy?: number;
 		}>,
 	): MarketplaceVendorLocation[] {
-		this.logTranslationStart('toMarketplaceVendorLocationList', { count: locationServicesData.length });
-
 		try {
 			const result = locationServicesData.map((vendor) => this.toMarketplaceVendorLocation(vendor));
-
-			this.logTranslationSuccess('toMarketplaceVendorLocationList', { count: result.length });
 			return result;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceVendorLocationList', error, { locationServicesData });
+			this.logger.error('Failed to translate vendor location list', error);
 			throw error;
 		}
 	}
