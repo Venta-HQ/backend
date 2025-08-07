@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
 import { BaseContextMapper } from '@app/nest/modules/contracts';
+import { Injectable } from '@nestjs/common';
 
 /**
  * Location Services → Marketplace Context Mapper
- * 
+ *
  * Translates data between Location Services and Marketplace domains
  */
 @Injectable()
@@ -209,4 +209,4 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 
 		return true;
 	}
-} 
+}

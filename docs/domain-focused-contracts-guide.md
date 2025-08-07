@@ -378,5 +378,5 @@ apps/marketplace/contracts/  # Shared across all marketplace services
 ## 📚 **Resources**
 
 - [Domain-Driven Design Best Practices](./ddd-best-practices.md)
-- [Domain Contracts Implementation Guide](./domain-contracts-implementation-guide.md)
+- [Domain Contracts Guide](./domain-contracts-guide.md)
 - [DDD Migration Guide](./ddd-migration-guide.md) 
