@@ -1,5 +1,6 @@
-import { userEventSchemas, UserLocationUpdateEventData } from '../../domains/user/user.events';
-import { VendorEventData, vendorEventSchemas, VendorLocationUpdateEventData } from '../../domains/vendor/vendor.events';
+import { z } from 'zod';
+import { userEventSchemas } from '../../domains/user/user.events';
+import { vendorEventSchemas } from '../../domains/vendor/vendor.events';
 
 /**
  * Combine all domain event schemas
@@ -19,21 +20,18 @@ export const ALL_EVENT_SCHEMAS = {
 export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
 
 /**
+ * Utility type to infer Zod schema types while preserving required fields
+ * This ensures that required fields in the schema remain required in the inferred type
+ */
+type InferRequired<T> = {
+	[K in keyof T]-?: T[K];
+};
+
+/**
  * Type mapping from subject to data type
  * This provides type safety for the second parameter of emit
- *
- * Note: We use manual mapping instead of z.infer because:
- * - z.infer makes all fields optional by default
- * - Event data should have required fields for type safety
- * - Manual mapping ensures proper required/optional field semantics
+ * Auto-inferred from ALL_EVENT_SCHEMAS while preserving required fields
  */
 export type EventDataMap = {
-	// User events
-	'user.location.updated': UserLocationUpdateEventData;
-
-	// Vendor events
-	'vendor.created': VendorEventData;
-	'vendor.deleted': VendorEventData;
-	'vendor.location.updated': VendorLocationUpdateEventData;
-	'vendor.updated': VendorEventData;
+	[K in AvailableEventSubjects]: InferRequired<z.infer<(typeof ALL_EVENT_SCHEMAS)[K]>>;
 };
