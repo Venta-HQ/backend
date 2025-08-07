@@ -3,6 +3,13 @@ import { AlgoliaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
+interface VendorData {
+	[name: string]: unknown;
+	id: string;
+	lat?: number;
+	long?: number;
+}
+
 @Injectable()
 export class AlgoliaSyncService {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
@@ -11,29 +18,39 @@ export class AlgoliaSyncService {
 
 	/**
 	 * Process vendor events and sync to Algolia
+	 * Events are already validated by the event system, so we focus on business logic
 	 */
 	async processVendorEvent(event: BaseEvent, subject: AvailableEventSubjects): Promise<void> {
 		const { data: vendor, eventId } = event;
 
-		// Logger automatically picks up correlation ID from RequestContextService
 		this.logger.log(`Processing ${subject} event: ${eventId} for vendor: ${vendor.id}`);
 
-		switch (subject) {
-			case 'vendor.created':
-				await this.handleVendorCreated(vendor);
-				break;
-			case 'vendor.updated':
-				await this.handleVendorUpdated(vendor);
-				break;
-			case 'vendor.deleted':
-				await this.handleVendorDeleted(vendor);
-				break;
-			default:
-				this.logger.warn(`Unknown vendor event: ${subject}`);
+		try {
+			switch (subject) {
+				case 'vendor.created':
+					await this.handleVendorCreated(vendor);
+					break;
+				case 'vendor.updated':
+					await this.handleVendorUpdated(vendor);
+					break;
+				case 'vendor.deleted':
+					await this.handleVendorDeleted(vendor);
+					break;
+				default:
+					this.logger.warn(`Unknown vendor event: ${subject}`);
+			}
+		} catch (error) {
+			this.logger.error(`Failed to process ${subject} event: ${eventId} for vendor: ${vendor.id}`, error);
+			throw error;
 		}
 	}
 
-	private async handleVendorCreated(vendor: Record<string, unknown>): Promise<void> {
+	/**
+	 * Handle vendor creation in Algolia
+	 */
+	private async handleVendorCreated(vendor: VendorData): Promise<void> {
+		this.logger.log(`Creating vendor in Algolia: ${vendor.id}`);
+
 		await retryOperation(
 			() =>
 				this.algoliaService.createObject('vendor', {
@@ -54,7 +71,12 @@ export class AlgoliaSyncService {
 		this.logger.log(`Successfully created vendor in Algolia: ${vendor.id}`);
 	}
 
-	private async handleVendorUpdated(vendor: Record<string, unknown>): Promise<void> {
+	/**
+	 * Handle vendor update in Algolia
+	 */
+	private async handleVendorUpdated(vendor: VendorData): Promise<void> {
+		this.logger.log(`Updating vendor in Algolia: ${vendor.id}`);
+
 		const { lat, long, ...justVendor } = vendor;
 
 		await retryOperation(
@@ -81,7 +103,12 @@ export class AlgoliaSyncService {
 		this.logger.log(`Successfully updated vendor in Algolia: ${vendor.id}`);
 	}
 
-	private async handleVendorDeleted(vendor: Record<string, unknown>): Promise<void> {
+	/**
+	 * Handle vendor deletion in Algolia
+	 */
+	private async handleVendorDeleted(vendor: VendorData): Promise<void> {
+		this.logger.log(`Deleting vendor from Algolia: ${vendor.id}`);
+
 		await retryOperation(
 			() => this.algoliaService.deleteObject('vendor', vendor.id as string),
 			`Deleting vendor from Algolia: ${vendor.id}`,

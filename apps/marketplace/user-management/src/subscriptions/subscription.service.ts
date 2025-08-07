@@ -13,6 +13,12 @@ interface UserSubscriptionData {
 	clerkUserId: string;
 }
 
+interface SubscriptionActivationData {
+	clerkUserId: string;
+	providerId: string;
+	subscriptionData?: Prisma.InputJsonValue;
+}
+
 @Injectable()
 export class SubscriptionService {
 	private readonly logger = new Logger(SubscriptionService.name);
@@ -20,13 +26,65 @@ export class SubscriptionService {
 	constructor(private prisma: PrismaService) {}
 
 	/**
+	 * Activate user subscription with integration
+	 * Domain method for subscription activation with business logic
+	 */
+	async activateSubscription(activationData: SubscriptionActivationData): Promise<void> {
+		this.logger.log('Starting subscription activation process', {
+			clerkUserId: activationData.clerkUserId,
+			providerId: activationData.providerId,
+		});
+
+		try {
+			// Create integration record
+			await this.prisma.db.integration.create({
+				data: {
+					data: activationData.subscriptionData as any,
+					providerId: activationData.providerId,
+					type: IntegrationType.RevenueCat,
+					user: {
+						connect: {
+							clerkId: activationData.clerkUserId,
+						},
+					},
+				},
+			});
+
+			// Create user subscription record
+			await this.prisma.db.userSubscription.create({
+				data: {
+					status: SubscriptionStatus.Active,
+					user: {
+						connect: {
+							clerkId: activationData.clerkUserId,
+						},
+					},
+				},
+			});
+
+			this.logger.log('Subscription activation completed successfully', {
+				clerkUserId: activationData.clerkUserId,
+				providerId: activationData.providerId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to activate subscription', {
+				clerkUserId: activationData.clerkUserId,
+				error,
+				providerId: activationData.providerId,
+			});
+			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to activate subscription', {
+				clerkUserId: activationData.clerkUserId,
+				operation: 'activate_subscription',
+				providerId: activationData.providerId,
+			});
+		}
+	}
+
+	/**
 	 * Handle user creation from external auth provider
 	 */
 	async handleUserCreated(clerkId: string): Promise<void> {
 		this.logger.log('Handling user creation from external auth provider', { clerkId });
-
-		// Domain validation
-		await this.validateUserDoesNotExist(clerkId);
 
 		try {
 			await this.prisma.db.user.create({
@@ -55,9 +113,6 @@ export class SubscriptionService {
 	async handleUserDeleted(clerkId: string): Promise<void> {
 		this.logger.log('Handling user deletion from external auth provider', { clerkId });
 
-		// Domain validation
-		await this.validateUserExists(clerkId);
-
 		try {
 			await this.prisma.db.user.deleteMany({
 				where: {
@@ -80,7 +135,7 @@ export class SubscriptionService {
 	}
 
 	/**
-	 * Create integration record for subscription provider
+	 * Create integration record for subscription provider (legacy method)
 	 */
 	async createIntegration(data: IntegrationData): Promise<void> {
 		this.logger.log('Creating integration record for subscription provider', {
@@ -88,10 +143,6 @@ export class SubscriptionService {
 			providerId: data.providerId,
 			type: IntegrationType.RevenueCat,
 		});
-
-		// Domain validation
-		await this.validateUserExists(data.clerkUserId);
-		await this.validateIntegrationData(data);
 
 		try {
 			await this.prisma.db.integration.create({
@@ -121,16 +172,12 @@ export class SubscriptionService {
 	}
 
 	/**
-	 * Create user subscription record
+	 * Create user subscription record (legacy method)
 	 */
 	async createUserSubscription(data: UserSubscriptionData): Promise<void> {
 		this.logger.log('Creating user subscription record', {
 			clerkUserId: data.clerkUserId,
 		});
-
-		// Domain validation
-		await this.validateUserExists(data.clerkUserId);
-		await this.validateSubscriptionDoesNotExist(data.clerkUserId);
 
 		try {
 			await this.prisma.db.userSubscription.create({
@@ -152,76 +199,6 @@ export class SubscriptionService {
 			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to create user subscription record', {
 				clerkUserId: data.clerkUserId,
 				operation: 'create_user_subscription',
-			});
-		}
-	}
-
-	/**
-	 * Validate that user exists
-	 */
-	private async validateUserExists(clerkId: string): Promise<void> {
-		const user = await this.prisma.db.user.findUnique({
-			where: { clerkId },
-		});
-
-		if (!user) {
-			throw new UserDomainError(UserDomainErrorCodes.USER_NOT_FOUND, 'User not found', {
-				clerkId,
-			});
-		}
-	}
-
-	/**
-	 * Validate that user does not exist
-	 */
-	private async validateUserDoesNotExist(clerkId: string): Promise<void> {
-		const existingUser = await this.prisma.db.user.findUnique({
-			where: { clerkId },
-		});
-
-		if (existingUser) {
-			throw new UserDomainError(UserDomainErrorCodes.USER_ALREADY_EXISTS, 'User already exists', {
-				clerkId,
-			});
-		}
-	}
-
-	/**
-	 * Validate that subscription does not exist for user
-	 */
-	private async validateSubscriptionDoesNotExist(clerkId: string): Promise<void> {
-		const existingSubscription = await this.prisma.db.userSubscription.findFirst({
-			where: {
-				user: {
-					clerkId,
-				},
-			},
-		});
-
-		if (existingSubscription) {
-			throw new UserDomainError(
-				UserDomainErrorCodes.SUBSCRIPTION_NOT_FOUND,
-				'User already has an active subscription',
-				{
-					clerkId,
-				},
-			);
-		}
-	}
-
-	/**
-	 * Validate integration data according to domain rules
-	 */
-	private async validateIntegrationData(data: IntegrationData): Promise<void> {
-		if (!data.clerkUserId || data.clerkUserId.trim().length === 0) {
-			throw new UserDomainError(UserDomainErrorCodes.PROFILE_INCOMPLETE, 'Clerk user ID is required', {
-				clerkUserId: data.clerkUserId,
-			});
-		}
-
-		if (data.providerId && data.providerId.trim().length === 0) {
-			throw new UserDomainError(UserDomainErrorCodes.PROFILE_INCOMPLETE, 'Provider ID cannot be empty if provided', {
-				providerId: data.providerId,
 			});
 		}
 	}

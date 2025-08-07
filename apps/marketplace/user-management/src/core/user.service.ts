@@ -16,6 +16,11 @@ interface UserProfile {
 	updatedAt: Date;
 }
 
+interface UserRegistrationData {
+	clerkId: string;
+	source?: 'clerk_webhook' | 'manual' | 'admin';
+}
+
 @Injectable()
 export class UserService {
 	private readonly logger = new Logger(UserService.name);
@@ -23,7 +28,45 @@ export class UserService {
 	constructor(private readonly prisma: PrismaService) {}
 
 	/**
-	 * Get user profile by ID with domain validation
+	 * Register a new user in the marketplace
+	 * Domain method for user registration with business logic
+	 */
+	async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
+		this.logger.log('Starting user registration process', {
+			clerkId: registrationData.clerkId,
+			source: registrationData.source || 'unknown',
+		});
+
+		try {
+			const user = await this.prisma.db.user.create({
+				data: {
+					clerkId: registrationData.clerkId,
+				},
+			});
+
+			this.logger.log('User registration completed successfully', {
+				clerkId: registrationData.clerkId,
+				source: registrationData.source,
+				userId: user.id,
+			});
+
+			return user;
+		} catch (error) {
+			this.logger.error('Failed to register user', {
+				clerkId: registrationData.clerkId,
+				error,
+				source: registrationData.source,
+			});
+			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to register user', {
+				clerkId: registrationData.clerkId,
+				operation: 'register_user',
+				source: registrationData.source,
+			});
+		}
+	}
+
+	/**
+	 * Get user profile by ID
 	 */
 	async getUserById(userId: string): Promise<UserProfile | null> {
 		this.logger.log('Getting user profile', { userId });
@@ -57,10 +100,6 @@ export class UserService {
 	async updateUserLocation(userId: string, location: UserLocationData): Promise<UserProfile> {
 		this.logger.log('Updating user location from location service', { location, userId });
 
-		// Domain validation
-		await this.validateUserExists(userId);
-		await this.validateLocationData(location);
-
 		try {
 			// Update user location in database
 			const user = await this.prisma.db.user.update({
@@ -89,13 +128,10 @@ export class UserService {
 	}
 
 	/**
-	 * Create user profile with domain validation
+	 * Create user profile (legacy method - use registerUser for new registrations)
 	 */
 	async createUserProfile(clerkId: string): Promise<UserProfile> {
 		this.logger.log('Creating new user profile', { clerkId });
-
-		// Domain validation
-		await this.validateUserDoesNotExist(clerkId);
 
 		try {
 			const user = await this.prisma.db.user.create({
@@ -117,74 +153,24 @@ export class UserService {
 	}
 
 	/**
-	 * Delete user profile with domain validation
+	 * Delete user profile and all associated data
+	 * Domain method for user deletion with cleanup
 	 */
 	async deleteUserProfile(clerkId: string): Promise<void> {
-		this.logger.log('Deleting user profile', { clerkId });
-
-		// Domain validation
-		await this.validateUserExists(clerkId);
+		this.logger.log('Starting user profile deletion process', { clerkId });
 
 		try {
-			await this.prisma.db.user.delete({
+			// Delete user and all associated data (cascade)
+			await this.prisma.db.user.deleteMany({
 				where: { clerkId },
 			});
 
-			this.logger.log('User profile deleted successfully', { clerkId });
+			this.logger.log('User profile and associated data deleted successfully', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user profile', { clerkId, error });
 			throw new UserDomainError(UserDomainErrorCodes.DATABASE_ERROR, 'Failed to delete user profile', {
 				clerkId,
 				operation: 'delete_user_profile',
-			});
-		}
-	}
-
-	/**
-	 * Validate that user exists
-	 */
-	private async validateUserExists(identifier: string): Promise<void> {
-		const user = await this.prisma.db.user.findFirst({
-			where: {
-				OR: [{ id: identifier }, { clerkId: identifier }],
-			},
-		});
-
-		if (!user) {
-			throw new UserDomainError(UserDomainErrorCodes.USER_NOT_FOUND, 'User not found', {
-				identifier,
-			});
-		}
-	}
-
-	/**
-	 * Validate that user does not exist (for creation)
-	 */
-	private async validateUserDoesNotExist(clerkId: string): Promise<void> {
-		const existingUser = await this.prisma.db.user.findUnique({
-			where: { clerkId },
-		});
-
-		if (existingUser) {
-			throw new UserDomainError(UserDomainErrorCodes.USER_ALREADY_EXISTS, 'User already exists', {
-				clerkId,
-			});
-		}
-	}
-
-	/**
-	 * Validate location data according to domain rules
-	 */
-	private async validateLocationData(location: UserLocationData): Promise<void> {
-		if (location.lat < -90 || location.lat > 90) {
-			throw new UserDomainError(UserDomainErrorCodes.INVALID_LOCATION, 'Invalid latitude value', {
-				lat: location.lat,
-			});
-		}
-
-		if (location.long < -180 || location.long > 180) {
-			throw new UserDomainError(UserDomainErrorCodes.INVALID_LOCATION, 'Invalid longitude value', {
-				long: location.long,
 			});
 		}
 	}

@@ -103,11 +103,12 @@ export const VendorDomainErrorCodes = {
 	VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND',
 } as const;
 
-// Domain error codes for marketplace
+// Domain error codes for marketplace operations
 export const MarketplaceDomainErrorCodes = {
-	ALGOLIA_SYNC_FAILED: 'MARKETPLACE_ALGOLIA_SYNC_FAILED',
-	DISCOVERY_FAILED: 'MARKETPLACE_DISCOVERY_FAILED',
-	SEARCH_FAILED: 'MARKETPLACE_SEARCH_FAILED',
+	DATABASE_ERROR: 'MARKETPLACE_DATABASE_ERROR',
+	INVALID_EVENT_SUBJECT: 'MARKETPLACE_INVALID_EVENT_SUBJECT',
+	INVALID_VENDOR_DATA: 'MARKETPLACE_INVALID_VENDOR_DATA',
+	SEARCH_SYNC_FAILED: 'MARKETPLACE_SEARCH_SYNC_FAILED',
 } as const;
 
 // Domain error codes for communication
