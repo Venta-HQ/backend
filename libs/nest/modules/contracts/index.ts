@@ -2,9 +2,6 @@
 export { BaseContextMapper } from './base/base-context-mapper';
 export { BaseAntiCorruptionLayer } from './base/base-anti-corruption-layer';
 
-// Utilities
-export { ContractUtils } from './utils/contract-utils';
-
 // Services
 export { ContractRegistrationService } from './contract-registration.service';
 export { ContractFactoryService } from './contract-factory.service';

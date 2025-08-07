@@ -4,8 +4,9 @@ import {
 	MarketplaceUserLocation,
 	MarketplaceVendorLocation,
 } from '@app/apitypes/domains/marketplace';
+import { BaseContextMapper } from '@app/nest/modules/contracts';
 import { Injectable } from '@nestjs/common';
-import { BaseContextMapper, ContractUtils } from '@app/nest/modules/contracts';
+import { LocationContractUtils } from '../../../location-services/contracts/utils/location-contract-utils';
 
 /**
  * Context Mapper for Marketplace ↔ Location Services communication
@@ -28,16 +29,16 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 	validateSourceData(data: any): boolean {
 		if (data.location) {
-			return ContractUtils.validateLocation(data.location);
+			return LocationContractUtils.validateLocation(data.location);
 		}
 		if (data.bounds) {
-			return ContractUtils.validateBounds(data.bounds);
+			return LocationContractUtils.validateBounds(data.bounds);
 		}
 		return true;
 	}
 
 	validateTargetData(data: any): boolean {
-		return this.validateLocationServicesResponse(data);
+		return LocationContractUtils.validateEntityData(data);
 	}
 
 	// ============================================================================
@@ -57,7 +58,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: vendorId, // Location Services uses 'entityId'
-				coordinates: ContractUtils.transformLocationToLatLng(location),
+				coordinates: LocationContractUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),
@@ -85,7 +86,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 
 			const result = {
 				entityId: userId, // Location Services uses 'entityId'
-				coordinates: ContractUtils.transformLocationToLatLng(location),
+				coordinates: LocationContractUtils.transformLocationToLatLng(location),
 				trackingStatus: 'active',
 				accuracy: 5.0, // Default accuracy
 				lastUpdateTime: new Date().toISOString(),
@@ -111,7 +112,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 				throw this.createValidationError('Invalid bounds data', { bounds });
 			}
 
-			const result = ContractUtils.transformBounds(bounds);
+			const result = LocationContractUtils.transformBounds(bounds);
 
 			this.logTranslationSuccess('toLocationServicesBounds', result);
 			return result;
@@ -133,10 +134,17 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			}
 
 			const result = {
-				center: ContractUtils.transformLocationToLatLng(center),
+				center: LocationContractUtils.transformLocationToLatLng(center),
 				radiusInMeters,
-			entityType: 'vendor', // Location Services needs to know entity type
-		};
+				entityType: 'vendor', // Location Services needs to know entity type
+			};
+
+			this.logTranslationSuccess('toLocationServicesRadiusSearch', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toLocationServicesRadiusSearch', error, { center, radiusInMeters });
+			throw error;
+		}
 	}
 
 	// ============================================================================
@@ -214,7 +222,7 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 		coordinates: { latitude: number; longitude: number };
 		timestamp: string;
 	}): MarketplaceLocationUpdate {
-		this.logTranslationStart('toMarketplaceLocationUpdate', { 
+		this.logTranslationStart('toMarketplaceLocationUpdate', {
 			entityId: locationServicesData.entityId,
 			entityType: locationServicesData.entityType,
 		});
@@ -262,6 +270,4 @@ export class MarketplaceLocationContextMapper extends BaseContextMapper {
 			throw error;
 		}
 	}
-
-
 }

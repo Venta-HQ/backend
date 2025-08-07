@@ -1,93 +1,20 @@
 import { Logger } from '@nestjs/common';
 
 /**
- * Contract Utilities
- *
- * Shared utilities for domain-specific contract operations.
- * These utilities can be used by any contract implementation.
+ * Marketplace Contract Utilities
+ * 
+ * Domain-specific utilities for marketplace contract operations.
+ * Contains validation and transformation logic specific to the marketplace domain.
  */
-export class ContractUtils {
-	private static logger = new Logger('ContractUtils');
-
-	// ============================================================================
-	// Location Validation & Transformation
-	// ============================================================================
-
-	/**
-	 * Validate location data
-	 */
-	static validateLocation(location: { lat: number; lng: number }): boolean {
-		const isValid =
-			typeof location.lat === 'number' &&
-			location.lat >= -90 &&
-			location.lat <= 90 &&
-			typeof location.lng === 'number' &&
-			location.lng >= -180 &&
-			location.lng <= 180;
-
-		if (!isValid) {
-			this.logger.warn('Invalid location data', { location });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate bounds data
-	 */
-	static validateBounds(bounds: {
-		northEast: { lat: number; lng: number };
-		southWest: { lat: number; lng: number };
-	}): boolean {
-		const isValid =
-			this.validateLocation(bounds.northEast) &&
-			this.validateLocation(bounds.southWest) &&
-			bounds.northEast.lat > bounds.southWest.lat &&
-			bounds.northEast.lng > bounds.southWest.lng;
-
-		if (!isValid) {
-			this.logger.warn('Invalid bounds data', { bounds });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Transform location format (lat/lng to latitude/longitude)
-	 */
-	static transformLocationToLatLng(location: { lat: number; lng: number }) {
-		return {
-			latitude: location.lat,
-			longitude: location.lng,
-		};
-	}
-
-	/**
-	 * Transform location format (latitude/longitude to lat/lng)
-	 */
-	static transformLatLngToLocation(location: { latitude: number; longitude: number }) {
-		return {
-			lat: location.latitude,
-			lng: location.longitude,
-		};
-	}
-
-	/**
-	 * Transform bounds format
-	 */
-	static transformBounds(bounds: { northEast: { lat: number; lng: number }; southWest: { lat: number; lng: number } }) {
-		return {
-			northEast: this.transformLocationToLatLng(bounds.northEast),
-			southWest: this.transformLocationToLatLng(bounds.southWest),
-		};
-	}
+export class MarketplaceContractUtils {
+	private static logger = new Logger('MarketplaceContractUtils');
 
 	// ============================================================================
 	// User Data Validation & Transformation
 	// ============================================================================
 
 	/**
-	 * Validate user data
+	 * Validate marketplace user data
 	 */
 	static validateUserData(userData: {
 		email: string;
@@ -104,14 +31,14 @@ export class ContractUtils {
 			(!userData.metadata || typeof userData.metadata === 'object');
 
 		if (!isValid) {
-			this.logger.warn('Invalid user data', { userData });
+			this.logger.warn('Invalid marketplace user data', { userData });
 		}
 
 		return isValid;
 	}
 
 	/**
-	 * Extract email from external service data
+	 * Extract email from external service data for marketplace
 	 */
 	static extractEmail(data: any): string {
 		// Handle different API versions and structures
@@ -164,7 +91,7 @@ export class ContractUtils {
 	// ============================================================================
 
 	/**
-	 * Validate subscription data
+	 * Validate marketplace subscription data
 	 */
 	static validateSubscriptionData(subscriptionData: {
 		productId: string;
@@ -180,7 +107,7 @@ export class ContractUtils {
 			(!subscriptionData.metadata || typeof subscriptionData.metadata === 'object');
 
 		if (!isValid) {
-			this.logger.warn('Invalid subscription data', { subscriptionData });
+			this.logger.warn('Invalid marketplace subscription data', { subscriptionData });
 		}
 
 		return isValid;
@@ -219,40 +146,6 @@ export class ContractUtils {
 	 */
 	static extractOriginalTransactionId(data: any): string {
 		return data.original_transaction_id || data.originalTransactionId || '';
-	}
-
-	// ============================================================================
-	// File Data Validation
-	// ============================================================================
-
-	/**
-	 * Validate file data
-	 */
-	static validateFileData(file: {
-		filename: string;
-		buffer: Buffer;
-		mimeType: string;
-		uploadedBy: string;
-		context: string;
-	}): boolean {
-		const isValid =
-			file &&
-			typeof file.filename === 'string' &&
-			file.filename.length > 0 &&
-			Buffer.isBuffer(file.buffer) &&
-			file.buffer.length > 0 &&
-			typeof file.mimeType === 'string' &&
-			file.mimeType.length > 0 &&
-			typeof file.uploadedBy === 'string' &&
-			file.uploadedBy.length > 0 &&
-			typeof file.context === 'string' &&
-			file.context.length > 0;
-
-		if (!isValid) {
-			this.logger.warn('Invalid file data', { file });
-		}
-
-		return isValid;
 	}
 
 	// ============================================================================
@@ -314,4 +207,4 @@ export class ContractUtils {
 	static extractUpdatedAt(data: any): string {
 		return data.updatedAt || data.updated_at || new Date().toISOString();
 	}
-}
+} 
