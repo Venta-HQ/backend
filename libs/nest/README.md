@@ -14,6 +14,8 @@ This library provides:
 - Consistent patterns for microservice development
 - Type-safe interfaces and configurations
 - Integration with external services and APIs
+- Unified error handling system with automatic domain context
+- DDD-aligned bootstrap configuration
 
 ## Usage
 
@@ -36,6 +38,7 @@ import {
 	imports: [
 		BootstrapModule.forRoot({
 			appName: 'Your Service',
+			domain: 'marketplace', // Explicit DDD domain
 			protocol: 'grpc',
 			additionalModules: [
 				PrismaModule,
@@ -96,7 +99,7 @@ export class YourService {
 
 Use guards, interceptors, and filters for security, monitoring, and validation:
 
-````typescript
+```typescript
 import {
   AuthGuard,
   WsAuthGuard,
@@ -140,13 +143,14 @@ export class YourGateway {
   ],
 })
 export class YourModule {}
+```
 
-### Error Handling
+### Unified Error Handling
 
-Use standardized error handling patterns:
+Use the unified error handling system with automatic domain context:
 
 ```typescript
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 
 @Injectable()
 export class YourService {
@@ -154,7 +158,12 @@ export class YourService {
     const resource = await this.prisma.db.resource.findUnique({ where: { id } });
 
     if (!resource) {
-      throw AppError.notFound(ErrorCodes.RESOURCE_NOT_FOUND, { resourceId: id });
+      throw new AppError(
+        ErrorType.NOT_FOUND,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Resource not found',
+        { resourceId: id }
+      );
     }
 
     return resource;
@@ -162,11 +171,93 @@ export class YourService {
 
   async validateData(data: any) {
     if (!data.requiredField) {
-      throw AppError.badRequest(ErrorCodes.VALIDATION_ERROR, { field: 'requiredField' });
+      throw new AppError(
+        ErrorType.VALIDATION,
+        ErrorCodes.VALIDATION_ERROR,
+        'Required field is missing',
+        { field: 'requiredField' }
+      );
+    }
+  }
+
+  async externalServiceCall() {
+    try {
+      // External service call
+    } catch (error) {
+      throw new AppError(
+        ErrorType.EXTERNAL_SERVICE,
+        ErrorCodes.EXTERNAL_SERVICE_ERROR,
+        'External service call failed',
+        { service: 'external-api' }
+      );
     }
   }
 }
-````
+```
+
+### Error Types and Codes
+
+The library provides a comprehensive set of error types and codes:
+
+```typescript
+// Error Types
+enum ErrorType {
+  VALIDATION = 'VALIDATION',
+  NOT_FOUND = 'NOT_FOUND',
+  INTERNAL = 'INTERNAL',
+  EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+}
+
+// Error Codes (consolidated from all domains)
+const ErrorCodes = {
+  // Generic errors
+  VALIDATION_ERROR: 'VALIDATION_ERROR',
+  DATABASE_ERROR: 'DATABASE_ERROR',
+  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+  
+  // User domain errors
+  USER_NOT_FOUND: 'USER_NOT_FOUND',
+  USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
+  
+  // Vendor domain errors
+  VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND',
+  VENDOR_ALREADY_EXISTS: 'VENDOR_ALREADY_EXISTS',
+  
+  // Location domain errors
+  LOCATION_INVALID_COORDINATES: 'LOCATION_INVALID_COORDINATES',
+  LOCATION_NOT_FOUND: 'LOCATION_NOT_FOUND',
+  LOCATION_REDIS_OPERATION_FAILED: 'LOCATION_REDIS_OPERATION_FAILED',
+  LOCATION_PROXIMITY_SEARCH_FAILED: 'LOCATION_PROXIMITY_SEARCH_FAILED',
+  
+  // ... and more
+};
+```
+
+### Automatic Domain Context
+
+All errors automatically receive domain context through the `AppExceptionFilter`:
+
+```typescript
+// The filter automatically adds domain context to all errors
+@Catch()
+export class AppExceptionFilter implements ExceptionFilter {
+  constructor(private readonly configService: ConfigService) {}
+
+  catch(exception: unknown, host: ArgumentsHost) {
+    const appError = this.convertToAppError(exception);
+    this.addDomainContext(appError); // Automatically adds domain context
+    
+    return this.formatResponse(appError, host);
+  }
+
+  private addDomainContext(error: AppError): void {
+    const domain = this.configService.get<string>('DOMAIN');
+    if (domain) {
+      error.context = { ...error.context, domain };
+    }
+  }
+}
+```
 
 ### Configuration
 
@@ -188,6 +279,9 @@ ALGOLIA_API_KEY=your-algolia-api-key
 
 # Events
 NATS_URL=nats://localhost:4222
+
+# DDD Domain (automatically set by bootstrap)
+DOMAIN=marketplace
 ```
 
 ## Key Benefits
@@ -198,6 +292,9 @@ NATS_URL=nats://localhost:4222
 - **Type Safety**: TypeScript interfaces for all components
 - **Reliability**: Battle-tested components used across all services
 - **Standardization**: Consistent patterns for microservice development
+- **Unified Error Handling**: Single error system with automatic domain context
+- **DDD Alignment**: Domain-aware configuration and error handling
+- **Simplified Development**: Just throw `AppError`, domain context is automatic
 
 ## Dependencies
 

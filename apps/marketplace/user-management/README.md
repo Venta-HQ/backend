@@ -1,8 +1,8 @@
-# User Service
+# User Management Service
 
 ## Purpose
 
-The User service manages all user-related operations in the Venta backend system. It handles user authentication, profile management, subscription handling, and user-vendor relationships. This service serves as the central authority for user data and authentication state, providing gRPC endpoints for other services to consume user information and managing webhook integrations with external authentication and billing providers.
+The User Management service manages all user-related operations in the Venta backend system. It handles user authentication, profile management, subscription handling, and user-vendor relationships. This service serves as the central authority for user data and authentication state, providing gRPC endpoints for other services to consume user information and managing webhook integrations with external authentication and billing providers.
 
 ## Overview
 
@@ -15,6 +15,7 @@ This microservice provides:
 - User data validation, sanitization, and compliance
 - Webhook processing for external service events (Clerk, RevenueCat)
 - Event publishing for user-related changes
+- DDD-aligned domain services with unified error handling
 
 ## Key Responsibilities
 
@@ -26,6 +27,7 @@ This microservice provides:
 - **Data Validation**: Ensures user data integrity and compliance with business rules
 - **Event Publishing**: Publishes user-related events for other services to consume
 - **Webhook Processing**: Handles Clerk and RevenueCat webhook events
+- **Domain Logic**: Implements business logic with proper error handling and logging
 
 ## Architecture
 
@@ -34,18 +36,28 @@ The service follows a domain-driven design approach, focusing specifically on us
 ### Service Structure
 
 ```
-User Service
-├── Controllers (gRPC)
-│   ├── Clerk Controller - Clerk webhook processing
-│   ├── Subscription Controller - RevenueCat webhook processing
-│   └── Vendor Controller - User-vendor relationship management
-├── Services
-│   ├── Clerk Service - Clerk integration and user management
+User Management Service
+├── Core Module
+│   ├── User Service - User registration and profile management
+│   └── User Controller - gRPC endpoints for user operations
+├── Authentication Module
+│   ├── Auth Service - Clerk integration and user management
+│   └── Auth Controller - Clerk webhook processing
+├── Subscriptions Module
 │   ├── Subscription Service - RevenueCat integration and billing
-│   └── Vendor Service - User-vendor relationship logic
+│   └── Subscription Controller - RevenueCat webhook processing
+├── Vendors Module
+│   ├── Vendor Service - User-vendor relationship logic
+│   └── Vendor Controller - User-vendor relationship management
+├── Location Module
+│   └── User Location Events Controller - Location service event handling
 └── Module Configuration
-    └── BootstrapModule - Standardized service bootstrapping
+    └── BootstrapModule - Standardized service bootstrapping with DDD domain
 ```
+
+### DDD Domain
+
+This service belongs to the **Marketplace** domain and is configured with `domain: 'marketplace'` in its bootstrap configuration.
 
 ## Usage
 
@@ -53,13 +65,13 @@ User Service
 
 ```bash
 # Development mode
-pnpm run start:dev user
+pnpm run start:dev user-management
 
 # Production mode
-pnpm run start:prod user
+pnpm run start:prod user-management
 
 # With Docker
-docker-compose up user
+docker-compose up user-management
 ```
 
 ### Environment Configuration
@@ -68,6 +80,9 @@ docker-compose up user
 # Service Configuration
 USER_SERVICE_ADDRESS=localhost:5000
 USER_HEALTH_PORT=5010
+
+# DDD Domain (automatically set by bootstrap)
+DOMAIN=marketplace
 
 # External Services
 CLERK_SECRET_KEY=your-clerk-secret
@@ -88,12 +103,43 @@ NATS_URL=nats://localhost:4222
 
 The service follows these patterns:
 
-- **BootstrapModule**: Uses the standardized BootstrapModule for service configuration
+- **BootstrapModule**: Uses the standardized BootstrapModule with DDD domain configuration
 - **gRPC Controllers**: Exposes gRPC endpoints for inter-service communication
 - **Webhook Processing**: Handles external webhook events from Clerk and RevenueCat
 - **Event Publishing**: Publishes events to NATS for other services to consume
 - **Database Operations**: Uses PrismaService for database access via `prisma.db`
-- **Error Handling**: Uses standardized AppError patterns for consistent error responses
+- **Unified Error Handling**: Uses `AppError` with automatic domain context
+- **Domain Services**: Business logic with proper logging and error handling
+
+### Error Handling
+
+The service uses the unified error handling system:
+
+```typescript
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+
+@Injectable()
+export class UserService {
+  async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
+    try {
+      const user = await this.prisma.db.user.create({
+        data: { clerkId: registrationData.clerkId },
+      });
+      return user;
+    } catch (error) {
+      throw new AppError(
+        ErrorType.INTERNAL,
+        ErrorCodes.DATABASE_ERROR,
+        'Failed to register user',
+        {
+          clerkId: registrationData.clerkId,
+          operation: 'register_user',
+        }
+      );
+    }
+  }
+}
+```
 
 ### Integration Points
 
@@ -102,13 +148,15 @@ The service follows these patterns:
 - **Vendor Service**: Manages user-vendor relationships and permissions
 - **Event System**: Publishes user-related events for other services
 - **Database**: Stores user data, profiles, and relationships
+- **Location Services**: Handles user location updates via events
 
 ## Dependencies
 
-- **BootstrapModule** for standardized service configuration
+- **BootstrapModule** for standardized service configuration with DDD domain
 - **PrismaService** for database operations
 - **EventService** for publishing events to NATS
 - **NatsQueueModule** for event subscription and processing
 - **Clerk** for authentication and user management
 - **RevenueCat** for subscription management and billing
 - **Database** for user data persistence
+- **Unified Error Handling** with automatic domain context

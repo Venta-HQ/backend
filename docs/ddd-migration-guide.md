@@ -260,9 +260,9 @@ apps/communication/webhooks/src/
 - **Specific provider names** for external integrations (clerk, revenuecat)
 - **Clear separation** between domain logic and external adapters
 
-## 🎯 Phase 2: Domain Services
+## 🎯 Phase 2: Domain Services ✅ COMPLETE
 
-### **Enhance Existing Services with Domain Context**
+### **Enhanced Existing Services with Domain Context**
 
 #### **Current Service Pattern**
 
@@ -287,67 +287,180 @@ export class UserService {
 ```typescript
 // Domain-specific service with business logic
 @Injectable()
-export class UserRegistrationService {
+export class UserService {
 	constructor(
 		private prisma: PrismaService,
 		private eventService: EventService,
 		private logger: Logger,
 	) {}
 
-	async registerNewUser(registrationData: UserRegistrationData): Promise<UserProfile> {
+	async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
 		this.logger.log('Starting user registration process', {
-			email: registrationData.email,
-			source: registrationData.source,
+			clerkId: registrationData.clerkId,
+			source: registrationData.source || 'unknown',
 		});
 
-		// Domain validation
-		await this.validateRegistrationData(registrationData);
+		try {
+			const user = await this.prisma.db.user.create({
+				data: {
+					clerkId: registrationData.clerkId,
+				},
+			});
 
-		// Domain logic
-		const user = await this.createUserProfile(registrationData);
-		const preferences = this.createDefaultPreferences(registrationData);
+			this.logger.log('User registration completed successfully', {
+				clerkId: registrationData.clerkId,
+				source: registrationData.source,
+				userId: user.id,
+			});
 
-		// Domain events
-		await this.eventService.emit('marketplace.user_registered', {
-			userId: user.id,
-			email: user.email,
-			source: registrationData.source,
-			preferences: preferences,
-			timestamp: new Date(),
-		});
-
-		this.logger.log('User registration completed', { userId: user.id });
-		return user;
-	}
-
-	private async validateRegistrationData(data: UserRegistrationData): Promise<void> {
-		// Business rules validation
-		if (await this.prisma.db.user.findUnique({ where: { email: data.email } })) {
-			throw new DomainError('USER_ALREADY_EXISTS', 'User with this email already exists', { email: data.email });
+			return user;
+		} catch (error) {
+			this.logger.error('Failed to register user', {
+				clerkId: registrationData.clerkId,
+				error,
+				source: registrationData.source,
+			});
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to register user', {
+				clerkId: registrationData.clerkId,
+				operation: 'register_user',
+				source: registrationData.source,
+			});
 		}
-	}
-
-	private createDefaultPreferences(data: UserRegistrationData): UserPreferences {
-		return {
-			notificationSettings: { email: true, push: true, sms: false },
-			searchRadius: 5000, // 5km default
-			favoriteCategories: [],
-		};
 	}
 }
 ```
 
-### **Domain-Specific Error Handling**
+### **Unified Error Handling System**
 
-#### **Enhanced Error System**
+#### **Consolidated Error Approach**
 
 ```typescript
-// libs/shared/errors/domain-errors.ts
-export class DomainError extends AppError {
+// libs/nest/errors/app-error.ts
+export class AppError extends Error {
 	constructor(
-		code: string,
-		message: string,
-		context?: Record<string, any>,
+		public readonly type: ErrorType,
+		public readonly code: string,
+		public readonly message: string,
+		public readonly context?: Record<string, any>,
+	) {
+		super(message);
+		this.name = 'AppError';
+	}
+}
+
+// libs/nest/errors/errorcodes.ts
+export const ErrorCodes = {
+	// Generic errors
+	VALIDATION_ERROR: 'VALIDATION_ERROR',
+	DATABASE_ERROR: 'DATABASE_ERROR',
+	EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
+	
+	// User domain errors
+	USER_NOT_FOUND: 'USER_NOT_FOUND',
+	USER_ALREADY_EXISTS: 'USER_ALREADY_EXISTS',
+	
+	// Vendor domain errors
+	VENDOR_NOT_FOUND: 'VENDOR_NOT_FOUND',
+	VENDOR_ALREADY_EXISTS: 'VENDOR_ALREADY_EXISTS',
+	
+	// Location domain errors
+	LOCATION_INVALID_COORDINATES: 'LOCATION_INVALID_COORDINATES',
+	LOCATION_NOT_FOUND: 'LOCATION_NOT_FOUND',
+	LOCATION_REDIS_OPERATION_FAILED: 'LOCATION_REDIS_OPERATION_FAILED',
+	LOCATION_PROXIMITY_SEARCH_FAILED: 'LOCATION_PROXIMITY_SEARCH_FAILED',
+} as const;
+```
+
+#### **Automatic Domain Context**
+
+```typescript
+// libs/nest/errors/app-exception.filter.ts
+@Catch()
+export class AppExceptionFilter implements ExceptionFilter {
+	constructor(private readonly configService: ConfigService) {}
+
+	catch(exception: unknown, host: ArgumentsHost) {
+		const appError = this.convertToAppError(exception);
+		this.addDomainContext(appError); // Automatically adds domain context
+		
+		// Format response based on protocol (HTTP/gRPC/WebSocket)
+		return this.formatResponse(appError, host);
+	}
+
+	private addDomainContext(error: AppError): void {
+		const domain = this.configService.get<string>('DOMAIN');
+		if (domain) {
+			error.context = { ...error.context, domain };
+		}
+	}
+}
+```
+
+### **New EventTypes Library**
+
+#### **Centralized Event Management**
+
+```typescript
+// libs/eventtypes/src/domains/marketplace/user/user.events.ts
+export const userEventSchemas = {
+	'user.location.updated': z.object({
+		userId: z.string(),
+		location: z.object({
+			lat: z.number(),
+			long: z.number(),
+		}),
+		timestamp: z.date(),
+	}),
+} as const;
+
+export type UserEventDataMap = {
+	'user.location.updated': z.infer<typeof userEventSchemas['user.location.updated']>;
+};
+
+// libs/eventtypes/src/shared/unified-event-registry.ts
+export const ALL_EVENT_SCHEMAS = {
+	...userEventSchemas,
+	...vendorEventSchemas,
+} as const;
+
+export type EventDataMap = UserEventDataMap & VendorEventDataMap;
+```
+
+### **Explicit Domain Configuration**
+
+#### **Application Bootstrap with Domain Context**
+
+```typescript
+// apps/marketplace/user-management/src/main.ts
+async function bootstrap() {
+	const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+		transport: Transport.GRPC,
+		options: {
+			package: 'user_management',
+			protoPath: join(__dirname, 'proto/user-management.proto'),
+		},
+	});
+
+	await BootstrapService.bootstrapGrpcMicroservice({
+		app,
+		domain: 'marketplace', // Explicit DDD domain
+		appName: APP_NAMES.USER_MANAGEMENT,
+	});
+
+	await app.listen();
+}
+```
+
+### **Key Achievements**
+
+✅ **Enhanced all domain services** with business logic and proper error handling
+✅ **Created unified error handling system** with automatic domain context
+✅ **Established `eventtypes` library** for centralized event management
+✅ **Consolidated error codes** into single source of truth
+✅ **Removed redundant validation** (already handled by gRPC contracts and event system)
+✅ **Added explicit domain configuration** to all applications
+✅ **Updated domain folder structure** across all libraries
+✅ **Enhanced logging** with business context and domain semantics
 		public readonly domain?: string,
 	) {
 		super(code, message, context);

@@ -21,31 +21,41 @@
 
 Venta Backend is a distributed system built with Domain-Driven Design (DDD) principles, consisting of multiple microservices organized around business domains. The system follows modern architectural patterns including gRPC for inter-service communication, WebSocket for real-time features, and a unified API gateway.
 
-**🚀 Currently migrating to full DDD architecture** - See [DDD Migration Status](./docs/ddd-migration-status.md) for current progress.
+**✅ Phase 2 Complete** - Domain Services enhanced with unified error handling, centralized event management, and DDD-aligned structure. See [DDD Migration Status](./docs/ddd-migration-status.md) for current progress.
 
 ## 🏛️ System Architecture
 
 ### 🚀 Core Services
 
-| Service               | Purpose                        | Protocol  | Description                                  |
-| --------------------- | ------------------------------ | --------- | -------------------------------------------- |
-| **API Gateway**       | HTTP Routing & Auth            | HTTP/gRPC | Main entry point for all client requests     |
-| **User Management**   | User Registration & Profiles   | gRPC      | User accounts, preferences, and webhooks     |
-| **Vendor Management** | Vendor Onboarding & Operations | gRPC      | Vendor profiles and business operations      |
-| **Location Services** | Geolocation & Proximity        | gRPC      | Real-time location and geospatial operations |
-| **Real-time Gateway** | WebSocket Communication        | WebSocket | Live updates and real-time features          |
-| **Search Discovery**  | Search Index & Discovery       | HTTP      | Search, recommendations, and discovery       |
-
-> **📋 Note**: Services are being reorganized into domain-driven structure. See [DDD Migration Guide](./docs/ddd-migration-guide.md) for target architecture.
+| Service               | Purpose                        | Protocol  | Domain           | Description                                  |
+| --------------------- | ------------------------------ | --------- | ---------------- | -------------------------------------------- |
+| **API Gateway**       | HTTP Routing & Auth            | HTTP/gRPC | Infrastructure   | Main entry point for all client requests     |
+| **User Management**   | User Registration & Profiles   | gRPC      | Marketplace      | User accounts, preferences, and webhooks     |
+| **Vendor Management** | Vendor Onboarding & Operations | gRPC      | Marketplace      | Vendor profiles and business operations      |
+| **Location Services** | Geolocation & Proximity        | gRPC      | Location Services | Real-time location and geospatial operations |
+| **Real-time Gateway** | WebSocket Communication        | WebSocket | Location Services | Live updates and real-time features          |
+| **Search Discovery**  | Search Index & Discovery       | HTTP      | Marketplace      | Search, recommendations, and discovery       |
+| **Webhooks**          | External Integrations          | HTTP      | Communication    | Clerk, RevenueCat, and other webhooks        |
+| **File Management**   | File Upload & Storage          | HTTP      | Infrastructure   | Image and file upload management             |
 
 ### 📚 Shared Libraries
 
 | Library              | Purpose           | Description                           |
 | -------------------- | ----------------- | ------------------------------------- |
-| **API Types**        | Type Definitions  | Centralized schemas and validation    |
-| **NestJS Shared**    | Framework Modules | Reusable NestJS modules and utilities |
+| **API Types**        | Type Definitions  | DDD-aligned schemas and validation    |
+| **Event Types**      | Event Management  | Centralized event definitions and schemas |
+| **NestJS Shared**    | Framework Modules | Unified error handling and utilities  |
 | **Protocol Buffers** | gRPC Definitions  | Service contracts and generated code  |
 | **Utilities**        | Helper Functions  | Common utility functions and helpers  |
+
+### 🎯 DDD Domains
+
+The system is organized into four main business domains:
+
+- **Marketplace**: User management, vendor management, subscriptions, and search
+- **Location Services**: Real-time location tracking and geospatial operations
+- **Communication**: Webhooks and external integrations
+- **Infrastructure**: API gateway, file management, and system operations
 
 ## 🚀 Quick Start
 
@@ -133,6 +143,9 @@ ALGOLIA_API_KEY="your-algolia-api-key"
 CLOUDINARY_CLOUD_NAME="your-cloudinary-name"
 CLOUDINARY_API_KEY="your-cloudinary-key"
 CLOUDINARY_API_SECRET="your-cloudinary-secret"
+
+# DDD Domain (automatically set by bootstrap)
+DOMAIN=marketplace
 ```
 
 ## 🔄 Development Workflow
@@ -208,6 +221,24 @@ docker-compose logs -f
 - **Caching**: Redis for session management and caching
 - **Events**: NATS for event-driven communication between services
 - **Search**: Algolia integration for full-text search
+- **Error Handling**: Unified `AppError` system with automatic domain context
+- **Event Management**: Centralized `eventtypes` library for all event definitions
+
+## 🎯 Key Features
+
+### ✅ Completed (Phase 2)
+
+- **Unified Error Handling**: Single `AppError` system with automatic domain context
+- **Centralized Event Management**: `eventtypes` library for all event definitions
+- **DDD-Aligned Structure**: Business domains reflected in code organization
+- **Enhanced Domain Services**: Business logic with proper error handling and logging
+- **Explicit Domain Configuration**: All applications configured with DDD domains
+- **Consolidated Error Codes**: Single source of truth for all error codes
+
+### 🚧 In Progress (Phase 3)
+
+- **Enhanced Domain Events**: Business context in event schemas and naming
+- **Domain-Specific Event Validation**: Improved event validation and error handling
 
 ## 🤝 Contributing
 

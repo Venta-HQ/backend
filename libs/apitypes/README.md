@@ -7,12 +7,12 @@ The API Types library provides centralized type definitions, schemas, and valida
 ## Overview
 
 This library provides:
-- **Domain-specific types** organized by business domain
+- **Domain-specific types** organized by business domain following DDD principles
 - **Shared types** for common functionality across domains
-- **Event schemas** for type-safe event publishing and consumption
 - **Validation schemas** using Zod for runtime type checking
 - **Protocol buffer types** for gRPC communication
 - **Helper functions** for common type operations
+- **DDD-aligned structure** reflecting business domains
 
 ## Organization
 
@@ -21,28 +21,30 @@ This library provides:
 ```
 libs/apitypes/src/
 ├── domains/
-│   ├── user/              # User domain types
-│   │   ├── user.schemas.ts
+│   ├── marketplace/           # Marketplace domain types
+│   │   ├── user/
+│   │   │   ├── user.schemas.ts
+│   │   │   └── index.ts
+│   │   ├── vendor/
+│   │   │   ├── vendor.schemas.ts
+│   │   │   └── index.ts
+│   │   ├── subscription/
+│   │   │   ├── subscription.types.ts
+│   │   │   └── index.ts
 │   │   └── index.ts
-│   ├── vendor/            # Vendor domain types
-│   │   ├── vendor.schemas.ts
-│   │   ├── vendor.events.ts
-│   │   └── index.ts
-│   ├── location/          # Location domain types
+│   ├── location-services/     # Location services domain types
 │   │   ├── location.schemas.ts
+│   │   ├── location.types.ts
 │   │   └── index.ts
-│   └── subscription/      # Subscription domain types
-│       ├── subscription.types.ts
-│       └── index.ts
+│   ├── communication/         # Communication domain types
+│   │   └── index.ts           # Placeholder for future types
+│   └── infrastructure/        # Infrastructure domain types
+│       └── index.ts           # Placeholder for future types
 ├── shared/
-│   ├── events/            # Shared event types
-│   │   ├── base.types.ts
-│   │   ├── unified-event-registry.ts
-│   │   └── index.ts
-│   └── helpers/           # Shared helper functions
+│   └── helpers/               # Shared helper functions
 │       ├── helpers.ts
 │       └── index.ts
-└── index.ts               # Main export file
+└── index.ts                   # Main export file
 ```
 
 ### Domain Organization
@@ -50,14 +52,16 @@ libs/apitypes/src/
 Each domain contains:
 - **Schemas**: Zod validation schemas for request/response validation
 - **Types**: TypeScript type definitions
-- **Events**: Domain-specific event types and schemas
 - **Index**: Domain-specific exports
 
-### Shared Organization
+### DDD Domain Structure
 
-Shared components include:
-- **Events**: Common event types and registry
-- **Helpers**: Utility functions for type operations
+The library follows the established DDD domains:
+
+- **Marketplace**: User management, vendor management, and subscription types
+- **Location Services**: Location tracking and geospatial types
+- **Communication**: Webhook and messaging types
+- **Infrastructure**: System and operational types
 
 ## Usage
 
@@ -74,18 +78,18 @@ import {
 const validatedData = UserCreateSchema.parse(requestBody);
 ```
 
-### Importing Event Types
+### Importing Domain-Specific Types
 
 ```typescript
 import { 
-  VendorCreatedEvent,
-  VendorUpdatedEvent,
-  VendorDeletedEvent 
-} from '@app/apitypes';
+  VendorCreateData,
+  VendorUpdateData,
+  VendorProfile 
+} from '@app/apitypes/domains/marketplace/vendor';
 
-// Type-safe event handling
-function handleVendorEvent(event: VendorCreatedEvent) {
-  // TypeScript knows the exact structure
+// Type-safe vendor operations
+function updateVendor(id: string, data: VendorUpdateData): Promise<VendorProfile> {
+  // TypeScript ensures correct data structure
 }
 ```
 
@@ -93,24 +97,41 @@ function handleVendorEvent(event: VendorCreatedEvent) {
 
 ```typescript
 import { 
-  BaseEvent,
-  EventMetadata,
-  AvailableEventSubjects 
-} from '@app/apitypes';
+  GrpcLocationUpdateSchema,
+  VendorLocationRequestSchema 
+} from '@app/apitypes/domains/location-services';
 
-// Use shared event types
-const event: BaseEvent = {
-  eventId: 'uuid',
-  timestamp: new Date().toISOString(),
-  // ... other properties
-};
+// Use location-specific schemas
+const locationData = GrpcLocationUpdateSchema.parse(requestBody);
+```
+
+## Event Types
+
+**Note**: Event types have been moved to the dedicated `@app/eventtypes` library for better separation of concerns.
+
+```typescript
+// Import event types from the dedicated library
+import { 
+  EventDataMap, 
+  AvailableEventSubjects,
+  ALL_EVENT_SCHEMAS 
+} from '@app/eventtypes';
+
+// Type-safe event emission
+await eventService.emit('vendor.created', {
+  id: 'vendor-123',
+  name: 'My Vendor',
+  // TypeScript ensures all required fields are provided
+});
 ```
 
 ## Benefits
 
-- **Domain-driven organization** for better maintainability
+- **DDD-aligned organization** reflecting business domains
 - **Type safety** across all microservices
 - **Centralized validation** with Zod schemas
 - **Consistent patterns** for all API types
 - **Easy discovery** of available types by domain
-- **Reduced duplication** through shared types 
+- **Reduced duplication** through shared types
+- **Clear separation** between API types and event types
+- **Business-focused structure** that domain experts can understand 
