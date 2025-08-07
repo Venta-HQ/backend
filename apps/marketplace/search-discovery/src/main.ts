@@ -9,6 +9,7 @@ async function bootstrap() {
 
 		// Bootstrap NATS microservice with health checks
 		await BootstrapService.bootstrapNatsMicroservice({
+			domain: 'marketplace', // DDD domain for marketplace services
 			health: {
 				host: '0.0.0.0',
 				module: HealthCheckModule,

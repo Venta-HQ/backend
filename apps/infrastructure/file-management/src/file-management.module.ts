@@ -6,6 +6,7 @@ import { UploadModule } from './upload/upload.module';
 	imports: [
 		BootstrapModule.forRoot({
 			appName: APP_NAMES.FILE_MANAGEMENT,
+			domain: 'infrastructure', // DDD domain for infrastructure services
 			protocol: 'http',
 		}),
 		UploadModule,

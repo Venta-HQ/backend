@@ -21,6 +21,7 @@ import { modules, routes } from './router';
 				RouterModule.register(routes),
 			],
 			appName: APP_NAMES.GATEWAY,
+			domain: 'infrastructure', // DDD domain for infrastructure services
 			protocol: 'http',
 		}),
 	],

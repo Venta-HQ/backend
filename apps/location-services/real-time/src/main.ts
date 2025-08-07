@@ -9,6 +9,7 @@ async function bootstrap() {
 
 		// Bootstrap HTTP service with health checks included
 		await BootstrapService.bootstrapHttpService({
+			domain: 'location', // DDD domain for location services
 			module: WebsocketGatewayModule,
 			port: configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT') || 3003,
 		});

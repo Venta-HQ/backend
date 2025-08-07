@@ -7,6 +7,7 @@ import { RevenueCatWebhooksModule } from './revenuecat/revenuecat-webhooks.modul
 	imports: [
 		BootstrapModule.forRoot({
 			appName: APP_NAMES.CLERK_WEBHOOKS,
+			domain: 'communication', // DDD domain for communication services
 			protocol: 'http',
 		}),
 		ClerkWebhooksModule,
