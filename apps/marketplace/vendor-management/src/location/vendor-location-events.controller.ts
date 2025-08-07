@@ -25,26 +25,34 @@ export class VendorLocationEventsController implements OnModuleInit {
 		// Set up queue subscription for vendor location update events
 		// This ensures only ONE instance processes each event
 		this.natsQueueService.subscribeToQueue(
-			'vendor.location.updated', // Specific event for location updates
+			'location.vendor_location_updated', // DDD domain event for location updates
 			'vendor-location-update-workers', // Queue group name - all instances share this
 			this.handleVendorLocationUpdate.bind(this),
 		);
 
-		this.logger.log('Vendor location events controller initialized with queue groups');
+		this.logger.log('Vendor location events controller initialized with DDD event patterns');
 	}
 
 	private async handleVendorLocationUpdate(data: { data: BaseEvent; subject: string }): Promise<void> {
 		const { data: event, subject } = data;
-		// Correlation ID is automatically available in logs via the app-level interceptor
-		this.logger.log(`Handling ${subject} event: ${event.eventId} for vendor: ${event.data.vendorId}`);
+		// Enhanced logging with domain context
+		this.logger.log(`Handling vendor location event: ${subject}`, {
+			context: event.context,
+			domain: event.meta.domain,
+			eventId: event.meta.eventId,
+			subdomain: event.meta.subdomain,
+			vendorId: event.data.vendorId,
+		});
 
 		try {
 			await this.vendorService.updateVendorLocation(event.data.vendorId, event.data.location);
 		} catch (error) {
-			this.logger.error(
-				`Failed to handle ${subject} event: ${event.eventId} for vendor ${event.data.vendorId}:`,
+			this.logger.error(`Failed to handle vendor location event: ${subject}`, {
+				context: event.context,
 				error,
-			);
+				eventId: event.meta.eventId,
+				vendorId: event.data.vendorId,
+			});
 			throw error;
 		}
 	}

@@ -94,7 +94,7 @@ export class UserService {
 
 	/**
 	 * Update user location from location service events
-	 * This method is called when the location service publishes a user.location.updated event
+	 * This method is called when the location service publishes a location.user_location_updated event
 	 * It doesn't require user authorization since it's a system-level operation
 	 */
 	async updateUserLocation(userId: string, location: UserLocationData): Promise<UserProfile> {

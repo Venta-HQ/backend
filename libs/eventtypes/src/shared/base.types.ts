@@ -28,7 +28,7 @@ export interface ContextConfig {
 /**
  * Enhanced Zod schema with context support and fluent API
  */
-export interface ContextSchema<T> extends z.ZodObject<any> {
+export interface ContextSchema<T> extends z.ZodType<T> {
 	_context?: ContextConfig;
 	withContext<Fields extends keyof T>(fields: Fields[]): ContextSchema<T>;
 }
@@ -36,13 +36,11 @@ export interface ContextSchema<T> extends z.ZodObject<any> {
 /**
  * Create an event schema with fluent API for adding context
  */
-export function createEventSchema<T extends z.ZodRawShape>(shape: T): ContextSchema<z.infer<z.ZodObject<T>>> {
+export function createEventSchema<T extends z.ZodRawShape>(shape: T) {
 	const baseSchema = z.object(shape);
-	const schema = baseSchema as unknown as ContextSchema<z.infer<z.ZodObject<T>>>;
+	const schema = baseSchema as unknown as ContextSchema<z.infer<typeof baseSchema>>;
 
-	schema.withContext = function <Fields extends keyof z.infer<z.ZodObject<T>>>(
-		fields: Fields[],
-	): ContextSchema<z.infer<z.ZodObject<T>>> {
+	schema.withContext = function <Fields extends keyof z.infer<typeof baseSchema>>(fields: Fields[]) {
 		this._context = { fields: fields as string[] };
 		return this;
 	};

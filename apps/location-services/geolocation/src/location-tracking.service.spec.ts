@@ -48,7 +48,7 @@ describe('LocationTrackingService', () => {
 				where: { id: vendorId },
 			});
 			expect(mockRedis.geoadd).toHaveBeenCalledWith('vendor_locations', location.lng, location.lat, vendorId);
-			expect(mockEventService.emit).toHaveBeenCalledWith('vendor.location.updated', {
+			expect(mockEventService.emit).toHaveBeenCalledWith('location.vendor_location_updated', {
 				location: {
 					lat: location.lat,
 					long: location.lng,
@@ -116,7 +116,7 @@ describe('LocationTrackingService', () => {
 				where: { id: userId },
 			});
 			expect(mockRedis.geoadd).toHaveBeenCalledWith('user_locations', location.lng, location.lat, userId);
-			expect(mockEventService.emit).toHaveBeenCalledWith('user.location.updated', {
+			expect(mockEventService.emit).toHaveBeenCalledWith('location.user_location_updated', {
 				location: {
 					lat: location.lat,
 					long: location.lng,

@@ -54,15 +54,7 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			// Publish location update event for vendor management to handle
-			await this.eventService.emit('vendor.location.updated', {
-				location: {
-					lat: data.location.lat,
-					long: data.location.long,
-				},
-				timestamp: new Date(),
-				vendorId: data.entityId,
-			});
+
 
 			this.logger.log('Vendor location updated successfully', {
 				location: `${data.location.lat}, ${data.location.long}`,
@@ -113,15 +105,7 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-			// Publish user location update event for user management to handle
-			await this.eventService.emit('user.location.updated', {
-				location: {
-					lat: data.location.lat,
-					long: data.location.long,
-				},
-				timestamp: new Date(),
-				userId: data.entityId,
-			});
+
 
 			this.logger.log('User location updated successfully', {
 				location: `${data.location.lat}, ${data.location.long}`,

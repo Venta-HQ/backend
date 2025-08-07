@@ -51,7 +51,7 @@ describe('LocationService', () => {
 			await service.updateVendorLocation(locationData);
 
 			expect(redis.geoadd).toHaveBeenCalledWith('vendor_locations', -74.006, 40.7128, 'vendor_123');
-			expect(eventsService.emit).toHaveBeenCalledWith('vendor.location.updated', {
+			expect(eventsService.emit).toHaveBeenCalledWith('location.vendor_location_updated', {
 				location: {
 					lat: 40.7128,
 					long: -74.006,

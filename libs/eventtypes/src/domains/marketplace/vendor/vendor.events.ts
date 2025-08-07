@@ -3,7 +3,7 @@ import { createEventSchema } from '../../../shared/base.types';
 import { EnforceValidDomainEvents } from '../../../shared/event-schema-types';
 
 // Type-safe event schemas - TypeScript will error if you use invalid event names
-export const vendorEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
+export const vendorEventSchemas = {
 	'marketplace.vendor_onboarded': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
@@ -26,7 +26,7 @@ export const vendorEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
 		ownerId: z.string(),
 		timestamp: z.string().default(() => new Date().toISOString()),
 	}).withContext(['vendorId', 'ownerId']),
-} as const;
+} as const satisfies EnforceValidDomainEvents<'marketplace'>;
 
 // Type-safe event data map
 export type VendorEventDataMap = {

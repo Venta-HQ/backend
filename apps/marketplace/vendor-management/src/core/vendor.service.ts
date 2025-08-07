@@ -207,7 +207,7 @@ export class VendorService {
 			await this.eventService.emit('location.vendor_location_updated', {
 				location: { lat: location.lat, lng: location.lng },
 				vendorId,
-				// movementType and businessHours automatically determined by schema defaults
+	
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', { error, vendorId });

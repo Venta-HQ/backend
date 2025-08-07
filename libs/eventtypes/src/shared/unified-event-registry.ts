@@ -8,9 +8,7 @@ import { VendorEventDataMap, vendorEventSchemas } from '../domains/marketplace/v
 export const ALL_EVENT_SCHEMAS = {
 	...vendorEventSchemas,
 	...locationEventSchemas,
-	// Add other domain schemas here as they're created:
-	// ...communicationEventSchemas,
-	// ...infrastructureEventSchemas,
+	// Add other domain schemas here as they're created
 } as const;
 
 /**

@@ -23,7 +23,7 @@ describe('UserLocationEventsController', () => {
 			await controller.onModuleInit();
 
 			expect(mockNatsQueueService.subscribeToQueue).toHaveBeenCalledWith(
-				'user.location.updated',
+				'location.user_location_updated',
 				'user-location-update-workers',
 				expect.any(Function),
 			);
@@ -33,16 +33,24 @@ describe('UserLocationEventsController', () => {
 	describe('handleUserLocationUpdate', () => {
 		const mockEvent = {
 			data: {
-				eventId: 'event-123',
+				context: { userId: 'user-123' },
+				meta: {
+					eventId: 'event-123',
+					source: 'test',
+					timestamp: '2023-01-01T00:00:00.000Z',
+					version: '1.0',
+					domain: 'location',
+					subdomain: 'user',
+				},
 				data: {
 					userId: 'user-123',
 					location: {
 						lat: 40.7128,
-						long: -74.006,
+						lng: -74.006,
 					},
 				},
 			},
-			subject: 'user.location.updated',
+			subject: 'location.user_location_updated',
 		};
 
 		it('should handle user location update event successfully', async () => {
@@ -50,13 +58,10 @@ describe('UserLocationEventsController', () => {
 
 			await controller['handleUserLocationUpdate'](mockEvent);
 
-			expect(mockUserService.updateUserLocation).toHaveBeenCalledWith(
-				'user-123',
-				{
-					lat: 40.7128,
-					long: -74.006,
-				},
-			);
+			expect(mockUserService.updateUserLocation).toHaveBeenCalledWith('user-123', {
+				lat: 40.7128,
+				long: -74.006,
+			});
 		});
 
 		it('should handle service errors', async () => {
@@ -66,4 +71,4 @@ describe('UserLocationEventsController', () => {
 			await expect(controller['handleUserLocationUpdate'](mockEvent)).rejects.toThrow('Service error');
 		});
 	});
-}); 
+});

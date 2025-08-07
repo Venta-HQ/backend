@@ -22,7 +22,7 @@ describe('VendorLocationEventsController', () => {
 			await controller.onModuleInit();
 
 			expect(natsQueueService.subscribeToQueue).toHaveBeenCalledWith(
-				'vendor.location.updated',
+				'location.vendor_location_updated',
 				'vendor-location-update-workers',
 				expect.any(Function),
 			);
@@ -33,16 +33,21 @@ describe('VendorLocationEventsController', () => {
 		it('should handle vendor location update event successfully', async () => {
 			const mockEvent = {
 				data: {
-					eventId: 'event-123',
+					context: { vendorId: 'vendor-123' },
+					meta: {
+						eventId: 'event-123',
+						domain: 'location',
+						subdomain: 'vendor',
+					},
 					data: {
 						vendorId: 'vendor-123',
 						location: {
 							lat: 40.7128,
-							long: -74.006,
+							lng: -74.006,
 						},
 					},
 				},
-				subject: 'vendor.location.updated',
+				subject: 'location.vendor_location_updated',
 			};
 
 			vendorService.updateVendorLocation.mockResolvedValue(undefined);
@@ -61,16 +66,21 @@ describe('VendorLocationEventsController', () => {
 		it('should handle errors gracefully', async () => {
 			const mockEvent = {
 				data: {
-					eventId: 'event-123',
+					context: { vendorId: 'vendor-123' },
+					meta: {
+						eventId: 'event-123',
+						domain: 'location',
+						subdomain: 'vendor',
+					},
 					data: {
 						vendorId: 'vendor-123',
 						location: {
 							lat: 40.7128,
-							long: -74.006,
+							lng: -74.006,
 						},
 					},
 				},
-				subject: 'vendor.location.updated',
+				subject: 'location.vendor_location_updated',
 			};
 
 			const error = new Error('Service error');

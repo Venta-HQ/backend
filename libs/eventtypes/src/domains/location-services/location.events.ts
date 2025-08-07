@@ -8,7 +8,7 @@ const baseLocationSchema = z.object({
 });
 
 // Type-safe location event schemas - TypeScript will error if you use invalid event names
-export const locationEventSchemas: EnforceValidDomainEvents<'location'> = {
+export const locationEventSchemas = {
 	'location.vendor_location_updated': createEventSchema({
 		vendorId: z.string(),
 		location: baseLocationSchema,
@@ -20,7 +20,7 @@ export const locationEventSchemas: EnforceValidDomainEvents<'location'> = {
 		location: baseLocationSchema,
 		timestamp: z.string().default(() => new Date().toISOString()),
 	}).withContext(['userId']),
-} as const;
+} as const satisfies EnforceValidDomainEvents<'location'>;
 
 // Type-safe event data map
 export type LocationEventDataMap = {
