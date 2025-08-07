@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LocationDomainErrorCodes } from '@app/nest/errors';
+import { ErrorCodes } from '@app/nest/errors';
 import { LocationTrackingService } from './location-tracking.service';
 
 describe('LocationTrackingService', () => {
@@ -29,7 +29,7 @@ describe('LocationTrackingService', () => {
 			emit: vi.fn(),
 		};
 
-		service = new LocationTrackingService(mockRedis, mockPrisma, mockEventService);
+		service = new LocationTrackingService(mockPrisma, mockEventService, mockRedis);
 	});
 
 	describe('updateVendorLocation', () => {
@@ -44,16 +44,14 @@ describe('LocationTrackingService', () => {
 			await service.updateVendorLocation(vendorId, location);
 
 			expect(mockPrisma.db.vendor.findUnique).toHaveBeenCalledWith({
-				select: { id: true },
 				where: { id: vendorId },
 			});
 			expect(mockRedis.geoadd).toHaveBeenCalledWith('vendor_locations', location.lng, location.lat, vendorId);
 			expect(mockEventService.emit).toHaveBeenCalledWith('location.vendor_location_updated', {
 				location: {
 					lat: location.lat,
-					long: location.lng,
+					lng: location.lng,
 				},
-				timestamp: expect.any(Date),
 				vendorId,
 			});
 		});
@@ -64,8 +62,8 @@ describe('LocationTrackingService', () => {
 
 			await expect(service.updateVendorLocation(vendorId, location)).rejects.toThrow(
 				expect.objectContaining({
-					code: LocationDomainErrorCodes.INVALID_LATITUDE,
-					details: { lat: 100 },
+					code: ErrorCodes.LOCATION_INVALID_COORDINATES,
+					details: { latitude: 100 },
 					message: 'Invalid latitude value',
 				}),
 			);
@@ -77,8 +75,8 @@ describe('LocationTrackingService', () => {
 
 			await expect(service.updateVendorLocation(vendorId, location)).rejects.toThrow(
 				expect.objectContaining({
-					code: LocationDomainErrorCodes.INVALID_LONGITUDE,
-					details: { lng: 200 },
+					code: ErrorCodes.LOCATION_INVALID_COORDINATES,
+					details: { longitude: 200 },
 					message: 'Invalid longitude value',
 				}),
 			);
@@ -92,7 +90,7 @@ describe('LocationTrackingService', () => {
 
 			await expect(service.updateVendorLocation(vendorId, location)).rejects.toThrow(
 				expect.objectContaining({
-					code: LocationDomainErrorCodes.LOCATION_NOT_FOUND,
+					code: ErrorCodes.VENDOR_NOT_FOUND,
 					details: { vendorId },
 					message: 'Vendor not found',
 				}),
@@ -112,16 +110,14 @@ describe('LocationTrackingService', () => {
 			await service.updateUserLocation(userId, location);
 
 			expect(mockPrisma.db.user.findUnique).toHaveBeenCalledWith({
-				select: { id: true },
 				where: { id: userId },
 			});
 			expect(mockRedis.geoadd).toHaveBeenCalledWith('user_locations', location.lng, location.lat, userId);
 			expect(mockEventService.emit).toHaveBeenCalledWith('location.user_location_updated', {
 				location: {
 					lat: location.lat,
-					long: location.lng,
+					lng: location.lng,
 				},
-				timestamp: expect.any(Date),
 				userId,
 			});
 		});
@@ -134,7 +130,7 @@ describe('LocationTrackingService', () => {
 
 			await expect(service.updateUserLocation(userId, location)).rejects.toThrow(
 				expect.objectContaining({
-					code: LocationDomainErrorCodes.LOCATION_NOT_FOUND,
+					code: ErrorCodes.USER_NOT_FOUND,
 					details: { userId },
 					message: 'User not found',
 				}),
