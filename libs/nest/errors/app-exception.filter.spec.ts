@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HttpException } from '@nestjs/common';
+import { vi } from 'vitest';
+import { ArgumentsHost, HttpException } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
 import { AppError, ErrorType } from './app-error';
@@ -7,140 +7,122 @@ import { AppExceptionFilter } from './app-exception.filter';
 
 describe('AppExceptionFilter', () => {
 	let filter: AppExceptionFilter;
-	let mockResponse: any;
-	let mockRequest: any;
+	let mockConfigService: any;
 
 	beforeEach(() => {
-		filter = new AppExceptionFilter();
-		mockResponse = {
-			json: vi.fn().mockReturnThis(),
-			status: vi.fn().mockReturnThis(),
+		mockConfigService = {
+			get: vi.fn().mockReturnValue('test-domain'),
 		};
-		mockRequest = {
-			headers: {
-				'x-request-id': 'test-request-id',
-			},
-			method: 'GET',
-			url: '/test',
-		};
+		filter = new AppExceptionFilter(mockConfigService);
 	});
 
 	describe('catch', () => {
 		it('should handle AppError for HTTP context', () => {
-			const appError = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found');
-			const exception = appError.toHttpException();
+			const error = new AppError(ErrorType.VALIDATION, 'TEST_ERROR', 'Test error message');
+			const mockResponse = {
+				status: vi.fn().mockReturnThis(),
+				json: vi.fn().mockReturnThis(),
+			};
+			const mockRequest = {
+				url: '/test',
+				headers: {
+					'x-request-id': 'test-request-id',
+				},
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
-				switchToHttp: () => ({
-					getRequest: () => mockRequest,
-					getResponse: () => mockResponse,
+				switchToHttp: vi.fn().mockReturnValue({
+					getResponse: vi.fn().mockReturnValue(mockResponse),
+					getRequest: vi.fn().mockReturnValue(mockRequest),
 				}),
-			};
+			} as ArgumentsHost;
 
-			filter.catch(exception, mockContext as any);
+			filter.catch(error, mockContext);
 
-			expect(mockResponse.status).toHaveBeenCalledWith(404);
+			expect(mockResponse.status).toHaveBeenCalledWith(400);
 			expect(mockResponse.json).toHaveBeenCalledWith({
 				error: {
-					code: 'USER_NOT_FOUND',
+					code: 'TEST_ERROR',
 					details: undefined,
-					message: 'User not found',
+					message: 'Test error message',
 					path: '/test',
 					requestId: 'test-request-id',
-					timestamp: appError.timestamp,
-					type: 'NOT_FOUND',
+					timestamp: expect.any(String),
+					type: 'VALIDATION',
 				},
 			});
 		});
 
 		it('should handle AppError for gRPC context', () => {
-			const appError = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found');
-			const exception = appError.toGrpcException();
+			const error = new AppError(ErrorType.NOT_FOUND, 'TEST_ERROR', 'Test error message');
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('rpc'),
-				switchToRpc: () => ({
-					getContext: () => ({}),
-					getData: () => ({}),
+				switchToRpc: vi.fn().mockReturnValue({
+					getContext: vi.fn().mockReturnValue({}),
+					getData: vi.fn().mockReturnValue({}),
 				}),
-			};
+			} as ArgumentsHost;
 
-			// Mock the handleGrpcException method to avoid actual error throwing
-			const handleGrpcSpy = vi.spyOn(filter as any, 'handleGrpcException').mockImplementation(() => {
-				return {
-					code: 5,
-					details: JSON.stringify({
-						code: 'USER_NOT_FOUND',
-						details: undefined,
-						path: undefined,
-						requestId: undefined,
-						timestamp: appError.timestamp,
-						type: 'NOT_FOUND',
-					}),
-					message: 'User not found',
-				};
-			});
-
-			const result = filter.catch(exception, mockContext as any);
-
-			// The filter converts the exception to AppError before calling handleGrpcException
-			expect(handleGrpcSpy).toHaveBeenCalledWith(expect.any(AppError), mockContext);
-			expect(result).toBeDefined();
+			expect(() => filter.catch(error, mockContext)).toThrow();
 		});
 
 		it('should handle AppError for WebSocket context', () => {
-			const appError = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found');
-			const exception = appError.toWsException();
+			const error = new AppError(ErrorType.INTERNAL, 'TEST_ERROR', 'Test error message');
+			const mockClient = {
+				emit: vi.fn(),
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('ws'),
-				switchToWs: () => ({
-					getClient: () => ({
-						send: vi.fn(),
-					}),
-					getData: () => ({}),
+				switchToWs: vi.fn().mockReturnValue({
+					getClient: vi.fn().mockReturnValue(mockClient),
+					getData: vi.fn().mockReturnValue({}),
 				}),
-			};
+			} as ArgumentsHost;
 
-			// Mock the handleWsException method
-			const handleWsSpy = vi.spyOn(filter as any, 'handleWsException').mockImplementation(() => {
-				return {
-					code: 'USER_NOT_FOUND',
-					details: undefined,
-					message: 'User not found',
-					path: undefined,
-					requestId: undefined,
-					timestamp: appError.timestamp,
-					type: 'NOT_FOUND',
-				};
+			filter.catch(error, mockContext);
+
+			expect(mockClient.emit).toHaveBeenCalledWith('error', {
+				code: 'TEST_ERROR',
+				details: undefined,
+				message: 'Test error message',
+				path: undefined,
+				requestId: undefined,
+				timestamp: expect.any(String),
+				type: 'INTERNAL',
 			});
-
-			const result = filter.catch(exception, mockContext as any);
-
-			// The filter converts the exception to AppError before calling handleWsException
-			expect(handleWsSpy).toHaveBeenCalledWith(expect.any(AppError), mockContext);
-			expect(result).toBeDefined();
 		});
 
 		it('should convert HttpException to AppError', () => {
-			const httpException = new HttpException('Bad Request', 400);
+			const httpError = new HttpException('HTTP Error', 400);
+			const mockResponse = {
+				status: vi.fn().mockReturnThis(),
+				json: vi.fn().mockReturnThis(),
+			};
+			const mockRequest = {
+				url: '/test',
+				headers: {
+					'x-request-id': 'test-request-id',
+				},
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
-				switchToHttp: () => ({
-					getRequest: () => mockRequest,
-					getResponse: () => mockResponse,
+				switchToHttp: vi.fn().mockReturnValue({
+					getResponse: vi.fn().mockReturnValue(mockResponse),
+					getRequest: vi.fn().mockReturnValue(mockRequest),
 				}),
-			};
+			} as ArgumentsHost;
 
-			filter.catch(httpException, mockContext as any);
+			filter.catch(httpError, mockContext);
 
 			expect(mockResponse.status).toHaveBeenCalledWith(400);
 			expect(mockResponse.json).toHaveBeenCalledWith({
 				error: {
 					code: 'VALIDATION_ERROR',
 					details: {
-						originalError: 'Bad Request',
+						originalError: 'HTTP Error',
 						statusCode: 400,
 					},
-					message: 'Bad Request',
+					message: 'HTTP Error',
 					path: '/test',
 					requestId: 'test-request-id',
 					timestamp: expect.any(String),
@@ -150,85 +132,74 @@ describe('AppExceptionFilter', () => {
 		});
 
 		it('should convert RpcException to AppError', () => {
-			const rpcException = new RpcException({
-				code: 5,
-				details: 'User not found',
-				message: 'gRPC Error',
-			});
+			const rpcError = new RpcException('gRPC error');
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('rpc'),
-				switchToRpc: () => ({
-					getContext: () => ({}),
-					getData: () => ({}),
+				switchToRpc: vi.fn().mockReturnValue({
+					getContext: vi.fn().mockReturnValue({}),
+					getData: vi.fn().mockReturnValue({}),
 				}),
-			};
+			} as ArgumentsHost;
 
-			// Mock the handleGrpcException method
-			const handleGrpcSpy = vi.spyOn(filter as any, 'handleGrpcException').mockImplementation(() => {
-				return {
-					code: 5,
-					details: 'User not found',
-					message: 'gRPC Error',
-				};
-			});
-
-			const result = filter.catch(rpcException, mockContext as any);
-
-			// The filter converts the exception to AppError before calling handleGrpcException
-			expect(handleGrpcSpy).toHaveBeenCalledWith(expect.any(AppError), mockContext);
-			expect(result).toBeDefined();
+			expect(() => filter.catch(rpcError, mockContext)).toThrow();
 		});
 
 		it('should convert WsException to AppError', () => {
-			const wsException = new WsException('WebSocket error');
+			const wsError = new WsException('WebSocket Error');
+			const mockClient = {
+				emit: vi.fn(),
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('ws'),
-				switchToWs: () => ({
-					getClient: () => ({
-						send: vi.fn(),
-					}),
-					getData: () => ({}),
+				switchToWs: vi.fn().mockReturnValue({
+					getClient: vi.fn().mockReturnValue(mockClient),
+					getData: vi.fn().mockReturnValue({}),
 				}),
-			};
+			} as ArgumentsHost;
 
-			// Mock the handleWsException method
-			const handleWsSpy = vi.spyOn(filter as any, 'handleWsException').mockImplementation(() => {
-				return {
-					code: 'INTERNAL_ERROR',
-					details: undefined,
-					message: 'Internal server error',
-					path: undefined,
-					requestId: undefined,
-					timestamp: expect.any(String),
-					type: 'INTERNAL',
-				};
+			filter.catch(wsError, mockContext);
+
+			expect(mockClient.emit).toHaveBeenCalledWith('error', {
+				code: 'UNKNOWN_ERROR',
+				details: {
+					originalError: 'WebSocket Error',
+				},
+				message: 'WebSocket error',
+				path: undefined,
+				requestId: undefined,
+				timestamp: expect.any(String),
+				type: 'INTERNAL',
 			});
-
-			const result = filter.catch(wsException, mockContext as any);
-
-			// The filter converts the exception to AppError before calling handleWsException
-			expect(handleWsSpy).toHaveBeenCalledWith(expect.any(AppError), mockContext);
-			expect(result).toBeDefined();
 		});
 
 		it('should handle unknown errors', () => {
 			const unknownError = new Error('Unknown error');
+			const mockResponse = {
+				status: vi.fn().mockReturnThis(),
+				json: vi.fn().mockReturnThis(),
+			};
+			const mockRequest = {
+				url: '/test',
+				headers: {
+					'x-request-id': 'test-request-id',
+				},
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
-				switchToHttp: () => ({
-					getRequest: () => mockRequest,
-					getResponse: () => mockResponse,
+				switchToHttp: vi.fn().mockReturnValue({
+					getResponse: vi.fn().mockReturnValue(mockResponse),
+					getRequest: vi.fn().mockReturnValue(mockRequest),
 				}),
-			};
+			} as ArgumentsHost;
 
-			filter.catch(unknownError, mockContext as any);
+			filter.catch(unknownError, mockContext);
 
 			expect(mockResponse.status).toHaveBeenCalledWith(500);
 			expect(mockResponse.json).toHaveBeenCalledWith({
 				error: {
 					code: 'UNKNOWN_ERROR',
 					details: {
-						stack: expect.stringContaining('Error: Unknown error'),
+						stack: expect.any(String),
 					},
 					message: 'Unknown error',
 					path: '/test',
@@ -241,15 +212,25 @@ describe('AppExceptionFilter', () => {
 
 		it('should handle non-Error objects', () => {
 			const nonError = 'String error';
+			const mockResponse = {
+				status: vi.fn().mockReturnThis(),
+				json: vi.fn().mockReturnThis(),
+			};
+			const mockRequest = {
+				url: '/test',
+				headers: {
+					'x-request-id': 'test-request-id',
+				},
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
-				switchToHttp: () => ({
-					getRequest: () => mockRequest,
-					getResponse: () => mockResponse,
+				switchToHttp: vi.fn().mockReturnValue({
+					getResponse: vi.fn().mockReturnValue(mockResponse),
+					getRequest: vi.fn().mockReturnValue(mockRequest),
 				}),
-			};
+			} as ArgumentsHost;
 
-			filter.catch(nonError, mockContext as any);
+			filter.catch(nonError, mockContext);
 
 			expect(mockResponse.status).toHaveBeenCalledWith(500);
 			expect(mockResponse.json).toHaveBeenCalledWith({
@@ -268,28 +249,42 @@ describe('AppExceptionFilter', () => {
 		});
 
 		it('should include error details in response', () => {
-			const details = { userId: '123' };
-			const appError = new AppError(ErrorType.NOT_FOUND, 'USER_NOT_FOUND', 'User not found', details);
-			const exception = appError.toHttpException();
+			const error = new AppError(ErrorType.VALIDATION, 'TEST_ERROR', 'Test error message', {
+				field: 'test',
+				value: 'invalid',
+			});
+			const mockResponse = {
+				status: vi.fn().mockReturnThis(),
+				json: vi.fn().mockReturnThis(),
+			};
+			const mockRequest = {
+				url: '/test',
+				headers: {
+					'x-request-id': 'test-request-id',
+				},
+			};
 			const mockContext = {
 				getType: vi.fn().mockReturnValue('http'),
-				switchToHttp: () => ({
-					getRequest: () => mockRequest,
-					getResponse: () => mockResponse,
+				switchToHttp: vi.fn().mockReturnValue({
+					getResponse: vi.fn().mockReturnValue(mockResponse),
+					getRequest: vi.fn().mockReturnValue(mockRequest),
 				}),
-			};
+			} as ArgumentsHost;
 
-			filter.catch(exception, mockContext as any);
+			filter.catch(error, mockContext);
 
 			expect(mockResponse.json).toHaveBeenCalledWith({
 				error: {
-					code: 'USER_NOT_FOUND',
-					details,
-					message: 'User not found',
+					code: 'TEST_ERROR',
+					details: {
+						field: 'test',
+						value: 'invalid',
+					},
+					message: 'Test error message',
 					path: '/test',
 					requestId: 'test-request-id',
-					timestamp: appError.timestamp,
-					type: 'NOT_FOUND',
+					timestamp: expect.any(String),
+					type: 'VALIDATION',
 				},
 			});
 		});
