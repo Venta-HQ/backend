@@ -1,293 +1,302 @@
-# 🛡️ Event Pattern Enforcement Guide
+# Event Pattern Enforcement
+
+This document describes how we enforce consistent event naming patterns and domain boundaries in our DDD architecture.
 
 ## Overview
 
-This document outlines the **type-based enforcement mechanisms** for maintaining consistent DDD event patterns across the codebase.
+We use **type-based validation** to enforce event naming patterns at compile-time, ensuring all events follow our DDD conventions and domain boundaries are respected.
 
-## Enforcement Strategy
+## 🎯 Event Naming Convention
 
-### **Type-Based Validation (Compile-time)**
-
-- **TypeScript enforces** DDD event naming: `domain.subdomain_action`
-- **Domain boundaries** enforced at the type level
-- **Valid subdomains** enforced for each domain
-- **Zero runtime overhead** - all validation happens at compile time
-
-## Valid Domains and Subdomains
-
-### **Available Domains**
+### Pattern: `domain.subdomain_action`
 
 ```typescript
-const VALID_DOMAINS = [
-	'marketplace', // Business marketplace operations
-	'location', // Location and geospatial services
-	'communication', // Notifications and messaging
-	'infrastructure', // Cross-cutting infrastructure
-	'payments', // Payment and billing operations
-	'analytics', // Business intelligence and reporting
-];
+// ✅ Valid DDD Event Names
+'marketplace.vendor_onboarded'; // Domain: marketplace, Subdomain: vendor, Action: onboarded
+'location.vendor_location_updated'; // Domain: location, Subdomain: vendor, Action: location_updated
+'marketplace.user_registered'; // Domain: marketplace, Subdomain: user, Action: registered
+'location.user_location_updated'; // Domain: location, Subdomain: user, Action: location_updated
 ```
 
-### **Domain-Subdomain Mapping**
+### Domain Structure
 
 ```typescript
-marketplace: ['user', 'vendor', 'search', 'reviews', 'favorites'];
-location: ['geolocation', 'proximity', 'real_time', 'geofencing'];
-communication: ['notifications', 'messaging', 'webhooks', 'email'];
-infrastructure: ['api_gateway', 'file_management', 'monitoring', 'security'];
-payments: ['processing', 'subscriptions', 'billing', 'fraud'];
-analytics: ['business', 'user', 'location', 'reporting'];
-```
-
-## Event Naming Rules
-
-### ✅ **Valid Event Names**
-
-```typescript
-'marketplace.vendor_onboarded'; // ✅ Domain + subdomain + action
-'location.vendor_location_updated'; // ✅ Location domain
-'marketplace.user_registered'; // ✅ User registration
-'communication.notification_sent'; // ✅ Communication domain
-'payments.subscription_created'; // ✅ Payments domain
-'analytics.user_activity_tracked'; // ✅ Analytics domain
-```
-
-### ❌ **Invalid Event Names**
-
-```typescript
-'vendor.created'; // ❌ No domain prefix
-'user.location.updated'; // ❌ Wrong domain (should be location.user_*)
-'VENDOR_ONBOARDED'; // ❌ Wrong case
-'vendor-onboarded'; // ❌ Wrong separator
-'marketplace.invalid_subdomain_action'; // ❌ Invalid subdomain for marketplace
-'nonexistent.vendor_created'; // ❌ Invalid domain
-```
-
-## Type-Based Schema Definition
-
-### **✅ Correct Schema Definition**
-
-```typescript
-// ✅ Type-safe event schemas - TypeScript will error if you use invalid event names
-export const userEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
-	'marketplace.user_profile_updated': createEventSchema({
-		userId: z.string(),
-		profileCompleteness: z.number().min(0).max(100).optional(),
-		updatedFields: z.array(z.string()),
-	}).withBusinessContext(['userId']),
-};
-```
-
-### **❌ TypeScript Errors (Invalid Schemas)**
-
-```typescript
-// ❌ TypeScript Error: Invalid domain
-export const userEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
-	'invalid.vendor_created': createEventSchema({}), // ❌ Type error - 'invalid' not in VALID_DOMAINS
-};
-
-// ❌ TypeScript Error: Invalid subdomain for marketplace
-export const userEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
-	'marketplace.location_updated': createEventSchema({}), // ❌ Type error - 'location' not in marketplace subdomains
-};
-
-// ❌ TypeScript Error: Wrong domain for location events
-export const userEventSchemas: EnforceValidDomainEvents<'marketplace'> = {
-	'location.user_location_updated': createEventSchema({}), // ❌ Type error - 'location' domain in marketplace schema
-};
-```
-
-## Business Context Requirements
-
-### ✅ **Type-Safe Business Context**
-
-```typescript
-// ✅ TypeScript ensures only valid fields can be used for business context
-const userEvent = createEventSchema({
-	userId: z.string(),
-	email: z.string().email(),
-	profile: z.object({ firstName: z.string() }),
-}).withBusinessContext(['userId']); // ✅ Only fields that exist in schema
-
-// ❌ TypeScript Error: Invalid field
-const invalidEvent = createEventSchema({
-	userId: z.string(),
-	email: z.string(),
-}).withBusinessContext(['userId', 'nonExistentField']); // ❌ TypeScript error!
-```
-
-### ✅ **Valid Event Data (DDD Approach)**
-
-```typescript
-// ✅ Simple and clean - DDD aligned
-await eventService.emit('marketplace.vendor_onboarded', {
-	vendorId: vendor.id, // ✅ Automatically extracted as context
-	ownerId: vendor.ownerId, // ✅ Automatically extracted as context
-	businessType: 'food_vendor', // Domain concept
-	location: {
-		// Domain concept
-		lat: vendor.location.lat,
-		lng: vendor.location.lng,
-	},
-});
-
-// ✅ Result: Event includes context automatically
-// {
-//   context: {
-//     requestId: 'req-123', // ✅ Always included for correlation
-//     vendorId: 'vendor-123',
-//     ownerId: 'owner-456'
-//   },
-//   meta: {
-//     eventId: 'evt-123',
-//     source: 'vendor-service',
-//     timestamp: '2024-01-01T00:00:00Z',
-//     version: '1.0',
-//     correlationId: 'req-123',
-//     domain: 'marketplace',
-//     subdomain: 'vendor'
-//   },
-//   data: { ... }
-// }
-```
-
-## Enforcement Examples
-
-### **TypeScript Compile-Time Validation**
-
-```typescript
-// ❌ TypeScript will catch invalid event names immediately
-const eventName: ValidEventName = 'invalid.event'; // Type error
-
-// ❌ TypeScript will catch non-existent events
-await eventService.emit('nonexistent.event', data); // Type error
-
-// ❌ TypeScript will catch domain boundary violations
-export const schemas: EnforceValidDomainEvents<'marketplace'> = {
-	'location.user_location_updated': createEventSchema({}), // Type error
-};
-```
-
-## Adding New Domains
-
-### **1. Update Event Schema Types**
-
-```typescript
-// In event-schema-types.ts
-export const VALID_DOMAINS = [
-	'marketplace',
-	'location',
-	'communication',
-	'infrastructure',
-	'payments',
-	'analytics',
-	'new_domain', // ✅ Add new domain
-] as const;
-
-export const DOMAIN_SUBDOMAINS: Record<ValidDomain, readonly string[]> = {
-	// ... existing domains
-	new_domain: ['subdomain1', 'subdomain2'], // ✅ Add subdomains
-};
-```
-
-### **2. Create Event Schemas**
-
-```typescript
-// In new-domain.events.ts
-export const newDomainEventSchemas: EnforceValidDomainEvents<'new_domain'> = {
-	'new_domain.subdomain1_action': createEventSchema({
-		// ✅ Valid domain and subdomain
-		// ✅ Include business identifiers
-		userId: z.string(),
-		// ... other fields
-	}).withBusinessContext(['userId']),
-};
-```
-
-### **3. Update Unified Registry**
-
-```typescript
-// In unified-event-registry.ts
-export const ALL_EVENT_SCHEMAS = {
-	...userEventSchemas,
-	...vendorEventSchemas,
-	...newDomainEventSchemas, // ✅ Add new schemas
+// Valid domains and their subdomains
+const DOMAIN_SUBDOMAINS = {
+	marketplace: ['user', 'vendor', 'search', 'subscription'],
+	location: ['vendor', 'user', 'geolocation'],
 } as const;
 ```
 
-## Best Practices
+## 🔧 Type-Based Validation
 
-### 1. **Always Use EventService**
+### Compile-Time Enforcement
+
+We use TypeScript template literal types to enforce event patterns at compile-time:
 
 ```typescript
-// ✅ Correct
-await this.eventService.emit('marketplace.vendor_onboarded', data);
+// Type definition for valid event names
+type ValidEventNamePattern<TDomain extends keyof typeof DOMAIN_SUBDOMAINS> =
+	`${TDomain}.${DOMAIN_SUBDOMAINS[TDomain][number]}_${string}`;
 
-// ❌ Wrong - direct NATS usage
-await this.natsClient.emit('vendor.created', data);
+// Enforce valid domain events
+type EnforceValidDomainEvents<TDomain extends keyof typeof DOMAIN_SUBDOMAINS> = {
+	[K in ValidEventNamePattern<TDomain>]: z.ZodType<any>;
+};
 ```
 
-### 2. **Include Business Context**
+### Usage in Event Schemas
 
 ```typescript
-// ✅ Always include business identifiers
+// ✅ Correct: Type-safe event schema
+export const vendorEventSchemas = {
+	'marketplace.vendor_onboarded': createEventSchema({
+		vendorId: z.string(),
+		ownerId: z.string(),
+		location: z.object({
+			lat: z.number().min(-90).max(90),
+			lng: z.number().min(-180).max(180),
+		}),
+		timestamp: z.string().default(() => new Date().toISOString()),
+	}).withContext(['vendorId', 'ownerId']),
+} as const satisfies EnforceValidDomainEvents<'marketplace'>;
+```
+
+### Compile-Time Errors
+
+```typescript
+// ❌ This will cause a compile-time error
+export const invalidEventSchemas = {
+	'invalid.event_name': z.object({}), // Type error: not a valid event pattern
+	'marketplace.invalid_action': z.object({}), // Type error: invalid subdomain
+} as const satisfies EnforceValidDomainEvents<'marketplace'>;
+```
+
+## 🏗️ Schema-Driven Context Extraction
+
+### Automatic Business Context
+
+Events automatically extract business context from their Zod schemas:
+
+```typescript
+// Schema with context configuration
+'marketplace.vendor_onboarded': createEventSchema({
+  vendorId: z.string(),
+  ownerId: z.string(),
+  location: z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
+  timestamp: z.string().default(() => new Date().toISOString()),
+}).withContext(['vendorId', 'ownerId']), // Specify fields for correlation
+```
+
+### Context Extraction Process
+
+```typescript
+// EventService automatically extracts context
+private extractContextFromSchema(subject: string, data: any): Record<string, any> {
+  const schema = ALL_EVENT_SCHEMAS[subject];
+  if (!schema || !schema._context) {
+    return {};
+  }
+
+  const context: Record<string, any> = {};
+  for (const field of schema._context.fields) {
+    if (data[field] !== undefined) {
+      context[field] = data[field];
+    }
+  }
+  return context;
+}
+```
+
+## 📋 Event Structure
+
+### BaseEvent Interface
+
+```typescript
+export interface BaseEvent {
+	context?: Record<string, any>; // Business context for correlation
+	meta: {
+		eventId: string; // Unique event identifier
+		source: string; // Service that emitted the event
+		timestamp: string; // ISO timestamp
+		version: string; // Event schema version
+		correlationId?: string; // Request correlation ID
+		domain?: string; // Extracted from event name
+		subdomain?: string; // Extracted from event name
+	};
+	data: any; // Validated event data
+}
+```
+
+### Event Emission
+
+```typescript
+// Simple emission with automatic context
 await this.eventService.emit('marketplace.vendor_onboarded', {
 	vendorId: vendor.id,
 	ownerId: vendor.ownerId,
-	// ... other business data
+	location: onboardingData.location,
 });
+
+// Automatically creates:
+// {
+//   context: { vendorId: "123", ownerId: "456" },
+//   meta: {
+//     eventId: "uuid",
+//     source: "vendor-management",
+//     timestamp: "2024-12-01T10:00:00Z",
+//     version: "1.0",
+//     correlationId: "req-123",
+//     domain: "marketplace",
+//     subdomain: "vendor"
+//   },
+//   data: { vendorId: "123", ownerId: "456", location: {...} }
+// }
 ```
 
-### 3. **Follow Domain Boundaries**
+## 🔍 Validation Examples
+
+### Valid Event Patterns
 
 ```typescript
-// ✅ Location events in location domain
+// ✅ All of these are valid and will compile
+'marketplace.vendor_onboarded';
+'marketplace.vendor_profile_updated';
+'marketplace.vendor_deactivated';
 'location.vendor_location_updated';
 'location.user_location_updated';
-
-// ✅ Marketplace events in marketplace domain
-'marketplace.vendor_onboarded';
 'marketplace.user_registered';
+'marketplace.user_profile_updated';
 ```
 
-### 4. **Use Valid Subdomains**
+### Invalid Event Patterns
 
 ```typescript
-// ✅ Valid subdomains for marketplace
-'marketplace.user_registered';
-'marketplace.vendor_onboarded';
-'marketplace.search_performed';
-
-// ❌ Invalid subdomains for marketplace
-'marketplace.location_updated'; // Should be location.user_location_updated
-'marketplace.payment_processed'; // Should be payments.processing_completed
+// ❌ These will cause compile-time errors
+'invalid.event_name'; // Invalid domain
+'marketplace.invalid_action'; // Invalid subdomain
+'location.vendor.invalid'; // Wrong pattern
+'vendor.onboarded'; // Missing domain prefix
 ```
 
-## Troubleshooting
+## 🛠️ Implementation Details
 
-### **Common Issues**
+### Event Schema Creation
 
-1. **TypeScript Compile Errors**
+```typescript
+// Fluent API for creating event schemas
+export function createEventSchema<T extends z.ZodRawShape>(shape: T) {
+	const baseSchema = z.object(shape);
+	const schema = baseSchema as unknown as ContextSchema<z.infer<typeof baseSchema>>;
 
-   - Check that all event names use valid domains from `event-schema-types.ts`
-   - Ensure subdomains are valid for the specified domain
-   - Verify event name format follows `domain.subdomain_action` pattern
+	schema.withContext = function <Fields extends keyof z.infer<typeof baseSchema>>(fields: Fields[]) {
+		this._context = { fields: fields as string[] };
+		return this;
+	};
 
-2. **Type Errors**
+	return schema;
+}
+```
 
-   - Import proper types from `@app/eventtypes`
-   - Ensure event data includes business context
-   - Check that event names exist in schemas
+### Type Safety
 
-3. **Domain Boundary Violations**
+```typescript
+// Type-safe event emission
+export class EventService {
+	async emit<TSubject extends keyof EventDataMap>(subject: TSubject, data: EventDataMap[TSubject]): Promise<void> {
+		// Compile-time validation ensures:
+		// 1. Subject is a valid event name
+		// 2. Data matches the schema for that event
+		// 3. Context is automatically extracted
+	}
+}
+```
 
-   - Don't define location events in marketplace schemas
-   - Don't define marketplace events in location schemas
-   - Use the correct domain for each event type
+## 📊 Benefits
 
-### **Getting Help**
+### Compile-Time Safety
 
-- Check this documentation
-- Review existing event schemas in `libs/eventtypes/src/domains/`
-- Look at examples in service implementations
-- Check `event-schema-types.ts` for valid domains and subdomains
+- **No runtime errors** from invalid event names
+- **Type-safe event data** with automatic validation
+- **IDE support** with autocomplete and error detection
+
+### Business Alignment
+
+- **Consistent naming** across all domains
+- **Clear domain boundaries** enforced by types
+- **Business context** automatically extracted
+
+### Developer Experience
+
+- **Fluent API** for schema creation
+- **Automatic context extraction** from schemas
+- **Rich TypeScript support** with full type inference
+
+## 🔧 Configuration
+
+### Adding New Domains
+
+```typescript
+// 1. Add domain to VALID_DOMAINS
+const VALID_DOMAINS = ['marketplace', 'location', 'newdomain'] as const;
+
+// 2. Add subdomains to DOMAIN_SUBDOMAINS
+const DOMAIN_SUBDOMAINS = {
+	marketplace: ['user', 'vendor', 'search'],
+	location: ['vendor', 'user', 'geolocation'],
+	newdomain: ['subdomain1', 'subdomain2'], // New domain
+} as const;
+
+// 3. Create event schemas with type enforcement
+export const newDomainEventSchemas = {
+	'newdomain.subdomain1_action': createEventSchema({
+		// schema definition
+	}).withContext(['field1', 'field2']),
+} as const satisfies EnforceValidDomainEvents<'newdomain'>;
+```
+
+### Adding New Events
+
+```typescript
+// Simply add to existing schema object
+export const vendorEventSchemas = {
+  'marketplace.vendor_onboarded': createEventSchema({...}),
+  'marketplace.vendor_profile_updated': createEventSchema({...}),
+  'marketplace.vendor_deactivated': createEventSchema({...}),
+  // ✅ New event - automatically type-checked
+  'marketplace.vendor_reactivated': createEventSchema({
+    vendorId: z.string(),
+    reactivationReason: z.string(),
+    timestamp: z.string().default(() => new Date().toISOString()),
+  }).withContext(['vendorId']),
+} as const satisfies EnforceValidDomainEvents<'marketplace'>;
+```
+
+## 🎯 Best Practices
+
+### Event Naming
+
+- Use **business terminology** in event names
+- Follow **consistent patterns** across domains
+- Make names **descriptive and specific**
+
+### Context Configuration
+
+- Include **business identifiers** in context (userId, vendorId, etc.)
+- Avoid **sensitive data** in context fields
+- Keep context **focused and relevant**
+
+### Schema Design
+
+- Use **smart defaults** for common fields (timestamps)
+- Include **validation rules** for data integrity
+- Make schemas **comprehensive but not bloated**
+
+---
+
+**Status**: ✅ **IMPLEMENTED**  
+**Last Updated**: December 2024  
+**Enforcement**: Compile-time type validation

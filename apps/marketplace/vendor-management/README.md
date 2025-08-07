@@ -1,108 +1,429 @@
-# Vendor Service
+# Vendor Management Service
 
-## Purpose
-
-The Vendor service manages all vendor-related operations in the Venta backend system. It handles vendor creation, updates, profile management, and vendor data operations. This service serves as the central authority for vendor information and business logic, providing gRPC endpoints for other services to consume vendor data and managing vendor-related business rules and relationships.
+Domain-driven vendor management service for the Venta marketplace platform.
 
 ## Overview
 
-This microservice provides:
+The Vendor Management Service handles all vendor-related business operations including onboarding, profile management, location updates, and deactivation. It follows DDD (Domain-Driven Design) principles with clear domain boundaries and rich business context.
 
-- Vendor account creation and management with validation
-- Vendor profile and business information management
-- Vendor data validation, sanitization, and compliance
-- Vendor search and discovery functionality with filtering
-- Vendor relationship management with users and other entities
-- Vendor business logic and rules enforcement
-- Event publishing for vendor-related changes
-- Vendor analytics and reporting capabilities
+## Features
 
-## Key Responsibilities
-
-- **Vendor Management**: Handles vendor registration, updates, and deletion with validation
-- **Profile Management**: Manages vendor profiles, business details, and settings
-- **Data Validation**: Ensures vendor data integrity and compliance with business rules
-- **Search Operations**: Provides vendor search and filtering capabilities with optimization
-- **Business Logic**: Enforces vendor-related business rules and policies
-- **Event Publishing**: Publishes vendor-related events for other services to consume
-- **Relationship Management**: Manages connections between vendors and users
-- **Analytics**: Provides vendor performance metrics and insights
+- **Vendor Onboarding**: Complete vendor registration with business validation
+- **Profile Management**: Vendor profile updates and business information
+- **Location Services**: Real-time location tracking and updates
+- **Domain Events**: Rich business events with automatic context extraction
+- **Type Safety**: Compile-time validation of all operations
+- **Structured Logging**: Business context in all logs for observability
 
 ## Architecture
 
-The service follows a domain-driven design approach, focusing specifically on vendor-related business logic. It exposes gRPC endpoints for other services to consume and publishes events for asynchronous communication with the rest of the system.
-
-### Service Structure
+### Domain Structure
 
 ```
-Vendor Service
-├── Controllers (gRPC)
-│   └── Vendor Controller - gRPC vendor operations
-├── Services
-│   └── Vendor Service - Vendor business logic and data management
-└── Module Configuration
-    └── BootstrapModule - Standardized service bootstrapping
+src/
+├── core/                    # Core vendor business logic
+│   ├── vendor.service.ts   # Main vendor operations
+│   └── vendor.module.ts    # Core module configuration
+├── location/               # Location-related operations
+│   ├── vendor-location-events.controller.ts  # Location event handling
+│   └── location.module.ts  # Location module
+└── main.ts                 # Application bootstrap
+```
+
+### Domain Events
+
+The service emits domain events with rich business context:
+
+```typescript
+// Vendor lifecycle events
+'marketplace.vendor_onboarded'     // New vendor registration
+'marketplace.vendor_profile_updated' // Profile changes
+'marketplace.vendor_deactivated'   // Vendor deactivation
+
+// Location events
+'location.vendor_location_updated' // Real-time location updates
 ```
 
 ## Usage
 
-### Starting the Service
+### Vendor Onboarding
+
+```typescript
+// Domain service with business logic
+export class VendorService {
+  async onboardVendor(onboardingData: VendorOnboardingData): Promise<string> {
+    this.logger.log('Starting vendor onboarding', {
+      vendorId: onboardingData.vendorId,
+      ownerId: onboardingData.ownerId,
+    });
+
+    // Business validation
+    await this.validateOnboardingData(onboardingData);
+
+    // Create vendor
+    const vendor = await this.prisma.db.vendor.create({
+      data: onboardingData,
+    });
+
+    // Emit domain event with automatic context
+    await this.eventService.emit('marketplace.vendor_onboarded', {
+      vendorId: vendor.id,
+      ownerId: vendor.ownerId,
+      location: onboardingData.location,
+    });
+
+    this.logger.log('Vendor onboarded successfully', {
+      vendorId: vendor.id,
+      ownerId: vendor.ownerId,
+    });
+
+    return vendor.id;
+  }
+}
+```
+
+### Profile Updates
+
+```typescript
+async updateVendor(vendorId: string, updateData: UpdateVendorData): Promise<Vendor> {
+  this.logger.log('Updating vendor profile', { vendorId });
+
+  const vendor = await this.prisma.db.vendor.update({
+    where: { id: vendorId },
+    data: updateData,
+  });
+
+  // Emit domain event
+  await this.eventService.emit('marketplace.vendor_profile_updated', {
+    vendorId: vendor.id,
+    updatedFields: Object.keys(updateData),
+  });
+
+  return vendor;
+}
+```
+
+### Location Updates
+
+```typescript
+async updateVendorLocation(vendorId: string, location: LocationData): Promise<void> {
+  this.logger.log('Updating vendor location', { vendorId, location });
+
+  // Update location in database
+  await this.prisma.db.vendor.update({
+    where: { id: vendorId },
+    data: { location },
+  });
+
+  // Emit location event
+  await this.eventService.emit('location.vendor_location_updated', {
+    vendorId,
+    location,
+  });
+}
+```
+
+## API Endpoints
+
+### gRPC Interface
+
+```protobuf
+service VendorService {
+  rpc OnboardVendor(OnboardVendorRequest) returns (OnboardVendorResponse);
+  rpc UpdateVendor(UpdateVendorRequest) returns (UpdateVendorResponse);
+  rpc GetVendor(GetVendorRequest) returns (GetVendorResponse);
+  rpc UpdateVendorLocation(UpdateVendorLocationRequest) returns (UpdateVendorLocationResponse);
+  rpc DeactivateVendor(DeactivateVendorRequest) returns (DeactivateVendorResponse);
+}
+```
+
+### Request/Response Examples
+
+```typescript
+// Onboard vendor
+const response = await vendorService.onboardVendor({
+  name: "Joe's Food Truck",
+  description: "Delicious street food",
+  ownerId: "user-123",
+  location: {
+    lat: 40.7128,
+    lng: -74.0060,
+  },
+});
+
+// Update vendor location
+await vendorService.updateVendorLocation("vendor-456", {
+  lat: 40.7589,
+  lng: -73.9851,
+});
+```
+
+## Event Handling
+
+### Location Event Consumer
+
+The service consumes location events to maintain vendor location state:
+
+```typescript
+@Injectable()
+export class VendorLocationEventsController implements OnModuleInit {
+  async onModuleInit() {
+    // Subscribe to location events
+    this.natsQueueService.subscribeToQueue(
+      'location.vendor_location_updated',
+      'vendor-location-workers',
+      this.handleVendorLocationUpdated.bind(this),
+    );
+  }
+
+  private async handleVendorLocationUpdated(data: { data: BaseEvent; subject: string }) {
+    const { data: event } = data;
+    
+    this.logger.log('Handling vendor location update', {
+      vendorId: event.data.vendorId,
+      location: event.data.location,
+      eventId: event.meta.eventId,
+    });
+
+    // Update vendor location in database
+    await this.vendorService.updateVendorLocation(
+      event.data.vendorId,
+      event.data.location,
+    );
+  }
+}
+```
+
+## Configuration
+
+### Environment Variables
 
 ```bash
-# Development mode
-pnpm run start:dev vendor
-
-# Production mode
-pnpm run start:prod vendor
-
-# With Docker
-docker-compose up vendor
-```
-
-### Environment Configuration
-
-```env
-# Service Configuration
-VENDOR_SERVICE_ADDRESS=localhost:5005
-VENDOR_HEALTH_PORT=5015
-
 # Database
-DATABASE_URL=postgresql://user:password@localhost:5432/venta
-
-# Redis
-REDIS_PASSWORD=your-redis-password
+DATABASE_URL="postgresql://user:pass@localhost:5432/venta"
 
 # NATS
-NATS_URL=nats://localhost:4222
+NATS_URL="nats://localhost:4222"
 
-# Search (optional)
-ALGOLIA_APP_ID=your-algolia-app-id
-ALGOLIA_API_KEY=your-algolia-api-key
+# Service Configuration
+VENDOR_SERVICE_PORT=5000
+VENDOR_SERVICE_HOST=localhost
 ```
 
-### Service Patterns
+### Bootstrap Configuration
 
-The service follows these patterns:
+```typescript
+// main.ts
+async function bootstrap() {
+  const app = await BootstrapService.bootstrapGrpcMicroservice({
+    domain: 'marketplace', // DDD domain
+    main: {
+      module: VendorManagementModule,
+      package: 'vendor_management',
+      protoPath: join(__dirname, 'proto/vendor-management.proto'),
+      url: 'localhost:5000',
+    },
+    health: {
+      module: HealthModule,
+      port: 3001,
+    },
+  });
 
-- **BootstrapModule**: Uses the standardized BootstrapModule for service configuration
-- **gRPC Controllers**: Exposes gRPC endpoints for inter-service communication
-- **Event Publishing**: Publishes vendor-related events to NATS
-- **Database Operations**: Uses PrismaService for database access via `prisma.db`
-- **Error Handling**: Uses standardized AppError patterns for consistent error responses
-- **Business Rules**: Enforces vendor-specific business logic and validation
+  await app.listen();
+}
+```
 
-### Integration Points
+## Domain Events
 
-- **User Service**: Manages user-vendor relationships and permissions
-- **Location Service**: Handles vendor location data and geospatial operations
-- **Event System**: Publishes vendor-related events for other services
-- **Database**: Stores vendor data, profiles, and relationships
-- **Search**: Integrates with Algolia for vendor search capabilities
+### Emitted Events
+
+| Event | Description | Context |
+|-------|-------------|---------|
+| `marketplace.vendor_onboarded` | New vendor registration | `vendorId`, `ownerId` |
+| `marketplace.vendor_profile_updated` | Profile changes | `vendorId` |
+| `marketplace.vendor_deactivated` | Vendor deactivation | `vendorId`, `reason` |
+| `location.vendor_location_updated` | Location updates | `vendorId` |
+
+### Event Structure
+
+```typescript
+// Example: marketplace.vendor_onboarded
+{
+  context: {
+    vendorId: "vendor-123",
+    ownerId: "user-456"
+  },
+  meta: {
+    eventId: "evt-789",
+    source: "vendor-management",
+    timestamp: "2024-12-01T10:00:00Z",
+    version: "1.0",
+    correlationId: "req-abc",
+    domain: "marketplace",
+    subdomain: "vendor"
+  },
+  data: {
+    vendorId: "vendor-123",
+    ownerId: "user-456",
+    location: {
+      lat: 40.7128,
+      lng: -74.0060
+    },
+    timestamp: "2024-12-01T10:00:00Z"
+  }
+}
+```
+
+## Business Logic
+
+### Vendor Onboarding Validation
+
+```typescript
+private async validateOnboardingData(data: VendorOnboardingData): Promise<void> {
+  // Check for duplicate vendor names per owner
+  const existingVendor = await this.prisma.db.vendor.findFirst({
+    where: {
+      name: data.name,
+      ownerId: data.ownerId,
+    },
+  });
+
+  if (existingVendor) {
+    throw new AppError(
+      ErrorType.VALIDATION,
+      ErrorCodes.VENDOR_ALREADY_EXISTS,
+      'Vendor with this name already exists for this owner',
+      { name: data.name, ownerId: data.ownerId }
+    );
+  }
+
+  // Validate location coordinates
+  if (data.location.lat < -90 || data.location.lat > 90) {
+    throw new AppError(
+      ErrorType.VALIDATION,
+      ErrorCodes.LOCATION_INVALID_COORDINATES,
+      'Invalid latitude value',
+      { latitude: data.location.lat }
+    );
+  }
+}
+```
+
+### Business Rules
+
+1. **Unique Names**: Each owner can only have one vendor with a given name
+2. **Valid Locations**: All location coordinates must be within valid ranges
+3. **Owner Validation**: Vendors must have a valid owner
+4. **Status Management**: Vendors can be active or deactivated
+
+## Monitoring
+
+### Health Checks
+
+```bash
+# Health check endpoint
+curl http://localhost:3001/health
+
+# Response
+{
+  "status": "ok",
+  "timestamp": "2024-12-01T10:00:00Z",
+  "uptime": 3600,
+  "checks": {
+    "database": "ok",
+    "nats": "ok"
+  }
+}
+```
+
+### Metrics
+
+The service automatically collects metrics for:
+- Vendor onboarding success/failure rates
+- Profile update frequency
+- Location update frequency
+- Event emission success rates
+
+### Logging
+
+All operations include structured logging with business context:
+
+```typescript
+this.logger.log('Vendor onboarded successfully', {
+  vendorId: vendor.id,
+  ownerId: vendor.ownerId,
+  location: vendor.location,
+});
+
+this.logger.error('Failed to onboard vendor', error.stack, {
+  error,
+  vendorId: data.vendorId,
+  ownerId: data.ownerId,
+});
+```
+
+## Development
+
+### Local Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start required services
+docker-compose up -d postgres redis nats
+
+# Run in development mode
+pnpm dev:vendor-management
+
+# Run tests
+pnpm test:vendor-management
+```
+
+### Testing
+
+```typescript
+// Example test
+describe('VendorService', () => {
+  it('should onboard vendor successfully', async () => {
+    const onboardingData = {
+      name: 'Test Vendor',
+      ownerId: 'user-123',
+      location: { lat: 40.7128, lng: -74.0060 },
+    };
+
+    const vendorId = await vendorService.onboardVendor(onboardingData);
+
+    expect(vendorId).toBeDefined();
+    expect(mockEventService.emit).toHaveBeenCalledWith(
+      'marketplace.vendor_onboarded',
+      expect.objectContaining({
+        vendorId,
+        ownerId: 'user-123',
+      })
+    );
+  });
+});
+```
 
 ## Dependencies
 
-- **BootstrapModule** for standardized service configuration
-- **PrismaService** for database operations
-- **EventService** for publishing events to NATS
-- **Algolia** (optional) for advanced search capabilities
-- **Database** for vendor data persistence
+- **Database**: PostgreSQL with Prisma ORM
+- **Events**: NATS for event messaging
+- **Authentication**: Clerk integration
+- **Monitoring**: Prometheus metrics and Loki logging
+- **Health Checks**: Built-in health check endpoints
+
+## Related Services
+
+- **User Management**: User authentication and profiles
+- **Location Services**: Real-time location tracking
+- **Search Discovery**: Algolia integration for vendor search
+- **Communication**: Webhook handling for external integrations
+
+---
+
+**Status**: ✅ **Production Ready**  
+**Domain**: Marketplace  
+**Last Updated**: December 2024  
+**Version**: 1.0.0

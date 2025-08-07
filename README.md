@@ -1,184 +1,308 @@
-# 🚀 Venta Backend
+# Venta Backend
 
-<div align="center">
+A modern, scalable backend system built with NestJS, following Domain-Driven Design (DDD) principles and microservices architecture.
 
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+## Overview
 
-**A modern microservices-based backend system built with NestJS, providing scalable and maintainable architecture for the Venta platform.**
+Venta Backend is a comprehensive platform that provides vendor management, location services, user authentication, and real-time communication capabilities. The system is built with a focus on business alignment, team scalability, and long-term maintainability.
 
-[![License](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+## Architecture
 
-</div>
+### Domain-Driven Design
 
----
+The system is organized around business domains, with clear boundaries and rich business context:
 
-## 🏗️ Architecture Overview
+```
+apps/
+├── marketplace/              # Business marketplace operations
+│   ├── user-management/     # User accounts and profiles
+│   ├── vendor-management/   # Vendor profiles and operations
+│   └── search-discovery/    # Search indexing and discovery
+├── location-services/       # Location and geospatial services
+│   ├── geolocation/        # Location tracking and storage
+│   └── real-time/          # Live location updates (WebSocket)
+└── communication/          # External integrations
+    └── webhooks/           # Webhook handling (Clerk, RevenueCat)
+```
 
-Venta Backend is a distributed system built with Domain-Driven Design (DDD) principles, consisting of multiple microservices organized around business domains. The system follows modern architectural patterns including gRPC for inter-service communication, WebSocket for real-time features, and a unified API gateway.
+### Key Features
 
-**✅ Phase 2 Complete** - Domain Services enhanced with unified error handling, centralized event management, and DDD-aligned structure. See [DDD Migration Status](./docs/ddd-migration-status.md) for current progress.
+- **Domain Events**: Rich business events with automatic context extraction
+- **Type Safety**: Compile-time validation of all operations
+- **Structured Logging**: Business context in all logs for observability
+- **Real-time Communication**: WebSocket support for live updates
+- **Geospatial Services**: Efficient location tracking and proximity queries
+- **Event-Driven Architecture**: NATS-based asynchronous communication
 
-## 🏛️ System Architecture
+## Quick Start
 
-### 🚀 Core Services
+### Prerequisites
 
-| Service               | Purpose                        | Protocol  | Domain           | Description                                  |
-| --------------------- | ------------------------------ | --------- | ---------------- | -------------------------------------------- |
-| **API Gateway**       | HTTP Routing & Auth            | HTTP/gRPC | Infrastructure   | Main entry point for all client requests     |
-| **User Management**   | User Registration & Profiles   | gRPC      | Marketplace      | User accounts, preferences, and webhooks     |
-| **Vendor Management** | Vendor Onboarding & Operations | gRPC      | Marketplace      | Vendor profiles and business operations      |
-| **Location Services** | Geolocation & Proximity        | gRPC      | Location Services | Real-time location and geospatial operations |
-| **Real-time Gateway** | WebSocket Communication        | WebSocket | Location Services | Live updates and real-time features          |
-| **Search Discovery**  | Search Index & Discovery       | HTTP      | Marketplace      | Search, recommendations, and discovery       |
-| **Webhooks**          | External Integrations          | HTTP      | Communication    | Clerk, RevenueCat, and other webhooks        |
-| **File Management**   | File Upload & Storage          | HTTP      | Infrastructure   | Image and file upload management             |
+- Node.js 18+
+- pnpm
+- Docker and Docker Compose
+- PostgreSQL
+- Redis
+- NATS
 
-### 📚 Shared Libraries
-
-| Library              | Purpose           | Description                           |
-| -------------------- | ----------------- | ------------------------------------- |
-| **API Types**        | Type Definitions  | DDD-aligned schemas and validation    |
-| **Event Types**      | Event Management  | Centralized event definitions and schemas |
-| **NestJS Shared**    | Framework Modules | Unified error handling and utilities  |
-| **Protocol Buffers** | gRPC Definitions  | Service contracts and generated code  |
-| **Utilities**        | Helper Functions  | Common utility functions and helpers  |
-
-### 🎯 DDD Domains
-
-The system is organized into four main business domains:
-
-- **Marketplace**: User management, vendor management, subscriptions, and search
-- **Location Services**: Real-time location tracking and geospatial operations
-- **Communication**: Webhooks and external integrations
-- **Infrastructure**: API gateway, file management, and system operations
-
-## 🚀 Quick Start
-
-### 📋 Prerequisites
-
-- **Node.js** (v18 or higher)
-- **pnpm** package manager
-- **Docker** and **Docker Compose**
-- **PostgreSQL** database
-- **Redis** cache
-
-### ⚡ Installation
+### Installation
 
 ```bash
+# Clone the repository
+git clone <repository-url>
+cd venta-backend
+
 # Install dependencies
 pnpm install
 
-# Generate Prisma client
-pnpm run prisma:generate
+# Start required services
+docker-compose up -d postgres redis nats loki
 
-# Build protocol buffers
-pnpm run build-proto
+# Run database migrations
+pnpm prisma:migrate
 
-# Build the project
-pnpm run build
+# Start development servers
+pnpm dev
 ```
 
-### 🛠️ Development
+### Environment Configuration
+
+Create a `.env` file with the following variables:
 
 ```bash
-# Start all services with Docker Compose
-pnpm run docker:up
-
-# Run tests
-pnpm run test:run
-
-# Run tests with coverage
-pnpm run test:coverage
-
-# Lint code
-pnpm run lint
-
-# Format code
-pnpm run format
-```
-
-### 🔧 Running Individual Services
-
-```bash
-# Start specific service
-pnpm run start:dev api-gateway
-pnpm run start:dev user-management
-pnpm run start:dev vendor-management
-pnpm run start:dev location-services
-pnpm run start:dev real-time-gateway
-pnpm run start:dev search-discovery
-```
-
-## ⚙️ Environment Configuration
-
-Create a `.env` file in the root directory with the following variables:
-
-```env
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/venta"
+DATABASE_URL="postgresql://user:pass@localhost:5432/venta"
 
 # Redis
-REDIS_PASSWORD="your-redis-password"
+REDIS_URL="redis://localhost:6379"
 
-# Services
-GATEWAY_SERVICE_PORT=5002
-USER_SERVICE_ADDRESS=localhost:5000
-USER_HEALTH_PORT=5010
-VENDOR_SERVICE_ADDRESS=localhost:5005
-VENDOR_HEALTH_PORT=5015
-LOCATION_SERVICE_ADDRESS=localhost:5001
-LOCATION_HEALTH_PORT=5011
-WEBSOCKET_GATEWAY_SERVICE_PORT=5004
-ALGOLIA_SYNC_HEALTH_PORT=5016
+# NATS
+NATS_URL="nats://localhost:4222"
 
 # External Services
-CLERK_SECRET_KEY="your-clerk-secret"
-ALGOLIA_APP_ID="your-algolia-app-id"
-ALGOLIA_API_KEY="your-algolia-api-key"
-CLOUDINARY_CLOUD_NAME="your-cloudinary-name"
-CLOUDINARY_API_KEY="your-cloudinary-key"
-CLOUDINARY_API_SECRET="your-cloudinary-secret"
+CLERK_SECRET_KEY="sk_test_..."
+ALGOLIA_APP_ID="your-app-id"
+ALGOLIA_API_KEY="your-api-key"
 
-# DDD Domain (automatically set by bootstrap)
-DOMAIN=marketplace
+# Monitoring
+LOKI_URL="http://localhost:3100"
+LOKI_USERNAME="admin"
+LOKI_PASSWORD="password"
 ```
 
-## 🔄 Development Workflow
+## Services
 
-1. **Feature Development**: Create feature branches from `main`
-2. **Testing**: Write tests for new functionality
-3. **Code Quality**: Ensure code passes linting and formatting
-4. **Documentation**: Update relevant README files
-5. **Review**: Submit pull requests for code review
+### Marketplace Domain
 
-## 🧪 Testing
+#### User Management
+- User authentication and profile management
+- Integration with Clerk authentication
+- User-vendor relationship management
 
-The project uses Vitest for testing with comprehensive coverage:
+#### Vendor Management
+- Vendor onboarding and profile management
+- Business validation and rules enforcement
+- Vendor lifecycle management
+
+#### Search Discovery
+- Algolia integration for vendor search
+- Real-time search indexing
+- Location-based vendor discovery
+
+### Location Services Domain
+
+#### Geolocation
+- Real-time location tracking for vendors and users
+- Geospatial queries with Redis optimization
+- Location validation and processing
+
+#### Real-time Services
+- WebSocket connections for live updates
+- Real-time location broadcasting
+- Connection management and rate limiting
+
+### Communication Domain
+
+#### Webhooks
+- Clerk webhook handling for user events
+- RevenueCat webhook processing for subscriptions
+- External service integration
+
+## Development
+
+### Available Scripts
 
 ```bash
-# Run all tests
-pnpm run test:run
+# Development
+pnpm dev                    # Start all services in development
+pnpm dev:vendor-management  # Start vendor management service
+pnpm dev:location-services  # Start location services
+pnpm dev:user-management    # Start user management service
 
-# Run tests in watch mode
-pnpm run test
+# Building
+pnpm build                  # Build all applications and libraries
+pnpm build:apps             # Build only applications
+pnpm build:libs             # Build only libraries
 
-# Run tests with UI
-pnpm run test:ui
+# Testing
+pnpm test                   # Run all tests
+pnpm test:cov               # Run tests with coverage
+pnpm test:e2e               # Run end-to-end tests
 
-# Generate coverage report
-pnpm run test:coverage
+# Database
+pnpm prisma:generate        # Generate Prisma client
+pnpm prisma:migrate         # Run database migrations
+pnpm prisma:studio          # Open Prisma Studio
+
+# Linting and Formatting
+pnpm lint                   # Run ESLint
+pnpm lint:fix               # Fix ESLint issues
+pnpm format                 # Format code with Prettier
 ```
 
-## 🚀 Deployment
+### Project Structure
 
-The system is containerized using Docker and can be deployed using Docker Compose or Kubernetes.
+```
+venta-backend/
+├── apps/                   # Microservices
+│   ├── marketplace/       # Business marketplace services
+│   ├── location-services/ # Location and geospatial services
+│   └── communication/     # External integrations
+├── libs/                  # Shared libraries
+│   ├── eventtypes/        # Event schema definitions
+│   ├── nest/             # NestJS utilities and modules
+│   ├── apitypes/         # API type definitions
+│   └── utils/            # Utility functions
+├── docs/                  # Documentation
+├── prisma/               # Database schema and migrations
+├── docker/               # Docker configuration
+└── test/                 # Test utilities and setup
+```
 
-### Docker Deployment
+## Domain Events
+
+The system uses domain events for asynchronous communication between services:
+
+### Event Naming Convention
+
+Events follow the pattern: `domain.subdomain_action`
+
+```typescript
+// Examples
+'marketplace.vendor_onboarded'     // New vendor registration
+'location.vendor_location_updated' // Vendor location changes
+'marketplace.user_registered'      // New user registration
+```
+
+### Event Structure
+
+```typescript
+{
+  context: {
+    vendorId: "vendor-123",
+    ownerId: "user-456"
+  },
+  meta: {
+    eventId: "evt-789",
+    source: "vendor-management",
+    timestamp: "2024-12-01T10:00:00Z",
+    version: "1.0",
+    correlationId: "req-abc",
+    domain: "marketplace",
+    subdomain: "vendor"
+  },
+  data: {
+    // Event-specific data
+  }
+}
+```
+
+## API Documentation
+
+### gRPC Services
+
+The system exposes gRPC endpoints for inter-service communication:
+
+- **Vendor Management**: `localhost:5000`
+- **Location Services**: `localhost:5001`
+- **User Management**: `localhost:5002`
+
+### Health Checks
+
+Each service provides health check endpoints:
+
+```bash
+# Vendor Management
+curl http://localhost:3001/health
+
+# Location Services
+curl http://localhost:3002/health
+
+# User Management
+curl http://localhost:3003/health
+```
+
+## Monitoring
+
+### Logging
+
+The system uses structured logging with Loki integration:
+
+- **Centralized Logging**: All logs sent to Loki
+- **Structured Data**: Business context in all log entries
+- **Request Correlation**: Automatic request ID tracking
+
+### Metrics
+
+Prometheus metrics are collected for:
+
+- Service health and performance
+- Event processing rates
+- Database operation latency
+- External service integration status
+
+### Dashboards
+
+Grafana dashboards are available for:
+
+- Service overview and health
+- Request flow visualization
+- Error rate monitoring
+- Performance metrics
+
+## Testing
+
+### Unit Tests
+
+```bash
+# Run unit tests for all services
+pnpm test
+
+# Run tests for specific service
+pnpm test:vendor-management
+pnpm test:location-services
+```
+
+### Integration Tests
+
+```bash
+# Run integration tests
+pnpm test:integration
+
+# Run with database
+pnpm test:integration:db
+```
+
+### End-to-End Tests
+
+```bash
+# Run E2E tests
+pnpm test:e2e
+```
+
+## Deployment
+
+### Docker
 
 ```bash
 # Build all services
@@ -191,64 +315,70 @@ docker-compose up -d
 docker-compose logs -f
 ```
 
-## 📚 Documentation
+### Kubernetes
 
-### 🏗️ Architecture & Design
+Kubernetes manifests are provided for production deployment:
 
-- **[Architecture Overview](docs/architecture-overview.md)** - Complete system architecture and design patterns
-- **[Development Guide](docs/development-guide.md)** - Setup, workflows, and best practices
-- **[Domain-Driven Design Guide](docs/ddd-migration-guide.md)** - DDD architecture implementation guide
-- **[DDD Migration Status](docs/ddd-migration-status.md)** - Current migration progress and status
-- **[Full Architecture Vision](docs/full-architecture-vision.md)** - Complete end-state architecture with all features
+```bash
+# Apply manifests
+kubectl apply -f k8s/
 
-### 🔧 Development & Testing
+# Check deployment status
+kubectl get pods
+kubectl get services
+```
 
-- **[Testing Strategy](docs/testing-strategy.md)** - Comprehensive testing approach and guidelines
-- **[Naming Conventions](docs/naming-conventions.md)** - Code organization standards
+## Contributing
 
-### 🚀 Deployment & Operations
+### Development Workflow
 
-- **[Deployment Guide](docs/deployment-guide.md)** - Containerization and deployment procedures
-- **[Metrics Instrumentation](docs/metrics-instrumentation-guide.md)** - Monitoring and observability
-- **[Request ID Propagation](docs/request-id-propagation.md)** - Distributed tracing
-- **[Infrastructure Cost Analysis](docs/infrastructure-cost-analysis.md)** - Kubernetes deployment costs and scaling
+1. **Create Feature Branch**: `git checkout -b feature/your-feature`
+2. **Make Changes**: Follow DDD principles and coding standards
+3. **Add Tests**: Include unit and integration tests
+4. **Update Documentation**: Update relevant README files
+5. **Submit PR**: Create pull request with clear description
 
-### 📖 Quick Reference
+### Coding Standards
 
-- **Service Ports**: All configurable via environment variables
-- **Communication**: gRPC for inter-service, HTTP for external APIs, WebSocket for real-time
-- **Database**: PostgreSQL with Prisma ORM
-- **Caching**: Redis for session management and caching
-- **Events**: NATS for event-driven communication between services
-- **Search**: Algolia integration for full-text search
-- **Error Handling**: Unified `AppError` system with automatic domain context
-- **Event Management**: Centralized `eventtypes` library for all event definitions
+- Follow DDD principles and domain boundaries
+- Use TypeScript for type safety
+- Include structured logging with business context
+- Write comprehensive tests
+- Follow established naming conventions
 
-## 🎯 Key Features
+### DDD Guidelines
 
-### ✅ Completed (Phase 2)
+- **Domain Events**: Use business terminology in event names
+- **Service Boundaries**: Keep services focused on business domains
+- **Context Extraction**: Include relevant business context in events
+- **Type Safety**: Use compile-time validation for all operations
 
-- **Unified Error Handling**: Single `AppError` system with automatic domain context
-- **Centralized Event Management**: `eventtypes` library for all event definitions
-- **DDD-Aligned Structure**: Business domains reflected in code organization
-- **Enhanced Domain Services**: Business logic with proper error handling and logging
-- **Explicit Domain Configuration**: All applications configured with DDD domains
-- **Consolidated Error Codes**: Single source of truth for all error codes
+## Documentation
 
-### 🚧 In Progress (Phase 3)
+### Architecture Guides
 
-- **Enhanced Domain Events**: Business context in event schemas and naming
-- **Domain-Specific Event Validation**: Improved event validation and error handling
+- [DDD Migration Guide](docs/ddd-migration-guide.md) - Complete DDD implementation overview
+- [Event Pattern Enforcement](docs/event-pattern-enforcement.md) - Event validation patterns
+- [Error Handling Guide](docs/error-handling-guide.md) - Unified error handling patterns
+- [Logging Standards](docs/logging-standards.md) - Structured logging patterns
 
-## 🤝 Contributing
+### Service Documentation
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Ensure all tests pass
-6. Submit a pull request
+- [Vendor Management](apps/marketplace/vendor-management/README.md)
+- [Location Services](apps/location-services/geolocation/README.md)
+- [User Management](apps/marketplace/user-management/README.md)
 
-## 📄 License
+### Library Documentation
 
-This project is proprietary and confidential.
+- [EventTypes Library](libs/eventtypes/README.md)
+- [NestJS Library](libs/nest/README.md)
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+**Status**: ✅ **Production Ready**  
+**Last Updated**: December 2024  
+**Version**: 1.0.0
