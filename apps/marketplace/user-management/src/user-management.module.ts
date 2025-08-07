@@ -2,6 +2,7 @@ import { APP_NAMES, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { AuthModule } from './authentication/auth.module';
 import { CoreModule } from './core/core.module';
+import { LocationModule } from './location/location.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { VendorModule } from './vendors/vendor.module';
 
@@ -14,6 +15,7 @@ import { VendorModule } from './vendors/vendor.module';
 		}),
 		AuthModule,
 		CoreModule,
+		LocationModule,
 		SubscriptionModule,
 		VendorModule,
 	],

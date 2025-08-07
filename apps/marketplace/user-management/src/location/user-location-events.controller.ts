@@ -1,7 +1,7 @@
 import { BaseEvent } from '@app/apitypes';
 import { NatsQueueService } from '@app/nest/modules';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { UserService } from './user.service';
+import { UserService } from '../core/user.service';
 
 /**
  * NATS consumer for user location update events.
