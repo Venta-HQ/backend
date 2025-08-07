@@ -4,6 +4,7 @@
 
 - [Getting Started](#getting-started)
 - [Project Structure](#project-structure)
+- [DDD Architecture](#ddd-architecture)
 - [Development Workflow](#development-workflow)
 - [Coding Standards](#coding-standards)
 - [Testing Guidelines](#testing-guidelines)
@@ -70,665 +71,421 @@ pnpm run docker:up
 
 ## 📁 Project Structure
 
-### 🏗️ Monorepo Organization
+### 🏗️ DDD-Aligned Monorepo Organization
 
 ```
 venta-backend/
-├── 📁 apps/                    # Microservices
-│   ├── 🚪 gateway/            # API Gateway
-│   ├── 👤 user/               # User Service
-│   ├── 🏪 vendor/             # Vendor Service
-│   ├── 📍 location/           # Location Service
-│   ├── 🔌 websocket-gateway/  # WebSocket Gateway
-│   └── 🔍 algolia-sync/       # Algolia Sync Service
-├── 📚 libs/                   # Shared Libraries
-│   ├── 📝 apitypes/           # API Types and Schemas
-│   ├── 🪺 nest/               # NestJS Shared Modules
-│   ├── 📡 proto/              # Protocol Buffers
-│   └── 🛠️ utils/              # Utility Functions
-├── 📖 docs/                   # Documentation
-├── 🗄️ prisma/                 # Database Schema
-├── 🧪 test/                   # Test Utilities
-└── 🐳 docker/                 # Docker Configuration
+├── 📁 apps/                           # Microservices by Domain
+│   ├── 🏪 marketplace/                # Marketplace Domain
+│   │   ├── user-management/          # User accounts, profiles, preferences
+│   │   ├── vendor-management/        # Vendor profiles, business operations
+│   │   └── search-discovery/         # Search, recommendations, discovery
+│   ├── 📍 location-services/         # Location Services Domain
+│   │   ├── geolocation/             # Location tracking & storage
+│   │   └── real-time/               # Live location updates (WebSocket)
+│   ├── 💬 communication/            # Communication Domain
+│   │   └── webhooks/                # External integrations (Clerk, RevenueCat)
+│   └── 🔧 infrastructure/           # Infrastructure Domain
+│       ├── api-gateway/             # HTTP routing & auth
+│       └── file-management/         # File uploads & storage
+├── 📚 libs/                          # Shared Libraries
+│   ├── 📝 apitypes/                 # DDD-aligned API Types and Schemas
+│   ├── 🔄 eventtypes/               # Centralized Event Definitions
+│   ├── 🪺 nest/                     # NestJS Shared Modules & Error Handling
+│   ├── 📡 proto/                    # Protocol Buffers
+│   └── 🛠️ utils/                    # Utility Functions
+├── 📖 docs/                         # Documentation
+├── 🗄️ prisma/                       # Database Schema
+├── 🧪 test/                         # Test Utilities
+└── 🐳 docker/                       # Docker Configuration
 ```
 
 ### 🔧 Service Structure
 
-Each service follows a consistent structure:
+Each service follows a consistent DDD-aligned structure:
 
 ```
-apps/service-name/
-├── 📁 src/
-│   ├── 🚀 main.ts             # Application entry point
-│   ├── 📦 service.module.ts   # Root module
-│   ├── 🎮 controllers/        # HTTP/gRPC controllers
-│   ├── ⚙️ services/           # Business logic
-│   ├── 🛡️ guards/             # Authentication/authorization
-│   ├── 🔌 pipes/              # Request validation
-│   └── 📋 dto/                # Data transfer objects
-├── 🐳 Dockerfile              # Container configuration
-├── 📖 README.md               # Service-specific documentation
-└── ⚙️ tsconfig.app.json       # TypeScript configuration
+apps/domain/service-name/
+├── src/
+│   ├── subdomain-modules/           # Business subdomains
+│   │   ├── core/                   # Core domain logic
+│   │   ├── authentication/         # Auth-related functionality
+│   │   ├── subscriptions/          # Subscription management
+│   │   └── vendors/                # Vendor relationships
+│   ├── main.ts                     # Service entry point
+│   └── service-name.module.ts      # Root module
+├── Dockerfile                       # Container configuration
+├── README.md                        # Service documentation
+└── tsconfig.app.json               # TypeScript configuration
+```
+
+## 🏛️ DDD Architecture
+
+### **Domain Organization**
+
+The system is organized into four main business domains:
+
+#### **🏪 Marketplace Domain**
+- **User Management**: User accounts, profiles, preferences, authentication
+- **Vendor Management**: Vendor profiles, business operations, onboarding
+- **Search Discovery**: Search, recommendations, discovery, Algolia integration
+
+#### **📍 Location Services Domain**
+- **Geolocation**: Location tracking, storage, geospatial operations
+- **Real-time**: Live location updates, WebSocket communication
+
+#### **💬 Communication Domain**
+- **Webhooks**: External integrations (Clerk, RevenueCat), event processing
+
+#### **🔧 Infrastructure Domain**
+- **API Gateway**: HTTP routing, authentication, load balancing
+- **File Management**: File uploads, storage, media processing
+
+### **Shared Libraries**
+
+#### **📝 API Types (`@app/apitypes`)**
+- DDD-aligned type definitions and schemas
+- Domain-specific validation schemas
+- Protocol buffer types for gRPC communication
+
+#### **🔄 Event Types (`@app/eventtypes`)**
+- Centralized event definitions and schemas
+- Type-safe event emission and consumption
+- Domain-specific event mappings
+
+#### **🪺 NestJS Shared (`@app/nest`)**
+- Unified error handling with automatic domain context
+- Standardized modules (Prisma, Redis, Events, etc.)
+- Guards, interceptors, and filters
+- Bootstrap patterns for consistent service configuration
+
+### **Error Handling**
+
+The system uses a unified error handling approach:
+
+```typescript
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+
+@Injectable()
+export class YourService {
+  async getResource(id: string) {
+    const resource = await this.prisma.db.resource.findUnique({ where: { id } });
+
+    if (!resource) {
+      throw new AppError(
+        ErrorType.NOT_FOUND,
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Resource not found',
+        { resourceId: id }
+      );
+    }
+
+    return resource;
+  }
+}
+```
+
+### **Event System**
+
+Events are managed through the centralized `eventtypes` library:
+
+```typescript
+import { EventDataMap, AvailableEventSubjects } from '@app/eventtypes';
+
+@Injectable()
+export class YourService {
+  constructor(private eventService: EventService) {}
+
+  async createResource(data: CreateResourceData) {
+    const resource = await this.prisma.db.resource.create({ data });
+
+    // Type-safe event emission
+    await this.eventService.emit('resource.created', {
+      id: resource.id,
+      name: resource.name,
+      timestamp: new Date(),
+    });
+
+    return resource;
+  }
+}
 ```
 
 ## 🔄 Development Workflow
 
-### 1. **Feature Development**
+### **Feature Development**
 
-#### **Step 1: Create a feature branch**
+1. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-```bash
-git checkout -b feature/your-feature-name
-```
+2. **Follow DDD Principles**
+   - Organize code by business domains
+   - Use domain-specific error handling
+   - Emit type-safe events for cross-service communication
 
-#### **Step 2: Make your changes**
+3. **Write Tests**
+   ```bash
+   pnpm run test:run
+   pnpm run test:coverage
+   ```
 
-- ✅ Follow the coding standards
-- ✅ Write tests for new functionality
-- ✅ Update documentation as needed
+4. **Code Quality**
+   ```bash
+   pnpm run lint
+   pnpm run format
+   ```
 
-#### **Step 3: Run tests**
+5. **Documentation**
+   - Update relevant README files
+   - Document domain-specific changes
 
-```bash
-pnpm run test:run
-```
+### **Service Development**
 
-#### **Step 4: Check code quality**
+#### **Adding New Services**
 
-```bash
-pnpm run lint
-pnpm run format
-```
+1. **Create Service Structure**
+   ```bash
+   mkdir -p apps/domain/service-name/src
+   ```
 
-#### **Step 5: Commit your changes**
+2. **Configure Bootstrap**
+   ```typescript
+   // main.ts
+   await BootstrapService.bootstrapGrpcMicroservice({
+     app,
+     domain: 'domain-name', // Explicit DDD domain
+     appName: APP_NAMES.SERVICE_NAME,
+   });
+   ```
 
-```bash
-git add .
-git commit -m "feat: add your feature description"
-```
+3. **Add to Docker Compose**
+   ```yaml
+   services:
+     service-name:
+       build: ./apps/domain/service-name
+       environment:
+         - DOMAIN=domain-name
+   ```
 
-#### **Step 6: Push and create a pull request**
+#### **Adding New Domain Logic**
 
-```bash
-git push origin feature/your-feature-name
-```
+1. **Create Domain Service**
+   ```typescript
+   @Injectable()
+   export class DomainService {
+     constructor(
+       private prisma: PrismaService,
+       private eventService: EventService,
+       private logger: Logger,
+     ) {}
 
-### 2. **Running Services**
+     async performDomainOperation(data: DomainData) {
+       this.logger.log('Performing domain operation', { data });
+       
+       // Domain logic here
+       
+       // Emit events for cross-service communication
+       await this.eventService.emit('domain.event', eventData);
+     }
+   }
+   ```
 
-#### **Start all services with hot reload**
-
-```bash
-# Start infrastructure first
-pnpm run docker:up
-
-# Start all NestJS applications with hot reload
-pnpm run start:dev
-```
-
-**What this starts:**
-
-- ✅ Gateway (port 3000)
-- ✅ User service (port 3001)
-- ✅ Vendor service (port 3002)
-- ✅ Location service (port 3003)
-- ✅ WebSocket Gateway (port 3004)
-- ✅ Algolia Sync service (background)
-- ✅ **Hot reload** - file changes trigger automatic restarts
-
-#### **Start individual services (for debugging)**
-
-```bash
-# Start specific service
-nest start gateway --watch
-nest start user --watch
-nest start vendor --watch
-nest start location --watch
-nest start websocket-gateway --watch
-nest start algolia-sync --watch
-```
-
-#### **Production mode**
-
-```bash
-# Build all services
-pnpm run build
-
-# Start all services in production mode
-pnpm run start:prod
-```
-
-#### **Service Ports**
-
-| Service           | Port | Description             |
-| ----------------- | ---- | ----------------------- |
-| Gateway           | 3000 | API Gateway             |
-| User              | 3001 | User Management         |
-| Vendor            | 3002 | Vendor Management       |
-| Location          | 3003 | Location Services       |
-| WebSocket Gateway | 3004 | Real-time Communication |
-| Algolia Sync      | -    | Background Processing   |
-
-### 3. **Database Management**
-
-#### **Run migrations**
-
-```bash
-pnpm run prisma:migrate:dev
-```
-
-#### **Reset database**
-
-```bash
-pnpm run prisma:migrate:reset
-```
-
-#### **View database**
-
-```bash
-pnpm run prisma:studio
-```
-
-#### **Generate Prisma client**
-
-```bash
-pnpm run prisma:generate
-```
-
-## 📝 Coding Standards
-
-### TypeScript Guidelines
-
-#### **1. Use strict TypeScript configuration**
-
-- ✅ Enable all strict flags
-- ✅ Use explicit types when beneficial
-- ✅ Avoid `any` type
-
-#### **2. Follow naming conventions**
-
-```typescript
-// Interfaces and types
-interface UserProfile {}
-type UserStatus = 'active' | 'inactive';
-
-// Classes
-class UserService {}
-
-// Constants
-const API_ENDPOINTS = {};
-
-// Functions
-function getUserById(id: string): Promise<User> {}
-```
-
-#### **3. Use proper imports**
-
-```typescript
-// Prefer named imports
-import { Injectable } from '@nestjs/common';
-// Use absolute imports for shared libraries
-import { UserSchema } from '@venta/apitypes';
-// Use relative imports for local files
-import { UserService } from './user.service';
-```
-
-### NestJS Best Practices
-
-#### **1. Module Organization**
-
-```typescript
-@Module({
-	imports: [
-		// External modules first
-		ConfigModule,
-		// Internal modules
-		UserModule,
-		// Feature modules
-		AuthModule,
-	],
-	controllers: [UserController],
-	providers: [UserService],
-	exports: [UserService],
-})
-export class AppModule {}
-```
-
-#### **2. Service Design**
-
-```typescript
-@Injectable()
-export class UserService {
-	constructor(
-		private readonly prisma: PrismaService,
-		private readonly logger: LoggerService,
-	) {}
-
-	async handleClerkUserCreated(data: ClerkUserData): Promise<ClerkWebhookResponse> {
-		try {
-			// Handle Clerk user creation webhook
-			return { message: 'User created successfully' };
-		} catch (error) {
-			this.logger.error('Failed to handle Clerk user creation', error);
-			throw new AppError('USER_CREATION_FAILED');
-		}
-	}
-}
-```
-
-#### **3. Controller Design**
-
-```typescript
-@Controller('users')
-export class UserController {
-	constructor(private readonly userService: UserService) {}
-
-	@Post('webhook/clerk')
-	@UseGuards(SignedWebhookGuard)
-	async handleClerkWebhook(@Body() data: ClerkWebhookData): Promise<ClerkWebhookResponse> {
-		return this.userService.handleClerkUserCreated(data);
-	}
-}
-```
-
-### Error Handling
-
-#### **1. Use centralized error handling**
-
-```typescript
-// Define error types
-export class AppError extends Error {
-	constructor(
-		public readonly code: string,
-		public readonly statusCode: number = 500,
-	) {
-		super(code);
-	}
-}
-
-// Use in services
-throw new AppError('WEBHOOK_PROCESSING_FAILED', 500);
-```
-
-#### **2. Handle async errors properly**
-
-```typescript
-async function handleAsyncOperation() {
-	try {
-		return await someAsyncOperation();
-	} catch (error) {
-		this.logger.error('Operation failed', error);
-		throw new AppError('OPERATION_FAILED');
-	}
-}
-```
+2. **Add Error Handling**
+   ```typescript
+   try {
+     // Domain operation
+   } catch (error) {
+     throw new AppError(
+       ErrorType.INTERNAL,
+       ErrorCodes.DATABASE_ERROR,
+       'Operation failed',
+       { operation: 'domain_operation' }
+     );
+   }
+   ```
 
 ## 🧪 Testing Guidelines
 
-### 1. **Unit Tests**
+### **Unit Testing**
 
 ```typescript
-describe('UserService', () => {
-	let service: UserService;
-	let prisma: PrismaService;
+describe('DomainService', () => {
+  let service: DomainService;
+  let mockPrisma: jest.Mocked<PrismaService>;
+  let mockEventService: jest.Mocked<EventService>;
 
-	beforeEach(async () => {
-		const module = await Test.createTestingModule({
-			providers: [
-				UserService,
-				{
-					provide: PrismaService,
-					useValue: {
-						user: {
-							create: jest.fn(),
-							findUnique: jest.fn(),
-						},
-					},
-				},
-			],
-		}).compile();
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        DomainService,
+        {
+          provide: PrismaService,
+          useValue: createMockPrismaService(),
+        },
+        {
+          provide: EventService,
+          useValue: createMockEventService(),
+        },
+      ],
+    }).compile();
 
-		service = module.get<UserService>(UserService);
-		prisma = module.get<PrismaService>(PrismaService);
-	});
+    service = module.get<DomainService>(DomainService);
+    mockPrisma = module.get(PrismaService);
+    mockEventService = module.get(EventService);
+  });
 
-	it('should handle Clerk user creation', async () => {
-		const clerkData = { id: 'clerk_user_123' };
-		const expectedResponse = { message: 'User created successfully' };
-
-		const result = await service.handleClerkUserCreated(clerkData);
-
-		expect(result).toEqual(expectedResponse);
-	});
+  it('should perform domain operation successfully', async () => {
+    // Test implementation
+  });
 });
 ```
 
-### 2. **Integration Tests**
+### **Integration Testing**
 
 ```typescript
-describe('UserController (e2e)', () => {
-	let app: INestApplication;
+describe('DomainController (e2e)', () => {
+  let app: INestApplication;
 
-	beforeEach(async () => {
-		const moduleFixture = await Test.createTestingModule({
-			imports: [AppModule],
-		}).compile();
+  beforeEach(async () => {
+    const moduleFixture = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
 
-		app = moduleFixture.createNestApplication();
-		await app.init();
-	});
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
 
-	it('/users/webhook/clerk (POST)', () => {
-		return request(app.getHttpServer()).post('/users/webhook/clerk').send({ id: 'clerk_user_123' }).expect(200);
-	});
+  it('/domain (POST)', () => {
+    return request(app.getHttpServer())
+      .post('/domain')
+      .send(validData)
+      .expect(201);
+  });
 });
 ```
 
 ## 🔧 Common Tasks
 
-### Adding a New Service
+### **Adding New Event Types**
 
-#### **Step 1: Create service directory**
+1. **Define Event Schema**
+   ```typescript
+   // libs/eventtypes/src/domains/domain/domain.events.ts
+   export const domainEventSchemas = {
+     'domain.event': z.object({
+       id: z.string(),
+       data: z.object({
+         // event data structure
+       }),
+       timestamp: z.date(),
+     }),
+   } as const;
+   ```
 
-```bash
-mkdir apps/new-service
-cd apps/new-service
-```
+2. **Add to Unified Registry**
+   ```typescript
+   // libs/eventtypes/src/shared/unified-event-registry.ts
+   export const ALL_EVENT_SCHEMAS = {
+     ...domainEventSchemas,
+     // other schemas
+   } as const;
+   ```
 
-#### **Step 2: Initialize NestJS application**
+3. **Use in Services**
+   ```typescript
+   await this.eventService.emit('domain.event', {
+     id: 'event-id',
+     data: { /* event data */ },
+     timestamp: new Date(),
+   });
+   ```
 
-```bash
-nest new . --package-manager pnpm
-```
+### **Adding New Error Codes**
 
-#### **Step 3: Update nest-cli.json**
+1. **Add to Error Codes**
+   ```typescript
+   // libs/nest/errors/errorcodes.ts
+   export const ErrorCodes = {
+     // existing codes...
+     DOMAIN_SPECIFIC_ERROR: 'DOMAIN_SPECIFIC_ERROR',
+   } as const;
+   ```
 
-```json
-{
-	"new-service": {
-		"type": "application",
-		"root": "apps/new-service",
-		"entryFile": "src/main",
-		"sourceRoot": ".",
-		"compilerOptions": {
-			"tsConfigPath": "apps/new-service/tsconfig.app.json"
-		}
-	}
-}
-```
-
-#### **Step 4: Add service to package.json scripts**
-
-```json
-{
-	"scripts": {
-		"start:dev:new-service": "nest start new-service --watch"
-	}
-}
-```
-
-### Adding a New Library
-
-#### **Step 1: Create library directory**
-
-```bash
-mkdir libs/new-library
-cd libs/new-library
-```
-
-#### **Step 2: Initialize library**
-
-```bash
-nest generate library new-library
-```
-
-#### **Step 3: Update nest-cli.json**
-
-```json
-{
-	"new-library": {
-		"type": "library",
-		"root": "libs/new-library",
-		"entryFile": "index",
-		"sourceRoot": "libs/new-library/src",
-		"compilerOptions": {
-			"tsConfigPath": "libs/new-library/tsconfig.lib.json"
-		}
-	}
-}
-```
-
-### Database Schema Changes
-
-#### **Step 1: Create migration**
-
-```bash
-pnpm run prisma:migrate:dev --name add_new_table
-```
-
-#### **Step 2: Update Prisma client**
-
-```bash
-pnpm run prisma:generate
-```
-
-#### **Step 3: Update API types if needed**
-
-```bash
-# Update schemas in libs/apitypes
-pnpm run build
-```
-
-### Protocol Buffer Changes
-
-#### **Step 1: Update .proto files**
-
-```protobuf
-// libs/proto/src/definitions/service.proto
-service NewService {
-  rpc NewMethod(NewRequest) returns (NewResponse);
-}
-```
-
-#### **Step 2: Regenerate TypeScript code**
-
-```bash
-pnpm run build-proto
-```
-
-#### **Step 3: Update service implementations**
-
-```typescript
-// Implement new gRPC methods
-```
+2. **Use in Services**
+   ```typescript
+   throw new AppError(
+     ErrorType.VALIDATION,
+     ErrorCodes.DOMAIN_SPECIFIC_ERROR,
+     'Domain-specific error message',
+     { context: 'additional_info' }
+   );
+   ```
 
 ## 🐛 Debugging
 
-### Local Development
+### **Error Investigation**
 
-#### **1. Enable debug logging**
+1. **Check Domain Context**
+   - All errors automatically include domain context
+   - Look for `domain` field in error logs
 
-```bash
-DEBUG=* pnpm run start:dev gateway
-```
+2. **Event Tracing**
+   - Use correlation IDs for request tracing
+   - Check event emission and consumption logs
 
-#### **2. Use VS Code debugging**
+3. **Service Communication**
+   - Verify gRPC service connections
+   - Check NATS event delivery
 
-```json
-// .vscode/launch.json
-{
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Debug Gateway",
-			"type": "node",
-			"request": "launch",
-			"program": "${workspaceFolder}/apps/gateway/src/main.ts",
-			"runtimeArgs": ["-r", "ts-node/register"],
-			"env": {
-				"NODE_ENV": "development"
-			}
-		}
-	]
-}
-```
-
-### Docker Debugging
-
-#### **1. View logs**
+### **Log Analysis**
 
 ```bash
-pnpm run docker:logs
-```
+# View service logs
+docker-compose logs -f service-name
 
-#### **2. Access container shell**
+# Filter by domain
+docker-compose logs -f service-name | grep "domain=marketplace"
 
-```bash
-docker exec -it venta-backend-gateway-1 sh
-```
-
-#### **3. Inspect container**
-
-```bash
-docker inspect venta-backend-gateway-1
+# Check error patterns
+docker-compose logs -f service-name | grep "ERROR"
 ```
 
 ## ⚡ Performance Optimization
 
-### Code Optimization
+### **Domain-Specific Optimization**
 
-#### **1. Use async/await properly**
+- **Marketplace Services**: Optimize for user activity patterns
+- **Location Services**: Optimize for real-time location updates
+- **Communication Services**: Optimize for webhook processing
+- **Infrastructure Services**: Optimize for load balancing and routing
 
-```typescript
-// ✅ Good - Parallel execution
-const users = await Promise.all(
-  userIds.map(id => userService.findById(id))
-);
+### **Resource Allocation**
 
-// ❌ Avoid - Sequential execution
-const users = [];
-for (const id of userIds) {
-  users.push(await userService.findById(id));
-}
-```
-
-#### **2. Implement caching**
-
-```typescript
-@Injectable()
-export class UserService {
-	constructor(
-		private readonly redis: RedisService,
-		private readonly prisma: PrismaService,
-	) {}
-
-	async findById(id: string): Promise<User> {
-		const cached = await this.redis.get(`user:${id}`);
-		if (cached) {
-			return JSON.parse(cached);
-		}
-
-		const user = await this.prisma.user.findUnique({ where: { id } });
-		await this.redis.setex(`user:${id}`, 3600, JSON.stringify(user));
-		return user;
-	}
-}
-```
-
-#### **3. Use database indexes**
-
-```sql
--- Add indexes for frequently queried columns
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_created_at ON users(created_at);
-```
+- **CPU-Intensive**: Location services (geospatial calculations)
+- **Memory-Intensive**: Real-time services (WebSocket connections)
+- **I/O-Intensive**: File management and database operations
 
 ## 🔧 Troubleshooting
 
-### Common Issues
+### **Common Issues**
 
-#### **1. Port conflicts**
+1. **Domain Configuration Missing**
+   - Ensure `domain` is set in bootstrap configuration
+   - Check environment variables for domain context
 
-```bash
-# Check what's using a port
-lsof -i :5000
+2. **Event Type Errors**
+   - Verify event schemas are properly defined
+   - Check unified event registry imports
 
-# Kill process
-kill -9 <PID>
-```
+3. **Error Context Missing**
+   - Ensure `AppExceptionFilter` is properly configured
+   - Check `ConfigService` for domain configuration
 
-#### **2. Database connection issues**
+### **Getting Help**
 
-```bash
-# Check database status
-docker ps | grep postgres
-
-# Restart database
-docker-compose restart postgres
-```
-
-#### **3. Build errors**
-
-```bash
-# Clean and rebuild
-pnpm run clean
-pnpm install
-pnpm run build
-```
-
-#### **4. Test failures**
-
-```bash
-# Run tests with verbose output
-pnpm run test:run -- --verbose
-
-# Run specific test file
-pnpm run test:run -- user.service.spec.ts
-```
-
-### Getting Help
-
-#### **1. Check existing documentation**
-
-- ✅ README files in each service
-- ✅ API documentation
-- ✅ Architecture overview
-
-#### **2. Review logs**
-
-- ✅ Application logs
-- ✅ Docker logs
-- ✅ Test output
-
-#### **3. Search codebase**
-
-```bash
-# Search for specific patterns
-grep -r "pattern" apps/ libs/
-
-# Find files by name
-find . -name "*.ts" -type f
-```
-
-## 📊 Development Metrics
-
-### Code Quality Standards
-
-| Metric            | Target     | Tool       |
-| ----------------- | ---------- | ---------- |
-| **Test Coverage** | >80%       | Vitest     |
-| **Linting**       | 0 errors   | ESLint     |
-| **Type Safety**   | 0 errors   | TypeScript |
-| **Build Time**    | <2 minutes | pnpm build |
-
-### Performance Benchmarks
-
-| Metric             | Target      | Measurement      |
-| ------------------ | ----------- | ---------------- |
-| **Startup Time**   | <30 seconds | Service startup  |
-| **Test Execution** | <1 minute   | Full test suite  |
-| **Build Time**     | <2 minutes  | Production build |
-| **Memory Usage**   | <512MB      | Per service      |
-
----
-
-**This development guide should help you get started and maintain high code quality throughout the project.**
+- Check the [DDD Migration Guide](./ddd-migration-guide.md)
+- Review [DDD Migration Status](./ddd-migration-status.md)
+- Consult service-specific README files
+- Check error logs for domain context information

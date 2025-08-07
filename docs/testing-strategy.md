@@ -5,6 +5,7 @@
 - [Overview](#overview)
 - [Testing Philosophy](#testing-philosophy)
 - [Testing Levels](#testing-levels)
+- [DDD Testing Patterns](#ddd-testing-patterns)
 - [Testing Tools and Configuration](#testing-tools-and-configuration)
 - [Testing Best Practices](#testing-best-practices)
 - [Continuous Integration](#continuous-integration)
@@ -12,7 +13,7 @@
 
 ## 🎯 Overview
 
-This document outlines the **comprehensive testing strategy** for the Venta Backend project. A robust testing approach ensures code quality, reliability, and maintainability across all services.
+This document outlines the **comprehensive testing strategy** for the Venta Backend project. A robust testing approach ensures code quality, reliability, and maintainability across all DDD-aligned services.
 
 ## 🧠 Testing Philosophy
 
@@ -20,6 +21,7 @@ This document outlines the **comprehensive testing strategy** for the Venta Back
 
 | Principle | Description | Benefit |
 |-----------|-------------|---------|
+| **Domain-Driven Testing** | Tests align with business domains and use cases | Ensures business value and domain logic correctness |
 | **Test-Driven Development (TDD)** | Write tests before implementation when possible | Ensures code is designed for testability |
 | **Comprehensive Coverage** | Aim for high test coverage across all critical paths | Reduces bugs and improves reliability |
 | **Fast Feedback** | Tests should run quickly to provide immediate feedback | Enables rapid development cycles |
@@ -48,12 +50,13 @@ This document outlines the **comprehensive testing strategy** for the Venta Back
 
 **🛠️ Tools**: Vitest, Jest
 
-#### **Example: UserService Unit Test**
+#### **Example: Domain Service Unit Test**
 
 ```typescript
 describe('UserService', () => {
   let service: UserService;
-  let prisma: PrismaService;
+  let mockPrisma: jest.Mocked<PrismaService>;
+  let mockEventService: jest.Mocked<EventService>;
 
   beforeEach(async () => {
     const module = await Test.createTestingModule({
@@ -61,42 +64,53 @@ describe('UserService', () => {
         UserService,
         {
           provide: PrismaService,
-          useValue: {
-            user: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-          },
+          useValue: createMockPrismaService(),
+        },
+        {
+          provide: EventService,
+          useValue: createMockEventService(),
         },
       ],
     }).compile();
 
     service = module.get<UserService>(UserService);
-    prisma = module.get<PrismaService>(PrismaService);
+    mockPrisma = module.get(PrismaService);
+    mockEventService = module.get(EventService);
   });
 
-  describe('createUser', () => {
-    it('should handle Clerk user creation successfully', async () => {
-      const clerkData = { id: 'clerk_user_123' };
-      const expectedResponse = { message: 'User created successfully' };
+  describe('registerUser', () => {
+    it('should register user successfully', async () => {
+      const registrationData = {
+        clerkId: 'clerk_123',
+        source: 'web' as const,
+      };
 
-      const result = await service.handleClerkUserCreated(clerkData);
+      const mockUser = {
+        id: 'user_123',
+        clerkId: 'clerk_123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
-      expect(result).toEqual(expectedResponse);
+      mockPrisma.db.user.create.mockResolvedValue(mockUser);
+
+      const result = await service.registerUser(registrationData);
+
+      expect(result).toEqual(mockUser);
+      expect(mockPrisma.db.user.create).toHaveBeenCalledWith({
+        data: { clerkId: 'clerk_123' },
+      });
     });
 
-    it('should throw error when webhook processing fails', async () => {
-      const clerkData = { id: 'clerk_user_123' };
+    it('should throw AppError on database failure', async () => {
+      const registrationData = {
+        clerkId: 'clerk_123',
+        source: 'web' as const,
+      };
 
-      jest.spyOn(service, 'handleClerkUserCreated').mockRejectedValue(
-        new Error('Webhook processing failed')
-      );
+      mockPrisma.db.user.create.mockRejectedValue(new Error('Database error'));
 
-      await expect(service.handleClerkUserCreated(clerkData)).rejects.toThrow(
-        'Webhook processing failed'
-      );
+      await expect(service.registerUser(registrationData)).rejects.toThrow(AppError);
     });
   });
 });
@@ -106,164 +120,258 @@ describe('UserService', () => {
 
 **🎯 Purpose**: Test interactions between components and external dependencies.
 
-**📈 Coverage**: Database operations, external API calls, service interactions.
+**📈 Coverage**: Critical integration paths and domain boundaries.
 
-**🛠️ Tools**: Vitest, TestContainers, Prisma
+**🛠️ Tools**: Vitest, TestContainers
 
-#### **Example: UserController Integration Test**
+#### **Example: Domain Integration Test**
 
 ```typescript
-describe('UserController (Integration)', () => {
+describe('UserManagement Integration', () => {
   let app: INestApplication;
   let prisma: PrismaService;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [UserManagementModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     prisma = moduleFixture.get<PrismaService>(PrismaService);
-    
     await app.init();
   });
 
-  beforeEach(async () => {
-    // Clean database before each test
-    await prisma.user.deleteMany();
-  });
-
-  afterAll(async () => {
+  afterEach(async () => {
+    await prisma.db.user.deleteMany();
     await app.close();
   });
 
-  describe('POST /users/webhook/clerk', () => {
-    it('should handle Clerk webhook', async () => {
-      const clerkData = { id: 'clerk_user_123' };
+  it('should create user and emit event', async () => {
+    const userData = {
+      clerkId: 'clerk_123',
+      source: 'web' as const,
+    };
 
-      const response = await request(app.getHttpServer())
-        .post('/users/webhook/clerk')
-        .send(clerkData)
-        .expect(200);
+    const response = await request(app.getHttpServer())
+      .post('/users/register')
+      .send(userData)
+      .expect(201);
 
-      expect(response.body).toMatchObject({
-        message: 'User created successfully',
-      });
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.clerkId).toBe('clerk_123');
+
+    // Verify user was created in database
+    const user = await prisma.db.user.findUnique({
+      where: { id: response.body.id },
     });
-
-    it('should return 400 for invalid webhook data', async () => {
-      const invalidData = { id: '' };
-
-      await request(app.getHttpServer())
-        .post('/users/webhook/clerk')
-        .send(invalidData)
-        .expect(400);
-    });
+    expect(user).toBeTruthy();
   });
 });
 ```
 
 ### **3. End-to-End Tests**
 
-**🎯 Purpose**: Test complete user workflows and system integration.
+**🎯 Purpose**: Test complete user workflows across multiple services.
 
-**📈 Coverage**: Critical user journeys, cross-service communication.
+**📈 Coverage**: Critical user journeys and cross-domain interactions.
 
-**🛠️ Tools**: Playwright, Cypress, Supertest
+**🛠️ Tools**: Playwright, Cypress
 
-#### **Example: Complete User Registration Flow**
+#### **Example: Cross-Domain E2E Test**
 
 ```typescript
-describe('User Registration Flow (E2E)', () => {
-  let app: INestApplication;
+describe('Vendor Onboarding Flow', () => {
+  it('should complete vendor onboarding workflow', async () => {
+    // 1. User registration
+    const user = await registerUser({
+      clerkId: 'clerk_123',
+      source: 'web',
+    });
 
-  beforeAll(async () => {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+    // 2. Vendor onboarding
+    const vendor = await onboardVendor({
+      name: 'Test Vendor',
+      ownerId: user.id,
+      location: { lat: 40.7128, long: -74.0060 },
+    });
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
+    // 3. Verify location tracking
+    const location = await getVendorLocation(vendor.id);
+    expect(location).toEqual({ lat: 40.7128, long: -74.0060 });
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  it('should handle webhook flow successfully', async () => {
-    // 1. Handle Clerk user creation webhook
-    const clerkResponse = await request(app.getHttpServer())
-      .post('/users/webhook/clerk')
-      .send({
-        id: 'clerk_user_123',
-      })
-      .expect(200);
-
-    expect(clerkResponse.body.message).toBe('User created successfully');
-
-    // 2. Handle RevenueCat subscription webhook
-    const subscriptionResponse = await request(app.getHttpServer())
-      .post('/users/webhook/revenuecat')
-      .send({
-        clerkUserId: 'clerk_user_123',
-        providerId: 'provider_123',
-      })
-      .expect(200);
-
-    expect(subscriptionResponse.body.message).toBe('Subscription created successfully');
+    // 4. Verify search indexing
+    const searchResults = await searchVendors({ lat: 40.7128, long: -74.0060, radius: 1000 });
+    expect(searchResults).toContainEqual(expect.objectContaining({ id: vendor.id }));
   });
 });
 ```
 
-### **4. Performance Tests**
+## 🏛️ DDD Testing Patterns
 
-**🎯 Purpose**: Ensure system performance under load.
+### **Domain Service Testing**
 
-**📈 Coverage**: Response times, throughput, resource usage.
+```typescript
+describe('VendorService', () => {
+  let service: VendorService;
+  let mockPrisma: jest.Mocked<PrismaService>;
+  let mockEventService: jest.Mocked<EventService>;
 
-**🛠️ Tools**: Artillery, k6, Apache Bench
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        VendorService,
+        {
+          provide: PrismaService,
+          useValue: createMockPrismaService(),
+        },
+        {
+          provide: EventService,
+          useValue: createMockEventService(),
+        },
+      ],
+    }).compile();
 
-#### **Example: Load Test for User Creation**
+    service = module.get<VendorService>(VendorService);
+    mockPrisma = module.get(PrismaService);
+    mockEventService = module.get(EventService);
+  });
 
-```javascript
-// test/load/user-creation.yml
-config:
-  target: 'http://localhost:5002'
-  phases:
-    - duration: 60
-      arrivalRate: 10
-      name: "Warm up"
-    - duration: 300
-      arrivalRate: 50
-      name: "Sustained load"
-    - duration: 60
-      arrivalRate: 100
-      name: "Peak load"
+  describe('onboardVendor', () => {
+    it('should onboard vendor and emit event', async () => {
+      const onboardingData = {
+        name: 'Test Vendor',
+        ownerId: 'user_123',
+      };
 
-scenarios:
-  - name: "Create users"
-    weight: 100
-    flow:
-      - post:
-          url: "/users"
-          json:
-            name: "{{ $randomString() }}"
-            email: "{{ $randomEmail() }}"
-          capture:
-            - json: "$.id"
-              as: "userId"
-      - get:
-          url: "/users/{{ userId }}"
+      const mockVendor = {
+        id: 'vendor_123',
+        name: 'Test Vendor',
+        ownerId: 'user_123',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockPrisma.db.vendor.create.mockResolvedValue(mockVendor);
+
+      const result = await service.onboardVendor(onboardingData);
+
+      expect(result).toBe('vendor_123');
+      expect(mockPrisma.db.vendor.create).toHaveBeenCalledWith({
+        data: {
+          name: 'Test Vendor',
+          ownerId: 'user_123',
+        },
+      });
+      expect(mockEventService.emit).toHaveBeenCalledWith('vendor.created', {
+        id: 'vendor_123',
+        name: 'Test Vendor',
+        ownerId: 'user_123',
+        timestamp: expect.any(Date),
+      });
+    });
+
+    it('should throw AppError on database failure', async () => {
+      const onboardingData = {
+        name: 'Test Vendor',
+        ownerId: 'user_123',
+      };
+
+      mockPrisma.db.vendor.create.mockRejectedValue(new Error('Database error'));
+
+      await expect(service.onboardVendor(onboardingData)).rejects.toThrow(AppError);
+    });
+  });
+});
 ```
 
-## ⚙️ Testing Tools and Configuration
+### **Event Testing**
 
-### **1. Test Runner Setup**
+```typescript
+describe('Event Handling', () => {
+  let controller: VendorEventsController;
+  let mockSearchService: jest.Mocked<SearchService>;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        VendorEventsController,
+        {
+          provide: SearchService,
+          useValue: createMockSearchService(),
+        },
+      ],
+    }).compile();
+
+    controller = module.get<VendorEventsController>(VendorEventsController);
+    mockSearchService = module.get(SearchService);
+  });
+
+  it('should handle vendor.created event', async () => {
+    const eventData = {
+      id: 'vendor_123',
+      name: 'Test Vendor',
+      ownerId: 'user_123',
+      timestamp: new Date(),
+    };
+
+    await controller.handleVendorCreated(eventData);
+
+    expect(mockSearchService.indexVendor).toHaveBeenCalledWith('vendor_123');
+  });
+});
+```
+
+### **Error Handling Testing**
+
+```typescript
+describe('Error Handling', () => {
+  let service: LocationService;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [LocationService],
+    }).compile();
+
+    service = module.get<LocationService>(LocationService);
+  });
+
+  it('should throw validation error for invalid coordinates', async () => {
+    const invalidData = {
+      entityId: 'vendor_123',
+      lat: 91, // Invalid latitude
+      long: 0,
+    };
+
+    await expect(service.updateVendorLocation(invalidData)).rejects.toThrow(AppError);
+    await expect(service.updateVendorLocation(invalidData)).rejects.toMatchObject({
+      type: ErrorType.VALIDATION,
+      code: ErrorCodes.LOCATION_INVALID_LATITUDE,
+    });
+  });
+
+  it('should throw not found error for non-existent vendor', async () => {
+    const data = {
+      entityId: 'non-existent',
+      lat: 40.7128,
+      long: -74.0060,
+    };
+
+    await expect(service.updateVendorLocation(data)).rejects.toThrow(AppError);
+    await expect(service.updateVendorLocation(data)).rejects.toMatchObject({
+      type: ErrorType.NOT_FOUND,
+      code: ErrorCodes.VENDOR_NOT_FOUND,
+    });
+  });
+});
+```
+
+## 🛠️ Testing Tools and Configuration
+
+### **Vitest Configuration**
 
 ```typescript
 // vitest.config.ts
 import { defineConfig } from 'vitest/config';
-import { resolve } from 'path';
 
 export default defineConfig({
   test: {
@@ -281,400 +389,333 @@ export default defineConfig({
       ],
     },
   },
-  resolve: {
-    alias: {
-      '@venta': resolve(__dirname, './libs'),
-    },
-  },
 });
 ```
 
-### **2. Test Utilities**
-
-```typescript
-// test/helpers/test-utils.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '@venta/nest/modules/prisma';
-
-export class TestUtils {
-  static async createTestingModule(providers: any[]): Promise<TestingModule> {
-    return Test.createTestingModule({
-      providers: [
-        ...providers,
-        {
-          provide: PrismaService,
-          useValue: {
-            user: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-            vendor: {
-              create: jest.fn(),
-              findUnique: jest.fn(),
-              update: jest.fn(),
-              delete: jest.fn(),
-            },
-          },
-        },
-      ],
-    }).compile();
-  }
-
-  static createMockUser(overrides = {}) {
-    return {
-      id: 'user-1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...overrides,
-    };
-  }
-
-  static createMockVendor(overrides = {}) {
-    return {
-      id: 'vendor-1',
-      name: 'Test Vendor',
-      email: 'vendor@example.com',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      ...overrides,
-    };
-  }
-}
-```
-
-### **3. Database Testing**
+### **Test Setup**
 
 ```typescript
 // test/setup.ts
-import { PrismaClient } from '@prisma/client';
+import { Test } from '@nestjs/testing';
+import { PrismaService } from '@app/nest/modules/data/prisma';
+import { EventService } from '@app/nest/modules/messaging/events';
 
-const prisma = new PrismaClient();
+export function createMockPrismaService() {
+  return {
+    db: {
+      user: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+      vendor: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      },
+    },
+  };
+}
 
-beforeAll(async () => {
-  // Setup test database
-  await prisma.$connect();
-});
-
-beforeEach(async () => {
-  // Clean database before each test
-  await prisma.user.deleteMany();
-  await prisma.vendor.deleteMany();
-  // Add other cleanup as needed
-});
-
-afterAll(async () => {
-  await prisma.$disconnect();
-});
-```
-
-## 🎯 Testing Best Practices
-
-### **1. Test Organization**
-
-```typescript
-// Organize tests by feature/domain
-describe('User Management', () => {
-  describe('UserService', () => {
-    describe('createUser', () => {
-      it('should create user with valid data', () => {});
-      it('should throw error for duplicate email', () => {});
-      it('should validate required fields', () => {});
-    });
-
-    describe('updateUser', () => {
-      it('should update user successfully', () => {});
-      it('should throw error for non-existent user', () => {});
-    });
-  });
-
-  describe('UserController', () => {
-    describe('POST /users', () => {
-      it('should create user via API', () => {});
-      it('should return 400 for invalid data', () => {});
-    });
-  });
-});
-```
-
-### **2. Test Data Management**
-
-```typescript
-// Use factories for test data
-export class UserFactory {
-  static create(overrides = {}) {
-    return {
-      id: faker.string.uuid(),
-      name: faker.person.fullName(),
-      email: faker.internet.email(),
-      createdAt: faker.date.past(),
-      updatedAt: faker.date.recent(),
-      ...overrides,
-    };
-  }
-
-  static createMany(count: number, overrides = {}) {
-    return Array.from({ length: count }, () => this.create(overrides));
-  }
+export function createMockEventService() {
+  return {
+    emit: jest.fn(),
+    subscribe: jest.fn(),
+  };
 }
 ```
 
-### **3. Mocking Strategies**
+### **Test Utilities**
 
 ```typescript
-// Mock external dependencies
-describe('UserService with external dependencies', () => {
-  let service: UserService;
-  let emailService: EmailService;
-  let notificationService: NotificationService;
+// test/helpers/test-utils.ts
+import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
+
+export function expectAppError(error: unknown, type: ErrorType, code: string) {
+  expect(error).toBeInstanceOf(AppError);
+  expect((error as AppError).type).toBe(type);
+  expect((error as AppError).code).toBe(code);
+}
+
+export function createTestUser(overrides = {}) {
+  return {
+    id: 'user_123',
+    clerkId: 'clerk_123',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
+export function createTestVendor(overrides = {}) {
+  return {
+    id: 'vendor_123',
+    name: 'Test Vendor',
+    ownerId: 'user_123',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+```
+
+## ✅ Testing Best Practices
+
+### **1. Test Structure**
+
+```typescript
+describe('DomainService', () => {
+  // Arrange
+  let service: DomainService;
+  let dependencies: MockDependencies;
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      providers: [
-        UserService,
-        {
-          provide: EmailService,
-          useValue: {
-            sendWelcomeEmail: jest.fn(),
-            sendVerificationEmail: jest.fn(),
-          },
-        },
-        {
-          provide: NotificationService,
-          useValue: {
-            sendPushNotification: jest.fn(),
-          },
-        },
-      ],
-    }).compile();
-
-    service = module.get<UserService>(UserService);
-    emailService = module.get<EmailService>(EmailService);
-    notificationService = module.get<NotificationService>(NotificationService);
+    // Setup
   });
 
-  it('should send welcome email when user is created', async () => {
-    const userData = { name: 'John Doe', email: 'john@example.com' };
-    const createdUser = { id: '1', ...userData };
+  afterEach(async () => {
+    // Cleanup
+  });
 
-    jest.spyOn(emailService, 'sendWelcomeEmail').mockResolvedValue(undefined);
+  describe('methodName', () => {
+    it('should do something when condition', async () => {
+      // Arrange
+      const input = createTestInput();
+      const expectedOutput = createExpectedOutput();
 
-    await service.createUser(userData);
+      // Act
+      const result = await service.methodName(input);
 
-    expect(emailService.sendWelcomeEmail).toHaveBeenCalledWith(createdUser);
+      // Assert
+      expect(result).toEqual(expectedOutput);
+    });
+
+    it('should throw error when invalid input', async () => {
+      // Arrange
+      const invalidInput = createInvalidInput();
+
+      // Act & Assert
+      await expect(service.methodName(invalidInput)).rejects.toThrow(AppError);
+    });
   });
 });
 ```
 
-### **4. Error Testing**
+### **2. Mock Management**
 
 ```typescript
-// Test error scenarios
-describe('Error handling', () => {
-  it('should handle database connection errors', async () => {
-    jest.spyOn(prisma.user, 'create').mockRejectedValue(
-      new Error('Connection failed')
-    );
+// Use consistent mock patterns
+const mockPrisma = {
+  db: {
+    user: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+  },
+};
 
-    await expect(service.createUser(userData)).rejects.toThrow(
-      'Database connection failed'
-    );
+// Reset mocks between tests
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+// Verify mock calls
+expect(mockPrisma.db.user.create).toHaveBeenCalledWith({
+  data: expect.objectContaining({
+    clerkId: 'clerk_123',
+  }),
+});
+```
+
+### **3. Error Testing**
+
+```typescript
+// Test specific error types and codes
+it('should throw validation error for invalid email', async () => {
+  const invalidData = { email: 'invalid-email' };
+
+  await expect(service.createUser(invalidData)).rejects.toMatchObject({
+    type: ErrorType.VALIDATION,
+    code: ErrorCodes.VALIDATION_ERROR,
+    message: expect.stringContaining('email'),
   });
+});
 
-  it('should handle validation errors', async () => {
-    const invalidData = { name: '', email: 'invalid-email' };
+// Test error context
+it('should include context in error', async () => {
+  const data = { clerkId: 'clerk_123' };
 
-    await expect(service.createUser(invalidData)).rejects.toThrow(
-      'Validation failed'
-    );
+  try {
+    await service.createUser(data);
+  } catch (error) {
+    expect(error.context).toMatchObject({
+      clerkId: 'clerk_123',
+      operation: 'create_user',
+    });
+  }
+});
+```
+
+### **4. Integration Testing**
+
+```typescript
+// Test domain boundaries
+describe('User-Vendor Integration', () => {
+  it('should create user and vendor relationship', async () => {
+    const user = await userService.createUser(userData);
+    const vendor = await vendorService.createVendor({
+      ...vendorData,
+      ownerId: user.id,
+    });
+
+    expect(vendor.ownerId).toBe(user.id);
+  });
+});
+
+// Test event-driven communication
+describe('Event-Driven Integration', () => {
+  it('should emit event when user is created', async () => {
+    const user = await userService.createUser(userData);
+
+    expect(mockEventService.emit).toHaveBeenCalledWith('user.created', {
+      id: user.id,
+      clerkId: user.clerkId,
+      timestamp: expect.any(Date),
+    });
   });
 });
 ```
 
 ## 🔄 Continuous Integration
 
-### **1. Test Pipeline**
+### **GitHub Actions Workflow**
 
 ```yaml
-# .github/workflows/test.yml
-name: Tests
+name: Test
 
 on: [push, pull_request]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: venta_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+
+    strategy:
+      matrix:
+        node-version: [18.x]
 
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-      
-      - name: Install dependencies
-        run: pnpm install
-      
-      - name: Run tests
-        run: pnpm run test:run
-        env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/venta_test
-          REDIS_URL: redis://localhost:6379
-      
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage/lcov.info
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Run linting
+      run: pnpm run lint
+
+    - name: Run unit tests
+      run: pnpm run test:unit
+
+    - name: Run integration tests
+      run: pnpm run test:integration
+
+    - name: Generate coverage report
+      run: pnpm run test:coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
 ```
 
-### **2. Test Commands**
+### **Test Scripts**
 
 ```json
-// package.json
 {
   "scripts": {
     "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui",
+    "test:unit": "vitest --config vitest.unit.config.ts",
+    "test:integration": "vitest --config vitest.integration.config.ts",
+    "test:e2e": "vitest --config vitest.e2e.config.ts",
+    "test:coverage": "vitest --coverage",
     "test:watch": "vitest --watch",
-    "test:e2e": "playwright test",
-    "test:load": "artillery run test/load/gateway-load-test.yml"
+    "test:run": "vitest run"
   }
 }
 ```
 
 ## 🎯 Quality Gates
 
-### **1. Coverage Requirements**
+### **Coverage Requirements**
 
 | Test Type | Minimum Coverage | Target Coverage |
 |-----------|------------------|-----------------|
-| **Unit Tests** | 80% | 90% |
-| **Integration Tests** | Critical paths covered | All service boundaries |
-| **E2E Tests** | Core user journeys covered | All major workflows |
+| **Unit Tests** | 70% | 80% |
+| **Integration Tests** | 50% | 70% |
+| **E2E Tests** | 20% | 40% |
 
-### **2. Performance Benchmarks**
+### **Performance Requirements**
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| **Response Time** | < 200ms for 95th percentile | API response times |
-| **Throughput** | > 1000 requests/second | Requests per second |
-| **Error Rate** | < 1% under normal load | Error percentage |
+| Metric | Requirement |
+|--------|-------------|
+| **Test Execution Time** | < 2 minutes for unit tests |
+| **Integration Test Time** | < 5 minutes |
+| **E2E Test Time** | < 10 minutes |
 
-### **3. Code Quality**
-
-| Metric | Requirement | Tool |
-|--------|-------------|------|
-| **Linting** | All linting rules must pass | ESLint |
-| **Type Safety** | No TypeScript errors | TypeScript compiler |
-| **Security** | No security vulnerabilities | npm audit |
-
-## 📊 Test Metrics and Reporting
-
-### **Coverage Reports**
-
-```bash
-# Generate coverage report
-pnpm run test:coverage
-
-# View coverage in browser
-open coverage/index.html
-```
-
-### **Test Performance**
-
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Unit Test Execution** | < 30 seconds | ~25 seconds |
-| **Integration Test Execution** | < 2 minutes | ~1.5 minutes |
-| **E2E Test Execution** | < 5 minutes | ~4 minutes |
-| **Full Test Suite** | < 10 minutes | ~8 minutes |
-
-### **Test Reliability**
-
-| Metric | Target | Current |
-|--------|--------|---------|
-| **Flaky Test Rate** | < 1% | ~0.5% |
-| **Test Failure Rate** | < 5% | ~2% |
-| **Test Maintenance** | < 2 hours/week | ~1 hour/week |
-
-## 🔧 Test Environment Setup
-
-### **Local Development**
-
-```bash
-# Run all tests
-pnpm run test:run
-
-# Run tests in watch mode
-pnpm run test:watch
-
-# Run specific test file
-pnpm run test:run -- user.service.spec.ts
-
-# Run tests with coverage
-pnpm run test:coverage
-```
-
-### **CI/CD Pipeline**
+### **Quality Checks**
 
 ```yaml
-# Test stages in CI
-stages:
-  - lint
-  - unit-tests
-  - integration-tests
-  - e2e-tests
-  - performance-tests
-  - security-scan
+# .github/workflows/quality.yml
+name: Quality Check
+
+on: [push, pull_request]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+
+    - name: Install dependencies
+      run: pnpm install
+
+    - name: Run linting
+      run: pnpm run lint
+
+    - name: Run type checking
+      run: pnpm run type-check
+
+    - name: Run tests
+      run: pnpm run test:run
+
+    - name: Check coverage
+      run: pnpm run test:coverage
+
+    - name: Verify coverage threshold
+      run: |
+        if [ $(grep -o '[0-9.]*%' coverage/coverage-summary.json | head -1 | sed 's/%//') -lt 80 ]; then
+          echo "Coverage below 80%"
+          exit 1
+        fi
 ```
-
-## 🎯 Test Strategy Summary
-
-### **Testing Approach**
-
-| Level | Purpose | Tools | Frequency |
-|-------|---------|-------|-----------|
-| **Unit Tests** | Test individual components | Vitest, Jest | Every commit |
-| **Integration Tests** | Test service interactions | Vitest, TestContainers | Every commit |
-| **E2E Tests** | Test complete workflows | Playwright, Cypress | Every PR |
-| **Performance Tests** | Test system performance | Artillery, k6 | Weekly |
-| **Security Tests** | Test security vulnerabilities | npm audit, OWASP ZAP | Every PR |
-
-### **Quality Assurance**
-
-- ✅ **Automated testing** for all code changes
-- ✅ **Comprehensive coverage** across all critical paths
-- ✅ **Fast feedback** for developers
-- ✅ **Reliable tests** with minimal flakiness
-- ✅ **Performance monitoring** for system health
 
 ---
 
-**This comprehensive testing strategy ensures high code quality, reliability, and maintainability across the Venta Backend project.** 
+**This testing strategy ensures comprehensive coverage of the DDD-aligned Venta backend with proper error handling, event testing, and domain-specific test patterns.** 

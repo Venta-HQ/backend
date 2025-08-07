@@ -3,10 +3,11 @@
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Deployment Architecture](#deployment-architecture)
+- [DDD Deployment Architecture](#ddd-deployment-architecture)
 - [Environment Configuration](#environment-configuration)
 - [Docker Deployment](#docker-deployment)
 - [Kubernetes Deployment](#kubernetes-deployment)
+- [Domain-Specific Deployment](#domain-specific-deployment)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Monitoring and Observability](#monitoring-and-observability)
 - [Deployment Checklist](#deployment-checklist)
@@ -14,13 +15,13 @@
 
 ## 🎯 Overview
 
-This guide covers the **deployment process** for the Venta Backend project across different environments. The system is designed to be deployed using containerization and can be scaled horizontally.
+This guide covers the **deployment process** for the Venta Backend project across different environments. The system is designed with Domain-Driven Design (DDD) principles and can be deployed using containerization with domain-specific scaling strategies.
 
-## 🏗️ Deployment Architecture
+## 🏗️ DDD Deployment Architecture
 
-### **Container Strategy**
+### **Domain-Based Container Strategy**
 
-The Venta Backend uses **Docker containers** for consistent deployment across environments:
+The Venta Backend uses **Docker containers** organized by business domains for consistent deployment:
 
 ```mermaid
 graph TB
@@ -28,21 +29,31 @@ graph TB
         LB[Load Balancer]
     end
 
-    subgraph "API Gateway Layer"
+    subgraph "Infrastructure Domain"
         AG1[API Gateway<br/>Port 5002]
         AG2[API Gateway<br/>Port 5002]
         AG3[API Gateway<br/>Port 5002]
+        FM[File Management<br/>Port 5003]
     end
 
-    subgraph "Core Services"
-        US[User Service<br/>Port 5000]
-        VS[Vendor Service<br/>Port 5005]
-        LS[Location Service<br/>Port 5001]
+    subgraph "Marketplace Domain"
+        UM1[User Management<br/>Port 5000]
+        UM2[User Management<br/>Port 5000]
+        VM1[Vendor Management<br/>Port 5005]
+        VM2[Vendor Management<br/>Port 5005]
+        SD[Search Discovery<br/>Port 5006]
     end
 
-    subgraph "Real-time Services"
-        WG[WebSocket Gateway<br/>Port 5004]
-        AS[Algolia Sync<br/>Port 5006]
+    subgraph "Location Services Domain"
+        GL1[Geolocation<br/>Port 5001]
+        GL2[Geolocation<br/>Port 5001]
+        RT1[Real-time<br/>Port 5004]
+        RT2[Real-time<br/>Port 5004]
+        RT3[Real-time<br/>Port 5004]
+    end
+
+    subgraph "Communication Domain"
+        WH[Webhooks<br/>Port 5007]
     end
 
     subgraph "Infrastructure"
@@ -55,36 +66,59 @@ graph TB
     LB --> AG2
     LB --> AG3
 
-    AG1 --> US
-    AG1 --> VS
-    AG1 --> LS
-    AG2 --> US
-    AG2 --> VS
-    AG2 --> LS
-    AG3 --> US
-    AG3 --> VS
-    AG3 --> LS
+    AG1 --> UM1
+    AG1 --> VM1
+    AG1 --> GL1
+    AG2 --> UM2
+    AG2 --> VM2
+    AG2 --> GL2
+    AG3 --> RT1
+    AG3 --> RT2
+    AG3 --> RT3
 
-    WG --> US
-    WG --> VS
-    WG --> LS
+    RT1 --> UM1
+    RT2 --> VM1
+    RT3 --> GL1
 
-    US --> PG
-    VS --> PG
-    LS --> PG
+    UM1 --> PG
+    VM1 --> PG
+    GL1 --> PG
 
-    US --> R
-    VS --> R
-    LS --> R
+    GL1 --> R
+    GL2 --> R
+    RT1 --> R
+    RT2 --> R
+    RT3 --> R
 
-    AS --> N
+    SD --> N
+    WH --> N
 ```
+
+### **Domain-Specific Scaling**
+
+Each domain has different scaling requirements based on business needs:
+
+#### **🏪 Marketplace Domain**
+- **User Management**: Scale based on user activity
+- **Vendor Management**: Scale based on vendor operations
+- **Search Discovery**: Scale based on search volume
+
+#### **📍 Location Services Domain**
+- **Geolocation**: Scale based on location update frequency
+- **Real-time**: Scale based on WebSocket connections
+
+#### **💬 Communication Domain**
+- **Webhooks**: Scale based on external integration volume
+
+#### **🔧 Infrastructure Domain**
+- **API Gateway**: Scale based on overall traffic
+- **File Management**: Scale based on file upload volume
 
 ## ⚙️ Environment Configuration
 
 ### **Environment Variables**
 
-Create environment-specific configuration files:
+Create environment-specific configuration files with domain context:
 
 ```bash
 # .env.production
@@ -93,491 +127,325 @@ DATABASE_URL=postgresql://user:password@prod-db:5432/venta_prod
 REDIS_URL=redis://prod-redis:6379
 NATS_URL=nats://prod-nats:4222
 
+# Domain Configuration
+DOMAIN=marketplace  # Set per service
+
 # Service Ports
 GATEWAY_SERVICE_PORT=5002
-USER_SERVICE_ADDRESS=user-service:5000
-VENDOR_SERVICE_ADDRESS=vendor-service:5005
-LOCATION_SERVICE_ADDRESS=location-service:5001
-WEBSOCKET_GATEWAY_SERVICE_PORT=5004
-ALGOLIA_SYNC_SERVICE_PORT=5006
-
-# External Services
-CLERK_SECRET_KEY=sk_prod_...
-ALGOLIA_APP_ID=prod_app_id
-ALGOLIA_API_KEY=prod_api_key
-CLOUDINARY_CLOUD_NAME=prod_cloud_name
-CLOUDINARY_API_KEY=prod_api_key
-CLOUDINARY_API_SECRET=prod_api_secret
-
-# Monitoring
-PROMETHEUS_PORT=9090
-GRAFANA_PORT=3000
+USER_MANAGEMENT_SERVICE_ADDRESS=user-management:5000
+VENDOR_MANAGEMENT_SERVICE_ADDRESS=vendor-management:5005
+GEOLOCATION_SERVICE_ADDRESS=geolocation:5001
+REAL_TIME_SERVICE_ADDRESS=real-time:5004
+SEARCH_DISCOVERY_SERVICE_ADDRESS=search-discovery:5006
+WEBHOOKS_SERVICE_ADDRESS=webhooks:5007
+FILE_MANAGEMENT_SERVICE_ADDRESS=file-management:5003
 ```
 
-### **Configuration Management**
+### **Domain-Specific Configuration**
 
-```typescript
-// libs/nest/modules/config/config.schema.ts
-import { z } from 'zod';
+Each domain can have its own configuration:
 
-export const configSchema = z.object({
-	nodeEnv: z.enum(['development', 'test', 'production']),
-	port: z.number().default(3000),
-	database: z.object({
-		url: z.string().url(),
-	}),
-	redis: z.object({
-		url: z.string().url(),
-	}),
-	nats: z.object({
-		url: z.string().url(),
-	}),
-	clerk: z.object({
-		secretKey: z.string(),
-	}),
-	algolia: z.object({
-		appId: z.string(),
-		apiKey: z.string(),
-	}),
-	cloudinary: z.object({
-		cloudName: z.string(),
-		apiKey: z.string(),
-		apiSecret: z.string(),
-	}),
-});
+```bash
+# Marketplace Domain
+MARKETPLACE_DOMAIN_CONFIG=production
+USER_ACTIVITY_THRESHOLD=1000
+VENDOR_OPERATIONS_LIMIT=500
 
-export type Config = z.infer<typeof configSchema>;
+# Location Services Domain
+LOCATION_SERVICES_DOMAIN_CONFIG=production
+LOCATION_UPDATE_FREQUENCY=30
+GEOSPATIAL_QUERY_LIMIT=1000
+
+# Communication Domain
+COMMUNICATION_DOMAIN_CONFIG=production
+WEBHOOK_RETRY_ATTEMPTS=3
+WEBHOOK_TIMEOUT=5000
+
+# Infrastructure Domain
+INFRASTRUCTURE_DOMAIN_CONFIG=production
+GATEWAY_RATE_LIMIT=1000
+FILE_UPLOAD_MAX_SIZE=10MB
 ```
 
 ## 🐳 Docker Deployment
 
-### **1. Docker Compose (Development/Staging)**
+### **Domain-Based Docker Compose**
 
 ```yaml
-# docker-compose.yml
 version: '3.8'
 
 services:
-  # Database
+  # Infrastructure Domain
+  api-gateway:
+    build: ./apps/infrastructure/api-gateway
+    environment:
+      - DOMAIN=infrastructure
+      - NODE_ENV=production
+    ports:
+      - "5002:5002"
+    depends_on:
+      - postgres
+      - redis
+      - nats
+
+  file-management:
+    build: ./apps/infrastructure/file-management
+    environment:
+      - DOMAIN=infrastructure
+      - NODE_ENV=production
+    ports:
+      - "5003:5003"
+    depends_on:
+      - postgres
+
+  # Marketplace Domain
+  user-management:
+    build: ./apps/marketplace/user-management
+    environment:
+      - DOMAIN=marketplace
+      - NODE_ENV=production
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+      - nats
+
+  vendor-management:
+    build: ./apps/marketplace/vendor-management
+    environment:
+      - DOMAIN=marketplace
+      - NODE_ENV=production
+    ports:
+      - "5005:5005"
+    depends_on:
+      - postgres
+      - nats
+
+  search-discovery:
+    build: ./apps/marketplace/search-discovery
+    environment:
+      - DOMAIN=marketplace
+      - NODE_ENV=production
+    ports:
+      - "5006:5006"
+    depends_on:
+      - nats
+
+  # Location Services Domain
+  geolocation:
+    build: ./apps/location-services/geolocation
+    environment:
+      - DOMAIN=location-services
+      - NODE_ENV=production
+    ports:
+      - "5001:5001"
+    depends_on:
+      - postgres
+      - redis
+      - nats
+
+  real-time:
+    build: ./apps/location-services/real-time
+    environment:
+      - DOMAIN=location-services
+      - NODE_ENV=production
+    ports:
+      - "5004:5004"
+    depends_on:
+      - redis
+      - nats
+
+  # Communication Domain
+  webhooks:
+    build: ./apps/communication/webhooks
+    environment:
+      - DOMAIN=communication
+      - NODE_ENV=production
+    ports:
+      - "5007:5007"
+    depends_on:
+      - nats
+
+  # Infrastructure Services
   postgres:
     image: postgres:15
     environment:
-      POSTGRES_DB: venta
+      POSTGRES_DB: venta_prod
       POSTGRES_USER: venta_user
       POSTGRES_PASSWORD: venta_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - '5432:5432'
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U venta_user -d venta']
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Redis
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass redis_password
-    ports:
-      - '6379:6379'
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # NATS
   nats:
-    image: nats:2.9-alpine
+    image: nats:2-alpine
     ports:
-      - '4222:4222'
-      - '8222:8222'
-    command: -js -m 8222
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:8222/healthz']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # API Gateway
-  gateway:
-    build:
-      context: .
-      dockerfile: apps/gateway/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-      - NATS_URL=nats://nats:4222
-      - USER_SERVICE_ADDRESS=user-service:5000
-      - VENDOR_SERVICE_ADDRESS=vendor-service:5005
-      - LOCATION_SERVICE_ADDRESS=location-service:5001
-    ports:
-      - '5002:5002'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      vendor-service:
-        condition: service_healthy
-      location-service:
-        condition: service_healthy
-    healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://localhost:5002/health']
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  # User Service
-  user-service:
-    build:
-      context: .
-      dockerfile: apps/user/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-    ports:
-      - '5000:5000'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # Vendor Service
-  vendor-service:
-    build:
-      context: .
-      dockerfile: apps/vendor/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-    ports:
-      - '5005:5005'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # Location Service
-  location-service:
-    build:
-      context: .
-      dockerfile: apps/location/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-    ports:
-      - '5001:5001'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # WebSocket Gateway
-  websocket-gateway:
-    build:
-      context: .
-      dockerfile: apps/websocket-gateway/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-      - USER_SERVICE_ADDRESS=user-service:5000
-      - VENDOR_SERVICE_ADDRESS=vendor-service:5005
-      - LOCATION_SERVICE_ADDRESS=location-service:5001
-    ports:
-      - '5004:5004'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      user-service:
-        condition: service_healthy
-      vendor-service:
-        condition: service_healthy
-      location-service:
-        condition: service_healthy
-
-  # Algolia Sync
-  algolia-sync:
-    build:
-      context: .
-      dockerfile: apps/algolia-sync/Dockerfile
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://venta_user:venta_password@postgres:5432/venta
-      - REDIS_URL=redis://:redis_password@redis:6379
-    ports:
-      - '5006:5006'
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # Monitoring
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - '9090:9090'
-    volumes:
-      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
-
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - '3000:3000'
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./docker/grafana-dashboards:/etc/grafana/provisioning/dashboards
+      - "4222:4222"
 
 volumes:
   postgres_data:
   redis_data:
-  prometheus_data:
-  grafana_data:
 ```
 
-### **2. Dockerfile Optimization**
+### **Domain-Specific Dockerfiles**
+
+Each service has a domain-aware Dockerfile:
 
 ```dockerfile
-# Multi-stage build for production
-FROM node:18-alpine AS builder
+# apps/marketplace/user-management/Dockerfile
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
+COPY package*.json ./
+RUN npm ci --only=production
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-COPY apps/*/package.json ./apps/
-COPY libs/*/package.json ./libs/
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source code
 COPY . .
+RUN npm run build
 
-# Build the application
-RUN pnpm run build
+# Set domain context
+ENV DOMAIN=marketplace
 
-# Production stage
-FROM node:18-alpine AS production
+EXPOSE 5000
 
-WORKDIR /app
-
-# Install pnpm
-RUN npm install -g pnpm
-
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
-COPY apps/*/package.json ./apps/
-COPY libs/*/package.json ./libs/
-
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
-# Copy built application
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nestjs -u 1001
-
-# Change ownership
-RUN chown -R nestjs:nodejs /app
-USER nestjs
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
-
-# Expose port
-EXPOSE ${PORT:-3000}
-
-# Start the application
-CMD ["node", "dist/apps/gateway/src/main.js"]
+CMD ["npm", "run", "start:prod"]
 ```
 
 ## ☸️ Kubernetes Deployment
 
-### **1. Namespace and ConfigMaps**
+### **Domain-Based Kubernetes Configuration**
 
 ```yaml
-# k8s/namespace.yaml
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: venta-backend
-  labels:
-    name: venta-backend
-
----
-# k8s/configmap.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: venta-config
-  namespace: venta-backend
-data:
-  NODE_ENV: 'production'
-  GATEWAY_SERVICE_PORT: '5002'
-  USER_SERVICE_ADDRESS: 'user-service:5000'
-  VENDOR_SERVICE_ADDRESS: 'vendor-service:5005'
-  LOCATION_SERVICE_ADDRESS: 'location-service:5001'
-  WEBSOCKET_GATEWAY_SERVICE_PORT: '5004'
-  ALGOLIA_SYNC_SERVICE_PORT: '5006'
-```
-
-### **2. Secrets**
-
-```yaml
-# k8s/secrets.yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: venta-secrets
-  namespace: venta-backend
-type: Opaque
-data:
-  DATABASE_URL: <base64-encoded-database-url>
-  REDIS_URL: <base64-encoded-redis-url>
-  NATS_URL: <base64-encoded-nats-url>
-  CLERK_SECRET_KEY: <base64-encoded-clerk-secret>
-  ALGOLIA_APP_ID: <base64-encoded-algolia-app-id>
-  ALGOLIA_API_KEY: <base64-encoded-algolia-api-key>
-  CLOUDINARY_CLOUD_NAME: <base64-encoded-cloudinary-name>
-  CLOUDINARY_API_KEY: <base64-encoded-cloudinary-key>
-  CLOUDINARY_API_SECRET: <base64-encoded-cloudinary-secret>
-```
-
-### **3. Service Deployments**
-
-```yaml
-# k8s/gateway-deployment.yaml
+# k8s/marketplace/user-management.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gateway
-  namespace: venta-backend
+  name: user-management
+  namespace: marketplace
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: gateway
+      app: user-management
+      domain: marketplace
   template:
     metadata:
       labels:
-        app: gateway
+        app: user-management
+        domain: marketplace
     spec:
       containers:
-        - name: gateway
-          image: venta/gateway:latest
-          ports:
-            - containerPort: 5002
-          envFrom:
-            - configMapRef:
-                name: venta-config
-            - secretRef:
-                name: venta-secrets
-          resources:
-            requests:
-              memory: '256Mi'
-              cpu: '250m'
-            limits:
-              memory: '512Mi'
-              cpu: '500m'
-          livenessProbe:
-            httpGet:
-              path: /health
-              port: 5002
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /health
-              port: 5002
-            initialDelaySeconds: 5
-            periodSeconds: 5
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: gateway-service
-  namespace: venta-backend
-spec:
-  selector:
-    app: gateway
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 5002
-  type: LoadBalancer
+      - name: user-management
+        image: venta/user-management:latest
+        env:
+        - name: DOMAIN
+          value: "marketplace"
+        - name: NODE_ENV
+          value: "production"
+        ports:
+        - containerPort: 5000
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
 ```
 
-### **4. Ingress Configuration**
+### **Domain-Specific Resource Allocation**
 
 ```yaml
-# k8s/ingress.yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+# k8s/location-services/geolocation.yaml
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: venta-ingress
-  namespace: venta-backend
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
-    cert-manager.io/cluster-issuer: 'letsencrypt-prod'
+  name: geolocation
+  namespace: location-services
 spec:
-  tls:
-    - hosts:
-        - api.venta.com
-      secretName: venta-tls
-  rules:
-    - host: api.venta.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: gateway-service
-                port:
-                  number: 80
+  replicas: 3
+  selector:
+    matchLabels:
+      app: geolocation
+      domain: location-services
+  template:
+    metadata:
+      labels:
+        app: geolocation
+        domain: location-services
+    spec:
+      containers:
+      - name: geolocation
+        image: venta/geolocation:latest
+        env:
+        - name: DOMAIN
+          value: "location-services"
+        - name: NODE_ENV
+          value: "production"
+        ports:
+        - containerPort: 5001
+        resources:
+          requests:
+            cpu: 1000m
+            memory: 2Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+```
+
+## 🏛️ Domain-Specific Deployment
+
+### **Marketplace Domain Deployment**
+
+```bash
+# Deploy marketplace services
+kubectl apply -f k8s/marketplace/
+
+# Scale based on business demand
+kubectl scale deployment user-management --replicas=5 -n marketplace
+kubectl scale deployment vendor-management --replicas=3 -n marketplace
+kubectl scale deployment search-discovery --replicas=2 -n marketplace
+```
+
+### **Location Services Domain Deployment**
+
+```bash
+# Deploy location services
+kubectl apply -f k8s/location-services/
+
+# Scale based on location activity
+kubectl scale deployment geolocation --replicas=5 -n location-services
+kubectl scale deployment real-time --replicas=7 -n location-services
+```
+
+### **Communication Domain Deployment**
+
+```bash
+# Deploy communication services
+kubectl apply -f k8s/communication/
+
+# Scale based on webhook volume
+kubectl scale deployment webhooks --replicas=3 -n communication
+```
+
+### **Infrastructure Domain Deployment**
+
+```bash
+# Deploy infrastructure services
+kubectl apply -f k8s/infrastructure/
+
+# Scale based on overall traffic
+kubectl scale deployment api-gateway --replicas=5 -n infrastructure
+kubectl scale deployment file-management --replicas=2 -n infrastructure
 ```
 
 ## 🔄 CI/CD Pipeline
 
-> **Note**: CI/CD workflows are not currently implemented in this codebase. The following is a reference implementation for future use.
-
-### **1. GitHub Actions Workflow (Reference)**
+### **Domain-Aware Pipeline**
 
 ```yaml
 # .github/workflows/deploy.yml
@@ -588,362 +456,163 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  deploy-marketplace:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+    - uses: actions/checkout@v3
+    
+    - name: Build Marketplace Services
+      run: |
+        docker build -t venta/user-management:latest ./apps/marketplace/user-management
+        docker build -t venta/vendor-management:latest ./apps/marketplace/vendor-management
+        docker build -t venta/search-discovery:latest ./apps/marketplace/search-discovery
+    
+    - name: Deploy to Marketplace Namespace
+      run: |
+        kubectl apply -f k8s/marketplace/
+        kubectl rollout restart deployment/user-management -n marketplace
+        kubectl rollout restart deployment/vendor-management -n marketplace
+        kubectl rollout restart deployment/search-discovery -n marketplace
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Run tests
-        run: pnpm run test:run
-
-      - name: Build application
-        run: pnpm run build
-
-  build-and-push:
-    needs: test
+  deploy-location-services:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          push: true
-          tags: |
-            venta/gateway:latest
-            venta/gateway:${{ github.sha }}
-            venta/user-service:latest
-            venta/user-service:${{ github.sha }}
-            venta/vendor-service:latest
-            venta/vendor-service:${{ github.sha }}
-            venta/location-service:latest
-            venta/location-service:${{ github.sha }}
-            venta/websocket-gateway:latest
-            venta/websocket-gateway:${{ github.sha }}
-            venta/algolia-sync:latest
-            venta/algolia-sync:${{ github.sha }}
-
-  deploy:
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Configure kubectl
-        run: |
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig.yaml
-          export KUBECONFIG=kubeconfig.yaml
-
-      - name: Deploy to Kubernetes
-        run: |
-          kubectl apply -f k8s/
-          kubectl set image deployment/gateway gateway=venta/gateway:${{ github.sha }} -n venta-backend
-          kubectl set image deployment/user-service user-service=venta/user-service:${{ github.sha }} -n venta-backend
-          kubectl set image deployment/vendor-service vendor-service=venta/vendor-service:${{ github.sha }} -n venta-backend
-          kubectl set image deployment/location-service location-service=venta/location-service:${{ github.sha }} -n venta-backend
-          kubectl set image deployment/websocket-gateway websocket-gateway=venta/websocket-gateway:${{ github.sha }} -n venta-backend
-          kubectl set image deployment/algolia-sync algolia-sync=venta/algolia-sync:${{ github.sha }} -n venta-backend
+    - uses: actions/checkout@v3
+    
+    - name: Build Location Services
+      run: |
+        docker build -t venta/geolocation:latest ./apps/location-services/geolocation
+        docker build -t venta/real-time:latest ./apps/location-services/real-time
+    
+    - name: Deploy to Location Services Namespace
+      run: |
+        kubectl apply -f k8s/location-services/
+        kubectl rollout restart deployment/geolocation -n location-services
+        kubectl rollout restart deployment/real-time -n location-services
 ```
 
 ## 📊 Monitoring and Observability
 
-### **1. Health Checks**
+### **Domain-Specific Monitoring**
 
-```typescript
-// Health check endpoint
-@Controller('health')
-export class HealthController {
-	constructor(
-		private readonly health: HealthCheckService,
-		private readonly db: TypeOrmHealthIndicator,
-		private readonly redis: RedisHealthIndicator,
-	) {}
-
-	@Get()
-	@HealthCheck()
-	check() {
-		return this.health.check([() => this.db.pingCheck('database'), () => this.redis.pingCheck('redis')]);
-	}
+```yaml
+# monitoring/grafana/dashboards/marketplace-dashboard.json
+{
+  "dashboard": {
+    "title": "Marketplace Domain Metrics",
+    "panels": [
+      {
+        "title": "User Management - Request Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{domain=\"marketplace\",service=\"user-management\"}[5m])"
+          }
+        ]
+      },
+      {
+        "title": "Vendor Management - Error Rate",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{domain=\"marketplace\",service=\"vendor-management\",status=~\"5..\"}[5m])"
+          }
+        ]
+      }
+    ]
+  }
 }
 ```
 
-### **2. Metrics Collection**
+### **Domain-Based Alerting**
 
-```typescript
-// Prometheus metrics
-@Injectable()
-export class MetricsService {
-	private readonly httpRequestDuration = new Histogram({
-		name: 'http_request_duration_seconds',
-		help: 'Duration of HTTP requests in seconds',
-		labelNames: ['method', 'route', 'status_code'],
-	});
+```yaml
+# monitoring/alertmanager/rules/marketplace-alerts.yml
+groups:
+- name: marketplace-alerts
+  rules:
+  - alert: UserManagementHighErrorRate
+    expr: rate(http_requests_total{domain="marketplace",service="user-management",status=~"5.."}[5m]) > 0.1
+    for: 2m
+    labels:
+      domain: marketplace
+      severity: critical
+    annotations:
+      summary: "High error rate in User Management service"
+      description: "User Management service is experiencing {{ $value }} errors per second"
 
-	private readonly activeConnections = new Gauge({
-		name: 'websocket_active_connections',
-		help: 'Number of active WebSocket connections',
-	});
-
-	recordHttpRequest(method: string, route: string, statusCode: number, duration: number) {
-		this.httpRequestDuration.labels(method, route, statusCode.toString()).observe(duration);
-	}
-
-	setActiveConnections(count: number) {
-		this.activeConnections.set(count);
-	}
-}
+  - alert: LocationServicesHighLatency
+    expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{domain="location-services"}[5m])) > 1
+    for: 2m
+    labels:
+      domain: location-services
+      severity: warning
+    annotations:
+      summary: "High latency in Location Services"
+      description: "95th percentile latency is {{ $value }} seconds"
 ```
 
 ## ✅ Deployment Checklist
 
 ### **Pre-Deployment**
 
-- [ ] All tests passing
-- [ ] Code review completed
-- [ ] Security scan passed
-- [ ] Performance benchmarks met
-- [ ] Database migrations ready
-- [ ] Environment variables configured
-- [ ] Secrets updated
-- [ ] Monitoring alerts configured
+- [ ] **Domain Configuration**: Verify domain settings for each service
+- [ ] **Environment Variables**: Set all required environment variables
+- [ ] **Database Migrations**: Run Prisma migrations
+- [ ] **Health Checks**: Verify all services have proper health endpoints
+- [ ] **Resource Limits**: Set appropriate CPU/memory limits per domain
+- [ ] **Monitoring**: Configure domain-specific monitoring and alerting
 
 ### **Deployment**
 
-- [ ] Backup production database
-- [ ] Deploy to staging environment
-- [ ] Run smoke tests
-- [ ] Deploy to production
-- [ ] Verify health checks
-- [ ] Monitor error rates
-- [ ] Check performance metrics
-- [ ] Update DNS if needed
+- [ ] **Infrastructure First**: Deploy infrastructure services (API Gateway, File Management)
+- [ ] **Communication Services**: Deploy webhooks and messaging services
+- [ ] **Location Services**: Deploy geolocation and real-time services
+- [ ] **Marketplace Services**: Deploy user management, vendor management, search
+- [ ] **Health Verification**: Verify all services are healthy
+- [ ] **Traffic Routing**: Update load balancer configuration
 
 ### **Post-Deployment**
 
-- [ ] Monitor application logs
-- [ ] Check error rates
-- [ ] Verify all services are healthy
-- [ ] Test critical user flows
-- [ ] Update documentation
-- [ ] Notify stakeholders
+- [ ] **Monitoring**: Verify metrics and logs are flowing
+- [ ] **Error Tracking**: Check for any domain-specific errors
+- [ ] **Performance**: Monitor domain-specific performance metrics
+- [ ] **User Testing**: Verify end-to-end functionality
+- [ ] **Rollback Plan**: Ensure rollback procedures are ready
 
 ## 🔄 Rollback Procedures
 
-### **1. Docker Compose Rollback**
+### **Domain-Specific Rollback**
 
 ```bash
-# Rollback to previous version
-docker-compose down
-docker-compose pull
-docker-compose up -d
+# Rollback specific domain
+kubectl rollout undo deployment/user-management -n marketplace
+kubectl rollout undo deployment/vendor-management -n marketplace
 
-# Or rollback to specific tag
-docker-compose down
-docker-compose up -d --force-recreate
+# Rollback location services
+kubectl rollout undo deployment/geolocation -n location-services
+kubectl rollout undo deployment/real-time -n location-services
+
+# Rollback infrastructure
+kubectl rollout undo deployment/api-gateway -n infrastructure
 ```
 
-### **2. Kubernetes Rollback**
+### **Full System Rollback**
 
 ```bash
-# Rollback deployment
-kubectl rollout undo deployment/gateway -n venta-backend
-
-# Rollback to specific revision
-kubectl rollout undo deployment/gateway --to-revision=2 -n venta-backend
-
-# Check rollout status
-kubectl rollout status deployment/gateway -n venta-backend
+# Rollback all services to previous version
+kubectl rollout undo deployment --all -n marketplace
+kubectl rollout undo deployment --all -n location-services
+kubectl rollout undo deployment --all -n communication
+kubectl rollout undo deployment --all -n infrastructure
 ```
 
-### **3. Database Rollback**
+### **Database Rollback**
 
 ```bash
-# Rollback database migration
-pnpm run prisma:migrate:reset
-pnpm run prisma:migrate:deploy
-
-# Or restore from backup
-pg_restore -d venta_prod backup.sql
-```
-
-## 📈 Performance Optimization
-
-### **Resource Allocation**
-
-| Service               | CPU Request | CPU Limit | Memory Request | Memory Limit |
-| --------------------- | ----------- | --------- | -------------- | ------------ |
-| **Gateway**           | 250m        | 500m      | 256Mi          | 512Mi        |
-| **User Service**      | 200m        | 400m      | 256Mi          | 512Mi        |
-| **Vendor Service**    | 200m        | 400m      | 256Mi          | 512Mi        |
-| **Location Service**  | 200m        | 400m      | 256Mi          | 512Mi        |
-| **WebSocket Gateway** | 300m        | 600m      | 512Mi          | 1Gi          |
-| **Algolia Sync**      | 100m        | 200m      | 128Mi          | 256Mi        |
-
-> **Note**: These are example Kubernetes resource allocations. The actual docker-compose.yml doesn't specify resource limits.
-
-### **Scaling Policies**
-
-```yaml
-# Horizontal Pod Autoscaler
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: gateway-hpa
-  namespace: venta-backend
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: gateway
-  minReplicas: 3
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
-```
-
-## 🔒 Security Considerations
-
-### **Network Policies**
-
-```yaml
-# k8s/network-policy.yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: venta-network-policy
-  namespace: venta-backend
-spec:
-  podSelector: {}
-  policyTypes:
-    - Ingress
-    - Egress
-  ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              name: ingress-nginx
-      ports:
-        - protocol: TCP
-          port: 5002
-  egress:
-    - to:
-        - namespaceSelector:
-            matchLabels:
-              name: venta-backend
-      ports:
-        - protocol: TCP
-          port: 5000
-        - protocol: TCP
-          port: 5001
-        - protocol: TCP
-          port: 5005
-```
-
-### **Pod Security Standards**
-
-```yaml
-# k8s/pod-security.yaml
-apiVersion: v1
-kind: Pod
-metadata:
-  name: gateway-pod
-  namespace: venta-backend
-spec:
-  securityContext:
-    runAsNonRoot: true
-    runAsUser: 1001
-    runAsGroup: 1001
-    fsGroup: 1001
-  containers:
-    - name: gateway
-      image: venta/gateway:latest
-      securityContext:
-        allowPrivilegeEscalation: false
-        readOnlyRootFilesystem: true
-        capabilities:
-          drop:
-            - ALL
-```
-
-## 📊 Monitoring Dashboards
-
-### **Grafana Dashboard Configuration**
-
-```json
-{
-	"dashboard": {
-		"title": "Venta Backend Overview",
-		"panels": [
-			{
-				"title": "Service Health",
-				"type": "stat",
-				"targets": [
-					{
-						"expr": "up{job=\"venta-backend\"}",
-						"legendFormat": "{{service}}"
-					}
-				]
-			},
-			{
-				"title": "Request Rate",
-				"type": "graph",
-				"targets": [
-					{
-						"expr": "rate(http_requests_total[5m])",
-						"legendFormat": "{{service}}"
-					}
-				]
-			},
-			{
-				"title": "Response Time",
-				"type": "graph",
-				"targets": [
-					{
-						"expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
-						"legendFormat": "95th percentile"
-					}
-				]
-			}
-		]
-	}
-}
+# Rollback database migrations if needed
+npx prisma migrate reset --force
+npx prisma migrate deploy
 ```
 
 ---
 
-**This deployment guide provides comprehensive coverage for deploying the Venta Backend across different environments with proper monitoring and rollback procedures.**
+**This deployment guide ensures consistent, scalable, and maintainable deployment of the DDD-aligned Venta backend architecture.**
