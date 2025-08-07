@@ -2,11 +2,10 @@ import { APP_NAMES, BootstrapModule, GrpcInstanceModule } from '@app/nest/module
 import { USER_PACKAGE_NAME, USER_SERVICE_NAME, UserServiceClient } from '@app/proto/user';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClerkWebhooksController } from './clerk/clerk-webhooks.controller';
-import { SubscriptionWebhooksController } from './subscription/subscription-webhooks.controller';
+import { ClerkWebhooksModule } from './clerk/clerk-webhooks.module';
+import { SubscriptionWebhooksModule } from './subscription/subscription-webhooks.module';
 
 @Module({
-	controllers: [ClerkWebhooksController, SubscriptionWebhooksController],
 	imports: [
 		BootstrapModule.forRoot({
 			appName: APP_NAMES.CLERK_WEBHOOKS,
@@ -20,6 +19,8 @@ import { SubscriptionWebhooksController } from './subscription/subscription-webh
 			serviceName: USER_SERVICE_NAME,
 			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
 		}),
+		ClerkWebhooksModule,
+		SubscriptionWebhooksModule,
 	],
 })
 export class WebhooksModule {}
