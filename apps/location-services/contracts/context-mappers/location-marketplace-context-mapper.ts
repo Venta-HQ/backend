@@ -1,5 +1,5 @@
-import { BaseContextMapper } from '@app/nest/modules/contracts';
-import { Injectable } from '@nestjs/common';
+import { ValidationUtils } from '@app/utils';
+import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Location Services → Marketplace Context Mapper
@@ -7,17 +7,44 @@ import { Injectable } from '@nestjs/common';
  * Translates data between Location Services and Marketplace domains
  */
 @Injectable()
-export class LocationMarketplaceContextMapper extends BaseContextMapper {
-	constructor() {
-		super('LocationMarketplaceContextMapper');
+export class LocationMarketplaceContextMapper {
+	private readonly logger = new Logger('LocationMarketplaceContextMapper');
+
+	/**
+	 * Validate location data
+	 */
+	private validateLocationData(data: any): boolean {
+		return (
+			data &&
+			typeof data.latitude === 'number' &&
+			typeof data.longitude === 'number' &&
+			typeof data.timestamp === 'string'
+		);
 	}
 
-	getDomain(): string {
-		return 'location-services';
+	/**
+	 * Validate location request
+	 */
+	private validateLocationRequest(data: any): boolean {
+		return data && typeof data.lat === 'number' && typeof data.lng === 'number';
 	}
 
-	getTargetDomain(): string {
-		return 'marketplace';
+	/**
+	 * Validate proximity results
+	 */
+	private validateProximityResults(data: any[]): boolean {
+		return (
+			Array.isArray(data) &&
+			data.every(
+				(item) =>
+					item &&
+					typeof item.entityId === 'string' &&
+					typeof item.distance === 'number' &&
+					item.coordinates &&
+					typeof item.coordinates.latitude === 'number' &&
+					typeof item.coordinates.longitude === 'number',
+			)
+		);
 	}
 
 	/**
@@ -32,11 +59,11 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 			accuracy?: number;
 		},
 	) {
-		this.logTranslationStart('toMarketplaceUserLocation', { userId });
-
 		try {
 			// Validate source data
-			this.validateSourceData(locationData);
+			if (!userId || !this.validateLocationData(locationData)) {
+				throw new Error('Invalid user location data');
+			}
 
 			// Transform to marketplace format
 			const marketplaceLocation = {
@@ -49,13 +76,9 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 				accuracy: locationData.accuracy || null,
 			};
 
-			// Validate target data
-			this.validateTargetData(marketplaceLocation);
-
-			this.logTranslationSuccess('toMarketplaceUserLocation', { userId });
 			return marketplaceLocation;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceUserLocation', error, { userId });
+			this.logger.error('Failed to translate user location', error);
 			throw error;
 		}
 	}
@@ -72,11 +95,11 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 			status: string;
 		},
 	) {
-		this.logTranslationStart('toMarketplaceVendorLocation', { vendorId });
-
 		try {
 			// Validate source data
-			this.validateSourceData(locationData);
+			if (!vendorId || !this.validateLocationData(locationData)) {
+				throw new Error('Invalid vendor location data');
+			}
 
 			// Transform to marketplace format
 			const marketplaceLocation = {
@@ -89,13 +112,9 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 				isActive: locationData.status === 'active',
 			};
 
-			// Validate target data
-			this.validateTargetData(marketplaceLocation);
-
-			this.logTranslationSuccess('toMarketplaceVendorLocation', { vendorId });
 			return marketplaceLocation;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceVendorLocation', error, { vendorId });
+			this.logger.error('Failed to translate vendor location', error);
 			throw error;
 		}
 	}
@@ -112,11 +131,11 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 			radius?: number;
 		},
 	) {
-		this.logTranslationStart('toLocationServicesLocationRequest', { entityId, entityType });
-
 		try {
 			// Validate source data
-			this.validateSourceData(locationRequest);
+			if (!entityId || !entityType || !this.validateLocationRequest(locationRequest)) {
+				throw new Error('Invalid location request data');
+			}
 
 			// Transform to location services format
 			const locationServicesRequest = {
@@ -130,13 +149,9 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 				timestamp: new Date().toISOString(),
 			};
 
-			// Validate target data
-			this.validateTargetData(locationServicesRequest);
-
-			this.logTranslationSuccess('toLocationServicesLocationRequest', { entityId, entityType });
 			return locationServicesRequest;
 		} catch (error) {
-			this.logTranslationError('toLocationServicesLocationRequest', error, { entityId, entityType });
+			this.logger.error('Failed to translate location request', error);
 			throw error;
 		}
 	}
@@ -151,11 +166,11 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 			coordinates: { latitude: number; longitude: number };
 		}[],
 	) {
-		this.logTranslationStart('toMarketplaceProximityResults', { count: results.length });
-
 		try {
 			// Validate source data
-			this.validateSourceData(results);
+			if (!this.validateProximityResults(results)) {
+				throw new Error('Invalid proximity results data');
+			}
 
 			// Transform to marketplace format
 			const marketplaceResults = results.map((result) => ({
@@ -167,46 +182,10 @@ export class LocationMarketplaceContextMapper extends BaseContextMapper {
 				},
 			}));
 
-			// Validate target data
-			this.validateTargetData(marketplaceResults);
-
-			this.logTranslationSuccess('toMarketplaceProximityResults', { count: results.length });
 			return marketplaceResults;
 		} catch (error) {
-			this.logTranslationError('toMarketplaceProximityResults', error, { count: results.length });
+			this.logger.error('Failed to translate proximity results', error);
 			throw error;
 		}
-	}
-
-	// ============================================================================
-	// ABSTRACT METHOD IMPLEMENTATIONS
-	// ============================================================================
-
-	validateSourceData(data: any): boolean {
-		if (!data) {
-			throw this.createValidationError('Source data is required', { data });
-		}
-
-		// Additional validation based on data structure
-		if (data.latitude !== undefined && data.longitude !== undefined) {
-			if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
-				throw this.createValidationError('Invalid coordinate types', { data });
-			}
-		}
-
-		return true;
-	}
-
-	validateTargetData(data: any): boolean {
-		if (!data) {
-			throw this.createValidationError('Target data is required', { data });
-		}
-
-		// Additional validation based on data structure
-		if (data.location && (typeof data.location.lat !== 'number' || typeof data.location.lng !== 'number')) {
-			throw this.createValidationError('Invalid location format', { data });
-		}
-
-		return true;
 	}
 }
