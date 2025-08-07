@@ -1,4 +1,4 @@
-import { DomainErrorInterceptor, ErrorHandlingModule } from '@app/nest/errors';
+import { ErrorHandlingModule } from '@app/nest/errors';
 import {
 	HealthCheckModule,
 	HealthModule,
@@ -48,17 +48,11 @@ export class BootstrapModule {
 				? [RequestTracingModule.register({ protocol: options.protocol })]
 				: [];
 
-		// Automatically include DomainErrorInterceptor for all apps
-		const domainErrorInterceptor = {
-			provide: 'DOMAIN_ERROR_INTERCEPTOR',
-			useClass: DomainErrorInterceptor,
-		};
-
 		return {
 			exports: baseModules,
 			imports: [...baseModules, ...httpModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
-			providers: [domainErrorInterceptor, ...(options.additionalProviders || [])],
+			providers: [...(options.additionalProviders || [])],
 		};
 	}
 }

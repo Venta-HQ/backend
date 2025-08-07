@@ -8,11 +8,11 @@ The Error Handling library provides centralized error management for the Venta b
 
 This library provides:
 - Standardized error types and structures
-- Centralized error code definitions
+- Centralized error code definitions (single source of truth)
 - Transport-specific exception filters
 - Consistent error response formatting
+- Domain-aware error handling with automatic domain context
 - Error handling utilities and helpers
-- Custom error type creation patterns
 
 ## Usage
 
@@ -24,39 +24,74 @@ Use the base AppError class for consistent error handling:
 import { AppError, ErrorCodes } from '@app/nest/errors';
 
 // Basic error with message and code
-throw new AppError('User not found', ErrorCodes.NOT_FOUND);
+throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.USER_NOT_FOUND, 'User not found');
 
 // Error with additional metadata
-throw new AppError('Validation failed', ErrorCodes.BAD_REQUEST, {
+throw new AppError(ErrorType.VALIDATION, ErrorCodes.VALIDATION_ERROR, 'Validation failed', {
   field: 'email',
   value: 'invalid-email'
 });
 
 // Error with custom context
-throw new AppError('Database connection failed', ErrorCodes.SERVICE_UNAVAILABLE, {
+throw new AppError(ErrorType.EXTERNAL_SERVICE, ErrorCodes.DATABASE_ERROR, 'Database connection failed', {
   service: 'database',
   retryAfter: 30
 });
 ```
 
+### Domain-Aware Error Handling
+
+Use the DomainError class for domain-specific errors with automatic domain context:
+
+```typescript
+import { DomainError, ErrorCodes } from '@app/nest/errors';
+
+// Domain error with automatic domain context
+throw new DomainError(ErrorCodes.USER_NOT_FOUND, 'User not found');
+
+// Domain error with additional context
+throw new DomainError(ErrorCodes.VENDOR_INVALID_LOCATION, 'Invalid vendor location', {
+  vendorId: '123',
+  coordinates: { lat: 0, lng: 0 }
+});
+
+// Domain error with explicit domain (optional)
+throw new DomainError(ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, 'Redis operation failed', {
+  operation: 'geoadd'
+}, 'location-services');
+```
+
+The DomainErrorInterceptor automatically appends the DDD domain context to all DomainError instances.
+
 ### Error Codes
 
-Use predefined error codes for consistency:
+Use predefined error codes for consistency. All error codes are centralized in a single source of truth:
 
 ```typescript
 import { ErrorCodes } from '@app/nest/errors';
 
-// Client errors (4xx)
-ErrorCodes.BAD_REQUEST           // 400 - Invalid request
-ErrorCodes.UNAUTHORIZED          // 401 - Authentication required
-ErrorCodes.FORBIDDEN             // 403 - Insufficient permissions
-ErrorCodes.NOT_FOUND             // 404 - Resource not found
-ErrorCodes.CONFLICT              // 409 - Resource conflict
-ErrorCodes.UNPROCESSABLE_ENTITY  // 422 - Validation failed
+// Generic/Cross-cutting errors
+ErrorCodes.DATABASE_ERROR              // Database operation failed
+ErrorCodes.VALIDATION_ERROR            // Validation failed
+ErrorCodes.UNAUTHORIZED                // Authentication required
+ErrorCodes.INSUFFICIENT_PERMISSIONS    // Insufficient permissions
 
-// Server errors (5xx)
-ErrorCodes.INTERNAL_SERVER_ERROR // 500 - Internal server error
-ErrorCodes.SERVICE_UNAVAILABLE   // 503 - Service unavailable
+// User domain errors
+ErrorCodes.USER_NOT_FOUND              // User not found
+ErrorCodes.USER_ALREADY_EXISTS         // User already exists
+ErrorCodes.USER_INVALID_CREDENTIALS    // Invalid user credentials
+
+// Vendor domain errors
+ErrorCodes.VENDOR_NOT_FOUND            // Vendor not found
+ErrorCodes.VENDOR_ALREADY_EXISTS       // Vendor already exists
+ErrorCodes.VENDOR_INVALID_LOCATION     // Invalid vendor location
+
+// Location domain errors
+ErrorCodes.LOCATION_NOT_FOUND          // Location not found
+ErrorCodes.LOCATION_INVALID_COORDINATES // Invalid coordinates
+ErrorCodes.LOCATION_REDIS_OPERATION_FAILED // Redis operation failed
+
+// And many more domain-specific error codes...
 ```
 
 ### Exception Filters
