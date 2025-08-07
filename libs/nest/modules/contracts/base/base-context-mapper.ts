@@ -1,9 +1,9 @@
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { Logger } from '@nestjs/common';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
 
 /**
  * Base Context Mapper
- * 
+ *
  * Provides common functionality for context mappers across all domains.
  * Extend this class to create domain-specific context mappers.
  */
@@ -281,4 +281,4 @@ export abstract class BaseContextMapper {
 	 * Validate target data after translation
 	 */
 	abstract validateTargetData(data: any): boolean;
-} 
+}

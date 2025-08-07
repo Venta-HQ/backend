@@ -1,9 +1,9 @@
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { Logger } from '@nestjs/common';
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
 
 /**
  * Base Anti-Corruption Layer
- * 
+ *
  * Provides common functionality for anti-corruption layers across all domains.
  * Extend this class to create domain-specific anti-corruption layers.
  */
@@ -398,4 +398,4 @@ export abstract class BaseAntiCorruptionLayer {
 	 * Validate marketplace data
 	 */
 	abstract validateMarketplaceData(data: any): boolean;
-} 
+}
