@@ -1,14 +1,9 @@
 import Redis from 'ioredis';
-import { z } from 'zod';
-import { GrpcLocationUpdateSchema } from '@app/apitypes';
 import { LocationDomainError, LocationDomainErrorCodes } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-
-// Type definitions for the service
-type LocationUpdate = z.infer<typeof GrpcLocationUpdateSchema>;
 
 interface LocationData {
 	lat: number;
@@ -61,9 +56,18 @@ export class LocationTrackingService {
 		await this.validateLocationData(location);
 		await this.validateUserExists(userId);
 
-		// Domain logic
+		// Domain logic - only handle Redis operations
 		await this.storeUserLocation(userId, location);
-		await this.updateUserDatabaseLocation(userId, location);
+
+		// Domain events - let user domain handle its own database updates
+		await this.eventService.emit('user.location.updated', {
+			location: {
+				lat: location.lat,
+				long: location.lng,
+			},
+			timestamp: new Date(),
+			userId,
+		});
 
 		this.logger.log('User location updated successfully', { userId });
 	}
@@ -137,20 +141,5 @@ export class LocationTrackingService {
 			'Update user location in Redis',
 			{ logger: this.logger },
 		);
-	}
-
-	/**
-	 * Update user location in database
-	 */
-	private async updateUserDatabaseLocation(userId: string, location: LocationData): Promise<void> {
-		await this.prisma.db.user.update({
-			data: {
-				lat: location.lat,
-				long: location.lng,
-			},
-			where: {
-				id: userId,
-			},
-		});
 	}
 }

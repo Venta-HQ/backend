@@ -1,3 +1,4 @@
+import { userEventSchemas, UserLocationUpdateEventData } from '../../domains/user/user.events';
 import { VendorEventData, vendorEventSchemas, VendorLocationUpdateEventData } from '../../domains/vendor/vendor.events';
 
 /**
@@ -5,9 +6,9 @@ import { VendorEventData, vendorEventSchemas, VendorLocationUpdateEventData } fr
  * This provides intellisense for all available events
  */
 export const ALL_EVENT_SCHEMAS = {
+	...userEventSchemas,
 	...vendorEventSchemas,
 	// Add other domain schemas here as they're created:
-	// ...userEventSchemas,
 	// ...locationEventSchemas,
 } as const;
 
@@ -22,6 +23,9 @@ export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
  * This provides type safety for the second parameter of emit
  */
 export type EventDataMap = {
+	// User events
+	'user.location.updated': UserLocationUpdateEventData;
+
 	// Vendor events
 	'vendor.created': VendorEventData;
 	'vendor.deleted': VendorEventData;

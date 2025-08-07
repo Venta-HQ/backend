@@ -107,7 +107,7 @@ describe('LocationTrackingService', () => {
 
 			mockPrisma.db.user.findUnique.mockResolvedValue({ id: userId });
 			mockRedis.geoadd.mockResolvedValue(1);
-			mockPrisma.db.user.update.mockResolvedValue({ id: userId });
+			mockEventService.emit.mockResolvedValue(undefined);
 
 			await service.updateUserLocation(userId, location);
 
@@ -116,9 +116,13 @@ describe('LocationTrackingService', () => {
 				where: { id: userId },
 			});
 			expect(mockRedis.geoadd).toHaveBeenCalledWith('user_locations', location.lng, location.lat, userId);
-			expect(mockPrisma.db.user.update).toHaveBeenCalledWith({
-				data: { lat: location.lat, long: location.lng },
-				where: { id: userId },
+			expect(mockEventService.emit).toHaveBeenCalledWith('user.location.updated', {
+				location: {
+					lat: location.lat,
+					long: location.lng,
+				},
+				timestamp: expect.any(Date),
+				userId,
 			});
 		});
 
