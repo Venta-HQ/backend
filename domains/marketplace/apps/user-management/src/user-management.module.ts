@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { MarketplaceContractsModule } from '../contracts/marketplace-contracts.module';
 import { AuthModule } from './authentication/auth.module';
 import { CoreModule } from './core/core.module';
+import { UserManagementController } from './core/user-management.controller';
 import { LocationModule } from './location/location.module';
 import { SubscriptionModule } from './subscriptions/subscription.module';
 import { VendorModule } from './vendors/vendor.module';
@@ -21,5 +22,6 @@ import { VendorModule } from './vendors/vendor.module';
 		SubscriptionModule,
 		VendorModule,
 	],
+	controllers: [UserManagementController],
 })
 export class UserManagementModule {}

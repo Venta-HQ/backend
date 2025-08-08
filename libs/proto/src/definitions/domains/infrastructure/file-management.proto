@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package infrastructure.file_management;
+
+service FileManagementService {
+  rpc UploadImage (UploadImageRequest) returns (FileUploadResponse) {}
+}
+
+// Service Function Types
+message UploadImageRequest {
+  bytes content = 1;
+  string filename = 2;
+  string mimetype = 3;
+  int32 size = 4;
+  string uploadedBy = 5;
+}
+
+message FileUploadResponse {
+  string url = 1;
+  string publicId = 2;
+  string format = 3;
+  int32 width = 4;
+  int32 height = 5;
+  int32 bytes = 6;
+}
+
+message Empty {}

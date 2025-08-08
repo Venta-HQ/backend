@@ -23,8 +23,8 @@ interface UserRegistrationData {
 }
 
 @Injectable()
-export class UserService {
-	private readonly logger = new Logger(UserService.name);
+export class UserManagementService {
+	private readonly logger = new Logger(UserManagementService.name);
 
 	constructor(
 		private readonly prisma: PrismaService,

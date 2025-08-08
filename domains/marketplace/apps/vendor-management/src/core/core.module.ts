@@ -1,12 +1,10 @@
 import { Module } from '@nestjs/common';
-import { MarketplaceContractsModule } from '../../../../contracts/marketplace-contracts.module';
-import { VendorController } from './vendor.controller';
-import { VendorService } from './vendor.service';
+import { VendorManagementController } from './vendor-management.controller';
+import { VendorManagementService } from './vendor-management.service';
 
 @Module({
-	imports: [MarketplaceContractsModule],
-	providers: [VendorService],
-	controllers: [VendorController],
-	exports: [VendorService],
+	controllers: [VendorManagementController],
+	providers: [VendorManagementService],
+	exports: [VendorManagementService],
 })
 export class CoreModule {}
