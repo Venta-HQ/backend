@@ -14,21 +14,50 @@ export class WebSocketACL {
 	 * Validate location update message
 	 */
 	validateLocationUpdate(data: unknown): data is RealTime.Contracts.LocationUpdate {
-		return RealTime.Validation.LocationUpdateSchema.safeParse(data).success;
+		const result = RealTime.Validation.LocationUpdateSchema.safeParse(data);
+		if (!result.success) {
+			this.logger.error('Invalid location update data', {
+				errors: result.error.errors,
+			});
+			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
+				errors: result.error.errors,
+			});
+		}
+		return true;
 	}
 
 	/**
 	 * Validate vendor status message
 	 */
 	validateVendorStatus(data: unknown): data is RealTime.Contracts.VendorStatus {
-		return RealTime.Validation.VendorStatusSchema.safeParse(data).success;
+		const result = RealTime.Validation.VendorStatusSchema.safeParse(data);
+		if (!result.success) {
+			this.logger.error('Invalid vendor status data', {
+				errors: result.error.errors,
+			});
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				errors: result.error.errors,
+				message: 'Invalid vendor status data',
+			});
+		}
+		return true;
 	}
 
 	/**
 	 * Validate subscription request
 	 */
 	validateSubscriptionRequest(data: unknown): data is RealTime.Contracts.SubscriptionRequest {
-		return RealTime.Validation.SubscriptionRequestSchema.safeParse(data).success;
+		const result = RealTime.Validation.SubscriptionRequestSchema.safeParse(data);
+		if (!result.success) {
+			this.logger.error('Invalid subscription request data', {
+				errors: result.error.errors,
+			});
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				errors: result.error.errors,
+				message: 'Invalid subscription request data',
+			});
+		}
+		return true;
 	}
 
 	/**
@@ -60,7 +89,11 @@ export class WebSocketACL {
 			};
 		} catch (error) {
 			this.logger.error('Failed to convert WebSocket message to domain format', { error });
-			throw AppError.validation('INVALID_INPUT', 'Invalid WebSocket message format');
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				type,
+				error: error instanceof Error ? error.message : 'Unknown error',
+				message: 'Invalid WebSocket message format',
+			});
 		}
 	}
 
@@ -74,14 +107,20 @@ export class WebSocketACL {
 		});
 
 		if (error.message.includes('rate limit')) {
-			throw AppError.validation('WS_RATE_LIMIT_EXCEEDED', 'Rate limit exceeded', context);
+			throw AppError.validation('WS_RATE_LIMIT_EXCEEDED', ErrorCodes.WS_RATE_LIMIT_EXCEEDED, context);
 		}
 
 		if (error.message.includes('unauthorized')) {
-			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Unauthorized operation', context);
+			throw AppError.unauthorized('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				...context,
+				message: 'Unauthorized WebSocket operation',
+			});
 		}
 
-		throw AppError.internal('NATS_OPERATION_FAILED', 'Operation failed', context);
+		throw AppError.internal('DATABASE_ERROR', ErrorCodes.DATABASE_ERROR, {
+			...context,
+			operation: 'WebSocket connection',
+		});
 	}
 
 	/**

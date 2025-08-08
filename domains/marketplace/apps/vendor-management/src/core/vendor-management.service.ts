@@ -102,12 +102,14 @@ export class VendorManagementService {
 
 			if (!user) {
 				throw AppError.notFound('USER_NOT_FOUND', 'User not found', {
+					operation: 'create_vendor',
 					userId: data.userId,
 				});
 			}
 
 			if (user.vendors.length > 0) {
 				throw AppError.validation('VENDOR_LIMIT_EXCEEDED', 'User already has a vendor account', {
+					operation: 'create_vendor',
 					userId: data.userId,
 				});
 			}
@@ -167,12 +169,14 @@ export class VendorManagementService {
 
 			if (!vendor) {
 				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
+					operation: 'update_vendor',
 					vendorId: data.id,
 				});
 			}
 
 			if (vendor.ownerId !== data.userId) {
 				throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'User not authorized to update vendor', {
+					operation: 'update_vendor',
 					userId: data.userId,
 					vendorId: data.id,
 				});
@@ -234,6 +238,7 @@ export class VendorManagementService {
 
 			if (!vendor) {
 				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
+					operation: 'update_vendor_location',
 					vendorId: data.vendorId,
 				});
 			}
@@ -326,8 +331,8 @@ export class VendorManagementService {
 				error,
 			});
 			throw AppError.internal('LOCATION_QUERY_FAILED', 'Failed to get vendors in geographic area', {
-				bounds,
 				operation: 'get_vendors_in_area',
+				bounds,
 			});
 		}
 	}

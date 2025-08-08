@@ -31,21 +31,54 @@ export class FileManagementService {
 		try {
 			// Validate request
 			if (!this.cloudinaryACL.validateFileUpload(request as unknown)) {
-				throw AppError.validation('INVALID_INPUT', 'Invalid input data', {
+				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+					operation: 'validate_file_upload',
 					filename: request.filename,
 					mimetype: request.mimetype,
 					size: request.size,
+					message: 'Invalid file upload request',
 				});
 			}
 
 			// Convert to Cloudinary options
-			const options = this.cloudinaryACL.toCloudinaryOptions(request);
+			let options: any;
+			try {
+				options = this.cloudinaryACL.toCloudinaryOptions(request);
+			} catch (error) {
+				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+					operation: 'convert_cloudinary_options',
+					filename: request.filename,
+					error: error instanceof Error ? error.message : 'Unknown error',
+				});
+			}
 
 			// Upload file
-			const result = await this.cloudinaryService.uploadBuffer(request.content, options);
+			let result: any;
+			try {
+				result = await this.cloudinaryService.uploadBuffer(request.content, options);
+			} catch (error) {
+				throw AppError.externalService(
+					'INFRASTRUCTURE_FILE_UPLOAD_FAILED',
+					ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED,
+					{
+						operation: 'upload_to_cloudinary',
+						filename: request.filename,
+						error: error instanceof Error ? error.message : 'Unknown error',
+					},
+				);
+			}
 
 			// Convert response
-			const uploadResult = this.cloudinaryACL.toDomainResult(result);
+			let uploadResult: Infrastructure.Core.FileUploadResult;
+			try {
+				uploadResult = this.cloudinaryACL.toDomainResult(result);
+			} catch (error) {
+				throw AppError.internal('INFRASTRUCTURE_FILE_UPLOAD_FAILED', ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED, {
+					operation: 'convert_upload_result',
+					filename: request.filename,
+					error: error instanceof Error ? error.message : 'Unknown error',
+				});
+			}
 
 			// Emit event
 			const event: Infrastructure.Events.FileUploaded = {
@@ -70,16 +103,16 @@ export class FileManagementService {
 			return uploadResult;
 		} catch (error) {
 			this.logger.error('Failed to upload file', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: request.filename,
 				size: request.size,
 			});
 
 			if (error instanceof AppError) throw error;
-
-			throw AppError.internal('UPLOAD_FAILED', 'File upload failed', {
+			throw AppError.internal('INFRASTRUCTURE_FILE_UPLOAD_FAILED', ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED, {
+				operation: 'upload_file',
 				filename: request.filename,
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}

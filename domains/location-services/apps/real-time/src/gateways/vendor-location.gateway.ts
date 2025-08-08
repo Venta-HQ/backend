@@ -57,8 +57,15 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		this.logger.debug('Vendor client connected', { clientId: client.id });
 
 		try {
+			if (!client.vendorId) {
+				throw AppError.unauthorized('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
+					operation: 'handle_vendor_connection',
+					socketId: client.id,
+				});
+			}
+
 			// Create domain connection
-			const connection = this.websocketACL.toDomainConnection(client.id, client.vendorId || '', {
+			const connection = this.websocketACL.toDomainConnection(client.id, client.vendorId, {
 				type: 'vendor',
 				clerkId: client.clerkId,
 			});
@@ -83,11 +90,24 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			});
 		} catch (error) {
 			this.logger.error('Failed to handle vendor connection', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				clientId: client.id,
 			});
 
-			client.disconnect();
+			if (error instanceof AppError) {
+				// Record error metrics
+				this.metrics.vendor_websocket_errors_total.inc({ type: 'connection' });
+				throw error;
+			}
+
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_vendor_connection',
+				socketId: client.id,
+			});
+		} finally {
+			if (!client.connected) {
+				client.disconnect();
+			}
 		}
 	}
 
@@ -111,8 +131,19 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			});
 		} catch (error) {
 			this.logger.error('Failed to handle vendor disconnection', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				clientId: client.id,
+			});
+
+			if (error instanceof AppError) {
+				// Record error metrics
+				this.metrics.vendor_websocket_errors_total.inc({ type: 'disconnection' });
+				throw error;
+			}
+
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_vendor_disconnection',
+				socketId: client.id,
 			});
 		}
 	}
@@ -126,7 +157,8 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	) {
 		const vendorId = socket.vendorId;
 		if (!vendorId) {
-			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Vendor not authenticated', {
+			throw AppError.unauthorized('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
+				operation: 'update_vendor_location',
 				socketId: socket.id,
 			});
 		}
@@ -172,7 +204,7 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});
 
@@ -180,7 +212,8 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			this.metrics.vendor_websocket_errors_total.inc({ type: 'location_update' });
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
+			throw AppError.internal('LOCATION_UPDATE_FAILED', ErrorCodes.LOCATION_UPDATE_FAILED, {
+				operation: 'update_vendor_location',
 				vendorId,
 				coordinates: { lat: data.lat, lng: data.lng },
 			});

@@ -1,4 +1,5 @@
 import Redis from 'ioredis';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
@@ -48,8 +49,16 @@ export class UserConnectionManagerService {
 
 			this.logger.log('User connection registered successfully', { socketId, userId });
 		} catch (error) {
-			this.logger.error('Failed to register user connection', error.stack, { error, socketId, userId });
-			throw error;
+			this.logger.error('Failed to register user connection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+				userId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'register_user',
+				socketId,
+				userId,
+			});
 		}
 	}
 
@@ -63,14 +72,24 @@ export class UserConnectionManagerService {
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				this.logger.warn('No user connection info found for disconnection', { socketId });
-				return;
+				throw AppError.notFound('USER_NOT_FOUND', ErrorCodes.USER_NOT_FOUND, {
+					operation: 'handle_disconnect',
+					socketId,
+				});
 			}
 
 			await this.handleUserDisconnect(connectionInfo.userId, socketId);
 		} catch (error) {
-			this.logger.error('Failed to handle user disconnection', error.stack, { error, socketId });
-			throw error;
+			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_disconnect',
+				socketId,
+			});
 		}
 	}
 
@@ -100,8 +119,16 @@ export class UserConnectionManagerService {
 				userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to cleanup user connection', error.stack, { error, socketId, userId });
-			throw error;
+			this.logger.error('Failed to cleanup user connection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+				userId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_user_disconnect',
+				socketId,
+				userId,
+			});
 		}
 	}
 
@@ -125,11 +152,15 @@ export class UserConnectionManagerService {
 			});
 		} catch (error) {
 			this.logger.error('Failed to add user to vendor room', {
-				error,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				userId: membership.userId,
 				vendorId: membership.vendorId,
 			});
-			throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'add_user_to_vendor_room',
+				userId: membership.userId,
+				vendorId: membership.vendorId,
+			});
 		}
 	}
 
@@ -153,11 +184,15 @@ export class UserConnectionManagerService {
 			});
 		} catch (error) {
 			this.logger.error('Failed to remove user from vendor room', {
-				error,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				userId: membership.userId,
 				vendorId: membership.vendorId,
 			});
-			throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'remove_user_from_vendor_room',
+				userId: membership.userId,
+				vendorId: membership.vendorId,
+			});
 		}
 	}
 
@@ -178,8 +213,14 @@ export class UserConnectionManagerService {
 
 			return vendorRooms;
 		} catch (error) {
-			this.logger.error('Failed to get user vendor room memberships', error.stack, { error, userId });
-			throw error;
+			this.logger.error('Failed to get user vendor room memberships', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				userId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_user_vendor_rooms',
+				userId,
+			});
 		}
 	}
 
@@ -193,10 +234,28 @@ export class UserConnectionManagerService {
 			if (!connectionData) {
 				return null;
 			}
-			return JSON.parse(connectionData);
+
+			const parsed = JSON.parse(connectionData);
+			if (!parsed || typeof parsed !== 'object' || !('userId' in parsed)) {
+				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+					operation: 'get_connection_info',
+					socketId,
+					message: 'Invalid connection data structure',
+				});
+			}
+
+			return parsed;
 		} catch (error) {
-			this.logger.error('Failed to get connection info', error.stack, { error, socketId });
-			throw error;
+			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_connection_info',
+				socketId,
+			});
 		}
 	}
 
@@ -208,8 +267,14 @@ export class UserConnectionManagerService {
 		try {
 			return await this.redis.get(`user:${userId}:socketId`);
 		} catch (error) {
-			this.logger.error('Failed to get user socket ID', error.stack, { error, userId });
-			throw error;
+			this.logger.error('Failed to get user socket ID', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				userId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_user_socket_id',
+				userId,
+			});
 		}
 	}
 
@@ -221,8 +286,14 @@ export class UserConnectionManagerService {
 		try {
 			return await this.redis.get(`socket:${socketId}:userId`);
 		} catch (error) {
-			this.logger.error('Failed to get socket user ID', error.stack, { error, socketId });
-			throw error;
+			this.logger.error('Failed to get socket user ID', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_socket_user_id',
+				socketId,
+			});
 		}
 	}
 }

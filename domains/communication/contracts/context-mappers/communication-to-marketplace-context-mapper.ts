@@ -1,3 +1,4 @@
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
 import { Communication } from '../types/context-mapping.types';
@@ -15,6 +16,14 @@ export class CommunicationToMarketplaceContextMapper {
 	 * Convert webhook event to marketplace user event
 	 */
 	toMarketplaceUserEvent(event: Communication.WebhookEvent<ClerkWebhookPayload>): Marketplace.Events.UserCreated {
+		if (!event?.payload?.data?.id || !event.timestamp) {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				operation: 'to_marketplace_user_event',
+				event,
+				message: 'Missing required fields in webhook event',
+			});
+		}
+
 		return {
 			userId: event.payload.data.id,
 			timestamp: event.timestamp,
@@ -27,6 +36,14 @@ export class CommunicationToMarketplaceContextMapper {
 	toMarketplaceSubscriptionEvent(
 		event: Communication.WebhookEvent<RevenueCatWebhookPayload>,
 	): Marketplace.Events.UserSubscriptionChanged {
+		if (!event?.payload?.event?.transaction_id || !event?.payload?.event?.app_user_id || !event.timestamp) {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				operation: 'to_marketplace_subscription_event',
+				event,
+				message: 'Missing required fields in webhook event',
+			});
+		}
+
 		const subscriptionId = event.payload.event.transaction_id;
 		const status = this.getSubscriptionStatus(event.payload.event.type);
 
@@ -53,7 +70,11 @@ export class CommunicationToMarketplaceContextMapper {
 			case 'EXPIRATION':
 				return 'expired';
 			default:
-				throw new Error(`Unsupported subscription event type: ${type}`);
+				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+					operation: 'get_subscription_status',
+					eventType: type,
+					message: 'Unsupported subscription event type',
+				});
 		}
 	}
 }

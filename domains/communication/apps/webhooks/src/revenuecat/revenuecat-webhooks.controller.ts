@@ -1,4 +1,4 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SignedWebhookGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
@@ -28,41 +28,57 @@ export class RevenueCatWebhooksController {
 		try {
 			switch (event.event.type) {
 				case 'INITIAL_PURCHASE': {
-					const marketplaceEvent = this.contextMapper.toMarketplaceSubscriptionEvent({
-						type: event.event.type,
-						source: 'revenuecat',
-						payload: event,
-						timestamp: new Date(event.event.purchased_at_ms).toISOString(),
-					});
+					try {
+						const marketplaceEvent = this.contextMapper.toMarketplaceSubscriptionEvent({
+							type: event.event.type,
+							source: 'revenuecat',
+							payload: event,
+							timestamp: new Date(event.event.purchased_at_ms).toISOString(),
+						});
 
-					await this.client.invoke('handleSubscriptionCreated', {
-						clerkUserId: marketplaceEvent.userId,
-						data: {
+						await this.client.invoke('handleSubscriptionCreated', {
+							clerkUserId: marketplaceEvent.userId,
+							data: {
+								eventId: event.event.transaction_id,
+								productId: event.event.product_id,
+								transactionId: marketplaceEvent.subscriptionId,
+							},
+							providerId: marketplaceEvent.subscriptionId,
+						});
+					} catch (error) {
+						throw AppError.externalService('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
+							operation: 'handle_revenuecat_initial_purchase',
 							eventId: event.event.transaction_id,
-							productId: event.event.product_id,
-							transactionId: marketplaceEvent.subscriptionId,
-						},
-						providerId: marketplaceEvent.subscriptionId,
-					});
+							userId: event.event.app_user_id,
+							error: error instanceof Error ? error.message : 'Unknown error',
+						});
+					}
 					break;
 				}
 
 				default:
-					this.logger.warn('Unhandled Event Type', {
+					throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+						operation: 'handle_revenuecat_event',
 						eventType: event.event.type,
 						userId: event.event.app_user_id,
+						message: 'Unhandled webhook event type',
 					});
 			}
 
 			return { message: 'Event processed successfully' };
 		} catch (error) {
 			this.logger.error('Failed to handle RevenueCat webhook event', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				eventType: event.event.type,
+				userId: event.event.app_user_id,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('WEBHOOK_PROCESSING_FAILED', 'Failed to process webhook');
+			throw AppError.internal('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
+				operation: 'handle_revenuecat_event',
+				eventType: event.event.type,
+				userId: event.event.app_user_id,
+			});
 		}
 	}
 }

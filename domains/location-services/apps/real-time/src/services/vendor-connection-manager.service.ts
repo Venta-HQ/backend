@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
@@ -49,8 +49,13 @@ export class VendorConnectionManagerService {
 
 			this.logger.log('Vendor connection registered successfully', { socketId, vendorId });
 		} catch (error) {
-			this.logger.error('Failed to register vendor connection', error.stack, { error, socketId, vendorId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to register vendor connection', {
+			this.logger.error('Failed to register vendor connection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+				vendorId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'register_vendor',
 				socketId,
 				vendorId,
 			});
@@ -67,14 +72,22 @@ export class VendorConnectionManagerService {
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				this.logger.warn('No vendor connection info found for disconnection', { socketId });
-				return;
+				throw AppError.notFound('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
+					operation: 'handle_disconnect',
+					socketId,
+				});
 			}
 
 			await this.handleVendorDisconnect(connectionInfo.vendorId, socketId);
 		} catch (error) {
-			this.logger.error('Failed to handle vendor disconnection', error.stack, { error, socketId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to handle vendor disconnection', {
+			this.logger.error('Failed to handle vendor disconnection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_disconnect',
 				socketId,
 			});
 		}
@@ -106,8 +119,13 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to cleanup vendor connection', error.stack, { error, socketId, vendorId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to cleanup vendor connection', {
+			this.logger.error('Failed to cleanup vendor connection', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+				vendorId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_vendor_disconnect',
 				socketId,
 				vendorId,
 			});
@@ -131,8 +149,12 @@ export class VendorConnectionManagerService {
 
 			return userIds;
 		} catch (error) {
-			this.logger.error('Failed to get vendor room users', error.stack, { error, vendorId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor room users', {
+			this.logger.error('Failed to get vendor room users', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				vendorId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_vendor_room_users',
 				vendorId,
 			});
 		}
@@ -151,9 +173,10 @@ export class VendorConnectionManagerService {
 
 			const data = JSON.parse(connectionData);
 			if (!data.socketId || !data.vendorId || !data.connectedAt) {
-				throw AppError.validation('INVALID_INPUT', 'Invalid connection data structure', {
+				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+					operation: 'get_connection_info',
 					socketId,
-					data,
+					message: 'Invalid connection data structure',
 				});
 			}
 
@@ -163,8 +186,14 @@ export class VendorConnectionManagerService {
 				connectedAt: new Date(data.connectedAt),
 			};
 		} catch (error) {
-			this.logger.error('Failed to get connection info', error.stack, { error, socketId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor connection info', {
+			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_connection_info',
 				socketId,
 			});
 		}
@@ -178,8 +207,12 @@ export class VendorConnectionManagerService {
 		try {
 			return await this.redis.get(`vendor:${vendorId}:socketId`);
 		} catch (error) {
-			this.logger.error('Failed to get vendor socket ID', error.stack, { error, vendorId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor socket ID', {
+			this.logger.error('Failed to get vendor socket ID', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				vendorId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_vendor_socket_id',
 				vendorId,
 			});
 		}
@@ -193,8 +226,12 @@ export class VendorConnectionManagerService {
 		try {
 			return await this.redis.get(`socket:${socketId}:vendorId`);
 		} catch (error) {
-			this.logger.error('Failed to get socket vendor ID', error.stack, { error, socketId });
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get socket vendor ID', {
+			this.logger.error('Failed to get socket vendor ID', error instanceof Error ? error.stack : '', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				socketId,
+			});
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'get_socket_vendor_id',
 				socketId,
 			});
 		}

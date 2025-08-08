@@ -1,4 +1,5 @@
 import { Server, Socket } from 'socket.io';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { EventService, GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
@@ -48,44 +49,89 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	async handleConnection(client: AuthenticatedSocket) {
 		this.logger.log(`User client connected: ${client.id}`);
 
-		// Record connection metrics
-		this.metrics.user_websocket_connections_total.inc({ status: 'connected', type: 'user' });
-		this.metrics.user_websocket_connections_active.inc({ type: 'user' });
-
-		// Handle user registration (now redundant since auth guard handles it)
-		client.on('register-user', async (data) => {
-			if (data.userId) {
-				await this.connectionManager.registerUser(data.userId, client.id);
-				this.logger.log(`User ${data.userId} registered with socket ${client.id}`);
-
-				// Emit user connected event
-				await this.eventService.emit('location.user.connected', {
-					userId: data.userId,
+		try {
+			if (!client.userId) {
+				throw AppError.unauthorized('USER_NOT_FOUND', ErrorCodes.USER_NOT_FOUND, {
+					operation: 'handle_user_connection',
 					socketId: client.id,
-					timestamp: new Date().toISOString(),
 				});
 			}
-		});
+
+			// Record connection metrics
+			this.metrics.user_websocket_connections_total.inc({ status: 'connected', type: 'user' });
+			this.metrics.user_websocket_connections_active.inc({ type: 'user' });
+
+			// Register user connection
+			await this.connectionManager.registerUser(client.userId, client.id);
+
+			// Emit user connected event
+			await this.eventService.emit('location.user.connected', {
+				userId: client.userId,
+				socketId: client.id,
+				timestamp: new Date().toISOString(),
+			});
+
+			this.logger.log(`User ${client.userId} registered with socket ${client.id}`);
+		} catch (error) {
+			this.logger.error('Failed to handle user connection', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				clientId: client.id,
+			});
+
+			// Record error metrics
+			this.metrics.user_websocket_errors_total.inc({ type: 'connection' });
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_user_connection',
+				socketId: client.id,
+			});
+		} finally {
+			if (!client.connected) {
+				client.disconnect();
+			}
+		}
 	}
 
 	async handleDisconnect(client: AuthenticatedSocket) {
 		this.logger.log(`User client disconnected: ${client.id}`);
 
-		// Record disconnection metrics
-		this.metrics.user_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'user' });
-		this.metrics.user_websocket_connections_active.dec({ type: 'user' });
+		try {
+			// Record disconnection metrics
+			this.metrics.user_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'user' });
+			this.metrics.user_websocket_connections_active.dec({ type: 'user' });
 
-		// Get user ID before removing connection
-		const userId = await this.connectionManager.getSocketUserId(client.id);
+			// Get user ID before removing connection
+			const userId = await this.connectionManager.getSocketUserId(client.id);
+			if (!userId) {
+				throw AppError.notFound('USER_NOT_FOUND', ErrorCodes.USER_NOT_FOUND, {
+					operation: 'handle_user_disconnection',
+					socketId: client.id,
+				});
+			}
 
-		await this.connectionManager.handleDisconnect(client.id);
+			await this.connectionManager.handleDisconnect(client.id);
 
-		if (userId) {
 			// Emit user disconnected event
 			await this.eventService.emit('location.user.disconnected', {
 				userId,
 				socketId: client.id,
 				timestamp: new Date().toISOString(),
+				reason: 'client_disconnect',
+			});
+		} catch (error) {
+			this.logger.error('Failed to handle user disconnection', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				clientId: client.id,
+			});
+
+			// Record error metrics
+			this.metrics.user_websocket_errors_total.inc({ type: 'disconnection' });
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation: 'handle_user_disconnection',
+				socketId: client.id,
 			});
 		}
 	}
@@ -96,23 +142,20 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		@MessageBody(new SchemaValidatorPipe(UpdateUserLocationDataSchema)) data: UpdateUserLocationData,
 		@ConnectedSocket() socket: AuthenticatedSocket,
 	) {
-		// User ID is guaranteed to be available from WsAuthGuard
 		const userId = socket.userId;
 		if (!userId) {
-			this.logger.error('No user ID found for authenticated socket');
-			socket.emit('error', {
-				code: 'UNAUTHORIZED',
-				message: 'User not authenticated',
+			throw AppError.unauthorized('USER_NOT_FOUND', ErrorCodes.USER_NOT_FOUND, {
+				operation: 'update_user_location',
+				socketId: socket.id,
 			});
-			return;
 		}
-
-		// Record location update metrics
-		this.metrics.location_updates_total.inc({ status: 'success', type: 'user' });
 
 		const { neLocation, swLocation } = data;
 
 		try {
+			// Record location update metrics
+			this.metrics.location_updates_total.inc({ status: 'success', type: 'user' });
+
 			// Get vendors in the user's current location
 			const { vendors } = await this.locationService
 				.invoke('vendorLocations', {
@@ -183,8 +226,21 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 
 			this.logger.debug(`User ${userId} location updated, now tracking ${vendorIds.length} vendors`);
 		} catch (error) {
-			this.logger.error(`Failed to update user location for ${userId}:`, error.stack, { error, userId });
-			socket.emit('error', { message: 'Failed to update location' });
+			this.logger.error('Failed to update user location', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				userId,
+				location: { neLocation, swLocation },
+			});
+
+			// Record error metrics
+			this.metrics.user_websocket_errors_total.inc({ type: 'location_update' });
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_UPDATE_FAILED', ErrorCodes.LOCATION_UPDATE_FAILED, {
+				operation: 'update_user_location',
+				userId,
+				location: { neLocation, swLocation },
+			});
 		}
 	}
 }

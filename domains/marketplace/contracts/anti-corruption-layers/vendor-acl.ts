@@ -37,8 +37,9 @@ export class VendorACL {
 			this.logger.error('Invalid vendor lookup data', {
 				errors: result.error.errors,
 			});
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_ID, 'Invalid vendor lookup data', {
+			throw AppError.validation('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
 				errors: result.error.errors,
+				vendorId: (data as any)?.id || 'undefined',
 			});
 		}
 		return true;
@@ -54,8 +55,9 @@ export class VendorACL {
 			this.logger.error('Invalid vendor create data', {
 				errors: result.error.errors,
 			});
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, 'Invalid vendor create data', {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
 				errors: result.error.errors,
+				message: 'Invalid vendor create data',
 			});
 		}
 		return true;
@@ -71,8 +73,9 @@ export class VendorACL {
 			this.logger.error('Invalid vendor update data', {
 				errors: result.error.errors,
 			});
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, 'Invalid vendor update data', {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
 				errors: result.error.errors,
+				message: 'Invalid vendor update data',
 			});
 		}
 		return true;
@@ -88,7 +91,7 @@ export class VendorACL {
 			this.logger.error('Invalid vendor location data', {
 				errors: result.error.errors,
 			});
-			throw AppError.validation(ErrorCodes.INVALID_LOCATION_DATA, 'Invalid vendor location data', {
+			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
 				errors: result.error.errors,
 			});
 		}

@@ -24,14 +24,15 @@ export class GeolocationController {
 			await this.geolocationService.updateVendorLocation(request);
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				entityId: request.entityId,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
+			throw AppError.internal('LOCATION_UPDATE_FAILED', ErrorCodes.LOCATION_UPDATE_FAILED, {
+				operation: 'grpc_update_vendor_location',
 				entityId: request.entityId,
-				error: error.message,
+				coordinates: request.coordinates,
 			});
 		}
 	}
@@ -51,14 +52,16 @@ export class GeolocationController {
 			return { vendors };
 		} catch (error) {
 			this.logger.error('Failed to get vendors in area', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				bounds: request.bounds,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_QUERY_FAILED', 'Failed to get vendors in area', {
+			throw AppError.internal('LOCATION_QUERY_FAILED', ErrorCodes.LOCATION_QUERY_FAILED, {
+				operation: 'grpc_get_vendors_in_area',
 				bounds: request.bounds,
-				error: error.message,
+				limit: request.limit,
+				activeOnly: request.activeOnly,
 			});
 		}
 	}

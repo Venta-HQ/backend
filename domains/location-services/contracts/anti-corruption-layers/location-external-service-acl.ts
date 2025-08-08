@@ -14,20 +14,44 @@ export class LocationExternalServiceACL {
 	 * Validate location update request
 	 */
 	validateLocationUpdate(data: unknown): data is LocationServices.Contracts.LocationUpdate {
-		return LocationServices.Validation.LocationUpdateSchema.safeParse(data).success;
+		const result = LocationServices.Validation.LocationUpdateSchema.safeParse(data);
+		if (!result.success) {
+			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
+				operation: 'validate_location_update',
+				data,
+				errors: result.error.errors,
+			});
+		}
+		return true;
 	}
 
 	/**
 	 * Validate geospatial query request
 	 */
 	validateGeospatialQuery(data: unknown): data is LocationServices.Contracts.GeospatialQuery {
-		return LocationServices.Validation.GeospatialQuerySchema.safeParse(data).success;
+		const result = LocationServices.Validation.GeospatialQuerySchema.safeParse(data);
+		if (!result.success) {
+			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
+				operation: 'validate_geospatial_query',
+				data,
+				errors: result.error.errors,
+			});
+		}
+		return true;
 	}
 
 	/**
 	 * Convert domain coordinates to Redis geospatial member
 	 */
 	toRedisMember(entityId: string, coordinates: LocationServices.Core.Coordinates): LocationServices.Internal.GeoMember {
+		if (!entityId || !coordinates?.lat || !coordinates?.lng) {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				operation: 'to_redis_member',
+				entityId,
+				coordinates,
+			});
+		}
+
 		return {
 			key: entityId,
 			latitude: coordinates.lat,
@@ -39,6 +63,13 @@ export class LocationExternalServiceACL {
 	 * Convert Redis geospatial member to domain vendor location
 	 */
 	toVendorLocation(member: LocationServices.Internal.GeoMember): LocationServices.Core.VendorLocation {
+		if (!this.validateGeoMember(member)) {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				operation: 'to_vendor_location',
+				member,
+			});
+		}
+
 		return {
 			entityId: member.key,
 			coordinates: {
@@ -55,25 +86,47 @@ export class LocationExternalServiceACL {
 	 */
 	handleRedisError(error: Error, context: Record<string, unknown>): never {
 		this.logger.error('Redis operation failed', {
-			error: error.message,
+			error: error instanceof Error ? error.message : 'Unknown error',
 			...context,
 		});
 
+		const operation = context.operation || 'redis_operation';
+
 		if (error.message.includes('WRONGTYPE')) {
-			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', 'Invalid Redis data type', context);
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation,
+				errorType: 'WRONGTYPE',
+				...context,
+			});
 		}
 
 		if (error.message.includes('ERR')) {
-			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', 'Redis operation error', context);
+			throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+				operation,
+				errorType: 'ERR',
+				...context,
+			});
 		}
 
-		throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', 'Unexpected Redis error', context);
+		throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
+			operation,
+			errorType: 'UNEXPECTED',
+			...context,
+		});
 	}
 
 	/**
 	 * Validate Redis geospatial member
 	 */
 	validateGeoMember(data: unknown): data is LocationServices.Internal.GeoMember {
-		return LocationServices.Validation.GeoMemberSchema.safeParse(data).success;
+		const result = LocationServices.Validation.GeoMemberSchema.safeParse(data);
+		if (!result.success) {
+			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				operation: 'validate_geo_member',
+				data,
+				errors: result.error.errors,
+			});
+		}
+		return true;
 	}
 }
