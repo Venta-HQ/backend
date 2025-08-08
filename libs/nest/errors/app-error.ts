@@ -1,4 +1,4 @@
-import { ErrorCodes } from './errorcodes';
+import { ErrorCode, ErrorsMap, interpolateMessage } from './errorcodes';
 
 export enum ErrorType {
 	INTERNAL = 'INTERNAL',
@@ -8,36 +8,33 @@ export enum ErrorType {
 	EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
 }
 
-type ErrorCode = keyof typeof ErrorCodes;
-
 export class AppError extends Error {
 	constructor(
 		public readonly type: ErrorType,
 		public readonly code: ErrorCode,
-		message: string,
 		public readonly context?: Record<string, unknown>,
 	) {
-		super(message);
+		super(interpolateMessage(ErrorsMap[code], context));
 		this.name = 'AppError';
 	}
 
-	static validation(code: ErrorCode, message: string, context?: Record<string, unknown>) {
-		return new AppError(ErrorType.VALIDATION, code, message, context);
+	static validation(code: ErrorCode, context?: Record<string, unknown>) {
+		return new AppError(ErrorType.VALIDATION, code, context);
 	}
 
-	static internal(code: ErrorCode, message: string, context?: Record<string, unknown>) {
-		return new AppError(ErrorType.INTERNAL, code, message, context);
+	static internal(code: ErrorCode, context?: Record<string, unknown>) {
+		return new AppError(ErrorType.INTERNAL, code, context);
 	}
 
-	static notFound(code: ErrorCode, message: string, context?: Record<string, unknown>) {
-		return new AppError(ErrorType.NOT_FOUND, code, message, context);
+	static notFound(code: ErrorCode, context?: Record<string, unknown>) {
+		return new AppError(ErrorType.NOT_FOUND, code, context);
 	}
 
-	static unauthorized(code: ErrorCode, message: string, context?: Record<string, unknown>) {
-		return new AppError(ErrorType.UNAUTHORIZED, code, message, context);
+	static unauthorized(code: ErrorCode, context?: Record<string, unknown>) {
+		return new AppError(ErrorType.UNAUTHORIZED, code, context);
 	}
 
-	static externalService(code: ErrorCode, message: string, context?: Record<string, unknown>) {
-		return new AppError(ErrorType.EXTERNAL_SERVICE, code, message, context);
+	static externalService(code: ErrorCode, context?: Record<string, unknown>) {
+		return new AppError(ErrorType.EXTERNAL_SERVICE, code, context);
 	}
 }

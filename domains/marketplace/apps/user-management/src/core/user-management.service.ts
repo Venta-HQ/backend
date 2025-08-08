@@ -1,10 +1,10 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
 import { MarketplaceToLocationContextMapper } from '@domains/marketplace/contracts/context-mappers/marketplace-to-location-context-mapper';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { User, UserSubscription } from '@prisma/client';
+import { User as PrismaUser, UserSubscription as PrismaUserSubscription } from '@prisma/client';
 
 /**
  * Service for managing user profiles and operations
@@ -33,10 +33,11 @@ export class UserManagementService {
 			const user = await this.prisma.db.user.create({
 				data: {
 					clerkId: request.clerkId,
-					isActive: true,
+					lat: null,
+					long: null,
 				},
 				include: {
-					UserSubscription: true,
+					subscription: true,
 				},
 			});
 
@@ -44,12 +45,11 @@ export class UserManagementService {
 			return this.toDomainUser(user);
 		} catch (error) {
 			this.logger.error('Failed to register user', {
-				error: error.message,
 				clerkId: request.clerkId,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_CREATION_FAILED', 'Failed to register user', {
+			throw AppError.internal(ErrorCodes.ERR_USER_CREATE, {
 				clerkId: request.clerkId,
 				source: request.source,
 			});
@@ -66,7 +66,7 @@ export class UserManagementService {
 			const user = await this.prisma.db.user.findUnique({
 				where: { id: userId },
 				include: {
-					UserSubscription: true,
+					subscription: true,
 				},
 			});
 
@@ -78,12 +78,11 @@ export class UserManagementService {
 			return this.toDomainUser(user);
 		} catch (error) {
 			this.logger.error('Failed to get user profile', {
-				error: error.message,
 				userId,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_NOT_FOUND', 'Failed to retrieve user profile', {
+			throw AppError.internal(ErrorCodes.ERR_USER_NOT_FOUND, {
 				userId,
 			});
 		}
@@ -100,8 +99,7 @@ export class UserManagementService {
 
 		try {
 			// Convert to location services format
-			const locationData = this.locationMapper.toLocationServicesUserUpdate({
-				userId: request.userId,
+			const locationData = this.locationMapper.toLocationServicesUserUpdate(request.userId, {
 				coordinates: request.location,
 				timestamp: request.timestamp,
 			});
@@ -111,28 +109,27 @@ export class UserManagementService {
 				where: { id: request.userId },
 				data: {
 					lat: locationData.coordinates.lat,
-					long: locationData.coordinates.lng,
+					long: locationData.coordinates.long,
 				},
 				include: {
-					UserSubscription: true,
+					subscription: true,
 				},
 			});
 
 			// Convert to domain model
 			return this.toDomainUser(user, {
 				lat: user.lat || 0,
-				lng: user.long || 0,
+				long: user.long || 0,
 				userId: user.id,
 				updatedAt: user.updatedAt.toISOString(),
 			});
 		} catch (error) {
 			this.logger.error('Failed to update user location', {
-				error: error.message,
 				userId: request.userId,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_UPDATE_FAILED', 'Failed to update user location', {
+			throw AppError.internal(ErrorCodes.ERR_USER_UPDATE, {
 				userId: request.userId,
 			});
 		}
@@ -159,12 +156,11 @@ export class UserManagementService {
 			this.logger.debug('User deleted successfully', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user', {
-				error: error.message,
 				clerkId,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_DELETION_FAILED', 'Failed to delete user', {
+			throw AppError.internal(ErrorCodes.ERR_USER_DELETE, {
 				clerkId,
 			});
 		}
@@ -174,7 +170,7 @@ export class UserManagementService {
 	 * Convert Prisma user to domain user
 	 */
 	private toDomainUser(
-		user: User & { UserSubscription?: UserSubscription | null },
+		user: PrismaUser & { subscription?: PrismaUserSubscription | null },
 		location?: Marketplace.Core.UserLocation,
 	): Marketplace.Core.User {
 		return {
@@ -185,16 +181,16 @@ export class UserManagementService {
 			createdAt: user.createdAt.toISOString(),
 			updatedAt: user.updatedAt.toISOString(),
 			isActive: user.isActive,
-			subscription: user.UserSubscription
+			subscription: user.subscription
 				? {
-						id: user.UserSubscription.id,
-						userId: user.UserSubscription.userId,
-						status: user.UserSubscription.status,
-						provider: user.UserSubscription.provider,
-						externalId: user.UserSubscription.externalId,
-						productId: user.UserSubscription.productId,
-						startDate: user.UserSubscription.startDate.toISOString(),
-						endDate: user.UserSubscription.endDate?.toISOString(),
+						id: user.subscription.id,
+						userId: user.subscription.userId,
+						status: user.subscription.status.toLowerCase() as 'active' | 'cancelled' | 'expired',
+						provider: user.subscription.provider.toLowerCase() as 'revenuecat',
+						externalId: user.subscription.externalId,
+						productId: user.subscription.productId,
+						startDate: user.subscription.startDate.toISOString(),
+						endDate: user.subscription.endDate?.toISOString(),
 					}
 				: undefined,
 			location,

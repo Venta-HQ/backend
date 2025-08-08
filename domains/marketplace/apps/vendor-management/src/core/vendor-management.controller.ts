@@ -1,4 +1,5 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { GrpcAuthGuard } from '@app/nest/guards';
 import {
 	Empty,
 	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
@@ -14,7 +15,7 @@ import {
 	VendorUpdateResponse,
 } from '@app/proto/marketplace/vendor-management';
 import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorManagementService } from './vendor-management.service';
 
@@ -23,6 +24,7 @@ import { VendorManagementService } from './vendor-management.service';
  * Implements the service interface generated from proto/marketplace/vendor-management.proto
  */
 @Controller()
+@UseGuards(GrpcAuthGuard)
 export class VendorManagementController implements VendorManagementServiceController {
 	private readonly logger = new Logger(VendorManagementController.name);
 
@@ -38,14 +40,14 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorLookupById(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_ID, 'Invalid vendor ID', {
-					vendorId: request.id,
+				throw AppError.validation(ErrorCodes.INVALID_VENDOR_ID, ErrorCodes.INVALID_VENDOR_ID, {
+					vendorId: (request as any)?.id || 'undefined',
 				});
 			}
 
 			const vendor = await this.vendorManagementService.getVendorById(request.id);
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
+				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
 					vendorId: request.id,
 				});
 			}
@@ -58,7 +60,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, 'Failed to get vendor', {
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
 				vendorId: request.id,
 			});
 		}
@@ -71,8 +73,8 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorCreateData(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, 'Invalid vendor data', {
-					userId: request.userId,
+				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
+					userId: (request as any)?.userId || 'undefined',
 				});
 			}
 
@@ -88,7 +90,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.VENDOR_CREATION_FAILED, 'Failed to create vendor', {
+			throw AppError.internal(ErrorCodes.VENDOR_CREATION_FAILED, ErrorCodes.VENDOR_CREATION_FAILED, {
 				userId: request.userId,
 			});
 		}
@@ -101,8 +103,8 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorUpdateData(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, 'Invalid vendor data', {
-					vendorId: request.id,
+				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
+					vendorId: (request as any)?.id || 'undefined',
 				});
 			}
 
@@ -118,7 +120,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.VENDOR_UPDATE_FAILED, 'Failed to update vendor', {
+			throw AppError.internal(ErrorCodes.VENDOR_UPDATE_FAILED, ErrorCodes.VENDOR_UPDATE_FAILED, {
 				vendorId: request.id,
 			});
 		}
@@ -134,9 +136,9 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorLocationUpdate(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_LOCATION_DATA, 'Invalid location data', {
-					vendorId: request.vendorId,
-					location: request.location,
+				throw AppError.validation(ErrorCodes.INVALID_LOCATION_DATA, ErrorCodes.INVALID_LOCATION_DATA, {
+					vendorId: (request as any)?.vendorId || 'undefined',
+					location: (request as any)?.location || 'undefined',
 				});
 			}
 
@@ -153,7 +155,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.LOCATION_UPDATE_FAILED, 'Failed to update vendor location', {
+			throw AppError.internal(ErrorCodes.LOCATION_UPDATE_FAILED, ErrorCodes.LOCATION_UPDATE_FAILED, {
 				vendorId: request.vendorId,
 			});
 		}
@@ -180,7 +182,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.LOCATION_QUERY_FAILED, 'Failed to get vendors in area', {
+			throw AppError.internal(ErrorCodes.LOCATION_QUERY_FAILED, ErrorCodes.LOCATION_QUERY_FAILED, {
 				neBounds: request.neLocation,
 				swBounds: request.swLocation,
 			});

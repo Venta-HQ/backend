@@ -116,7 +116,7 @@ export namespace Marketplace {
 		 */
 		export interface Location {
 			lat: number;
-			lng: number;
+			long: number;
 		}
 
 		export interface UserLocation extends Location {
@@ -225,7 +225,7 @@ export namespace Marketplace {
 	export namespace Validation {
 		export const LocationSchema = z.object({
 			lat: z.number().min(-90).max(90),
-			lng: z.number().min(-180).max(180),
+			long: z.number().min(-180).max(180),
 		});
 
 		export const VendorSchema = z.object({

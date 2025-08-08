@@ -1,6 +1,6 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { SearchDiscovery } from '../types/context-mapping.types';
 
 /**
  * Anti-Corruption Layer for Algolia integration
@@ -27,7 +27,7 @@ export class AlgoliaACL {
 	toAlgoliaIndexConfig(type: string): SearchDiscovery.Internal.AlgoliaIndexConfig {
 		const config = this.indexConfigs[type];
 		if (!config) {
-			throw AppError.validation('INVALID_INDEX_TYPE', 'Invalid Algolia index type', { type });
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INDEX, { type });
 		}
 		return config;
 	}
@@ -90,6 +90,6 @@ export class AlgoliaACL {
 			vendorId: context.vendorId,
 		});
 
-		throw AppError.internal('ALGOLIA_SERVICE_ERROR', 'Algolia operation failed', context);
+		throw AppError.internal(ErrorCodes.ERR_ALGOLIA_SERVICE, context);
 	}
 }

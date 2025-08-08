@@ -1,4 +1,4 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import {
 	Location,
@@ -77,7 +77,7 @@ export class VendorManagementService {
 			};
 		} catch (error) {
 			this.logger.error('Failed to get vendor', error.stack, { error, vendorId });
-			throw AppError.internal('DATABASE_ERROR', 'Failed to get vendor', {
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
 				operation: 'get_vendor_by_id',
 				vendorId,
 			});
@@ -101,14 +101,14 @@ export class VendorManagementService {
 			});
 
 			if (!user) {
-				throw AppError.notFound('USER_NOT_FOUND', 'User not found', {
+				throw AppError.notFound(ErrorCodes.USER_NOT_FOUND, ErrorCodes.USER_NOT_FOUND, {
 					operation: 'create_vendor',
 					userId: data.userId,
 				});
 			}
 
 			if (user.vendors.length > 0) {
-				throw AppError.validation('VENDOR_LIMIT_EXCEEDED', 'User already has a vendor account', {
+				throw AppError.validation(ErrorCodes.VENDOR_LIMIT_EXCEEDED, ErrorCodes.VENDOR_LIMIT_EXCEEDED, {
 					operation: 'create_vendor',
 					userId: data.userId,
 				});
@@ -147,7 +147,7 @@ export class VendorManagementService {
 				error,
 				userId: data.userId,
 			});
-			throw AppError.internal('DATABASE_ERROR', 'Failed to create vendor', {
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
 				operation: 'create_vendor',
 				userId: data.userId,
 			});
@@ -168,14 +168,14 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
+				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
 					operation: 'update_vendor',
 					vendorId: data.id,
 				});
 			}
 
 			if (vendor.ownerId !== data.userId) {
-				throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'User not authorized to update vendor', {
+				throw AppError.unauthorized(ErrorCodes.VENDOR_UNAUTHORIZED, ErrorCodes.VENDOR_UNAUTHORIZED, {
 					operation: 'update_vendor',
 					userId: data.userId,
 					vendorId: data.id,
@@ -213,7 +213,7 @@ export class VendorManagementService {
 				error,
 				vendorId: data.id,
 			});
-			throw AppError.internal('DATABASE_ERROR', 'Failed to update vendor', {
+			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
 				operation: 'update_vendor',
 				vendorId: data.id,
 			});
@@ -237,7 +237,7 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
+				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
 					operation: 'update_vendor_location',
 					vendorId: data.vendorId,
 				});
@@ -274,7 +274,7 @@ export class VendorManagementService {
 				location: data.location,
 				vendorId: data.vendorId,
 			});
-			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
+			throw AppError.internal(ErrorCodes.LOCATION_UPDATE_FAILED, ErrorCodes.LOCATION_UPDATE_FAILED, {
 				operation: 'update_vendor_location',
 				vendorId: data.vendorId,
 			});
@@ -330,7 +330,7 @@ export class VendorManagementService {
 				bounds,
 				error,
 			});
-			throw AppError.internal('LOCATION_QUERY_FAILED', 'Failed to get vendors in geographic area', {
+			throw AppError.internal(ErrorCodes.LOCATION_QUERY_FAILED, ErrorCodes.LOCATION_QUERY_FAILED, {
 				operation: 'get_vendors_in_area',
 				bounds,
 			});

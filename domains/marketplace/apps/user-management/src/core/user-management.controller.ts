@@ -1,4 +1,5 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { GrpcAuthGuard } from '@app/nest/guards/grpc';
 import {
 	CreateSubscriptionData,
 	CreateSubscriptionResponse,
@@ -12,7 +13,7 @@ import {
 import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
 import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserManagementService } from './user-management.service';
 
@@ -28,6 +29,7 @@ interface SubscriptionProviderData {
  * gRPC controller for user management service
  */
 @Controller()
+@UseGuards(GrpcAuthGuard)
 export class UserManagementController implements UserManagementServiceController {
 	private readonly logger = new Logger(UserManagementController.name);
 
@@ -69,7 +71,7 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_CREATION_FAILED', 'Failed to create user', {
+			throw AppError.internal(ErrorCodes.USER_CREATION_FAILED, ErrorCodes.USER_CREATION_FAILED, {
 				userId: request.id,
 			});
 		}
@@ -104,7 +106,7 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_DELETION_FAILED', 'Failed to delete user', {
+			throw AppError.internal(ErrorCodes.USER_DELETION_FAILED, ErrorCodes.USER_DELETION_FAILED, {
 				userId: request.id,
 			});
 		}
@@ -120,7 +122,7 @@ export class UserManagementController implements UserManagementServiceController
 		try {
 			// Validate request
 			if (!this.revenueCatACL.validateSubscriptionData(request.data as unknown)) {
-				throw AppError.validation('INVALID_SUBSCRIPTION_DATA', 'Invalid subscription data', {
+				throw AppError.validation(ErrorCodes.INVALID_SUBSCRIPTION_DATA, ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
 					userId: request.clerkUserId,
 				});
 			}
@@ -153,7 +155,7 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('SUBSCRIPTION_CREATION_FAILED', 'Failed to create subscription', {
+			throw AppError.internal(ErrorCodes.SUBSCRIPTION_CREATION_FAILED, ErrorCodes.SUBSCRIPTION_CREATION_FAILED, {
 				userId: request.clerkUserId,
 			});
 		}
@@ -182,7 +184,7 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_VENDORS_RETRIEVAL_FAILED', 'Failed to get user vendors', {
+			throw AppError.internal(ErrorCodes.USER_VENDORS_RETRIEVAL_FAILED, ErrorCodes.USER_VENDORS_RETRIEVAL_FAILED, {
 				userId: request.userId,
 			});
 		}

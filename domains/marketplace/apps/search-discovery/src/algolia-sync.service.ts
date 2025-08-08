@@ -1,10 +1,10 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AlgoliaService } from '@app/nest/modules';
+import { AlgoliaACL } from '@domains/marketplace/contracts/anti-corruption-layers/search/algolia-acl';
+import { SearchToMarketplaceContextMapper } from '@domains/marketplace/contracts/context-mappers/search/search-to-marketplace-context-mapper';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
+import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { AlgoliaACL } from './anti-corruption-layers/algolia-acl';
-import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-marketplace-context-mapper';
-import { SearchDiscovery } from './types/context-mapping.types';
 
 /**
  * Service for syncing vendor data with Algolia search index
@@ -43,7 +43,7 @@ export class AlgoliaSyncService {
 
 			// Validate record
 			if (!this.algoliaACL.validateSearchRecord(searchRecord)) {
-				throw AppError.validation('INVALID_SEARCH_RECORD', 'Invalid vendor search record', {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_RECORD, {
 					vendorId: event.vendorId,
 				});
 			}
@@ -95,7 +95,7 @@ export class AlgoliaSyncService {
 
 			// Validate record
 			if (!this.algoliaACL.validateSearchUpdate(searchRecord)) {
-				throw AppError.validation('INVALID_SEARCH_UPDATE', 'Invalid vendor search update', {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_UPDATE, {
 					vendorId: event.vendorId,
 				});
 			}
@@ -180,13 +180,16 @@ export class AlgoliaSyncService {
 			// Create location update record
 			const searchRecord = this.contextMapper.toLocationUpdate({
 				id: event.vendorId,
-				location: event.location,
+				location: {
+					lat: event.location.lat,
+					lng: event.location.long,
+				},
 				timestamp: event.timestamp,
 			});
 
 			// Validate record
 			if (!this.algoliaACL.validateLocationUpdate(searchRecord)) {
-				throw AppError.validation('INVALID_LOCATION_UPDATE', 'Invalid vendor location update', {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_UPDATE, {
 					vendorId: event.vendorId,
 				});
 			}
@@ -198,13 +201,19 @@ export class AlgoliaSyncService {
 			// Emit event
 			const syncEvent: SearchDiscovery.Events.VendorLocationIndexed = {
 				vendorId: event.vendorId,
-				location: event.location,
+				location: {
+					lat: event.location.lat,
+					lng: event.location.long,
+				},
 				timestamp: new Date().toISOString(),
 			};
 
 			this.logger.debug('Vendor location updated successfully', {
 				vendorId: event.vendorId,
-				location: event.location,
+				location: {
+					lat: event.location.lat,
+					lng: event.location.long,
+				},
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {

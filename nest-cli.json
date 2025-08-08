@@ -152,15 +152,6 @@
 			"compilerOptions": {
 				"tsConfigPath": "libs/proto/tsconfig.lib.json"
 			}
-		},
-		"apitypes": {
-			"type": "library",
-			"root": "libs/apitypes",
-			"entryFile": "index",
-			"sourceRoot": "libs/apitypes/src",
-			"compilerOptions": {
-				"tsConfigPath": "libs/apitypes/tsconfig.lib.json"
-			}
 		}
 	}
 }

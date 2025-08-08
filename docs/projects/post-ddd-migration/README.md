@@ -43,10 +43,16 @@ This document outlines the plan for improving our codebase after the initial DDD
 
 #### 5. Standardize Auth
 
-- Use `@app/nest/auth` guards and decorators
-- Remove custom auth logic
-- Use built-in auth context
-- Standardize role handling
+- Extend existing `@app/nest/guards` library:
+  - HTTP auth with `AuthGuard` (Clerk integration)
+  - WebSocket auth with `WsAuthGuard`
+  - Webhook auth with `SignedWebhookGuard`
+- Add missing components:
+  - gRPC auth strategy
+  - Role-based access control
+  - Permission system
+  - Standardized auth types
+  - Auth service for shared logic
 
 #### 6. Standardize Logging
 
@@ -165,6 +171,83 @@ async handleClerkEvent(
   await this.handleClerkWebhook(event, metadata);
 }
 ```
+
+## Current Status (Updated 2024-03-21)
+
+### Completed Tasks
+
+1. **Webhook Handling**
+
+   - ✅ Removed custom webhook handling code
+   - ✅ Integrated `SignedWebhookGuard` from `@app/nest/guards`
+   - ✅ Updated Clerk and RevenueCat controllers
+
+2. **Event Handling**
+
+   - ✅ Removed custom NATS code
+   - ✅ Integrated `EventService` from `@app/nest/modules`
+   - ✅ Standardized event types and validation
+
+3. **Error Handling**
+
+   - ✅ Consolidated error codes into single source (`errorcodes.ts`)
+   - ✅ Updated all services to use `AppError` consistently
+   - ✅ Added operation context to error metadata
+   - ✅ Fixed error code usage in ACLs and controllers
+
+4. **Validation**
+
+   - ✅ Created `@app/nest/validation` module
+   - ✅ Updated `SchemaValidatorPipe` for consistent error handling
+   - ✅ Standardized Zod schema usage in ACLs
+   - ✅ Added validation documentation
+
+5. **Authentication (In Progress)**
+   - ✅ Created standardized auth types (`AuthUser`, `AuthContext`, `AuthMetadata`)
+   - ✅ Created `AuthService` for shared logic
+   - ✅ Created `GrpcAuthGuard` and `GrpcAuthInterceptor`
+   - ✅ Updated `AuthGuard` and `WsAuthGuard` to use new types
+   - ✅ Added auth to marketplace domain gRPC services
+   - 🔄 Fixing type errors in user and vendor management
+   - ⏳ Pending: Location services domain auth
+   - ⏳ Pending: Communication domain auth
+   - ⏳ Pending: Infrastructure domain auth
+
+### Next Steps
+
+1. **Authentication**
+
+   - Fix remaining type errors in marketplace domain
+   - Integrate auth in location-services domain
+   - Integrate auth in communication domain
+   - Integrate auth in infrastructure domain
+
+2. **Logging**
+
+   - Replace raw Logger with `@app/nest/logging`
+   - Add request correlation
+   - Add structured logging
+   - Add context metadata
+
+3. **Domain Organization**
+
+   - Move misplaced components to contracts
+   - Standardize naming conventions
+   - Clean up unused code
+
+4. **Type Safety**
+   - Audit context mapper usage
+   - Audit ACL usage
+   - Standardize domain types
+
+### Current Focus
+
+Currently working on fixing type errors in the marketplace domain's user and vendor management services, specifically:
+
+1. Aligning Prisma types with domain models
+2. Fixing location type mismatches (`lng` vs `long`)
+3. Ensuring consistent error code usage
+4. Correcting type predicates in ACLs
 
 ## Benefits
 

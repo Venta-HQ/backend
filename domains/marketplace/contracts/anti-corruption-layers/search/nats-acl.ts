@@ -1,6 +1,6 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { SearchDiscovery } from '../types/context-mapping.types';
 
 /**
  * Anti-Corruption Layer for NATS integration
@@ -51,6 +51,6 @@ export class NatsACL {
 			subject: context.subject,
 		});
 
-		throw AppError.internal('NATS_OPERATION_FAILED', 'NATS operation failed', context);
+		throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, context);
 	}
 }
