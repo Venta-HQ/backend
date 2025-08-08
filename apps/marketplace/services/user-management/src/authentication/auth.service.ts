@@ -2,6 +2,7 @@ import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
+import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk-anti-corruption-layer';
 
 interface UserIdentityData {
 	clerkId: string;
@@ -18,7 +19,10 @@ interface IntegrationData {
 export class AuthService {
 	private readonly logger = new Logger(AuthService.name);
 
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private readonly clerkACL: ClerkAntiCorruptionLayer,
+	) {}
 
 	/**
 	 * Handle user identity creation from external auth provider
@@ -28,31 +32,34 @@ export class AuthService {
 		this.logger.log('Handling user identity creation from external auth provider', { clerkId: id });
 
 		try {
+			// Use anti-corruption layer to validate and transform Clerk data
+			const validatedClerkData = this.clerkACL.validateUserCreationData({ clerkId: id });
+
 			const userExists = await this.prisma.db.user.count({
 				where: {
-					clerkId: id,
+					clerkId: validatedClerkData.clerkId,
 				},
 			});
 
 			if (!userExists) {
 				const user = await this.prisma.db.user.create({
 					data: {
-						clerkId: id,
+						clerkId: validatedClerkData.clerkId,
 					},
 					select: { clerkId: true, id: true },
 				});
 
 				this.logger.log('User identity created successfully from external auth provider', {
-					clerkId: id,
+					clerkId: validatedClerkData.clerkId,
 					userId: user.id,
 				});
 
 				return user;
 			} else {
-				this.logger.log('User identity already exists', { clerkId: id });
+				this.logger.log('User identity already exists', { clerkId: validatedClerkData.clerkId });
 				return await this.prisma.db.user.findFirst({
 					select: { clerkId: true, id: true },
-					where: { clerkId: id },
+					where: { clerkId: validatedClerkData.clerkId },
 				});
 			}
 		} catch (error) {
@@ -72,25 +79,28 @@ export class AuthService {
 		this.logger.log('Handling user identity deletion from external auth provider', { clerkId: id });
 
 		try {
+			// Use anti-corruption layer to validate and transform Clerk data
+			const validatedClerkData = this.clerkACL.validateUserDeletionData({ clerkId: id });
+
 			// Get user before deletion for potential event emission
 			const user = await this.prisma.db.user.findFirst({
 				select: { clerkId: true, id: true },
-				where: { clerkId: id },
+				where: { clerkId: validatedClerkData.clerkId },
 			});
 
 			if (user) {
 				await this.prisma.db.user.deleteMany({
 					where: {
-						clerkId: id,
+						clerkId: validatedClerkData.clerkId,
 					},
 				});
 
 				this.logger.log('User identity deleted successfully from external auth provider', {
-					clerkId: id,
+					clerkId: validatedClerkData.clerkId,
 					userId: user.id,
 				});
 			} else {
-				this.logger.log('User identity not found for deletion', { clerkId: id });
+				this.logger.log('User identity not found for deletion', { clerkId: validatedClerkData.clerkId });
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity deletion', error.stack, { clerkId: id, error });

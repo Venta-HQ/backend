@@ -6,14 +6,15 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Context Mapper for Marketplace ↔ Communication domain
+ * Context Mapper for Marketplace → Communication domain
  *
- * Translates between Marketplace domain concepts and Communication domain concepts
+ * Translates Marketplace domain concepts to Communication domain concepts
  * for external service integrations (Clerk, RevenueCat, etc.)
+ * This is an OUTBOUND context mapper from Marketplace domain
  */
 @Injectable()
-export class MarketplaceCommunicationContextMapper {
-	private readonly logger = new Logger(MarketplaceCommunicationContextMapper.name);
+export class MarketplaceToCommunicationContextMapper {
+	private readonly logger = new Logger(MarketplaceToCommunicationContextMapper.name);
 
 	// ============================================================================
 	// Marketplace → Communication Translation
@@ -137,117 +138,6 @@ export class MarketplaceCommunicationContextMapper {
 			timestamp: new Date().toISOString(),
 			source: 'marketplace',
 		};
-	}
-
-	// ============================================================================
-	// Communication → Marketplace Translation
-	// ============================================================================
-
-	/**
-	 * Translate communication external user data to marketplace format
-	 */
-	toMarketplaceExternalUserData(communicationData: {
-		externalUserId: string;
-		service: 'clerk' | 'revenuecat';
-		userData: {
-			email: string;
-			firstName?: string;
-			lastName?: string;
-			metadata?: Record<string, any>;
-		};
-		timestamp: string;
-	}): MarketplaceExternalUserData {
-		this.logger.debug('Translating communication external user data to marketplace format', {
-			externalUserId: communicationData.externalUserId,
-			service: communicationData.service,
-		});
-
-		return {
-			externalUserId: communicationData.externalUserId,
-			service: communicationData.service,
-			userData: {
-				email: communicationData.userData.email,
-				firstName: communicationData.userData.firstName || '',
-				lastName: communicationData.userData.lastName || '',
-				metadata: communicationData.userData.metadata || {},
-			},
-			timestamp: communicationData.timestamp,
-		};
-	}
-
-	/**
-	 * Translate communication external user mapping to marketplace format
-	 */
-	toMarketplaceExternalUserMapping(communicationData: {
-		internalUserId: string;
-		externalUserId: string;
-		service: 'clerk' | 'revenuecat';
-		timestamp: string;
-	}): MarketplaceExternalUserMapping {
-		this.logger.debug('Translating communication external mapping to marketplace format', {
-			internalUserId: communicationData.internalUserId,
-			externalUserId: communicationData.externalUserId,
-			service: communicationData.service,
-		});
-
-		return {
-			marketplaceUserId: communicationData.internalUserId,
-			externalUserId: communicationData.externalUserId,
-			service: communicationData.service,
-			timestamp: communicationData.timestamp,
-		};
-	}
-
-	/**
-	 * Translate communication subscription data to marketplace format
-	 */
-	toMarketplaceExternalSubscriptionData(communicationData: {
-		externalSubscriptionId: string;
-		internalUserId: string;
-		service: 'revenuecat';
-		subscriptionData: {
-			productId: string;
-			transactionId: string;
-			status: string;
-			metadata?: Record<string, any>;
-		};
-		timestamp: string;
-	}): MarketplaceExternalSubscriptionData {
-		this.logger.debug('Translating communication subscription data to marketplace format', {
-			externalSubscriptionId: communicationData.externalSubscriptionId,
-			internalUserId: communicationData.internalUserId,
-		});
-
-		return {
-			externalSubscriptionId: communicationData.externalSubscriptionId,
-			marketplaceUserId: communicationData.internalUserId,
-			service: communicationData.service,
-			subscriptionData: {
-				productId: communicationData.subscriptionData.productId,
-				transactionId: communicationData.subscriptionData.transactionId,
-				status: communicationData.subscriptionData.status,
-				metadata: communicationData.subscriptionData.metadata || {},
-			},
-			timestamp: communicationData.timestamp,
-		};
-	}
-
-	/**
-	 * Translate communication user mapping list to marketplace format
-	 */
-	toMarketplaceUserMappingList(
-		communicationData: Array<{
-			internalUserId: string;
-			externalUserId: string;
-			service: 'clerk' | 'revenuecat';
-			timestamp: string;
-		}>,
-	): MarketplaceExternalUserMapping[] {
-		this.logger.debug('Translating communication user mapping list to marketplace format', {
-			count: communicationData.length,
-		});
-
-		return communicationData.map((mapping) => this.toMarketplaceExternalUserMapping(mapping));
 	}
 
 	// ============================================================================

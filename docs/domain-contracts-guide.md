@@ -29,7 +29,9 @@ We use **domain contracts for ALL inter-domain communication**:
 
 ## 🏗️ **Architecture Overview**
 
-### **Communication Layers**
+### **DDD Context Mapping Pattern**
+
+Each domain has **outbound context mappers** that translate its concepts to other domains:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -38,19 +40,47 @@ We use **domain contracts for ALL inter-domain communication**:
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
-│                   Domain Contracts Layer                    │
-│  (Type-safe interfaces between domains)                    │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
 │                 Context Mapping Layer                       │
-│  (Data translation between domain formats)                 │
+│  (OUTBOUND mappers from each domain)                       │
+│                                                             │
+│  Marketplace → Location: MarketplaceToLocationContextMapper │
+│  Marketplace → Communication: MarketplaceToCommunicationContextMapper │
+│  Location → Marketplace: LocationToMarketplaceContextMapper │
+│  Communication → Marketplace: CommunicationToMarketplaceContextMapper │
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
 │                    Transport Layer                          │
 │  (gRPC, HTTP, WebSockets)                                  │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### **Domain Independence Principle**
+
+- ✅ **Each domain owns its outbound context mappers**
+- ✅ **No cross-domain imports of context mappers**
+- ✅ **Unidirectional data flow** (Domain A → Domain B)
+- ✅ **Clear domain boundaries** maintained
+
+### **Context Mapper Naming Convention**
+
+Following DDD best practices, context mappers are named to show **direction**:
+
+```typescript
+// ✅ Correct: Shows direction (Source → Target)
+MarketplaceToLocationContextMapper; // Marketplace → Location
+LocationToMarketplaceContextMapper; // Location → Marketplace
+CommunicationToMarketplaceContextMapper; // Communication → Marketplace
+
+// ❌ Wrong: Ambiguous direction
+MarketplaceLocationContextMapper; // Which direction?
+LocationMarketplaceContextMapper; // Which direction?
+```
+
+**File Naming Pattern:**
+
+```
+{source-domain}-to-{target-domain}-context-mapper.ts
 ```
 
 ### **gRPC vs Domain Contracts: Different Layers**

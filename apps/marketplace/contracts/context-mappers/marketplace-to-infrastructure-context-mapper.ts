@@ -1,14 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Context Mapper for Marketplace ↔ Infrastructure domain
+ * Context Mapper for Marketplace → Infrastructure domain
  *
- * Translates between Marketplace domain concepts and Infrastructure domain concepts
+ * Translates Marketplace domain concepts to Infrastructure domain concepts
  * for file management, database operations, and messaging infrastructure
+ * This is an OUTBOUND context mapper from Marketplace domain
  */
 @Injectable()
-export class MarketplaceInfrastructureContextMapper {
-	private readonly logger = new Logger(MarketplaceInfrastructureContextMapper.name);
+export class MarketplaceToInfrastructureContextMapper {
+	private readonly logger = new Logger(MarketplaceToInfrastructureContextMapper.name);
 
 	// ============================================================================
 	// Marketplace → Infrastructure Translation

@@ -1,14 +1,16 @@
+import { PrometheusModule } from '@app/nest/modules/monitoring/prometheus/prometheus.module';
 import { Module } from '@nestjs/common';
-import { CommunicationMarketplaceContextMapper } from './context-mappers/communication-marketplace-context-mapper';
+import { CommunicationToMarketplaceContextMapper } from './context-mappers/communication-to-marketplace-context-mapper';
 
 /**
  * Communication Contracts Module
- * 
+ *
  * Provides all shared contracts, context mappers, and anti-corruption layers
  * for the entire communication domain (webhooks, notifications)
  */
 @Module({
-	providers: [CommunicationMarketplaceContextMapper],
-	exports: [CommunicationMarketplaceContextMapper],
+	imports: [PrometheusModule.register()],
+	providers: [CommunicationToMarketplaceContextMapper],
+	exports: [CommunicationToMarketplaceContextMapper],
 })
-export class CommunicationContractsModule {} 
+export class CommunicationContractsModule {}

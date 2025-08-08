@@ -2,13 +2,14 @@ import { ValidationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Infrastructure → Marketplace Context Mapper
+ * Context Mapper for Infrastructure → Marketplace communication
  *
- * Translates data between Infrastructure and Marketplace domains
+ * Translates Infrastructure domain concepts to Marketplace domain concepts
+ * This is an OUTBOUND context mapper from Infrastructure domain
  */
 @Injectable()
-export class InfrastructureMarketplaceContextMapper {
-	private readonly logger = new Logger('InfrastructureMarketplaceContextMapper');
+export class InfrastructureToMarketplaceContextMapper {
+	private readonly logger = new Logger('InfrastructureToMarketplaceContextMapper');
 
 	/**
 	 * Validate file upload result
@@ -227,6 +228,4 @@ export class InfrastructureMarketplaceContextMapper {
 			throw error;
 		}
 	}
-
-
 }

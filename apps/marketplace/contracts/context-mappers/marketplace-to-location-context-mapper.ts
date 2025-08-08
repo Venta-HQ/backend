@@ -8,13 +8,14 @@ import { TransformationUtils, ValidationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Context Mapper for Marketplace ↔ Location Services communication
+ * Context Mapper for Marketplace → Location Services communication
  *
- * Translates between Marketplace domain concepts and Location Services domain concepts
+ * Translates Marketplace domain concepts to Location Services domain concepts
+ * This is an OUTBOUND context mapper from Marketplace domain
  */
 @Injectable()
-export class MarketplaceLocationContextMapper {
-	private readonly logger = new Logger('MarketplaceLocationContextMapper');
+export class MarketplaceToLocationContextMapper {
+	private readonly logger = new Logger('MarketplaceToLocationContextMapper');
 
 	/**
 	 * Validate source data from marketplace domain
@@ -143,108 +144,4 @@ export class MarketplaceLocationContextMapper {
 	// ============================================================================
 	// Location Services → Marketplace Translation
 	// ============================================================================
-
-	/**
-	 * Translate location services vendor location to marketplace format
-	 */
-	toMarketplaceVendorLocation(locationServicesData: {
-		entityId: string;
-		coordinates: { latitude: number; longitude: number };
-		lastUpdateTime: string;
-		accuracy?: number;
-	}): MarketplaceVendorLocation {
-		try {
-			if (!this.validateTargetData(locationServicesData)) {
-				throw new Error('Invalid location services vendor data');
-			}
-
-			const result = {
-				vendorId: locationServicesData.entityId, // Marketplace uses 'vendorId'
-				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
-				lastUpdated: locationServicesData.lastUpdateTime,
-				accuracy: locationServicesData.accuracy || 5.0,
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate vendor location', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate location services user location to marketplace format
-	 */
-	toMarketplaceUserLocation(locationServicesData: {
-		entityId: string;
-		coordinates: { latitude: number; longitude: number };
-		lastUpdateTime: string;
-		accuracy?: number;
-	}): MarketplaceUserLocation {
-		try {
-			if (!this.validateTargetData(locationServicesData)) {
-				throw new Error('Invalid location services user data');
-			}
-
-			const result = {
-				userId: locationServicesData.entityId, // Marketplace uses 'userId'
-				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
-				lastUpdated: locationServicesData.lastUpdateTime,
-				accuracy: locationServicesData.accuracy || 5.0,
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate user location', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate location services location update to marketplace format
-	 */
-	toMarketplaceLocationUpdate(locationServicesData: {
-		entityId: string;
-		entityType: 'vendor' | 'user';
-		coordinates: { latitude: number; longitude: number };
-		timestamp: string;
-	}): MarketplaceLocationUpdate {
-		try {
-			if (!this.validateTargetData(locationServicesData)) {
-				throw new Error('Invalid location services update data');
-			}
-
-			const result = {
-				entityId: locationServicesData.entityId,
-				entityType: locationServicesData.entityType,
-				location: TransformationUtils.transformLatLngToLocation(locationServicesData.coordinates),
-				timestamp: locationServicesData.timestamp,
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate location update', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate location services vendor list to marketplace format
-	 */
-	toMarketplaceVendorLocationList(
-		locationServicesData: Array<{
-			entityId: string;
-			coordinates: { latitude: number; longitude: number };
-			lastUpdateTime: string;
-			accuracy?: number;
-		}>,
-	): MarketplaceVendorLocation[] {
-		try {
-			const result = locationServicesData.map((vendor) => this.toMarketplaceVendorLocation(vendor));
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate vendor location list', error);
-			throw error;
-		}
-	}
 }

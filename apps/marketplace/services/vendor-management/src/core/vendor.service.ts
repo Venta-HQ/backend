@@ -1,6 +1,7 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
+import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
 
 export interface VendorOnboardingData {
 	description?: string;
@@ -30,6 +31,7 @@ export class VendorService {
 	constructor(
 		private prisma: PrismaService,
 		private eventService: EventService,
+		private locationContextMapper: MarketplaceToLocationContextMapper,
 	) {}
 
 	/**
@@ -193,15 +195,22 @@ export class VendorService {
 		this.logger.log('Updating vendor location', { location, vendorId });
 
 		try {
+			// Transform location data using context mapper
+			const locationServicesData = this.locationContextMapper.toLocationServicesVendorUpdate(vendorId, location);
+
 			await this.prisma.db.vendor.update({
-				data: { lat: location.lat, long: location.lng },
+				data: {
+					lat: locationServicesData.coordinates.latitude,
+					long: locationServicesData.coordinates.longitude,
+				},
 				where: { id: vendorId },
 			});
 
 			// Emit DDD domain event with business context
-			await this.eventService.emit('location.vendor.location_updated', {
-				location: { lat: location.lat, lng: location.lng },
+			await this.eventService.emit('marketplace.vendor.profile_updated', {
 				vendorId,
+				updatedFields: ['location'],
+				timestamp: locationServicesData.lastUpdateTime,
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', error.stack, { error, vendorId });

@@ -1,6 +1,10 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
+import { CommunicationToMarketplaceContextMapper } from '../../../../../communication/contracts/context-mappers/communication-to-marketplace-context-mapper';
+import { MarketplaceToCommunicationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-communication-context-mapper';
+import { MarketplaceToInfrastructureContextMapper } from '../../../../contracts/context-mappers/marketplace-to-infrastructure-context-mapper';
+import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
 
 interface UserLocationData {
 	lat: number;
@@ -25,7 +29,13 @@ interface UserRegistrationData {
 export class UserService {
 	private readonly logger = new Logger(UserService.name);
 
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly locationContextMapper: MarketplaceToLocationContextMapper,
+		private readonly communicationContextMapper: MarketplaceToCommunicationContextMapper,
+		private readonly communicationToMarketplaceMapper: CommunicationToMarketplaceContextMapper,
+		private readonly infrastructureContextMapper: MarketplaceToInfrastructureContextMapper,
+	) {}
 
 	/**
 	 * Register a new user in the marketplace
@@ -101,11 +111,17 @@ export class UserService {
 		this.logger.log('Updating user location from location service', { location, userId });
 
 		try {
+			// Transform location data using context mapper for location services format
+			const locationServicesData = this.locationContextMapper.toLocationServicesUserUpdate(userId, {
+				lat: location.lat,
+				lng: location.long,
+			});
+
 			// Update user location in database
 			const user = await this.prisma.db.user.update({
 				data: {
-					lat: location.lat,
-					long: location.long,
+					lat: locationServicesData.coordinates.latitude,
+					long: locationServicesData.coordinates.longitude,
 				},
 				where: {
 					id: userId,
@@ -113,7 +129,7 @@ export class UserService {
 			});
 
 			this.logger.log('User location updated successfully', {
-				location: `${location.lat}, ${location.long}`,
+				location: `${locationServicesData.coordinates.latitude}, ${locationServicesData.coordinates.longitude}`,
 				userId,
 			});
 
@@ -149,6 +165,78 @@ export class UserService {
 				clerkId,
 				operation: 'create_user_profile',
 			});
+		}
+	}
+
+	/**
+	 * Handle user communication events using context mapper
+	 */
+	async handleUserCommunicationEvent(userId: string, eventData: any): Promise<void> {
+		this.logger.log('Handling user communication event', { userId, eventType: eventData.type });
+
+		try {
+			// Transform communication event data using inbound context mapper
+			const marketplaceEventData = this.communicationToMarketplaceMapper.toMarketplaceWebhookEvent({
+				type: eventData.type,
+				data: {
+					userId,
+					...eventData,
+				},
+				timestamp: new Date().toISOString(),
+				source: 'communication',
+			});
+
+			// Process the transformed event data
+			// This could involve updating user preferences, notification settings, etc.
+			this.logger.log('User communication event processed successfully', {
+				userId,
+				eventType: marketplaceEventData.eventType,
+			});
+		} catch (error) {
+			this.logger.error('Failed to handle user communication event', error.stack, { userId, error });
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.INTERNAL_SERVER_ERROR,
+				'Failed to handle user communication event',
+				{
+					operation: 'handle_user_communication_event',
+					userId,
+				},
+			);
+		}
+	}
+
+	/**
+	 * Handle user infrastructure operations using context mapper
+	 */
+	async handleUserInfrastructureOperation(userId: string, operationData: any): Promise<void> {
+		this.logger.log('Handling user infrastructure operation', { userId, operationType: operationData.type });
+
+		try {
+			// Transform infrastructure operation data using context mapper
+			const infrastructureData = this.infrastructureContextMapper.toInfrastructureEvent({
+				type: operationData.type,
+				data: { userId, ...operationData.data },
+				metadata: operationData.metadata,
+			});
+
+			// Process the transformed infrastructure data
+			// This could involve file operations, database operations, etc.
+			this.logger.log('User infrastructure operation processed successfully', {
+				userId,
+				operationType: infrastructureData.eventType,
+			});
+		} catch (error) {
+			this.logger.error('Failed to handle user infrastructure operation', error.stack, { userId, error });
+			throw new AppError(
+				ErrorType.INTERNAL,
+				ErrorCodes.INTERNAL_SERVER_ERROR,
+				'Failed to handle user infrastructure operation',
+				{
+					operation: 'handle_user_infrastructure_operation',
+					userId,
+				},
+			);
 		}
 	}
 

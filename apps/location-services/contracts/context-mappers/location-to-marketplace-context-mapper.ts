@@ -2,13 +2,14 @@ import { ValidationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
 
 /**
- * Location Services → Marketplace Context Mapper
+ * Context Mapper for Location Services → Marketplace communication
  *
- * Translates data between Location Services and Marketplace domains
+ * Translates Location Services domain concepts to Marketplace domain concepts
+ * This is an OUTBOUND context mapper from Location Services domain
  */
 @Injectable()
-export class LocationMarketplaceContextMapper {
-	private readonly logger = new Logger('LocationMarketplaceContextMapper');
+export class LocationToMarketplaceContextMapper {
+	private readonly logger = new Logger('LocationToMarketplaceContextMapper');
 
 	/**
 	 * Validate location data

@@ -2,13 +2,14 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ValidationUtils } from '@app/utils';
 
 /**
- * Communication → Marketplace Context Mapper
- * 
- * Translates data between Communication and Marketplace domains
+ * Context Mapper for Communication → Marketplace communication
+ *
+ * Translates Communication domain concepts to Marketplace domain concepts
+ * This is an OUTBOUND context mapper from Communication domain
  */
 @Injectable()
-export class CommunicationMarketplaceContextMapper {
-	private readonly logger = new Logger('CommunicationMarketplaceContextMapper');
+export class CommunicationToMarketplaceContextMapper {
+	private readonly logger = new Logger('CommunicationToMarketplaceContextMapper');
 
 	/**
 	 * Validate webhook data

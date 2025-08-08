@@ -2,6 +2,7 @@ import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma, SubscriptionStatus } from '@prisma/client';
+import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
 
 interface IntegrationData {
 	clerkUserId: string;
@@ -23,7 +24,10 @@ interface SubscriptionActivationData {
 export class SubscriptionService {
 	private readonly logger = new Logger(SubscriptionService.name);
 
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private readonly revenueCatACL: RevenueCatAntiCorruptionLayer,
+	) {}
 
 	/**
 	 * Activate user subscription with integration
@@ -36,15 +40,22 @@ export class SubscriptionService {
 		});
 
 		try {
+			// Use anti-corruption layer to validate and transform RevenueCat data
+			const validatedSubscriptionData = this.revenueCatACL.validateSubscriptionActivationData({
+				clerkUserId: activationData.clerkUserId,
+				providerId: activationData.providerId,
+				subscriptionData: activationData.subscriptionData,
+			});
+
 			// Create integration record
 			await this.prisma.db.integration.create({
 				data: {
-					data: activationData.subscriptionData as any,
-					providerId: activationData.providerId,
+					data: validatedSubscriptionData.subscriptionData as any,
+					providerId: validatedSubscriptionData.providerId,
 					type: IntegrationType.RevenueCat,
 					user: {
 						connect: {
-							clerkId: activationData.clerkUserId,
+							clerkId: validatedSubscriptionData.clerkUserId,
 						},
 					},
 				},
@@ -56,15 +67,15 @@ export class SubscriptionService {
 					status: SubscriptionStatus.Active,
 					user: {
 						connect: {
-							clerkId: activationData.clerkUserId,
+							clerkId: validatedSubscriptionData.clerkUserId,
 						},
 					},
 				},
 			});
 
 			this.logger.log('Subscription activation completed successfully', {
-				clerkUserId: activationData.clerkUserId,
-				providerId: activationData.providerId,
+				clerkUserId: validatedSubscriptionData.clerkUserId,
+				providerId: validatedSubscriptionData.providerId,
 			});
 		} catch (error) {
 			this.logger.error('Failed to activate subscription', {

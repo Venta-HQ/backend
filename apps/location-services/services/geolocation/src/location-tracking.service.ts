@@ -2,6 +2,7 @@ import { Redis } from 'ioredis';
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
+import { LocationToMarketplaceContextMapper } from '../../../contracts/context-mappers/location-to-marketplace-context-mapper';
 
 interface LocationData {
 	lat: number;
@@ -16,6 +17,7 @@ export class LocationTrackingService {
 		private prisma: PrismaService,
 		private eventService: EventService,
 		private redis: Redis,
+		private locationToMarketplaceMapper: LocationToMarketplaceContextMapper,
 	) {}
 
 	/**
@@ -31,10 +33,18 @@ export class LocationTrackingService {
 		// Domain logic
 		await this.storeVendorLocation(vendorId, location);
 
-		// Emit location update event
+		// Transform and emit location update event
+		const marketplaceLocation = this.locationToMarketplaceMapper.toMarketplaceVendorLocation(vendorId, {
+			latitude: location.lat,
+			longitude: location.lng,
+			timestamp: new Date().toISOString(),
+			status: 'active',
+		});
+
 		await this.eventService.emit('location.vendor.location_updated', {
-			location: { lat: location.lat, lng: location.lng },
-			vendorId,
+			location: marketplaceLocation.location,
+			vendorId: marketplaceLocation.vendorId,
+			timestamp: marketplaceLocation.lastUpdated,
 		});
 
 		this.logger.log('Vendor location updated successfully', { vendorId });
@@ -53,10 +63,18 @@ export class LocationTrackingService {
 		// Domain logic - only handle Redis operations
 		await this.storeUserLocation(userId, location);
 
-		// Emit DDD domain event with business context
+		// Transform and emit DDD domain event with business context
+		const marketplaceLocation = this.locationToMarketplaceMapper.toMarketplaceUserLocation(userId, {
+			latitude: location.lat,
+			longitude: location.lng,
+			timestamp: new Date().toISOString(),
+			accuracy: 5.0,
+		});
+
 		await this.eventService.emit('location.user.location_updated', {
-			userId,
-			location: { lat: location.lat, lng: location.lng },
+			userId: marketplaceLocation.userId,
+			location: marketplaceLocation.location,
+			timestamp: marketplaceLocation.lastUpdated,
 		});
 
 		this.logger.log('User location updated successfully', { userId });
@@ -173,13 +191,15 @@ export class LocationTrackingService {
 	 * Format nearby vendors from Redis response
 	 */
 	private formatNearbyVendors(redisResponse: any[]): any[] {
-		return redisResponse.map((item: any) => ({
-			vendorId: item[0],
+		const results = redisResponse.map((item: any) => ({
+			entityId: item[0],
 			distance: parseFloat(item[1]),
 			coordinates: {
-				lat: parseFloat(item[2][1]),
-				lng: parseFloat(item[2][0]),
+				latitude: parseFloat(item[2][1]),
+				longitude: parseFloat(item[2][0]),
 			},
 		}));
+
+		return this.locationToMarketplaceMapper.toMarketplaceProximityResults(results);
 	}
 }

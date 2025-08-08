@@ -1,17 +1,56 @@
 import { clearMocks, data, errors, mockPrisma } from '@test/helpers/test-utils';
+import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
 import { SubscriptionService } from './subscription.service';
 
 describe('SubscriptionService', () => {
 	let service: SubscriptionService;
 	let prisma: any;
+	let mockRevenueCatACL: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		service = new SubscriptionService(prisma);
+		mockRevenueCatACL = {
+			validateSubscriptionActivationData: vi.fn(),
+		};
+		service = new SubscriptionService(prisma, mockRevenueCatACL);
 	});
 
 	afterEach(() => {
 		clearMocks();
+	});
+
+	describe('activateSubscription', () => {
+		it('should activate subscription successfully with anti-corruption layer', async () => {
+			const activationData = {
+				clerkUserId: 'clerk_user_123',
+				providerId: 'premium_monthly',
+				subscriptionData: {
+					eventId: 'event_123',
+					productId: 'premium_monthly',
+					transactionId: 'txn_456',
+				},
+			};
+
+			const validatedData = {
+				clerkUserId: 'clerk_user_123',
+				providerId: 'premium_monthly',
+				subscriptionData: {
+					eventId: 'event_123',
+					productId: 'premium_monthly',
+					transactionId: 'txn_456',
+				},
+			};
+
+			mockRevenueCatACL.validateSubscriptionActivationData.mockReturnValue(validatedData);
+			prisma.db.integration.create.mockResolvedValue({ id: 'integration_123' });
+			prisma.db.userSubscription.create.mockResolvedValue({ id: 'subscription_123' });
+
+			await service.activateSubscription(activationData);
+
+			expect(mockRevenueCatACL.validateSubscriptionActivationData).toHaveBeenCalledWith(activationData);
+			expect(prisma.db.integration.create).toHaveBeenCalled();
+			expect(prisma.db.userSubscription.create).toHaveBeenCalled();
+		});
 	});
 
 	describe('createIntegration', () => {

@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppError } from '@app/nest/errors';
+import { MarketplaceToCommunicationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-communication-context-mapper';
+import { MarketplaceToInfrastructureContextMapper } from '../../../../contracts/context-mappers/marketplace-to-infrastructure-context-mapper';
+import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
 	let service: UserService;
 	let mockPrisma: any;
+	let mockLocationContextMapper: any;
+	let mockCommunicationContextMapper: any;
+	let mockInfrastructureContextMapper: any;
 
 	beforeEach(() => {
 		mockPrisma = {
@@ -18,23 +24,54 @@ describe('UserService', () => {
 			},
 		};
 
-		service = new UserService(mockPrisma);
+		mockLocationContextMapper = {
+			toLocationServicesUserUpdate: vi.fn(),
+		};
+
+		mockCommunicationContextMapper = {
+			toCommunicationUserCreated: vi.fn(),
+		};
+
+		mockInfrastructureContextMapper = {
+			toInfrastructureEvent: vi.fn(),
+		};
+
+		service = new UserService(
+			mockPrisma,
+			mockLocationContextMapper,
+			mockCommunicationContextMapper,
+			mockInfrastructureContextMapper,
+		);
 	});
 
 	describe('updateUserLocation', () => {
 		const userId = 'user-123';
 		const location = { lat: 40.7128, long: -74.006 };
 
-		it('should update user location successfully', async () => {
+		it('should update user location successfully with context mapper', async () => {
+			const mockLocationServicesData = {
+				entityId: userId,
+				coordinates: { latitude: location.lat, longitude: location.long },
+				trackingStatus: 'active',
+				accuracy: 5.0,
+				lastUpdateTime: new Date().toISOString(),
+				source: 'marketplace',
+			};
 			const mockUser = { id: userId, lat: location.lat, long: location.long };
+
+			mockLocationContextMapper.toLocationServicesUserUpdate.mockReturnValue(mockLocationServicesData);
 			mockPrisma.db.user.update.mockResolvedValue(mockUser);
 
 			const result = await service.updateUserLocation(userId, location);
 
+			expect(mockLocationContextMapper.toLocationServicesUserUpdate).toHaveBeenCalledWith(userId, {
+				lat: location.lat,
+				lng: location.long,
+			});
 			expect(mockPrisma.db.user.update).toHaveBeenCalledWith({
 				data: {
-					lat: location.lat,
-					long: location.long,
+					lat: mockLocationServicesData.coordinates.latitude,
+					long: mockLocationServicesData.coordinates.longitude,
 				},
 				where: {
 					id: userId,
@@ -44,7 +81,17 @@ describe('UserService', () => {
 		});
 
 		it('should handle database errors gracefully', async () => {
+			const mockLocationServicesData = {
+				entityId: userId,
+				coordinates: { latitude: location.lat, longitude: location.long },
+				trackingStatus: 'active',
+				accuracy: 5.0,
+				lastUpdateTime: new Date().toISOString(),
+				source: 'marketplace',
+			};
 			const dbError = new Error('Database connection failed');
+
+			mockLocationContextMapper.toLocationServicesUserUpdate.mockReturnValue(mockLocationServicesData);
 			mockPrisma.db.user.update.mockRejectedValue(dbError);
 
 			await expect(service.updateUserLocation(userId, location)).rejects.toThrow(AppError);

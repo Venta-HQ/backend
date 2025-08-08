@@ -1,14 +1,20 @@
 import { IntegrationType } from '@prisma/client';
 import { clearMocks, data, mockPrisma } from '@test/helpers/test-utils';
+import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk-anti-corruption-layer';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
 	let service: AuthService;
 	let prisma: any;
+	let mockClerkACL: any;
 
 	beforeEach(() => {
 		prisma = mockPrisma();
-		service = new AuthService(prisma);
+		mockClerkACL = {
+			validateUserCreationData: vi.fn(),
+			validateUserDeletionData: vi.fn(),
+		};
+		service = new AuthService(prisma, mockClerkACL);
 	});
 
 	afterEach(() => {
@@ -26,11 +32,14 @@ describe('AuthService', () => {
 		};
 
 		it('should create user and emit event successfully', async () => {
+			const validatedData = { clerkId: 'clerk_user_123' };
+			mockClerkACL.validateUserCreationData.mockReturnValue(validatedData);
 			prisma.db.user.count.mockResolvedValue(0);
 			prisma.db.user.create.mockResolvedValue(expectedUser);
 
 			const result = await service.handleUserCreated(clerkId);
 
+			expect(mockClerkACL.validateUserCreationData).toHaveBeenCalledWith({ clerkId });
 			expect(result).toEqual(expectedUser);
 			expect(prisma.db.user.create).toHaveBeenCalledWith(expectedCall);
 		});
@@ -57,30 +66,39 @@ describe('AuthService', () => {
 		};
 
 		it('should delete user and emit event when user exists', async () => {
+			const validatedData = { clerkId: 'clerk_user_123' };
+			mockClerkACL.validateUserDeletionData.mockReturnValue(validatedData);
 			prisma.db.user.findFirst.mockResolvedValue(existingUser);
 			prisma.db.user.deleteMany.mockResolvedValue({ count: 1 });
 
 			await service.handleUserDeleted(clerkId);
 
+			expect(mockClerkACL.validateUserDeletionData).toHaveBeenCalledWith({ clerkId });
 			expect(prisma.db.user.findFirst).toHaveBeenCalledWith(findFirstCall);
 			expect(prisma.db.user.deleteMany).toHaveBeenCalledWith(deleteManyCall);
 		});
 
 		it('should handle deletion when user does not exist', async () => {
+			const validatedData = { clerkId: 'clerk_user_123' };
+			mockClerkACL.validateUserDeletionData.mockReturnValue(validatedData);
 			prisma.db.user.findFirst.mockResolvedValue(null);
 			prisma.db.user.deleteMany.mockResolvedValue({ count: 0 });
 
 			await service.handleUserDeleted(clerkId);
 
+			expect(mockClerkACL.validateUserDeletionData).toHaveBeenCalledWith({ clerkId });
 			expect(prisma.db.user.findFirst).toHaveBeenCalledWith(findFirstCall);
 			expect(prisma.db.user.deleteMany).not.toHaveBeenCalled();
 		});
 
 		it('should handle database errors during deletion', async () => {
+			const validatedData = { clerkId: 'clerk_user_123' };
+			mockClerkACL.validateUserDeletionData.mockReturnValue(validatedData);
 			const dbError = new Error('Database connection failed');
 			prisma.db.user.findFirst.mockRejectedValue(dbError);
 
 			await expect(service.handleUserDeleted(clerkId)).rejects.toThrow('Failed to handle user identity deletion');
+			expect(mockClerkACL.validateUserDeletionData).toHaveBeenCalledWith({ clerkId });
 			expect(prisma.db.user.findFirst).toHaveBeenCalledWith(findFirstCall);
 		});
 	});
