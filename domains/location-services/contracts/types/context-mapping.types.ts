@@ -230,10 +230,10 @@ export namespace LocationServices {
 		});
 
 		export const GeoMemberSchema = z.object({
-			key: z.string(),
+			key: z.string().min(1),
 			latitude: z.number().min(-90).max(90),
 			longitude: z.number().min(-180).max(180),
-			distance: z.number().optional(),
+			distance: z.number().nonnegative().optional(),
 		});
 	}
 }

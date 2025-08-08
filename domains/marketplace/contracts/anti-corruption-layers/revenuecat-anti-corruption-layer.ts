@@ -1,6 +1,7 @@
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Marketplace } from '../types/context-mapping.types';
+import { GrpcSubscriptionDataSchema, RevenueCatSubscriptionSchema } from '../types/user/user.schemas';
 
 /**
  * Anti-Corruption Layer for RevenueCat integration
@@ -13,33 +14,51 @@ export class RevenueCatAntiCorruptionLayer {
 	 * Validate subscription data
 	 */
 	validateSubscriptionData(data: unknown): data is Marketplace.External.RevenueCatSubscription {
-		try {
-			if (!data || typeof data !== 'object') return false;
-			const subscription = data as Marketplace.External.RevenueCatSubscription;
-
-			return (
-				typeof subscription.id === 'string' &&
-				typeof subscription.user_id === 'string' &&
-				typeof subscription.product_id === 'string' &&
-				typeof subscription.transaction_id === 'string' &&
-				['active', 'cancelled', 'expired'].includes(subscription.status) &&
-				['normal', 'trial'].includes(subscription.period_type) &&
-				typeof subscription.purchased_at === 'string' &&
-				(!subscription.expires_at || typeof subscription.expires_at === 'string')
-			);
-		} catch (error) {
-			this.logger.error('Failed to validate subscription data', {
-				error: error.message,
+		const result = GrpcSubscriptionDataSchema.safeParse(data);
+		if (!result.success) {
+			throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
+				operation: 'validate_subscription_data',
+				errors: result.error.errors,
 				data,
 			});
-			return false;
 		}
+		return true;
+	}
+
+	/**
+	 * Validate RevenueCat subscription data
+	 */
+	validateRevenueCatSubscription(data: unknown): data is Marketplace.External.RevenueCatSubscription {
+		const result = RevenueCatSubscriptionSchema.safeParse(data);
+		if (!result.success) {
+			throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
+				operation: 'validate_revenuecat_subscription',
+				errors: result.error.errors,
+				userId: (data as any)?.user_id || 'undefined',
+			});
+		}
+		return true;
 	}
 
 	/**
 	 * Convert RevenueCat subscription to domain subscription
 	 */
 	toDomainSubscription(subscription: Marketplace.External.RevenueCatSubscription): Marketplace.Core.UserSubscription {
+		if (!subscription?.id || !subscription?.user_id || !subscription?.product_id || !subscription?.transaction_id) {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
+				operation: 'to_domain_subscription',
+				userId: subscription?.user_id || 'undefined',
+				subscriptionId: subscription?.id || 'undefined',
+				field: !subscription?.id
+					? 'id'
+					: !subscription?.user_id
+						? 'user_id'
+						: !subscription?.product_id
+							? 'product_id'
+							: 'transaction_id',
+			});
+		}
+
 		return {
 			id: subscription.id,
 			userId: subscription.user_id,
@@ -62,6 +81,11 @@ export class RevenueCatAntiCorruptionLayer {
 			userId: context.userId,
 		});
 
-		throw AppError.internal('SUBSCRIPTION_SERVICE_ERROR', 'RevenueCat operation failed', context);
+		throw AppError.externalService('EXTERNAL_SERVICE_UNAVAILABLE', ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE, {
+			operation: context.operation,
+			service: 'revenuecat',
+			userId: context.userId,
+			error: error instanceof Error ? error.message : 'Unknown error',
+		});
 	}
 }

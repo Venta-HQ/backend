@@ -1,6 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SignedWebhookGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
 import { CommunicationToMarketplaceContextMapper } from '../../../../contracts/context-mappers/communication-to-marketplace-context-mapper';
@@ -19,7 +20,10 @@ export class RevenueCatWebhooksController {
 
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.REVENUECAT_WEBHOOK_SECRET || ''))
-	async handleRevenueCatEvent(@Body() event: RevenueCatWebhookPayload): Promise<{ message: string }> {
+	async handleRevenueCatEvent(
+		@Body(new SchemaValidatorPipe(Communication.Validation.WebhookEventSchema))
+		event: RevenueCatWebhookPayload,
+	): Promise<{ message: string }> {
 		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
 			eventType: event.event.type,
 			userId: event.event.app_user_id,
@@ -46,10 +50,11 @@ export class RevenueCatWebhooksController {
 							providerId: marketplaceEvent.subscriptionId,
 						});
 					} catch (error) {
-						throw AppError.externalService('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
+						throw AppError.externalService('EXTERNAL_SERVICE_UNAVAILABLE', ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE, {
 							operation: 'handle_revenuecat_initial_purchase',
 							eventId: event.event.transaction_id,
 							userId: event.event.app_user_id,
+							service: 'revenuecat',
 							error: error instanceof Error ? error.message : 'Unknown error',
 						});
 					}
@@ -57,12 +62,15 @@ export class RevenueCatWebhooksController {
 				}
 
 				default:
-					throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
-						operation: 'handle_revenuecat_event',
-						eventType: event.event.type,
-						userId: event.event.app_user_id,
-						message: 'Unhandled webhook event type',
-					});
+					throw AppError.validation(
+						'COMMUNICATION_WEBHOOK_PROCESSING_FAILED',
+						ErrorCodes.COMMUNICATION_WEBHOOK_PROCESSING_FAILED,
+						{
+							operation: 'handle_revenuecat_event',
+							eventType: event.event.type,
+							userId: event.event.app_user_id,
+						},
+					);
 			}
 
 			return { message: 'Event processed successfully' };
@@ -74,11 +82,15 @@ export class RevenueCatWebhooksController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
-				operation: 'handle_revenuecat_event',
-				eventType: event.event.type,
-				userId: event.event.app_user_id,
-			});
+			throw AppError.internal(
+				'COMMUNICATION_WEBHOOK_PROCESSING_FAILED',
+				ErrorCodes.COMMUNICATION_WEBHOOK_PROCESSING_FAILED,
+				{
+					operation: 'handle_revenuecat_event',
+					eventType: event.event.type,
+					userId: event.event.app_user_id,
+				},
+			);
 		}
 	}
 }

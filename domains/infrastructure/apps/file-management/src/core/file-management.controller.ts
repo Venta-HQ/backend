@@ -1,6 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { FileManagementService } from './file-management.service';
 
@@ -14,6 +15,7 @@ export class FileManagementController {
 	constructor(private readonly fileManagementService: FileManagementService) {}
 
 	@GrpcMethod('FileManagementService', 'UploadImage')
+	@UsePipes(new SchemaValidatorPipe(Infrastructure.Validation.FileUploadSchema))
 	async uploadImage(request: Infrastructure.Contracts.FileUpload): Promise<Infrastructure.Core.FileUploadResult> {
 		this.logger.debug('Handling image upload request', {
 			filename: request.filename,
@@ -24,14 +26,19 @@ export class FileManagementController {
 		try {
 			// Validate file type
 			if (!request.mimetype.startsWith('image/')) {
-				throw AppError.validation('INVALID_FILE_TYPE', 'Invalid file type', {
-					providedType: request.mimetype,
+				throw AppError.validation('INVALID_FILE_TYPE', ErrorCodes.INVALID_FILE_TYPE, {
+					operation: 'validate_image_upload',
+					filename: request.filename,
+					mimetype: request.mimetype,
 				});
 			}
 
 			// Validate file size (5MB)
 			if (request.size > 5 * 1024 * 1024) {
-				throw AppError.validation('FILE_TOO_LARGE', 'File size too large', {
+				throw AppError.validation('INVALID_FORMAT', ErrorCodes.INVALID_FORMAT, {
+					operation: 'validate_image_upload',
+					field: 'size',
+					filename: request.filename,
 					size: request.size,
 					maxSize: 5 * 1024 * 1024,
 				});
@@ -42,15 +49,16 @@ export class FileManagementController {
 			return result;
 		} catch (error) {
 			this.logger.error('Failed to handle image upload', {
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: request.filename,
 			});
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal('UPLOAD_FAILED', 'File upload failed', {
+			throw AppError.internal('INFRASTRUCTURE_FILE_UPLOAD_FAILED', ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED, {
+				operation: 'upload_image',
 				filename: request.filename,
-				error: error.message,
+				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}

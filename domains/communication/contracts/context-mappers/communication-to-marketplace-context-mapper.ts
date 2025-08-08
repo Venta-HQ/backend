@@ -17,10 +17,9 @@ export class CommunicationToMarketplaceContextMapper {
 	 */
 	toMarketplaceUserEvent(event: Communication.WebhookEvent<ClerkWebhookPayload>): Marketplace.Events.UserCreated {
 		if (!event?.payload?.data?.id || !event.timestamp) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'to_marketplace_user_event',
-				event,
-				message: 'Missing required fields in webhook event',
+				field: !event?.payload?.data?.id ? 'payload.data.id' : 'timestamp',
 			});
 		}
 
@@ -37,10 +36,13 @@ export class CommunicationToMarketplaceContextMapper {
 		event: Communication.WebhookEvent<RevenueCatWebhookPayload>,
 	): Marketplace.Events.UserSubscriptionChanged {
 		if (!event?.payload?.event?.transaction_id || !event?.payload?.event?.app_user_id || !event.timestamp) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'to_marketplace_subscription_event',
-				event,
-				message: 'Missing required fields in webhook event',
+				field: !event?.payload?.event?.transaction_id
+					? 'payload.event.transaction_id'
+					: !event?.payload?.event?.app_user_id
+						? 'payload.event.app_user_id'
+						: 'timestamp',
 			});
 		}
 
@@ -70,10 +72,9 @@ export class CommunicationToMarketplaceContextMapper {
 			case 'EXPIRATION':
 				return 'expired';
 			default:
-				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
 					operation: 'get_subscription_status',
 					eventType: type,
-					message: 'Unsupported subscription event type',
 				});
 		}
 	}

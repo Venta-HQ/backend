@@ -1,6 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SignedWebhookGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
 import { CommunicationToMarketplaceContextMapper } from '../../../../contracts/context-mappers/communication-to-marketplace-context-mapper';
@@ -19,7 +20,10 @@ export class ClerkWebhooksController {
 
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
-	async handleClerkEvent(@Body() event: ClerkWebhookPayload): Promise<{ message: string }> {
+	async handleClerkEvent(
+		@Body(new SchemaValidatorPipe(Communication.Validation.WebhookEventSchema))
+		event: ClerkWebhookPayload,
+	): Promise<{ message: string }> {
 		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`, {
 			eventType: event.type,
 			id: event.id,
@@ -40,7 +44,7 @@ export class ClerkWebhooksController {
 							id: marketplaceEvent.userId,
 						});
 					} catch (error) {
-						throw AppError.externalService('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
+						throw AppError.externalService('CLERK_SERVICE_ERROR', ErrorCodes.CLERK_SERVICE_ERROR, {
 							operation: 'handle_clerk_user_created',
 							eventId: event.id,
 							userId: event.data.id,
@@ -63,7 +67,7 @@ export class ClerkWebhooksController {
 							id: marketplaceEvent.userId,
 						});
 					} catch (error) {
-						throw AppError.externalService('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
+						throw AppError.externalService('CLERK_SERVICE_ERROR', ErrorCodes.CLERK_SERVICE_ERROR, {
 							operation: 'handle_clerk_user_deleted',
 							eventId: event.id,
 							userId: event.data.id,
@@ -74,12 +78,15 @@ export class ClerkWebhooksController {
 				}
 
 				default:
-					throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
-						operation: 'handle_clerk_event',
-						eventType: event.type,
-						eventId: event.id,
-						message: 'Unhandled webhook event type',
-					});
+					throw AppError.validation(
+						'COMMUNICATION_WEBHOOK_PROCESSING_FAILED',
+						ErrorCodes.COMMUNICATION_WEBHOOK_PROCESSING_FAILED,
+						{
+							operation: 'handle_clerk_event',
+							eventType: event.type,
+							eventId: event.id,
+						},
+					);
 			}
 
 			return { message: 'Event processed successfully' };
@@ -91,11 +98,15 @@ export class ClerkWebhooksController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('USER_OPERATION_FAILED', ErrorCodes.USER_OPERATION_FAILED, {
-				operation: 'handle_clerk_event',
-				eventType: event.type,
-				eventId: event.id,
-			});
+			throw AppError.internal(
+				'COMMUNICATION_WEBHOOK_PROCESSING_FAILED',
+				ErrorCodes.COMMUNICATION_WEBHOOK_PROCESSING_FAILED,
+				{
+					operation: 'handle_clerk_event',
+					eventType: event.type,
+					eventId: event.id,
+				},
+			);
 		}
 	}
 }

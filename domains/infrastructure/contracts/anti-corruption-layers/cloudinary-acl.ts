@@ -16,10 +16,10 @@ export class CloudinaryACL {
 	validateFileUpload(data: unknown): data is Infrastructure.Contracts.FileUpload {
 		const result = Infrastructure.Validation.FileUploadSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('INVALID_FILE_TYPE', ErrorCodes.INVALID_FILE_TYPE, {
 				operation: 'validate_file_upload',
-				data,
 				errors: result.error.errors,
+				filename: (data as any)?.filename || 'undefined',
 			});
 		}
 		return true;
@@ -31,10 +31,10 @@ export class CloudinaryACL {
 	validateUploadOptions(data: unknown): data is Infrastructure.Internal.CloudinaryUploadOptions {
 		const result = Infrastructure.Validation.CloudinaryUploadOptionsSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('INVALID_FORMAT', ErrorCodes.INVALID_FORMAT, {
 				operation: 'validate_upload_options',
-				data,
 				errors: result.error.errors,
+				field: 'options',
 			});
 		}
 		return true;
@@ -45,10 +45,9 @@ export class CloudinaryACL {
 	 */
 	toCloudinaryOptions(upload: Infrastructure.Contracts.FileUpload): Infrastructure.Internal.CloudinaryUploadOptions {
 		if (!upload?.mimetype || !upload?.context || !upload?.filename) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'to_cloudinary_options',
-				upload,
-				message: 'Missing required fields for Cloudinary options',
+				field: !upload?.mimetype ? 'mimetype' : !upload?.context ? 'context' : 'filename',
 			});
 		}
 
@@ -68,10 +67,9 @@ export class CloudinaryACL {
 	toDomainResult(response: Record<string, unknown>): Infrastructure.Core.FileUploadResult {
 		try {
 			if (!this.isValidCloudinaryResponse(response)) {
-				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				throw AppError.validation('INVALID_FORMAT', ErrorCodes.INVALID_FORMAT, {
 					operation: 'to_domain_result',
-					response,
-					message: 'Invalid Cloudinary response structure',
+					field: 'response',
 				});
 			}
 
@@ -93,14 +91,11 @@ export class CloudinaryACL {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.externalService(
-				'INFRASTRUCTURE_FILE_UPLOAD_FAILED',
-				ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED,
-				{
-					operation: 'to_domain_result',
-					error: error instanceof Error ? error.message : 'Unknown error',
-				},
-			);
+			throw AppError.externalService('EXTERNAL_SERVICE_UNAVAILABLE', ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE, {
+				operation: 'to_domain_result',
+				service: 'cloudinary',
+				error: error instanceof Error ? error.message : 'Unknown error',
+			});
 		}
 	}
 
@@ -109,10 +104,9 @@ export class CloudinaryACL {
 	 */
 	private getResourceType(mimetype: string): Infrastructure.Internal.CloudinaryUploadOptions['resourceType'] {
 		if (!mimetype) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'get_resource_type',
-				mimetype,
-				message: 'Missing MIME type',
+				field: 'mimetype',
 			});
 		}
 
@@ -126,10 +120,9 @@ export class CloudinaryACL {
 	 */
 	private getFolderFromContext(context: string): string {
 		if (!context) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'get_folder_from_context',
-				context,
-				message: 'Missing upload context',
+				field: 'context',
 			});
 		}
 
@@ -147,10 +140,9 @@ export class CloudinaryACL {
 	 */
 	private generatePublicId(upload: Infrastructure.Contracts.FileUpload): string {
 		if (!upload?.filename || !upload?.context) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'generate_public_id',
-				upload,
-				message: 'Missing required fields for public ID generation',
+				field: !upload?.filename ? 'filename' : 'context',
 			});
 		}
 
@@ -179,11 +171,10 @@ export class CloudinaryACL {
 
 		const missingFields = requiredFields.filter((field) => !response[field]);
 		if (missingFields.length > 0) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
 				operation: 'validate_cloudinary_response',
-				missingFields,
+				field: missingFields[0],
 				response,
-				message: 'Missing required fields in Cloudinary response',
 			});
 		}
 
@@ -204,11 +195,10 @@ export class CloudinaryACL {
 		});
 
 		if (invalidTypes.length > 0) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation('INVALID_FORMAT', ErrorCodes.INVALID_FORMAT, {
 				operation: 'validate_cloudinary_response',
-				invalidTypes,
+				field: invalidTypes[0],
 				response,
-				message: 'Invalid field types in Cloudinary response',
 			});
 		}
 

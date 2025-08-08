@@ -1,4 +1,4 @@
-import { ErrorCodes } from './error-codes';
+import { ErrorCodes } from './errorcodes';
 
 export enum ErrorType {
 	INTERNAL = 'INTERNAL',

@@ -1,4 +1,4 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { Marketplace } from '../types/context-mapping.types';
 import {
@@ -34,10 +34,8 @@ export class VendorACL {
 	validateVendorLookupById(data: unknown): data is { id: string } {
 		const result = GrpcVendorLookupDataSchema.safeParse(data);
 		if (!result.success) {
-			this.logger.error('Invalid vendor lookup data', {
-				errors: result.error.errors,
-			});
-			throw AppError.validation('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
+			throw AppError.validation('INVALID_VENDOR_ID', ErrorCodes.INVALID_VENDOR_ID, {
+				operation: 'validate_vendor_lookup',
 				errors: result.error.errors,
 				vendorId: (data as any)?.id || 'undefined',
 			});
@@ -52,12 +50,10 @@ export class VendorACL {
 	validateVendorCreateData(data: unknown): data is Marketplace.Core.VendorCreateData {
 		const result = GrpcVendorCreateDataSchema.safeParse(data);
 		if (!result.success) {
-			this.logger.error('Invalid vendor create data', {
+			throw AppError.validation('INVALID_VENDOR_DATA', ErrorCodes.INVALID_VENDOR_DATA, {
+				operation: 'validate_vendor_create',
 				errors: result.error.errors,
-			});
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
-				errors: result.error.errors,
-				message: 'Invalid vendor create data',
+				userId: (data as any)?.userId || 'undefined',
 			});
 		}
 		return true;
@@ -70,12 +66,11 @@ export class VendorACL {
 	validateVendorUpdateData(data: unknown): data is Marketplace.Core.VendorUpdateData {
 		const result = GrpcVendorUpdateDataSchema.safeParse(data);
 		if (!result.success) {
-			this.logger.error('Invalid vendor update data', {
+			throw AppError.validation('INVALID_VENDOR_DATA', ErrorCodes.INVALID_VENDOR_DATA, {
+				operation: 'validate_vendor_update',
 				errors: result.error.errors,
-			});
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
-				errors: result.error.errors,
-				message: 'Invalid vendor update data',
+				vendorId: (data as any)?.id || 'undefined',
+				userId: (data as any)?.userId || 'undefined',
 			});
 		}
 		return true;
@@ -88,11 +83,11 @@ export class VendorACL {
 	validateVendorLocationUpdate(data: unknown): data is Marketplace.Core.VendorLocationUpdate {
 		const result = GrpcVendorLocationDataSchema.safeParse(data);
 		if (!result.success) {
-			this.logger.error('Invalid vendor location data', {
+			throw AppError.validation('VENDOR_INVALID_LOCATION', ErrorCodes.VENDOR_INVALID_LOCATION, {
+				operation: 'validate_vendor_location',
 				errors: result.error.errors,
-			});
-			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
-				errors: result.error.errors,
+				vendorId: (data as any)?.vendorId || 'undefined',
+				location: (data as any)?.location || 'undefined',
 			});
 		}
 		return true;
@@ -109,6 +104,14 @@ export class VendorACL {
 	 * Transform vendor creation data to domain format
 	 */
 	toDomainVendorCreateData(data: Marketplace.Core.VendorCreateData): Marketplace.Core.VendorCreateData {
+		if (!data?.userId || !data?.name) {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
+				operation: 'to_domain_vendor_create',
+				userId: data?.userId || 'undefined',
+				field: !data?.userId ? 'userId' : 'name',
+			});
+		}
+
 		return {
 			userId: data.userId,
 			name: data.name,
@@ -124,6 +127,15 @@ export class VendorACL {
 	 * Transform vendor update data to domain format
 	 */
 	toDomainVendorUpdateData(data: Marketplace.Core.VendorUpdateData): Marketplace.Core.VendorUpdateData {
+		if (!data?.id || !data?.userId) {
+			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
+				operation: 'to_domain_vendor_update',
+				vendorId: data?.id || 'undefined',
+				userId: data?.userId || 'undefined',
+				field: !data?.id ? 'id' : 'userId',
+			});
+		}
+
 		return {
 			id: data.id,
 			userId: data.userId,
@@ -140,6 +152,15 @@ export class VendorACL {
 	 * Transform vendor location update to domain format
 	 */
 	toDomainVendorLocationUpdate(data: Marketplace.Core.VendorLocationUpdate): Marketplace.Core.VendorLocationUpdate {
+		if (!data?.vendorId || !data?.location?.lat || !data?.location?.lng) {
+			throw AppError.validation('VENDOR_INVALID_LOCATION', ErrorCodes.VENDOR_INVALID_LOCATION, {
+				operation: 'to_domain_vendor_location',
+				vendorId: data?.vendorId || 'undefined',
+				location: data?.location || 'undefined',
+				field: !data?.vendorId ? 'vendorId' : !data?.location?.lat ? 'location.lat' : 'location.lng',
+			});
+		}
+
 		return {
 			vendorId: data.vendorId,
 			location: {
@@ -157,6 +178,21 @@ export class VendorACL {
 		neLocation: { lat: number; long: number };
 		swLocation: { lat: number; long: number };
 	}): Marketplace.Core.GeospatialBounds {
+		if (!data?.neLocation?.lat || !data?.neLocation?.long || !data?.swLocation?.lat || !data?.swLocation?.long) {
+			throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
+				operation: 'to_domain_geospatial_bounds',
+				neLocation: data?.neLocation || 'undefined',
+				swLocation: data?.swLocation || 'undefined',
+				field: !data?.neLocation?.lat
+					? 'neLocation.lat'
+					: !data?.neLocation?.long
+						? 'neLocation.long'
+						: !data?.swLocation?.lat
+							? 'swLocation.lat'
+							: 'swLocation.long',
+			});
+		}
+
 		return {
 			neBounds: {
 				lat: data.neLocation.lat,

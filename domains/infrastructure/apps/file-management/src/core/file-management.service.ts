@@ -31,12 +31,11 @@ export class FileManagementService {
 		try {
 			// Validate request
 			if (!this.cloudinaryACL.validateFileUpload(request as unknown)) {
-				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				throw AppError.validation('INVALID_FILE_TYPE', ErrorCodes.INVALID_FILE_TYPE, {
 					operation: 'validate_file_upload',
 					filename: request.filename,
 					mimetype: request.mimetype,
 					size: request.size,
-					message: 'Invalid file upload request',
 				});
 			}
 
@@ -45,9 +44,10 @@ export class FileManagementService {
 			try {
 				options = this.cloudinaryACL.toCloudinaryOptions(request);
 			} catch (error) {
-				throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+				throw AppError.validation('INVALID_FORMAT', ErrorCodes.INVALID_FORMAT, {
 					operation: 'convert_cloudinary_options',
 					filename: request.filename,
+					field: 'options',
 					error: error instanceof Error ? error.message : 'Unknown error',
 				});
 			}
@@ -57,15 +57,12 @@ export class FileManagementService {
 			try {
 				result = await this.cloudinaryService.uploadBuffer(request.content, options);
 			} catch (error) {
-				throw AppError.externalService(
-					'INFRASTRUCTURE_FILE_UPLOAD_FAILED',
-					ErrorCodes.INFRASTRUCTURE_FILE_UPLOAD_FAILED,
-					{
-						operation: 'upload_to_cloudinary',
-						filename: request.filename,
-						error: error instanceof Error ? error.message : 'Unknown error',
-					},
-				);
+				throw AppError.externalService('EXTERNAL_SERVICE_UNAVAILABLE', ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE, {
+					operation: 'upload_to_cloudinary',
+					filename: request.filename,
+					service: 'cloudinary',
+					error: error instanceof Error ? error.message : 'Unknown error',
+				});
 			}
 
 			// Convert response
