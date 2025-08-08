@@ -8,100 +8,113 @@
 import { z } from 'zod';
 
 // ============================================================================
-// Location Services Core Types
+// Location Services Domain Types
 // ============================================================================
 
-/**
- * Location bounds for geospatial queries
- */
-export interface LocationServicesBounds {
-	/** Southwest corner coordinates */
-	swLocation: {
-		lat: number;
-		lng: number;
-	};
-	/** Northeast corner coordinates */
-	neLocation: {
-		lat: number;
-		lng: number;
-	};
-}
-
-/**
- * Vendor location data in location services context
- */
-export interface VendorLocationData {
-	/** Vendor ID from marketplace context */
-	vendorId: string;
-	/** Location coordinates */
-	location: {
-		lat: number;
-		lng: number;
-	};
-	/** Distance from query point (in meters) */
-	distance?: number;
-	/** Last update timestamp */
-	lastUpdated: string;
-	/** Location tracking status */
-	trackingStatus: 'active' | 'inactive' | 'suspended';
-}
-
-/**
- * User location data in location services context
- */
-export interface UserLocationData {
-	/** User ID from marketplace context */
-	userId: string;
-	/** Location coordinates */
-	location: {
-		lat: number;
-		lng: number;
-	};
-	/** Last update timestamp */
-	lastUpdated: string;
-	/** Location tracking status */
-	trackingStatus: 'active' | 'inactive' | 'suspended';
-}
-
-/**
- * Location update event in location services context
- */
-export interface LocationUpdateEvent {
-	/** Entity ID (vendor or user) */
-	entityId: string;
-	/** Entity type */
-	entityType: 'vendor' | 'user';
-	/** New location coordinates */
-	location: {
-		lat: number;
-		lng: number;
-	};
-	/** Update timestamp */
-	timestamp: string;
-	/** Update source */
-	source: 'gps' | 'manual' | 'estimated';
-	/** Accuracy in meters */
-	accuracy?: number;
-}
-
-/**
- * Geospatial query result
- */
-export interface GeospatialQueryResult {
-	/** Query bounds */
-	bounds: LocationServicesBounds;
-	/** Found entities */
-	entities: Array<{
-		id: string;
-		type: 'vendor' | 'user';
-		location: {
+export namespace LocationServices {
+	/**
+	 * Location bounds for geospatial queries
+	 */
+	export interface Bounds {
+		/** Southwest corner coordinates */
+		swLocation: {
 			lat: number;
 			lng: number;
 		};
+		/** Northeast corner coordinates */
+		neLocation: {
+			lat: number;
+			lng: number;
+		};
+	}
+
+	/**
+	 * Vendor location data in location services context
+	 */
+	export interface VendorLocation {
+		/** Vendor ID from marketplace context */
+		vendorId: string;
+		/** Location coordinates */
+		location: Coordinates;
+		/** Distance from query point (in meters) */
 		distance?: number;
-	}>;
-	/** Query timestamp */
-	timestamp: string;
+		/** Last update timestamp */
+		lastUpdated: string;
+		/** Location tracking status */
+		trackingStatus: TrackingStatus;
+	}
+
+	/**
+	 * User location data in location services context
+	 */
+	export interface UserLocation {
+		/** User ID from marketplace context */
+		userId: string;
+		/** Location coordinates */
+		location: Coordinates;
+		/** Last update timestamp */
+		lastUpdated: string;
+		/** Location tracking status */
+		trackingStatus: TrackingStatus;
+	}
+
+	/**
+	 * Location update event in location services context
+	 */
+	export interface LocationUpdate {
+		/** Entity ID (vendor or user) */
+		entityId: string;
+		/** Entity type */
+		entityType: EntityType;
+		/** New location coordinates */
+		location: Coordinates;
+		/** Update timestamp */
+		timestamp: string;
+		/** Update source */
+		source: LocationSource;
+		/** Accuracy in meters */
+		accuracy?: number;
+	}
+
+	/**
+	 * Geospatial query result
+	 */
+	export interface GeospatialQueryResult {
+		/** Query bounds */
+		bounds: Bounds;
+		/** Found entities */
+		entities: Array<{
+			id: string;
+			type: EntityType;
+			location: Coordinates;
+			distance?: number;
+		}>;
+		/** Query timestamp */
+		timestamp: string;
+	}
+
+	/**
+	 * Common location coordinates type
+	 */
+	export interface Coordinates {
+		lat: number;
+		lng: number;
+	}
+
+	/**
+	 * Entity types that can be tracked
+	 */
+	export type EntityType = 'vendor' | 'user';
+
+	/**
+	 * Location tracking status
+	 */
+	export type TrackingStatus = 'active' | 'inactive' | 'suspended';
+
+	/**
+	 * Location update source
+	 */
+	export type LocationSource = 'gps' | 'manual' | 'estimated';
 }
 
 // ============================================================================

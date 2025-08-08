@@ -1,5 +1,6 @@
 import { TransformationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
+import { RevenueCatSubscriptionData, RevenueCatUserData } from '../types/auth/auth.types';
 
 /**
  * Anti-Corruption Layer for RevenueCat Integration
@@ -22,17 +23,22 @@ export class RevenueCatAntiCorruptionLayer {
 	/**
 	 * Validate RevenueCat subscription data
 	 */
-	private validateRevenueCatSubscription(data: unknown): boolean {
+	private validateRevenueCatSubscription(data: unknown): data is RevenueCatSubscriptionData {
 		if (!data || typeof data !== 'object') return false;
-		const d = data as Record<string, unknown>;
+		const d = data as Partial<RevenueCatSubscriptionData>;
+
+		if (!d.event || typeof d.event !== 'object') return false;
+		const event = d.event as Partial<RevenueCatSubscriptionData['event']>;
 
 		return (
-			typeof d.app_user_id === 'string' &&
-			typeof d.product_id === 'string' &&
-			(!d.transaction_id || typeof d.transaction_id === 'string') &&
-			(!d.original_transaction_id || typeof d.original_transaction_id === 'string') &&
-			(!d.purchase_date || typeof d.purchase_date === 'string') &&
-			(!d.expiration_date || typeof d.expiration_date === 'string')
+			typeof event.type === 'string' &&
+			['INITIAL_PURCHASE', 'RENEWAL', 'CANCELLATION', 'UNCANCELLATION'].includes(event.type) &&
+			typeof event.app_user_id === 'string' &&
+			typeof event.product_id === 'string' &&
+			typeof event.transaction_id === 'string' &&
+			typeof event.purchase_date === 'string' &&
+			(!event.expiration_date || typeof event.expiration_date === 'string') &&
+			['PRODUCTION', 'SANDBOX'].includes(event.environment as string)
 		);
 	}
 
@@ -54,15 +60,30 @@ export class RevenueCatAntiCorruptionLayer {
 	/**
 	 * Validate RevenueCat user data
 	 */
-	private validateRevenueCatUser(data: unknown): boolean {
+	private validateRevenueCatUser(data: unknown): data is RevenueCatUserData {
 		if (!data || typeof data !== 'object') return false;
-		const d = data as Record<string, unknown>;
+		const d = data as Partial<RevenueCatUserData>;
 
 		return (
 			typeof d.app_user_id === 'string' &&
-			(!d.email || typeof d.email === 'string') &&
-			(!d.attributes || (typeof d.attributes === 'object' && !Array.isArray(d.attributes))) &&
-			(!d.subscriptions || (typeof d.subscriptions === 'object' && !Array.isArray(d.subscriptions)))
+			typeof d.original_app_user_id === 'string' &&
+			(!d.subscriptions ||
+				(typeof d.subscriptions === 'object' &&
+					Object.values(d.subscriptions).every(
+						(sub) =>
+							typeof sub.product_identifier === 'string' &&
+							typeof sub.purchase_date === 'string' &&
+							(sub.expires_date === null || typeof sub.expires_date === 'string') &&
+							['app_store', 'play_store', 'stripe'].includes(sub.store) &&
+							['PURCHASED', 'FAMILY_SHARED', 'UNKNOWN'].includes(sub.ownership_type),
+					))) &&
+			(!d.entitlements ||
+				(typeof d.entitlements === 'object' &&
+					Object.values(d.entitlements).every(
+						(ent) =>
+							typeof ent.product_identifier === 'string' &&
+							(ent.expires_date === null || typeof ent.expires_date === 'string'),
+					)))
 		);
 	}
 

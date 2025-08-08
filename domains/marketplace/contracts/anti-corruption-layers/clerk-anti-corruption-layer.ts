@@ -1,6 +1,7 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { TransformationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
+import { ClerkUserData } from '../types/auth/auth.types';
 
 /**
  * Anti-Corruption Layer for Clerk Integration
@@ -15,15 +16,22 @@ export class ClerkAntiCorruptionLayer {
 	/**
 	 * Validate Clerk user data
 	 */
-	private validateClerkUser(data: unknown): boolean {
+	private validateClerkUser(data: unknown): data is ClerkUserData {
 		if (!data || typeof data !== 'object') return false;
-		const d = data as Record<string, unknown>;
+		const d = data as Partial<ClerkUserData>;
 
 		return (
 			typeof d.id === 'string' &&
-			(!d.email_addresses || Array.isArray(d.email_addresses)) &&
+			(!d.email_addresses ||
+				(Array.isArray(d.email_addresses) &&
+					d.email_addresses.every(
+						(email) =>
+							typeof email.email_address === 'string' &&
+							(!email.verification || ['verified', 'unverified'].includes(email.verification.status)),
+					))) &&
 			(!d.first_name || typeof d.first_name === 'string') &&
-			(!d.last_name || typeof d.last_name === 'string')
+			(!d.last_name || typeof d.last_name === 'string') &&
+			(!d.metadata || Object.values(d.metadata).every((value) => typeof value === 'string'))
 		);
 	}
 
