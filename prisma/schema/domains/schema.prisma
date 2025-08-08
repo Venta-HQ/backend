@@ -12,8 +12,3 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// Import domain-specific schemas
-import "domains/marketplace/user/user.prisma"
-import "domains/marketplace/vendor/vendor.prisma"
-import "domains/infrastructure/integration/integration.prisma"

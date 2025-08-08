@@ -1,56 +1,62 @@
-/**
- * Infrastructure Domain Context Mapping Types
- *
- * These types define the context mapping interfaces for the infrastructure domain
- * when communicating with other bounded contexts.
- */
-
 import { z } from 'zod';
-
-// ============================================================================
-// Infrastructure Domain Types
-// ============================================================================
+import { UserVendorRequestSchema } from './user/user.schemas';
+import { CreateVendorSchema, UpdateVendorSchema } from './vendor/vendor.schemas';
 
 export namespace Infrastructure {
-	/**
-	 * File upload metadata
-	 */
-	export interface FileMetadata {
-		/** Original filename */
-		filename: string;
-		/** File size in bytes */
-		size: number;
-		/** File MIME type */
-		mimeType: string;
-		/** User who uploaded the file */
-		uploadedBy: string;
-		/** Upload timestamp */
-		timestamp: string;
+	// ============================================================================
+	// Core Domain Types
+	// Primary types that represent our domain concepts
+	// ============================================================================
+	export namespace Core {
+		export type VendorCreateData = z.infer<typeof CreateVendorSchema>;
+		export type VendorUpdateData = z.infer<typeof UpdateVendorSchema>;
+		export type UserVendorRequest = z.infer<typeof UserVendorRequestSchema>;
 	}
 
-	/**
-	 * File upload result
-	 */
-	export interface FileUploadResult {
-		/** Generated file ID */
-		fileId: string;
-		/** Public URL to access the file */
-		url: string;
-		/** File metadata */
-		metadata: FileMetadata;
-		/** Storage provider (e.g., 'cloudinary', 's3') */
-		provider: string;
-		/** Upload timestamp */
-		timestamp: string;
+	// ============================================================================
+	// Contracts
+	// Types for cross-domain communication
+	// ============================================================================
+	export namespace Contracts {
+		export interface AuthContext {
+			userId: string;
+			roles: string[];
+			metadata: Record<string, string>;
+		}
 	}
 
-	/**
-	 * File operation type
-	 */
-	export type FileOperation = 'upload' | 'download' | 'delete' | 'update';
+	// ============================================================================
+	// Internal Types
+	// Types for internal implementation details
+	// ============================================================================
+	export namespace Internal {
+		export interface AuthedRequest extends Request {
+			userId: string;
+			roles: string[];
+			metadata: Record<string, string>;
+		}
+	}
 
-	/**
-	 * File context type
-	 */
-	export type FileContext = 'vendor_profile' | 'user_profile' | 'product_image' | 'document';
+	// ============================================================================
+	// Event Types
+	// Types for domain events
+	// ============================================================================
+	export namespace Events {
+		export interface FileUploaded {
+			fileId: string;
+			url: string;
+			uploadedBy: string;
+			timestamp: string;
+		}
+	}
+
+	// ============================================================================
+	// Validation Types
+	// Types for validation schemas
+	// ============================================================================
+	export namespace Validation {
+		export const VendorCreateSchema = CreateVendorSchema;
+		export const VendorUpdateSchema = UpdateVendorSchema;
+		export const UserVendorRequestSchema = UserVendorRequestSchema;
+	}
 }

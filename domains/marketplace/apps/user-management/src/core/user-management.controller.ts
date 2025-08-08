@@ -1,4 +1,4 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError } from '@app/nest/errors';
 import {
 	CreateSubscriptionData,
 	CreateSubscriptionResponse,
@@ -9,34 +9,67 @@ import {
 	UserVendorData,
 	UserVendorsResponse,
 } from '@app/proto/marketplace/user-management';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
+import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserManagementService } from './user-management.service';
 
+interface SubscriptionProviderData {
+	subscriptionId: string;
+	transactionId: string;
+	productId: string;
+	status?: 'active' | 'cancelled' | 'expired';
+	expiresAt?: string;
+}
+
 /**
  * gRPC controller for user management service
- * Implements the service interface generated from proto/marketplace/user-management.proto
  */
 @Controller()
 export class UserManagementController implements UserManagementServiceController {
 	private readonly logger = new Logger(UserManagementController.name);
 
-	constructor(private readonly userManagementService: UserManagementService) {}
+	constructor(
+		private readonly userManagementService: UserManagementService,
+		private readonly clerkACL: ClerkAntiCorruptionLayer,
+		private readonly revenueCatACL: RevenueCatAntiCorruptionLayer,
+	) {}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleUserCreated')
 	async handleUserCreated(request: UserIdentityData): Promise<CreateUserResponse> {
-		this.logger.debug('Handling user created event', { userId: request.id });
+		this.logger.debug('Processing user creation request', {
+			userId: request.id,
+		});
 
 		try {
-			await this.userManagementService.registerUser({ clerkId: request.id, source: 'clerk_webhook' });
-			return { message: 'User created successfully' };
-		} catch (error) {
-			this.logger.error('Failed to handle user creation', {
-				userId: request.id,
-				error: error.message,
+			// Validate request
+			if (!this.clerkACL.validateUserIdentity(request as unknown)) {
+				throw AppError.validation('INVALID_USER_DATA', 'Invalid user identity data', {
+					userId: request.id,
+				});
+			}
+
+			// Register user
+			await this.userManagementService.registerUser({
+				clerkId: request.id,
+				source: 'clerk_webhook',
 			});
 
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user creation', {
+			this.logger.debug('User created successfully', {
+				userId: request.id,
+			});
+
+			return { message: 'User created successfully' };
+		} catch (error) {
+			this.logger.error('Failed to create user', {
+				error: error.message,
+				userId: request.id,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_CREATION_FAILED', 'Failed to create user', {
 				userId: request.id,
 			});
 		}
@@ -44,18 +77,34 @@ export class UserManagementController implements UserManagementServiceController
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleUserDeleted')
 	async handleUserDeleted(request: UserIdentityData): Promise<CreateUserResponse> {
-		this.logger.debug('Handling user deleted event', { userId: request.id });
+		this.logger.debug('Processing user deletion request', {
+			userId: request.id,
+		});
 
 		try {
+			// Validate request
+			if (!this.clerkACL.validateUserIdentity(request as unknown)) {
+				throw AppError.validation('INVALID_USER_DATA', 'Invalid user identity data', {
+					userId: request.id,
+				});
+			}
+
+			// Delete user
 			await this.userManagementService.deleteUserProfile(request.id);
-			return { message: 'User deleted successfully' };
-		} catch (error) {
-			this.logger.error('Failed to handle user deletion', {
+
+			this.logger.debug('User deleted successfully', {
 				userId: request.id,
-				error: error.message,
 			});
 
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user deletion', {
+			return { message: 'User deleted successfully' };
+		} catch (error) {
+			this.logger.error('Failed to delete user', {
+				error: error.message,
+				userId: request.id,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_DELETION_FAILED', 'Failed to delete user', {
 				userId: request.id,
 			});
 		}
@@ -63,41 +112,77 @@ export class UserManagementController implements UserManagementServiceController
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleSubscriptionCreated')
 	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
-		this.logger.debug('Handling subscription created event', {
+		this.logger.debug('Processing subscription creation request', {
 			userId: request.clerkUserId,
 			subscriptionData: request.data,
 		});
 
 		try {
+			// Validate request
+			if (!this.revenueCatACL.validateSubscriptionData(request.data as unknown)) {
+				throw AppError.validation('INVALID_SUBSCRIPTION_DATA', 'Invalid subscription data', {
+					userId: request.clerkUserId,
+				});
+			}
+
+			// Convert to domain model
+			const subscription = this.revenueCatACL.toDomainSubscription({
+				id: request.data.subscriptionId,
+				user_id: request.clerkUserId,
+				product_id: request.data.productId,
+				transaction_id: request.data.transactionId,
+				status: request.data.status || 'active',
+				period_type: 'normal',
+				purchased_at: new Date().toISOString(),
+				expires_at: request.data.expiresAt,
+			} as Marketplace.External.RevenueCatSubscription);
+
 			// TODO: Implement subscription handling in UserManagementService
-			return { message: 'Subscription created successfully' };
-		} catch (error) {
-			this.logger.error('Failed to handle subscription creation', {
+			// await this.userManagementService.createSubscription(subscription);
+
+			this.logger.debug('Subscription created successfully', {
 				userId: request.clerkUserId,
-				error: error.message,
+				subscriptionId: subscription.id,
 			});
 
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle subscription creation', {
+			return { message: 'Subscription created successfully' };
+		} catch (error) {
+			this.logger.error('Failed to create subscription', {
+				error: error.message,
 				userId: request.clerkUserId,
-				subscriptionData: request.data,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('SUBSCRIPTION_CREATION_FAILED', 'Failed to create subscription', {
+				userId: request.clerkUserId,
 			});
 		}
 	}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'getUserVendors')
 	async getUserVendors(request: UserVendorData): Promise<UserVendorsResponse> {
-		this.logger.debug('Getting user vendors', { userId: request.userId });
+		this.logger.debug('Processing user vendors request', {
+			userId: request.userId,
+		});
 
 		try {
 			// TODO: Implement vendor retrieval in UserManagementService
+			// const vendors = await this.userManagementService.getUserVendors(request.userId);
+
+			this.logger.debug('User vendors retrieved successfully', {
+				userId: request.userId,
+				vendorCount: 0,
+			});
+
 			return { vendors: [] };
 		} catch (error) {
 			this.logger.error('Failed to get user vendors', {
-				userId: request.userId,
 				error: error.message,
+				userId: request.userId,
 			});
 
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to get user vendors', {
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_VENDORS_RETRIEVAL_FAILED', 'Failed to get user vendors', {
 				userId: request.userId,
 			});
 		}

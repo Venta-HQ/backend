@@ -1,52 +1,56 @@
+import { AppError } from '@app/nest/errors';
+import { SignedWebhookGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
-import { Body, Controller, Inject, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import { CommunicationToMarketplaceContextMapper } from '../../../../contracts/context-mappers/communication-to-marketplace-context-mapper';
 import { Communication } from '../../../../contracts/types/context-mapping.types';
-
-interface ClerkPayload {
-	id: string;
-}
+import { ClerkWebhookPayload } from '../../../../contracts/types/external/clerk.types';
 
 @Controller()
 export class ClerkWebhooksController {
 	private readonly logger = new Logger(ClerkWebhooksController.name);
 
-	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
+	constructor(
+		@Inject(USER_MANAGEMENT_SERVICE_NAME)
+		private readonly client: GrpcInstance<UserManagementServiceClient>,
+		private readonly contextMapper: CommunicationToMarketplaceContextMapper,
+	) {}
 
 	@Post()
-	async handleClerkEvent(@Body() event: Communication.WebhookEvent<ClerkPayload>): Promise<{ success: boolean }> {
+	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
+	async handleClerkEvent(@Body() event: ClerkWebhookPayload): Promise<{ message: string }> {
 		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`, {
 			eventType: event.type,
-			source: event.source,
-			timestamp: event.timestamp,
+			id: event.id,
 		});
 
 		try {
 			switch (event.type) {
 				case 'user.created': {
-					const userEvent: Communication.UserEvent = {
-						externalUserId: event.payload.id,
-						service: 'clerk',
-						type: 'created',
-						timestamp: event.timestamp,
-					};
+					const marketplaceEvent = this.contextMapper.toMarketplaceUserEvent({
+						type: event.type,
+						source: 'clerk',
+						payload: event,
+						timestamp: new Date(event.data.created_at).toISOString(),
+					});
 
 					await this.client.invoke('handleUserCreated', {
-						id: userEvent.externalUserId,
+						id: marketplaceEvent.userId,
 					});
 					break;
 				}
 
 				case 'user.deleted': {
-					const userEvent: Communication.UserEvent = {
-						externalUserId: event.payload.id,
-						service: 'clerk',
-						type: 'deleted',
-						timestamp: event.timestamp,
-					};
+					const marketplaceEvent = this.contextMapper.toMarketplaceUserEvent({
+						type: event.type,
+						source: 'clerk',
+						payload: event,
+						timestamp: new Date(event.data.updated_at).toISOString(),
+					});
 
 					await this.client.invoke('handleUserDeleted', {
-						id: userEvent.externalUserId,
+						id: marketplaceEvent.userId,
 					});
 					break;
 				}
@@ -54,19 +58,19 @@ export class ClerkWebhooksController {
 				default:
 					this.logger.warn('Unhandled Event Type', {
 						eventType: event.type,
-						source: event.source,
-						timestamp: event.timestamp,
+						id: event.id,
 					});
 			}
 
-			return { success: true };
+			return { message: 'Event processed successfully' };
 		} catch (error) {
 			this.logger.error('Failed to handle Clerk webhook event', {
 				error: error.message,
 				eventType: event.type,
 			});
 
-			throw error; // Let the exception filter handle it
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('WEBHOOK_PROCESSING_FAILED', 'Failed to process webhook');
 		}
 	}
 }

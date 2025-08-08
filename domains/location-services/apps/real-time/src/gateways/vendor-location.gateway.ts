@@ -1,11 +1,10 @@
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
+import { AppError } from '@app/nest/errors';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
-import { GrpcInstance } from '@app/nest/modules';
+import { EventService, GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
-import { retryOperation } from '@app/utils';
-import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@domains/location-services/contracts/types';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import {
@@ -18,8 +17,11 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
+import { WebSocketACL } from '../anti-corruption-layers/websocket-acl';
+import { RealtimeToMarketplaceContextMapper } from '../context-mappers/realtime-to-marketplace-context-mapper';
 import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
 import { VendorConnectionManagerService } from '../services/vendor-connection-manager.service';
+import { RealTime } from '../types/context-mapping.types';
 
 // Extend Socket interface to include vendor properties
 interface AuthenticatedVendorSocket extends Socket {
@@ -37,7 +39,10 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 		@Inject(GEOLOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<GeolocationServiceClient>,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly connectionManager: VendorConnectionManagerService,
+		private readonly eventService: EventService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
+		private readonly websocketACL: WebSocketACL,
+		private readonly contextMapper: RealtimeToMarketplaceContextMapper,
 	) {}
 
 	afterInit() {
@@ -49,84 +54,131 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	@WebSocketServer() server!: Server;
 
 	async handleConnection(client: AuthenticatedVendorSocket) {
-		this.logger.log(`Vendor client connected: ${client.id}`);
+		this.logger.debug('Vendor client connected', { clientId: client.id });
 
-		// Record connection metrics
-		this.metrics.vendor_websocket_connections_total.inc({ status: 'connected', type: 'vendor' });
-		this.metrics.vendor_websocket_connections_active.inc({ type: 'vendor' });
+		try {
+			// Create domain connection
+			const connection = this.websocketACL.toDomainConnection(client.id, client.vendorId || '', {
+				type: 'vendor',
+				clerkId: client.clerkId,
+			});
 
-		// Handle vendor registration (now redundant since auth guard handles it)
-		client.on('register-vendor', async (data) => {
-			if (data.vendorId) {
-				await this.connectionManager.registerVendor(data.vendorId, client.id);
-				this.logger.log(`Vendor ${data.vendorId} registered with socket ${client.id}`);
-			}
-		});
+			// Record connection metrics
+			this.metrics.vendor_websocket_connections_total.inc({ status: 'connected', type: 'vendor' });
+			this.metrics.vendor_websocket_connections_active.inc({ type: 'vendor' });
+
+			// Emit vendor connected event
+			await this.eventService.emit('location.vendor.connected', {
+				vendorId: client.vendorId,
+				socketId: client.id,
+				timestamp: new Date().toISOString(),
+				metadata: {
+					clerkId: client.clerkId,
+				},
+			});
+
+			this.logger.debug('Vendor client registered', {
+				clientId: client.id,
+				vendorId: client.vendorId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to handle vendor connection', {
+				error: error.message,
+				clientId: client.id,
+			});
+
+			client.disconnect();
+		}
 	}
 
 	async handleDisconnect(client: AuthenticatedVendorSocket) {
-		this.logger.log(`Vendor client disconnected: ${client.id}`);
+		this.logger.debug('Vendor client disconnected', { clientId: client.id });
 
-		// Record disconnection metrics
-		this.metrics.vendor_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'vendor' });
-		this.metrics.vendor_websocket_connections_active.dec({ type: 'vendor' });
-		await this.connectionManager.handleDisconnect(client.id);
+		try {
+			// Record disconnection metrics
+			this.metrics.vendor_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'vendor' });
+			this.metrics.vendor_websocket_connections_active.dec({ type: 'vendor' });
+
+			// Clean up connection
+			await this.connectionManager.handleDisconnect(client.id);
+
+			// Emit vendor disconnected event
+			await this.eventService.emit('location.vendor.disconnected', {
+				vendorId: client.vendorId,
+				socketId: client.id,
+				timestamp: new Date().toISOString(),
+				reason: 'client_disconnect',
+			});
+		} catch (error) {
+			this.logger.error('Failed to handle vendor disconnection', {
+				error: error.message,
+				clientId: client.id,
+			});
+		}
 	}
 
 	@SubscribeMessage('updateVendorLocation')
 	@UseGuards(WsRateLimitGuards.lenient) // 30 location updates per minute for vendors
 	async updateVendorLocation(
-		@MessageBody(new SchemaValidatorPipe(VendorLocationUpdateDataSchema)) data: VendorLocationUpdateData,
+		@MessageBody(new SchemaValidatorPipe(RealTime.Validation.LocationUpdateSchema))
+		data: { lat: number; lng: number },
 		@ConnectedSocket() socket: AuthenticatedVendorSocket,
 	) {
-		// Vendor ID is guaranteed to be available from WsAuthGuard
 		const vendorId = socket.vendorId;
 		if (!vendorId) {
-			this.logger.error('No vendor ID found for authenticated socket');
-			socket.emit('error', {
-				code: 'UNAUTHORIZED',
-				message: 'Vendor not authenticated',
-			});
-			return;
+			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Vendor not authenticated');
 		}
 
-		// Record location update metrics
-		this.metrics.location_updates_total.inc({ status: 'success', type: 'vendor' });
+		this.logger.debug('Processing vendor location update', {
+			vendorId,
+			coordinates: { lat: data.lat, lng: data.lng },
+		});
 
 		try {
-			// Store vendor location in database via gRPC service
-			await this.locationService
-				.invoke('updateVendorLocation', {
-					entityId: vendorId,
-					location: {
-						lat: data.lat,
-						long: data.long,
-					},
-				})
-				.toPromise();
+			// Record location update metrics
+			this.metrics.location_updates_total.inc({ status: 'success', type: 'vendor' });
 
-			// Store vendor location in Redis for geospatial queries
-			await retryOperation(
-				async () => {
-					await this.redis.zadd('vendor_locations', data.lat, vendorId);
-				},
-				'Update vendor location in Redis',
-				{ logger: this.logger },
-			);
-
-			// Notify all users tracking this vendor about the location update
-			socket.to(vendorId).emit('vendor_sync', {
-				id: vendorId,
+			// Update location via gRPC service
+			await this.locationService.invoke('updateVendorLocation', {
+				entityId: vendorId,
 				location: {
 					lat: data.lat,
-					long: data.long,
+					long: data.lng,
 				},
 			});
 
-			this.logger.debug(`Vendor ${vendorId} location updated: lat=${data.lat}, long=${data.long}`);
+			// Notify subscribers
+			socket.to(vendorId).emit('vendor_sync', {
+				id: vendorId,
+				location: { lat: data.lat, lng: data.lng },
+				timestamp: new Date().toISOString(),
+			});
+
+			// Emit vendor location updated event
+			await this.eventService.emit('location.vendor.location_updated', {
+				vendorId,
+				location: {
+					lat: data.lat,
+					lng: data.lng,
+				},
+				timestamp: new Date().toISOString(),
+			});
+
+			this.logger.debug('Vendor location updated successfully', {
+				vendorId,
+				coordinates: { lat: data.lat, lng: data.lng },
+			});
 		} catch (error) {
-			this.logger.error(`Failed to update vendor location for ${vendorId}:`, error.stack, { error, vendorId });
-			socket.emit('error', { message: 'Failed to update location' });
+			this.logger.error('Failed to update vendor location', {
+				error: error.message,
+				vendorId,
+			});
+
+			// Record error metrics
+			this.metrics.vendor_websocket_errors_total.inc({ type: 'location_update' });
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location');
 		}
 	}
 }

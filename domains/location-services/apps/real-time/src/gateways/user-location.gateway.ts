@@ -1,9 +1,9 @@
 import { Server, Socket } from 'socket.io';
-import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@domains/location-services/contracts/types';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
-import { GrpcInstance } from '@app/nest/modules';
+import { EventService, GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
+import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@domains/location-services/contracts/types';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import {
 	ConnectedSocket,
@@ -33,6 +33,7 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 	constructor(
 		@Inject(GEOLOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<GeolocationServiceClient>,
 		private readonly connectionManager: UserConnectionManagerService,
+		private readonly eventService: EventService,
 		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
 	) {}
 
@@ -56,6 +57,13 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 			if (data.userId) {
 				await this.connectionManager.registerUser(data.userId, client.id);
 				this.logger.log(`User ${data.userId} registered with socket ${client.id}`);
+
+				// Emit user connected event
+				await this.eventService.emit('location.user.connected', {
+					userId: data.userId,
+					socketId: client.id,
+					timestamp: new Date().toISOString(),
+				});
 			}
 		});
 	}
@@ -66,7 +74,20 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 		// Record disconnection metrics
 		this.metrics.user_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'user' });
 		this.metrics.user_websocket_connections_active.dec({ type: 'user' });
+
+		// Get user ID before removing connection
+		const userId = await this.connectionManager.getSocketUserId(client.id);
+
 		await this.connectionManager.handleDisconnect(client.id);
+
+		if (userId) {
+			// Emit user disconnected event
+			await this.eventService.emit('location.user.disconnected', {
+				userId,
+				socketId: client.id,
+				timestamp: new Date().toISOString(),
+			});
+		}
 	}
 
 	@SubscribeMessage('updateUserLocation')
@@ -118,8 +139,15 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 			// Leave rooms for vendors no longer in range
 			if (roomsToLeave.length) {
 				for (const room of roomsToLeave) {
-					await this.connectionManager.removeUserFromVendorRoom(userId, room);
+					await this.connectionManager.removeUserFromVendorRoom({ userId, vendorId: room });
 					socket.leave(room);
+
+					// Emit user left vendor area event
+					await this.eventService.emit('location.user.left_vendor_area', {
+						userId,
+						vendorId: room,
+						timestamp: new Date().toISOString(),
+					});
 				}
 				this.logger.debug(`User ${userId} left ${roomsToLeave.length} vendor rooms`);
 			}
@@ -127,14 +155,31 @@ export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, 
 			// Join rooms for new vendors in range
 			if (roomsToJoin.length) {
 				for (const room of roomsToJoin) {
-					await this.connectionManager.addUserToVendorRoom(userId, room);
+					await this.connectionManager.addUserToVendorRoom({ userId, vendorId: room });
 					socket.join(room);
+
+					// Emit user entered vendor area event
+					await this.eventService.emit('location.user.entered_vendor_area', {
+						userId,
+						vendorId: room,
+						timestamp: new Date().toISOString(),
+					});
 				}
 				this.logger.debug(`User ${userId} joined ${roomsToJoin.length} vendor rooms`);
 			}
 
 			// Emit updated vendor list to user
 			socket.emit('vendor_channels', vendors ?? []);
+
+			// Emit user location updated event
+			await this.eventService.emit('location.user.location_updated', {
+				userId,
+				location: {
+					lat: (neLocation.lat + swLocation.lat) / 2, // Use center point
+					lng: (neLocation.long + swLocation.long) / 2,
+				},
+				timestamp: new Date().toISOString(),
+			});
 
 			this.logger.debug(`User ${userId} location updated, now tracking ${vendorIds.length} vendors`);
 		} catch (error) {

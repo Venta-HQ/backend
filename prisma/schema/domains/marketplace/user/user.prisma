@@ -1,33 +1,45 @@
 model User {
-    id      String @id @default(uuid())
-    clerkId String @unique
-    lat     Float?
-    long    Float?
+    id        String  @id @default(uuid())
+    clerkId   String  @unique
+    email     String?
+    firstName String?
+    lastName  String?
+    isActive  Boolean @default(true)
+    lat       Float?
+    long      Float?
 
     // Metadata
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     // Relations
-    vendors          Vendor[]
-    UserSubscription UserSubscription?
-    integrations     Integration[]
+    vendors      Vendor[]
+    subscription UserSubscription?
+    integrations Integration[]
 
     @@map("user")
 }
 
 enum SubscriptionStatus {
-    Active
-    Cancelled
-    Inactive
-    Pending
+    active
+    cancelled
+    expired
+}
+
+enum SubscriptionProvider {
+    revenuecat
 }
 
 model UserSubscription {
-    id     String             @id @default(uuid())
-    userId String             @unique
-    user   User               @relation(fields: [userId], references: [id])
-    status SubscriptionStatus @default(Inactive)
+    id         String               @id @default(uuid())
+    userId     String               @unique
+    user       User                 @relation(fields: [userId], references: [id])
+    status     SubscriptionStatus   @default(active)
+    provider   SubscriptionProvider
+    externalId String
+    productId  String
+    startDate  DateTime
+    endDate    DateTime?
 
     // Metadata
     createdAt DateTime @default(now())

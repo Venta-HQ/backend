@@ -1,194 +1,354 @@
 /**
- * Marketplace Domain Context Mapping Types
+ * Marketplace Domain Types
  *
- * These types define the context mapping interfaces for the marketplace domain
- * when communicating with other bounded contexts.
+ * These types define the core concepts and contracts for the marketplace domain.
+ * The domain is responsible for managing users, vendors, and their interactions.
  */
 
 import { z } from 'zod';
 
-// ============================================================================
-// Marketplace Domain Types
-// ============================================================================
-
 export namespace Marketplace {
-	/**
-	 * Location bounds for geospatial queries
-	 */
-	export interface LocationBounds {
-		/** Southwest corner coordinates */
-		swLocation: {
-			lat: number;
-			lng: number;
-		};
-		/** Northeast corner coordinates */
-		neLocation: {
-			lat: number;
-			lng: number;
-		};
-	}
-
-	/**
-	 * Vendor location data returned from location services
-	 */
-	export interface VendorLocation {
-		/** Vendor ID from marketplace context */
-		vendorId: string;
-		/** Location coordinates */
-		location: {
-			lat: number;
-			lng: number;
-		};
-		/** Distance from query point (in meters) */
-		distance?: number;
-		/** Last update timestamp */
-		lastUpdated: string;
-	}
-
-	/**
-	 * User location data returned from location services
-	 */
-	export interface UserLocation {
-		/** User ID from marketplace context */
-		userId: string;
-		/** Location coordinates */
-		location: {
-			lat: number;
-			lng: number;
-		};
-		/** Last update timestamp */
-		lastUpdated: string;
-	}
-
-	/**
-	 * Location update event
-	 */
-	export interface LocationUpdate {
-		/** Entity ID (vendor or user) */
-		entityId: string;
-		/** Entity type */
-		entityType: 'vendor' | 'user';
-		/** New location coordinates */
-		location: {
-			lat: number;
-			lng: number;
-		};
-		/** Update timestamp */
-		timestamp: string;
-	}
-
-	/**
-	 * External user data from communication context
-	 */
-	export interface ExternalUserData {
-		/** External service user ID */
-		externalUserId: string;
-		/** External service name */
-		service: 'clerk' | 'revenuecat';
-		/** User data from external service */
-		data: ExternalUserDataMap[keyof ExternalUserDataMap];
-		/** Event timestamp */
-		timestamp: string;
-	}
-
-	/**
-	 * Type-safe external user data map
-	 */
-	export interface ExternalUserDataMap {
-		clerk: {
+	// ============================================================================
+	// Core Domain Types
+	// Primary types that represent our domain concepts
+	// ============================================================================
+	export namespace Core {
+		export interface UserSubscription {
+			id: string;
+			userId: string;
+			status: 'active' | 'cancelled' | 'expired';
+			provider: string;
+			externalId: string;
+			productId: string;
+			startDate: string;
+			endDate: string;
+		}
+		export interface UserVendorRequest {
+			userId: string;
+		}
+		export interface VendorCreateData {
+			name: string;
+			description: string;
 			email: string;
+			phone: string;
+			website: string;
+			imageUrl: string;
+			userId: string;
+		}
+
+		export interface VendorUpdateData {
+			id: string;
+			name: string;
+			description: string;
+			email: string;
+			phone: string;
+			website: string;
+			imageUrl: string;
+			userId: string;
+		}
+
+		export interface VendorLocation {
+			lat: number;
+			lng: number;
+			vendorId: string;
+			updatedAt: string;
+		}
+		/**
+		 * User avatar
+		 */
+		export interface UserAvatar {
+			url: string;
+			fileId: string;
+			uploadedAt: string;
+		}
+
+		/**
+		 * Vendor logo
+		 */
+		export interface VendorLogo {
+			url: string;
+			fileId: string;
+			uploadedAt: string;
+		}
+
+		/**
+		 * User in the marketplace
+		 */
+		export interface User {
+			id: string;
+			email: string | null;
 			firstName?: string;
 			lastName?: string;
-			metadata?: Record<string, string>;
-		};
-		revenuecat: {
-			originalAppUserId: string;
-			subscriptionStatus?: string;
-		};
-	}
+			createdAt: string;
+			updatedAt: string;
+			isActive: boolean;
+			subscription?: UserSubscription;
+			location?: UserLocation;
+		}
 
-	/**
-	 * External subscription data from communication context
-	 */
-	export interface ExternalSubscriptionData {
-		/** External service subscription ID */
-		externalSubscriptionId: string;
-		/** External service name */
-		service: 'revenuecat';
-		/** Subscription data from external service */
-		data: {
+		/**
+		 * Vendor in the marketplace
+		 */
+		export interface Vendor {
+			id: string;
+			name: string;
+			description: string;
+			email: string;
+			phone?: string;
+			website?: string;
+			isOpen: boolean;
+			imageUrl?: string;
+			location?: VendorLocation;
+			ownerId: string;
+			createdAt: string;
+			updatedAt: string;
+		}
+
+		/**
+		 * User subscription
+		 */
+		export interface UserSubscription {
+			id: string;
+			userId: string;
+			status: 'active' | 'cancelled' | 'expired';
+			provider: 'revenuecat';
+			externalId: string;
 			productId: string;
-			transactionId: string;
-			status: string;
-		};
-		/** Event timestamp */
-		timestamp: string;
+			startDate: string;
+			endDate?: string;
+		}
+
+		/**
+		 * Location data
+		 */
+		export interface Location {
+			lat: number;
+			lng: number;
+		}
+
+		export interface UserLocation extends Location {
+			userId: string;
+			updatedAt: string;
+		}
+
+		export interface VendorLocation extends Location {
+			vendorId: string;
+			updatedAt: string;
+		}
+
+		export interface LocationBounds {
+			swBounds: Location;
+			neBounds: Location;
+		}
 	}
 
-	/**
-	 * External user mapping for identity resolution
-	 */
-	export interface ExternalUserMapping {
-		/** Internal marketplace user ID */
-		marketplaceUserId: string;
-		/** External service mappings */
-		externalMappings: {
-			clerk?: string;
-			revenuecat?: string;
-		};
-		/** Mapping creation timestamp */
-		createdAt: string;
-		/** Mapping last updated timestamp */
-		updatedAt: string;
+	// ============================================================================
+	// External Service Types
+	// Types for external service data (part of our ACL)
+	// ============================================================================
+	export namespace External {
+		/**
+		 * Clerk user data
+		 */
+		export interface ClerkUser {
+			id: string;
+			email_addresses: Array<{
+				email_address: string;
+				verification?: {
+					status: 'verified' | 'unverified';
+				};
+			}>;
+			first_name?: string;
+			last_name?: string;
+			created_at: string;
+			updated_at: string;
+			metadata?: Record<string, unknown>;
+		}
+
+		/**
+		 * RevenueCat subscription data
+		 */
+		export interface RevenueCatSubscription {
+			id: string;
+			user_id: string;
+			product_id: string;
+			transaction_id: string;
+			status: 'active' | 'cancelled' | 'expired';
+			period_type: 'normal' | 'trial';
+			purchased_at: string;
+			expires_at?: string;
+		}
+	}
+
+	// ============================================================================
+	// Contract Types
+	// Types that other domains use when interacting with Marketplace
+	// ============================================================================
+	export namespace Contracts {
+		/**
+		 * User context for authentication
+		 */
+		export interface UserRegistrationRequest {
+			clerkId: string;
+			source?: 'clerk_webhook' | 'manual' | 'admin';
+		}
+
+		export interface UserLocationUpdate {
+			userId: string;
+			location: Core.Location;
+			timestamp: string;
+		}
+
+		export interface UserContext {
+			userId: string;
+			roles: string[];
+			metadata: Record<string, string>;
+		}
+
+		/**
+		 * Location service contract for vendor updates
+		 */
+		export interface VendorLocationUpdate {
+			vendorId: string;
+			location: Core.Location;
+			timestamp: string;
+		}
+
+		/**
+		 * Communication service contract for user events
+		 */
+		export interface UserEventData {
+			userId: string;
+			eventType: 'created' | 'updated' | 'deleted';
+			timestamp: string;
+			metadata?: Record<string, unknown>;
+		}
+	}
+
+	// ============================================================================
+	// Validation Schemas
+	// Zod schemas for validating domain types
+	// ============================================================================
+	export namespace Validation {
+		export const LocationSchema = z.object({
+			lat: z.number().min(-90).max(90),
+			lng: z.number().min(-180).max(180),
+		});
+
+		export const VendorSchema = z.object({
+			id: z.string().uuid(),
+			name: z.string().min(1),
+			description: z.string(),
+			email: z.string().email(),
+			phone: z.string().optional(),
+			website: z.string().url().optional(),
+			isOpen: z.boolean(),
+			imageUrl: z.string().url().optional(),
+			location: LocationSchema.optional(),
+			ownerId: z.string().uuid(),
+			createdAt: z.string().datetime(),
+			updatedAt: z.string().datetime(),
+		});
+
+		export const UserSchema = z.object({
+			id: z.string().uuid(),
+			email: z.string().email().nullable(),
+			firstName: z.string().optional(),
+			lastName: z.string().optional(),
+			createdAt: z.string().datetime(),
+			updatedAt: z.string().datetime(),
+			isActive: z.boolean(),
+			subscription: z
+				.object({
+					id: z.string().uuid(),
+					userId: z.string().uuid(),
+					status: z.enum(['active', 'cancelled', 'expired']),
+					provider: z.literal('revenuecat'),
+					externalId: z.string(),
+					productId: z.string(),
+					startDate: z.string().datetime(),
+					endDate: z.string().datetime().optional(),
+				})
+				.optional(),
+			location: LocationSchema.optional(),
+		});
+	}
+
+	// ============================================================================
+	// Event Types
+	// Types for domain events
+	// ============================================================================
+	export namespace Events {
+		export interface VendorCreated {
+			vendorId: string;
+			ownerId: string;
+			timestamp: string;
+		}
+
+		export interface VendorUpdated {
+			vendorId: string;
+			updatedFields: string[];
+			timestamp: string;
+		}
+
+		export interface VendorLocationChanged {
+			vendorId: string;
+			location: {
+				lat: number;
+				lng: number;
+			};
+			timestamp: string;
+		}
+		/**
+		 * Vendor events
+		 */
+		export interface VendorCreated {
+			vendorId: string;
+			ownerId: string;
+			timestamp: string;
+		}
+
+		export interface VendorUpdated {
+			vendorId: string;
+			updatedFields: Array<keyof Core.Vendor>;
+			timestamp: string;
+		}
+
+		export interface VendorLocationChanged {
+			vendorId: string;
+			location: Core.Location;
+			timestamp: string;
+		}
+
+		export interface VendorDeleted {
+			vendorId: string;
+			timestamp: string;
+		}
+
+		/**
+		 * User events
+		 */
+		export interface UserCreated {
+			userId: string;
+			timestamp: string;
+		}
+
+		export interface UserSubscriptionChanged {
+			userId: string;
+			subscriptionId: string;
+			status: Core.UserSubscription['status'];
+			timestamp: string;
+		}
+
+		export interface UserLocationChanged {
+			userId: string;
+			location: Core.Location;
+			timestamp: string;
+		}
+
+		export interface UserDeleted {
+			userId: string;
+			timestamp: string;
+		}
 	}
 }
-
-// ============================================================================
-// Validation Schemas
-// ============================================================================
-
-/**
- * Validation schema for location coordinates
- */
-const LocationCoordinatesSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
-
-/**
- * Validation schema for marketplace-location mapping
- */
-export const MarketplaceLocationMappingSchema = z.object({
-	vendorLocation: z.object({
-		marketplaceVendorId: z.string(),
-		locationCoordinates: LocationCoordinatesSchema,
-		locationDomain: z.literal('vendor_location'),
-		timestamp: z.string(),
-	}),
-	userLocation: z.object({
-		marketplaceUserId: z.string(),
-		locationCoordinates: LocationCoordinatesSchema,
-		locationDomain: z.literal('user_location'),
-		timestamp: z.string(),
-	}),
-});
-
-/**
- * Validation schema for marketplace-communication mapping
- */
-export const MarketplaceCommunicationMappingSchema = z.object({
-	userIdentity: z.object({
-		marketplaceUserId: z.string(),
-		externalServiceIds: z.object({
-			clerk: z.string(),
-			revenuecat: z.string().optional(),
-		}),
-		timestamp: z.string(),
-	}),
-	subscription: z.object({
-		marketplaceSubscriptionId: z.string(),
-		revenuecatSubscriptionId: z.string(),
-		status: z.enum(['active', 'cancelled', 'expired']),
-		timestamp: z.string(),
-	}),
-});

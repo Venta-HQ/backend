@@ -1,147 +1,73 @@
-import { TransformationUtils, ValidationUtils } from '@app/utils';
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import {
-	MarketplaceLocationBounds,
-	MarketplaceLocationUpdate,
-	MarketplaceUserLocation,
-	MarketplaceVendorLocation,
-} from '../types';
+import { Marketplace } from '../types/context-mapping.types';
 
 /**
- * Context Mapper for Marketplace → Location Services communication
- *
- * Translates Marketplace domain concepts to Location Services domain concepts
- * This is an OUTBOUND context mapper from Marketplace domain
+ * Context Mapper for translating between Marketplace and Location Services domains
  */
 @Injectable()
 export class MarketplaceToLocationContextMapper {
-	private readonly logger = new Logger('MarketplaceToLocationContextMapper');
+	private readonly logger = new Logger(MarketplaceToLocationContextMapper.name);
 
 	/**
-	 * Validate source data from marketplace domain
+	 * Convert marketplace vendor location to location services format
 	 */
-	private validateSourceData(data: unknown): boolean {
-		if (data.location) {
-			return ValidationUtils.isValidLocation(data.location);
-		}
-		if (data.bounds) {
-			return ValidationUtils.isValidBounds(data.bounds);
-		}
-		return true;
+	toLocationServicesVendorUpdate(
+		vendorId: string,
+		location: Marketplace.Location,
+	): LocationServices.Contracts.EntityLocationUpdate {
+		return {
+			entityId: vendorId,
+			entityType: 'vendor',
+			coordinates: this.toLocationCoordinates(location),
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	/**
-	 * Validate target data from location services domain
+	 * Convert marketplace user location to location services format
 	 */
-	private validateTargetData(data: unknown): boolean {
-		// Basic validation for location services data
-		return (
-			data &&
-			ValidationUtils.isValidString(data.entityId) &&
-			data.coordinates &&
-			typeof data.coordinates.latitude === 'number' &&
-			typeof data.coordinates.longitude === 'number'
-		);
-	}
-
-	// ============================================================================
-	// Marketplace → Location Services Translation
-	// ============================================================================
-
-	/**
-	 * Translate marketplace vendor location update to location services format
-	 */
-	toLocationServicesVendorUpdate(vendorId: string, location: { lat: number; lng: number }) {
-		try {
-			if (!this.validateSourceData({ location })) {
-				throw new Error('Invalid vendor location data');
-			}
-
-			const result = {
-				entityId: vendorId, // Location Services uses 'entityId'
-				coordinates: TransformationUtils.transformLocationToLatLng(location),
-				trackingStatus: 'active',
-				accuracy: 5.0, // Default accuracy
-				lastUpdateTime: new Date().toISOString(),
-				source: 'marketplace',
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate vendor location update', error);
-			throw error;
-		}
+	toLocationServicesUserUpdate(
+		userId: string,
+		location: Marketplace.Location,
+	): LocationServices.Contracts.EntityLocationUpdate {
+		return {
+			entityId: userId,
+			entityType: 'user',
+			coordinates: this.toLocationCoordinates(location),
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	/**
-	 * Translate marketplace user location update to location services format
+	 * Convert marketplace location bounds to location services format
 	 */
-	toLocationServicesUserUpdate(userId: string, location: { lat: number; lng: number }) {
-		try {
-			if (!this.validateSourceData({ location })) {
-				throw new Error('Invalid user location data');
-			}
-
-			const result = {
-				entityId: userId, // Location Services uses 'entityId'
-				coordinates: TransformationUtils.transformLocationToLatLng(location),
-				trackingStatus: 'active',
-				accuracy: 5.0, // Default accuracy
-				lastUpdateTime: new Date().toISOString(),
-				source: 'marketplace',
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate user location update', error);
-			throw error;
-		}
+	toLocationServicesBounds(bounds: Marketplace.LocationBounds): LocationServices.Contracts.GeospatialBounds {
+		return {
+			southwest: this.toLocationCoordinates(bounds.swBounds),
+			northeast: this.toLocationCoordinates(bounds.neBounds),
+		};
 	}
 
 	/**
-	 * Translate marketplace location bounds to location services format
+	 * Convert location services vendor data to marketplace format
 	 */
-	toLocationServicesBounds(bounds: MarketplaceLocationBounds) {
-		try {
-			if (!this.validateSourceData({ bounds })) {
-				throw new Error('Invalid bounds data');
-			}
-
-			const result = TransformationUtils.transformBounds({
-				southWest: bounds.swLocation,
-				northEast: bounds.neLocation,
-			});
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate location bounds', error);
-			throw error;
-		}
+	toMarketplaceVendorLocation(locationData: LocationServices.VendorLocation): Marketplace.VendorLocation {
+		return {
+			vendorId: locationData.vendorId,
+			lat: locationData.coordinates.latitude,
+			lng: locationData.coordinates.longitude,
+			updatedAt: locationData.updatedAt,
+		};
 	}
 
 	/**
-	 * Translate marketplace radius search to location services format
+	 * Convert marketplace coordinates to location services format
 	 */
-	toLocationServicesRadiusSearch(center: { lat: number; lng: number }, radiusInMeters: number) {
-		try {
-			if (!this.validateSourceData({ location: center })) {
-				throw new Error('Invalid center location data');
-			}
-
-			const result = {
-				center: TransformationUtils.transformLocationToLatLng(center),
-				radiusInMeters,
-				entityType: 'vendor', // Location Services needs to know entity type
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate radius search', error);
-			throw error;
-		}
+	private toLocationCoordinates(location: Marketplace.Location): LocationServices.Coordinates {
+		return {
+			latitude: location.lat,
+			longitude: location.lng,
+		};
 	}
-
-	// ============================================================================
-	// Location Services → Marketplace Translation
-	// ============================================================================
 }

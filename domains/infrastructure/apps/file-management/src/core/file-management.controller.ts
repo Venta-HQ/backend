@@ -1,89 +1,56 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import {
-	FileManagementServiceController,
-	FileUploadResponse,
-	INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME,
-	UploadImageRequest,
-} from '@app/proto/infrastructure/file-management';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { FileManagementService } from './file-management.service';
 
 /**
- * gRPC controller for file management service
- * Implements the service interface generated from proto/infrastructure/file-management.proto
+ * gRPC controller for file management operations
  */
 @Controller()
-export class FileManagementController implements FileManagementServiceController {
+export class FileManagementController {
 	private readonly logger = new Logger(FileManagementController.name);
 
 	constructor(private readonly fileManagementService: FileManagementService) {}
 
-	@GrpcMethod(INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME, 'uploadImage')
-	async uploadImage(request: UploadImageRequest): Promise<FileUploadResponse> {
+	@GrpcMethod('FileManagementService', 'UploadImage')
+	async uploadImage(request: Infrastructure.Contracts.FileUpload): Promise<Infrastructure.Core.FileUploadResult> {
 		this.logger.debug('Handling image upload request', {
 			filename: request.filename,
 			size: request.size,
-			uploadedBy: request.uploadedBy,
+			context: request.context,
 		});
 
 		try {
-			if (!request.content) {
-				throw AppError.validation('INVALID_INPUT', 'No file content provided', {
-					domain: 'infrastructure',
-					operation: 'upload_image',
-				});
-			}
-
+			// Validate file type
 			if (!request.mimetype.startsWith('image/')) {
-				throw AppError.validation('INVALID_FILE_TYPE', 'Only image files are allowed', {
-					domain: 'infrastructure',
-					operation: 'upload_image',
+				throw AppError.validation('INVALID_FILE_TYPE', 'Invalid file type', {
 					providedType: request.mimetype,
-					allowedTypes: ['image/*'],
 				});
 			}
 
-			const result = await this.fileManagementService.uploadFile({
-				buffer: request.content,
-				mimetype: request.mimetype,
-				originalname: request.filename,
-				size: request.size,
-				uploadedBy: request.uploadedBy,
-			});
+			// Validate file size (5MB)
+			if (request.size > 5 * 1024 * 1024) {
+				throw AppError.validation('FILE_TOO_LARGE', 'File size too large', {
+					size: request.size,
+					maxSize: 5 * 1024 * 1024,
+				});
+			}
 
-			return {
-				url: result.url,
-				publicId: result.publicId,
-				format: result.format,
-				width: result.width,
-				height: result.height,
-				bytes: result.bytes,
-			};
+			const result = await this.fileManagementService.uploadFile(request);
+
+			return result;
 		} catch (error) {
-			this.logger.error('Failed to upload image', {
+			this.logger.error('Failed to handle image upload', {
 				error: error.message,
 				filename: request.filename,
 			});
 
 			if (error instanceof AppError) throw error;
 
-			// Convert Cloudinary errors to domain errors
-			if (error.message?.includes('File size too large')) {
-				throw AppError.validation('FILE_TOO_LARGE', 'File exceeds size limit', {
-					domain: 'infrastructure',
-					operation: 'upload_image',
-					fileSize: request.size,
-					maxSize: process.env.MAX_FILE_SIZE || '5MB',
-				});
-			}
-
-			// Generic upload error with context
-			throw AppError.internal('UPLOAD_FAILED', 'Failed to upload file', {
-				domain: 'infrastructure',
-				operation: 'upload_image',
-				error: error.message,
+			throw AppError.internal('UPLOAD_FAILED', 'File upload failed', {
 				filename: request.filename,
+				error: error.message,
 			});
 		}
 	}

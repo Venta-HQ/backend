@@ -1,79 +1,65 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import {
-	Empty,
-	GeolocationServiceController,
-	LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
-	LocationUpdate,
-	VendorLocationRequest,
-	VendorLocationResponse,
-} from '@app/proto/location-services/geolocation';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GeolocationService } from './geolocation.service';
 
 /**
- * gRPC controller for geolocation service
- * Implements the service interface generated from proto/location-services/geolocation.proto
+ * gRPC controller for geolocation operations
  */
 @Controller()
-export class GeolocationController implements GeolocationServiceController {
+export class GeolocationController {
 	private readonly logger = new Logger(GeolocationController.name);
 
 	constructor(private readonly geolocationService: GeolocationService) {}
 
-	@GrpcMethod(LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME, 'updateVendorLocation')
-	async updateVendorLocation(request: LocationUpdate): Promise<Empty> {
-		this.logger.debug('Handling vendor location update', {
-			location: `${request.location?.lat}, ${request.location?.long}`,
-			vendorId: request.entityId,
+	@GrpcMethod('GeolocationService', 'UpdateVendorLocation')
+	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate): Promise<void> {
+		this.logger.debug('Handling vendor location update request', {
+			entityId: request.entityId,
+			coordinates: request.coordinates,
 		});
 
 		try {
 			await this.geolocationService.updateVendorLocation(request);
-			return {};
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
 				error: error.message,
-				location: request.location,
-				vendorId: request.entityId,
+				entityId: request.entityId,
 			});
 
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.LOCATION_UPDATE_FAILED, 'Failed to update vendor location', {
-				vendorId: request.entityId,
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
+				entityId: request.entityId,
+				error: error.message,
 			});
 		}
 	}
 
-	@GrpcMethod(LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME, 'vendorLocations')
-	async vendorLocations(request: VendorLocationRequest): Promise<VendorLocationResponse> {
-		this.logger.debug('Getting vendor locations in area', {
-			neBounds: `${request.neLocation?.lat}, ${request.neLocation?.long}`,
-			swBounds: `${request.swLocation?.lat}, ${request.swLocation?.long}`,
+	@GrpcMethod('GeolocationService', 'GetVendorsInArea')
+	async getVendorsInArea(
+		request: LocationServices.Contracts.GeospatialQuery,
+	): Promise<{ vendors: LocationServices.Core.VendorLocation[] }> {
+		this.logger.debug('Handling geospatial query request', {
+			bounds: request.bounds,
+			limit: request.limit,
+			activeOnly: request.activeOnly,
 		});
 
 		try {
-			const vendors = await this.geolocationService.getVendorsInArea({
-				neBounds: request.neLocation!,
-				swBounds: request.swLocation!,
-			});
-
+			const vendors = await this.geolocationService.getVendorsInArea(request);
 			return { vendors };
 		} catch (error) {
-			this.logger.error('Failed to get vendor locations', {
+			this.logger.error('Failed to get vendors in area', {
 				error: error.message,
-				neBounds: request.neLocation,
-				swBounds: request.swLocation,
+				bounds: request.bounds,
 			});
 
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.LOCATION_QUERY_FAILED,
-				'Failed to get vendor locations in area',
-				{
-					neBounds: request.neLocation,
-					swBounds: request.swLocation,
-				},
-			);
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('LOCATION_QUERY_FAILED', 'Failed to get vendors in area', {
+				bounds: request.bounds,
+				error: error.message,
+			});
 		}
 	}
 }

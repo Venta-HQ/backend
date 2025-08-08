@@ -1,16 +1,13 @@
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { NatsQueueService } from '@app/nest/modules';
-import { BaseEvent } from '@domains/marketplace/events';
+import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AlgoliaSyncService } from './algolia-sync.service';
+import { NatsACL } from './anti-corruption-layers/nats-acl.js';
+import { SearchDiscovery } from './types/context-mapping.types';
 
 /**
- * NATS consumer for Algolia sync operations.
- *
- * This controller automatically extracts correlation IDs from NATS messages
- * using the NatsRequestIdInterceptor (applied at module level), making them
- * available to all log messages.
- *
- * The same pattern is automatically applied to all NATS consumers in the system.
+ * Controller for handling vendor events and syncing with Algolia
  */
 @Injectable()
 export class AlgoliaSyncController implements OnModuleInit {
@@ -19,87 +16,221 @@ export class AlgoliaSyncController implements OnModuleInit {
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
 		private readonly algoliaSyncService: AlgoliaSyncService,
+		private readonly natsACL: NatsACL,
 	) {}
 
 	async onModuleInit() {
-		// Listen for marketplace vendor events
-		this.natsQueueService.subscribeToQueue(
-			'marketplace.vendor.>', // Wildcard for marketplace vendor events
-			'algolia-sync-workers',
-			this.handleMarketplaceVendorEvent.bind(this),
-		);
-
-		// Listen for location vendor events
-		this.natsQueueService.subscribeToQueue(
-			'location.vendor.>', // Wildcard for location vendor events
-			'algolia-sync-workers',
-			this.handleLocationVendorEvent.bind(this),
-		);
-
-		this.logger.log('Algolia sync controller initialized with DDD event patterns');
-	}
-
-	private async handleMarketplaceVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
-		const { data: event, subject } = data;
-
-		// Enhanced logging with domain context
-		this.logger.log(`Handling marketplace vendor event: ${subject}`, {
-			context: event.context,
-			domain: event.meta.domain,
-			eventId: event.meta.eventId,
-			subdomain: event.meta.subdomain,
-			vendorId: event.data.vendorId,
-		});
+		this.logger.debug('Initializing Algolia sync controller');
 
 		try {
-			switch (subject) {
-				case 'marketplace.vendor.onboarded':
-					await this.algoliaSyncService.indexNewVendor(event.data);
-					break;
-				case 'marketplace.vendor.profile_updated':
-					await this.algoliaSyncService.updateVendorIndex(event.data);
-					break;
-				case 'marketplace.vendor.deactivated':
-					await this.algoliaSyncService.removeVendorFromIndex(event.data);
-					break;
-				default:
-					this.logger.warn(`Unhandled marketplace vendor event: ${subject}`);
+			// Configure subscriptions
+			const marketplaceSubscription: SearchDiscovery.Core.SubscriptionOptions = {
+				topic: 'marketplace.vendor.>',
+				queue: 'algolia-sync-workers',
+				maxInFlight: 100,
+				timeout: 30000,
+			};
+
+			const locationSubscription: SearchDiscovery.Core.SubscriptionOptions = {
+				topic: 'location.vendor.>',
+				queue: 'algolia-sync-workers',
+				maxInFlight: 100,
+				timeout: 30000,
+			};
+
+			// Validate subscription options
+			if (!this.natsACL.validateSubscriptionOptions(marketplaceSubscription)) {
+				throw AppError.validation('INVALID_SUBSCRIPTION_OPTIONS', 'Invalid marketplace subscription options');
 			}
+
+			if (!this.natsACL.validateSubscriptionOptions(locationSubscription)) {
+				throw AppError.validation('INVALID_SUBSCRIPTION_OPTIONS', 'Invalid location subscription options');
+			}
+
+			// Subscribe to events
+			this.natsQueueService.subscribeToQueue(
+				marketplaceSubscription.topic,
+				marketplaceSubscription.queue,
+				this.handleMarketplaceVendorEvent.bind(this),
+			);
+
+			this.natsQueueService.subscribeToQueue(
+				locationSubscription.topic,
+				locationSubscription.queue,
+				this.handleLocationVendorEvent.bind(this),
+			);
+
+			this.logger.debug('Algolia sync controller initialized successfully');
 		} catch (error) {
-			this.logger.error(`Failed to handle marketplace vendor event: ${subject}`, error.stack, {
-				context: event.context,
-				error,
-				eventId: event.meta.eventId,
+			this.logger.error('Failed to initialize Algolia sync controller', {
+				error: error.message,
 			});
-			throw error;
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('NATS_SUBSCRIPTION_FAILED', 'Failed to initialize NATS subscriptions');
 		}
 	}
 
-	private async handleLocationVendorEvent(data: { data: BaseEvent; subject: string }): Promise<void> {
+	private async handleMarketplaceVendorEvent(data: {
+		data: SearchDiscovery.Core.DomainEvent<
+			Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
+		>;
+		subject: string;
+	}): Promise<void> {
 		const { data: event, subject } = data;
 
-		// Enhanced logging with domain context
-		this.logger.log(`Handling location vendor event: ${subject}`, {
-			context: event.context,
-			domain: event.meta.domain,
+		this.logger.debug('Processing marketplace vendor event', {
+			subject,
 			eventId: event.meta.eventId,
-			subdomain: event.meta.subdomain,
 			vendorId: event.data.vendorId,
 		});
 
 		try {
-			if (subject === 'location.vendor.location_updated') {
-				await this.algoliaSyncService.updateVendorLocation(event.data);
-			} else {
-				this.logger.warn(`Unhandled location vendor event: ${subject}`);
+			// Validate event
+			if (
+				!this.natsACL.validateDomainEvent<
+					Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
+				>(event.data)
+			) {
+				throw AppError.validation('INVALID_DOMAIN_EVENT', 'Invalid marketplace vendor event', {
+					subject,
+					eventId: event.meta.eventId,
+				});
 			}
-		} catch (error) {
-			this.logger.error(`Failed to handle location vendor event: ${subject}`, error.stack, {
-				context: event.context,
-				error,
+
+			// Handle event based on type
+			switch (subject) {
+				case 'marketplace.vendor.onboarded':
+					await this.algoliaSyncService.indexNewVendor(event.data as Marketplace.Events.VendorCreated);
+					break;
+				case 'marketplace.vendor.profile_updated':
+					await this.algoliaSyncService.updateVendorIndex(event.data as Marketplace.Events.VendorUpdated);
+					break;
+				case 'marketplace.vendor.deactivated':
+					await this.algoliaSyncService.removeVendorFromIndex(event.data as Marketplace.Events.VendorDeleted);
+					break;
+				default:
+					this.logger.warn('Unhandled marketplace vendor event', { subject });
+					return;
+			}
+
+			// Emit sync completed event
+			const syncEvent: SearchDiscovery.Events.IndexSyncCompleted = {
+				indexName: 'vendor',
+				timestamp: new Date().toISOString(),
+				recordCount: 1,
+				metadata: {
+					eventId: event.meta.eventId,
+					subject,
+				},
+			};
+
+			this.logger.debug('Index sync completed successfully', {
+				subject,
 				eventId: event.meta.eventId,
 			});
-			throw error;
+		} catch (error) {
+			this.logger.error('Failed to handle marketplace vendor event', {
+				error: error.message,
+				subject,
+				eventId: event.meta.eventId,
+			});
+
+			// Emit sync failed event
+			const syncError: SearchDiscovery.Events.IndexSyncFailed = {
+				indexName: 'vendor',
+				timestamp: new Date().toISOString(),
+				error: {
+					code: error instanceof AppError ? error.code : 'ALGOLIA_SERVICE_ERROR',
+					message: error.message,
+				},
+				metadata: {
+					eventId: event.meta.eventId,
+					subject,
+				},
+			};
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('ALGOLIA_SYNC_FAILED', 'Failed to sync vendor with Algolia', {
+				subject,
+				eventId: event.meta.eventId,
+			});
+		}
+	}
+
+	private async handleLocationVendorEvent(data: {
+		data: SearchDiscovery.Core.DomainEvent<Marketplace.Events.VendorLocationChanged>;
+		subject: string;
+	}): Promise<void> {
+		const { data: event, subject } = data;
+
+		this.logger.debug('Processing location vendor event', {
+			subject,
+			eventId: event.meta.eventId,
+			vendorId: event.data.vendorId,
+		});
+
+		try {
+			// Validate event
+			if (
+				!this.natsACL.validateDomainEvent<
+					Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
+				>(event.data)
+			) {
+				throw AppError.validation('INVALID_DOMAIN_EVENT', 'Invalid location vendor event', {
+					subject,
+					eventId: event.meta.eventId,
+				});
+			}
+
+			// Handle location update
+			if (subject === 'location.vendor.location_updated') {
+				await this.algoliaSyncService.updateVendorLocation(event.data);
+
+				// Emit sync completed event
+				const syncEvent: SearchDiscovery.Events.IndexSyncCompleted = {
+					indexName: 'vendor',
+					timestamp: new Date().toISOString(),
+					recordCount: 1,
+					metadata: {
+						eventId: event.meta.eventId,
+						subject,
+					},
+				};
+
+				this.logger.debug('Location sync completed successfully', {
+					subject,
+					eventId: event.meta.eventId,
+				});
+			} else {
+				this.logger.warn('Unhandled location vendor event', { subject });
+			}
+		} catch (error) {
+			this.logger.error('Failed to handle location vendor event', {
+				error: error.message,
+				subject,
+				eventId: event.meta.eventId,
+			});
+
+			// Emit sync failed event
+			const syncError: SearchDiscovery.Events.IndexSyncFailed = {
+				indexName: 'vendor',
+				timestamp: new Date().toISOString(),
+				error: {
+					code: error instanceof AppError ? error.code : 'ALGOLIA_SERVICE_ERROR',
+					message: error.message,
+				},
+				metadata: {
+					eventId: event.meta.eventId,
+					subject,
+				},
+			};
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('ALGOLIA_SYNC_FAILED', 'Failed to sync vendor location with Algolia', {
+				subject,
+				eventId: event.meta.eventId,
+			});
 		}
 	}
 }

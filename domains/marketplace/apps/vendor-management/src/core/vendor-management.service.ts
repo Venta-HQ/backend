@@ -1,5 +1,5 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
+import { AppError } from '@app/nest/errors';
+import { EventService, PrismaService } from '@app/nest/modules';
 import {
 	Location,
 	Vendor,
@@ -7,8 +7,9 @@ import {
 	VendorLocationUpdate,
 	VendorUpdateData,
 } from '@app/proto/marketplace/vendor-management';
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
+import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
+import { Injectable, Logger } from '@nestjs/common';
 
 interface GeospatialBounds {
 	neBounds: Location;
@@ -21,7 +22,8 @@ export class VendorManagementService {
 
 	constructor(
 		private readonly prisma: PrismaService,
-		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+		private readonly vendorACL: VendorACL,
+		private readonly eventService: EventService,
 	) {}
 
 	/**
@@ -34,8 +36,19 @@ export class VendorManagementService {
 		try {
 			const vendor = await this.prisma.db.vendor.findUnique({
 				where: { id: vendorId },
-				include: {
-					location: true,
+				select: {
+					id: true,
+					name: true,
+					description: true,
+					email: true,
+					phone: true,
+					website: true,
+					open: true,
+					primaryImage: true,
+					lat: true,
+					long: true,
+					createdAt: true,
+					updatedAt: true,
 				},
 			});
 
@@ -50,20 +63,21 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.isOpen,
-				primaryImage: vendor.imageUrl || '',
-				location: vendor.location
-					? {
-							lat: vendor.location.coordinates.latitude,
-							long: vendor.location.coordinates.longitude,
-						}
-					: undefined,
+				open: vendor.open,
+				primaryImage: vendor.primaryImage || '',
+				location:
+					vendor.lat && vendor.long
+						? {
+								lat: vendor.lat,
+								long: vendor.long,
+							}
+						: undefined,
 				createdAt: vendor.createdAt.toISOString(),
 				updatedAt: vendor.updatedAt.toISOString(),
 			};
 		} catch (error) {
 			this.logger.error('Failed to get vendor', error.stack, { error, vendorId });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to get vendor', {
+			throw AppError.internal('DATABASE_ERROR', 'Failed to get vendor', {
 				operation: 'get_vendor_by_id',
 				vendorId,
 			});
@@ -87,20 +101,15 @@ export class VendorManagementService {
 			});
 
 			if (!user) {
-				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.USER_NOT_FOUND, 'User not found', {
+				throw AppError.notFound('USER_NOT_FOUND', 'User not found', {
 					userId: data.userId,
 				});
 			}
 
 			if (user.vendors.length > 0) {
-				throw new AppError(
-					ErrorType.VALIDATION,
-					ErrorCodes.VENDOR_LIMIT_EXCEEDED,
-					'User already has a vendor account',
-					{
-						userId: data.userId,
-					},
-				);
+				throw AppError.validation('VENDOR_LIMIT_EXCEEDED', 'User already has a vendor account', {
+					userId: data.userId,
+				});
 			}
 
 			// Create vendor
@@ -111,7 +120,7 @@ export class VendorManagementService {
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					imageUrl: data.imageUrl,
+					primaryImage: data.imageUrl,
 					ownerId: data.userId,
 				},
 			});
@@ -122,9 +131,10 @@ export class VendorManagementService {
 			});
 
 			// Emit vendor created event
-			await this.natsClient.emit('marketplace.vendor.created', {
+			await this.eventService.emit('marketplace.vendor.created', {
 				vendorId: vendor.id,
-				userId: data.userId,
+				ownerId: vendor.ownerId,
+				timestamp: vendor.createdAt.toISOString(),
 			});
 
 			return vendor.id;
@@ -135,7 +145,7 @@ export class VendorManagementService {
 				error,
 				userId: data.userId,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create vendor', {
+			throw AppError.internal('DATABASE_ERROR', 'Failed to create vendor', {
 				operation: 'create_vendor',
 				userId: data.userId,
 			});
@@ -156,25 +166,20 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
+				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
 					vendorId: data.id,
 				});
 			}
 
 			if (vendor.ownerId !== data.userId) {
-				throw new AppError(
-					ErrorType.UNAUTHORIZED,
-					ErrorCodes.VENDOR_UNAUTHORIZED,
-					'User not authorized to update vendor',
-					{
-						userId: data.userId,
-						vendorId: data.id,
-					},
-				);
+				throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'User not authorized to update vendor', {
+					userId: data.userId,
+					vendorId: data.id,
+				});
 			}
 
 			// Update vendor
-			await this.prisma.db.vendor.update({
+			const updatedVendor = await this.prisma.db.vendor.update({
 				where: { id: data.id },
 				data: {
 					name: data.name,
@@ -182,7 +187,7 @@ export class VendorManagementService {
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					imageUrl: data.imageUrl,
+					primaryImage: data.imageUrl,
 				},
 			});
 
@@ -192,9 +197,10 @@ export class VendorManagementService {
 			});
 
 			// Emit vendor updated event
-			await this.natsClient.emit('marketplace.vendor.updated', {
-				vendorId: data.id,
-				userId: data.userId,
+			await this.eventService.emit('marketplace.vendor.updated', {
+				vendorId: updatedVendor.id,
+				updatedFields: ['name', 'description', 'email', 'phone', 'website', 'primaryImage'],
+				timestamp: updatedVendor.updatedAt.toISOString(),
 			});
 		} catch (error) {
 			if (error instanceof AppError) throw error;
@@ -203,7 +209,7 @@ export class VendorManagementService {
 				error,
 				vendorId: data.id,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update vendor', {
+			throw AppError.internal('DATABASE_ERROR', 'Failed to update vendor', {
 				operation: 'update_vendor',
 				vendorId: data.id,
 			});
@@ -227,31 +233,17 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
+				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
 					vendorId: data.vendorId,
 				});
 			}
 
 			// Update vendor location
-			await this.prisma.db.vendor.update({
+			const updatedVendor = await this.prisma.db.vendor.update({
 				where: { id: data.vendorId },
 				data: {
-					location: {
-						upsert: {
-							create: {
-								coordinates: {
-									latitude: data.location!.lat,
-									longitude: data.location!.long,
-								},
-							},
-							update: {
-								coordinates: {
-									latitude: data.location!.lat,
-									longitude: data.location!.long,
-								},
-							},
-						},
-					},
+					lat: data.location!.lat,
+					long: data.location!.long,
 				},
 			});
 
@@ -261,9 +253,13 @@ export class VendorManagementService {
 			});
 
 			// Emit location updated event
-			await this.natsClient.emit('location.vendor.location_updated', {
-				vendorId: data.vendorId,
-				location: data.location,
+			await this.eventService.emit('location.vendor.location_updated', {
+				vendorId: updatedVendor.id,
+				location: {
+					lat: updatedVendor.lat || 0,
+					lng: updatedVendor.long || 0,
+				},
+				timestamp: updatedVendor.updatedAt.toISOString(),
 			});
 		} catch (error) {
 			if (error instanceof AppError) throw error;
@@ -273,7 +269,7 @@ export class VendorManagementService {
 				location: data.location,
 				vendorId: data.vendorId,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.LOCATION_UPDATE_FAILED, 'Failed to update vendor location', {
+			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
 				operation: 'update_vendor_location',
 				vendorId: data.vendorId,
 			});
@@ -294,21 +290,14 @@ export class VendorManagementService {
 			// Get vendors within bounds using Prisma's spatial queries
 			const vendors = await this.prisma.db.vendor.findMany({
 				where: {
-					location: {
-						coordinates: {
-							latitude: {
-								gte: bounds.swBounds.lat,
-								lte: bounds.neBounds.lat,
-							},
-							longitude: {
-								gte: bounds.swBounds.long,
-								lte: bounds.neBounds.long,
-							},
-						},
+					lat: {
+						gte: bounds.swBounds.lat,
+						lte: bounds.neBounds.lat,
 					},
-				},
-				include: {
-					location: true,
+					long: {
+						gte: bounds.swBounds.long,
+						lte: bounds.neBounds.long,
+					},
 				},
 			});
 
@@ -319,14 +308,15 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.isOpen,
-				primaryImage: vendor.imageUrl || '',
-				location: vendor.location
-					? {
-							lat: vendor.location.coordinates.latitude,
-							long: vendor.location.coordinates.longitude,
-						}
-					: undefined,
+				open: vendor.open,
+				primaryImage: vendor.primaryImage || '',
+				location:
+					vendor.lat && vendor.long
+						? {
+								lat: vendor.lat,
+								long: vendor.long,
+							}
+						: undefined,
 				createdAt: vendor.createdAt.toISOString(),
 				updatedAt: vendor.updatedAt.toISOString(),
 			}));
@@ -335,15 +325,10 @@ export class VendorManagementService {
 				bounds,
 				error,
 			});
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.LOCATION_QUERY_FAILED,
-				'Failed to get vendors in geographic area',
-				{
-					bounds,
-					operation: 'get_vendors_in_area',
-				},
-			);
+			throw AppError.internal('LOCATION_QUERY_FAILED', 'Failed to get vendors in geographic area', {
+				bounds,
+				operation: 'get_vendors_in_area',
+			});
 		}
 	}
 }

@@ -1,150 +1,239 @@
 /**
- * Location Services Domain Context Mapping Types
+ * Location Services Domain Types
  *
- * These types define the context mapping interfaces for the location services domain
- * when communicating with other bounded contexts.
+ * These types define the core concepts and contracts for the location services domain.
+ * The domain is responsible for handling geospatial data, location tracking,
+ * and real-time location updates.
  */
 
 import { z } from 'zod';
 
-// ============================================================================
-// Location Services Domain Types
-// ============================================================================
-
 export namespace LocationServices {
-	/**
-	 * Location bounds for geospatial queries
-	 */
-	export interface Bounds {
-		/** Southwest corner coordinates */
-		swLocation: {
+	// ============================================================================
+	// Core Domain Types
+	// Primary types that represent our domain concepts
+	// ============================================================================
+	export namespace Core {
+		/**
+		 * Geographic coordinates
+		 */
+		export interface Coordinates {
+			/** Latitude (-90 to 90) */
 			lat: number;
+			/** Longitude (-180 to 180) */
 			lng: number;
-		};
-		/** Northeast corner coordinates */
-		neLocation: {
-			lat: number;
-			lng: number;
-		};
+		}
+
+		/**
+		 * Vendor location data
+		 */
+		export interface VendorLocation {
+			/** Vendor ID */
+			entityId: string;
+			/** Current coordinates */
+			coordinates: Coordinates;
+			/** Last update timestamp */
+			updatedAt: string;
+			/** Operating status */
+			isActive: boolean;
+		}
+
+		/**
+		 * Geospatial search bounds
+		 */
+		export interface GeospatialBounds {
+			/** Southwest corner */
+			sw: Coordinates;
+			/** Northeast corner */
+			ne: Coordinates;
+		}
+
+		/**
+		 * Location update metadata
+		 */
+		export interface LocationUpdateMetadata {
+			/** Update source */
+			source: 'vendor' | 'system' | 'manual';
+			/** Update reason */
+			reason?: string;
+			/** Update timestamp */
+			timestamp?: string;
+			/** Additional context */
+			context?: Record<string, string>;
+		}
 	}
 
-	/**
-	 * Vendor location data in location services context
-	 */
-	export interface VendorLocation {
-		/** Vendor ID from marketplace context */
-		vendorId: string;
-		/** Location coordinates */
-		location: Coordinates;
-		/** Distance from query point (in meters) */
-		distance?: number;
-		/** Last update timestamp */
-		lastUpdated: string;
-		/** Location tracking status */
-		trackingStatus: TrackingStatus;
+	// ============================================================================
+	// Contract Types
+	// Types that other domains use when interacting with Location Services
+	// ============================================================================
+	export namespace Contracts {
+		/**
+		 * Location update request
+		 */
+		export interface LocationUpdate {
+			/** Entity ID (vendor/user) */
+			entityId: string;
+			/** New coordinates */
+			coordinates: Core.Coordinates;
+			/** Update metadata */
+			metadata?: Core.LocationUpdateMetadata;
+		}
+
+		/**
+		 * Geospatial query request
+		 */
+		export interface GeospatialQuery {
+			/** Search bounds */
+			bounds: Core.GeospatialBounds;
+			/** Maximum results */
+			limit?: number;
+			/** Filter active only */
+			activeOnly?: boolean;
+		}
+
+		/**
+		 * Location update response
+		 */
+		export interface LocationUpdateResult {
+			/** Entity ID */
+			entityId: string;
+			/** Update success */
+			success: boolean;
+			/** Update timestamp */
+			timestamp: string;
+			/** Error message if failed */
+			error?: string;
+		}
 	}
 
-	/**
-	 * User location data in location services context
-	 */
-	export interface UserLocation {
-		/** User ID from marketplace context */
-		userId: string;
-		/** Location coordinates */
-		location: Coordinates;
-		/** Last update timestamp */
-		lastUpdated: string;
-		/** Location tracking status */
-		trackingStatus: TrackingStatus;
-	}
-
-	/**
-	 * Location update event in location services context
-	 */
-	export interface LocationUpdate {
-		/** Entity ID (vendor or user) */
-		entityId: string;
-		/** Entity type */
-		entityType: EntityType;
-		/** New location coordinates */
-		location: Coordinates;
-		/** Update timestamp */
-		timestamp: string;
-		/** Update source */
-		source: LocationSource;
-		/** Accuracy in meters */
-		accuracy?: number;
-	}
-
-	/**
-	 * Geospatial query result
-	 */
-	export interface GeospatialQueryResult {
-		/** Query bounds */
-		bounds: Bounds;
-		/** Found entities */
-		entities: Array<{
-			id: string;
-			type: EntityType;
-			location: Coordinates;
+	// ============================================================================
+	// Internal Types
+	// Types used within the Location Services domain
+	// ============================================================================
+	export namespace Internal {
+		/**
+		 * Redis geospatial member
+		 */
+		export interface GeoMember {
+			/** Entity key */
+			key: string;
+			/** Latitude */
+			latitude: number;
+			/** Longitude */
+			longitude: number;
+			/** Distance from query point (if applicable) */
 			distance?: number;
-		}>;
-		/** Query timestamp */
-		timestamp: string;
+		}
+
+		/**
+		 * Redis geospatial query options
+		 */
+		export interface GeoQueryOptions {
+			/** Result count limit */
+			count?: number;
+			/** Sort by distance */
+			sort?: 'ASC' | 'DESC';
+			/** Include distances in results */
+			withDistances?: boolean;
+		}
+
+		/**
+		 * Location tracking configuration
+		 */
+		export interface TrackingConfig {
+			/** Update frequency in seconds */
+			updateFrequency: number;
+			/** Maximum update age in seconds */
+			maxAge: number;
+			/** Whether to track history */
+			trackHistory: boolean;
+		}
 	}
 
-	/**
-	 * Common location coordinates type
-	 */
-	export interface Coordinates {
-		lat: number;
-		lng: number;
+	// ============================================================================
+	// Event Types
+	// Types for domain events
+	// ============================================================================
+	export namespace Events {
+		/**
+		 * Location updated event
+		 */
+		export interface LocationUpdated {
+			/** Entity ID */
+			entityId: string;
+			/** New coordinates */
+			coordinates: Core.Coordinates;
+			/** Update timestamp */
+			timestamp: string;
+			/** Update metadata */
+			metadata?: Core.LocationUpdateMetadata;
+		}
+
+		/**
+		 * Entity entered area event
+		 */
+		export interface EntityEnteredArea {
+			/** Entity ID */
+			entityId: string;
+			/** Area bounds */
+			bounds: Core.GeospatialBounds;
+			/** Entry timestamp */
+			timestamp: string;
+		}
+
+		/**
+		 * Entity left area event
+		 */
+		export interface EntityLeftArea {
+			/** Entity ID */
+			entityId: string;
+			/** Area bounds */
+			bounds: Core.GeospatialBounds;
+			/** Exit timestamp */
+			timestamp: string;
+		}
 	}
 
-	/**
-	 * Entity types that can be tracked
-	 */
-	export type EntityType = 'vendor' | 'user';
+	// ============================================================================
+	// Validation Schemas
+	// Zod schemas for validating domain types
+	// ============================================================================
+	export namespace Validation {
+		export const CoordinatesSchema = z.object({
+			lat: z.number().min(-90).max(90),
+			lng: z.number().min(-180).max(180),
+		});
 
-	/**
-	 * Location tracking status
-	 */
-	export type TrackingStatus = 'active' | 'inactive' | 'suspended';
+		export const GeospatialBoundsSchema = z.object({
+			sw: CoordinatesSchema,
+			ne: CoordinatesSchema,
+		});
 
-	/**
-	 * Location update source
-	 */
-	export type LocationSource = 'gps' | 'manual' | 'estimated';
+		export const LocationUpdateSchema = z.object({
+			entityId: z.string(),
+			coordinates: CoordinatesSchema,
+			metadata: z
+				.object({
+					source: z.enum(['vendor', 'system', 'manual']),
+					reason: z.string().optional(),
+					timestamp: z.string().datetime().optional(),
+					context: z.record(z.string()).optional(),
+				})
+				.optional(),
+		});
+
+		export const GeospatialQuerySchema = z.object({
+			bounds: GeospatialBoundsSchema,
+			limit: z.number().positive().optional(),
+			activeOnly: z.boolean().optional(),
+		});
+
+		export const GeoMemberSchema = z.object({
+			key: z.string(),
+			latitude: z.number().min(-90).max(90),
+			longitude: z.number().min(-180).max(180),
+			distance: z.number().optional(),
+		});
+	}
 }
-
-// ============================================================================
-// Validation Schemas
-// ============================================================================
-
-/**
- * Validation schema for location coordinates
- */
-const LocationCoordinatesSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
-
-/**
- * Validation schema for location-marketplace mapping
- */
-export const LocationMarketplaceMappingSchema = z.object({
-	vendorLocation: z.object({
-		locationVendorId: z.string(),
-		marketplaceVendorId: z.string(),
-		locationCoordinates: LocationCoordinatesSchema,
-		locationDomain: z.literal('vendor_location'),
-		timestamp: z.string(),
-	}),
-	userLocation: z.object({
-		locationUserId: z.string(),
-		marketplaceUserId: z.string(),
-		locationCoordinates: LocationCoordinatesSchema,
-		locationDomain: z.literal('user_location'),
-		timestamp: z.string(),
-	}),
-});

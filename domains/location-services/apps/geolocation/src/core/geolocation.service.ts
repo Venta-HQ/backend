@@ -1,15 +1,15 @@
 import { Redis } from 'ioredis';
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
-import { Location, LocationUpdate, VendorLocation } from '@app/proto/location-services/geolocation';
 import { retryOperation } from '@app/utils';
+import { LocationExternalServiceACL } from '@domains/location-services/contracts/anti-corruption-layers/location-external-service-acl';
+import { LocationToMarketplaceContextMapper } from '@domains/location-services/contracts/context-mappers/location-to-marketplace-context-mapper';
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
 
-interface GeospatialBounds {
-	neBounds: Location;
-	swBounds: Location;
-}
-
+/**
+ * Geolocation service for location services domain
+ */
 @Injectable()
 export class GeolocationService {
 	private readonly logger = new Logger(GeolocationService.name);
@@ -17,91 +17,119 @@ export class GeolocationService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly redis: Redis,
+		private readonly locationACL: LocationExternalServiceACL,
+		private readonly contextMapper: LocationToMarketplaceContextMapper,
 	) {}
 
 	/**
 	 * Update vendor location in Redis geospatial store
-	 * Domain method for vendor location management
 	 */
-	async updateVendorLocation(data: LocationUpdate): Promise<void> {
-		if (!data.location) {
-			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Location data is required', {
-				entityId: data.entityId,
-				operation: 'update_vendor_location',
-			});
-		}
-
-		this.logger.log('Updating vendor location in geospatial store', {
-			location: `${data.location.lat}, ${data.location.long}`,
-			vendorId: data.entityId,
+	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate): Promise<void> {
+		this.logger.debug('Processing vendor location update', {
+			entityId: request.entityId,
+			coordinates: request.coordinates,
 		});
 
 		try {
+			// Validate request
+			if (!this.locationACL.validateLocationUpdate(request as unknown)) {
+				throw AppError.validation('INVALID_INPUT', 'Invalid location update data', {
+					entityId: request.entityId,
+				});
+			}
+
 			// Validate vendor exists
 			const vendor = await this.prisma.db.vendor.findUnique({
-				where: { id: data.entityId },
+				where: { id: request.entityId },
 			});
 
 			if (!vendor) {
-				throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', {
-					vendorId: data.entityId,
+				throw AppError.notFound('VENDOR_NOT_FOUND', 'Vendor not found', {
+					vendorId: request.entityId,
 				});
 			}
+
+			// Convert to Redis format
+			const geoMember = this.locationACL.toRedisMember(request.entityId, request.coordinates);
 
 			// Update Redis geospatial store with retry
 			await retryOperation(
 				async () => {
-					await this.redis.geoadd('vendor_locations', data.location!.long, data.location!.lat, data.entityId);
+					await this.redis.geoadd('vendor_locations', geoMember.longitude, geoMember.latitude, geoMember.key);
 				},
 				'Update vendor location in Redis',
 				{ logger: this.logger },
 			);
 
-			this.logger.log('Vendor location updated successfully', {
-				location: `${data.location.lat}, ${data.location.long}`,
-				vendorId: data.entityId,
+			// Update vendor in database
+			await this.prisma.db.vendor.update({
+				where: { id: request.entityId },
+				data: {
+					lat: request.coordinates.lat,
+					long: request.coordinates.lng,
+					updatedAt: new Date(),
+				},
+			});
+
+			// Emit event
+			const event: LocationServices.Events.LocationUpdated = {
+				entityId: request.entityId,
+				coordinates: request.coordinates,
+				timestamp: new Date().toISOString(),
+				metadata: request.metadata,
+			};
+
+			this.logger.debug('Vendor location updated successfully', {
+				entityId: request.entityId,
+				coordinates: request.coordinates,
 			});
 		} catch (error) {
-			if (error instanceof AppError) throw error;
-
 			this.logger.error('Failed to update vendor location', {
-				error,
-				location: data.location,
-				vendorId: data.entityId,
+				error: error.message,
+				entityId: request.entityId,
 			});
-			throw new AppError(
-				ErrorType.EXTERNAL_SERVICE,
-				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
-				'Failed to update vendor location',
-				{
-					entityId: data.entityId,
-					operation: 'update_vendor_location',
-				},
-			);
+
+			if (error instanceof AppError) throw error;
+			this.locationACL.handleRedisError(error, {
+				operation: 'updateVendorLocation',
+				entityId: request.entityId,
+			});
 		}
 	}
 
 	/**
 	 * Get vendors within a geographic bounding box
-	 * Uses Redis geospatial queries for efficient lookup
 	 */
-	async getVendorsInArea(bounds: GeospatialBounds): Promise<VendorLocation[]> {
-		this.logger.log('Getting vendors in geographic area', {
-			neBounds: `${bounds.neBounds.lat}, ${bounds.neBounds.long}`,
-			swBounds: `${bounds.swBounds.lat}, ${bounds.swBounds.long}`,
+	async getVendorsInArea(
+		request: LocationServices.Contracts.GeospatialQuery,
+	): Promise<LocationServices.Core.VendorLocation[]> {
+		this.logger.debug('Processing geospatial query', {
+			bounds: request.bounds,
+			limit: request.limit,
+			activeOnly: request.activeOnly,
 		});
 
 		try {
+			// Validate request
+			if (!this.locationACL.validateGeospatialQuery(request as unknown)) {
+				throw AppError.validation('INVALID_INPUT', 'Invalid geospatial query', {
+					bounds: request.bounds,
+				});
+			}
+
 			// Get vendor IDs within bounds using Redis geospatial query
 			const vendorIds = await retryOperation(
 				async () => {
 					return this.redis.georadius(
 						'vendor_locations',
-						bounds.neBounds.long,
-						bounds.neBounds.lat,
+						request.bounds.ne.lng,
+						request.bounds.ne.lat,
 						'5000', // 5km radius
 						'km',
 						'WITHCOORD',
+						'WITHDIST',
+						'COUNT',
+						request.limit || 100,
 					);
 				},
 				'Get vendors in area from Redis',
@@ -118,34 +146,38 @@ export class GeolocationService {
 					id: {
 						in: vendorIds.map((v: any) => v[0]),
 					},
+					...(request.activeOnly && { open: true }),
 				},
 				select: {
 					id: true,
-					location: true,
+					lat: true,
+					long: true,
+					open: true,
+					updatedAt: true,
 				},
 			});
 
+			// Convert to domain format
 			return vendors.map((vendor) => ({
-				id: vendor.id,
-				location: {
-					lat: vendor.location.coordinates.latitude,
-					long: vendor.location.coordinates.longitude,
+				entityId: vendor.id,
+				coordinates: {
+					lat: vendor.lat || 0,
+					lng: vendor.long || 0,
 				},
+				updatedAt: vendor.updatedAt.toISOString(),
+				isActive: vendor.open,
 			}));
 		} catch (error) {
 			this.logger.error('Failed to get vendors in area', {
-				bounds,
-				error,
+				error: error.message,
+				bounds: request.bounds,
 			});
-			throw new AppError(
-				ErrorType.EXTERNAL_SERVICE,
-				ErrorCodes.LOCATION_REDIS_OPERATION_FAILED,
-				'Failed to get vendors in area',
-				{
-					bounds,
-					operation: 'get_vendors_in_area',
-				},
-			);
+
+			if (error instanceof AppError) throw error;
+			this.locationACL.handleRedisError(error, {
+				operation: 'getVendorsInArea',
+				bounds: request.bounds,
+			});
 		}
 	}
 }

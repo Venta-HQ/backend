@@ -1,24 +1,20 @@
 import { GrpcInstanceModule } from '@app/nest/modules';
-import {
-	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
-	USER_MANAGEMENT_SERVICE_NAME,
-	UserManagementServiceClient,
-} from '@app/proto/marketplace/user-management';
+import { USER_MANAGEMENT_SERVICE_NAME } from '@app/proto/marketplace/user-management';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CommunicationToMarketplaceContextMapper } from '../../../../contracts/context-mappers/communication-to-marketplace-context-mapper';
 import { ClerkWebhooksController } from './clerk-webhooks.controller';
 
 @Module({
-	controllers: [ClerkWebhooksController],
 	imports: [
-		ConfigModule,
-		GrpcInstanceModule.register<UserManagementServiceClient>({
-			proto: 'user.proto',
-			protoPackage: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
-			provide: USER_MANAGEMENT_SERVICE_NAME,
+		GrpcInstanceModule.register({
 			serviceName: USER_MANAGEMENT_SERVICE_NAME,
-			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
+			proto: 'marketplace/user-management.proto',
+			protoPackage: 'marketplace.user_management',
+			provide: USER_MANAGEMENT_SERVICE_NAME,
+			urlFactory: (configService) => configService.get<string>('MARKETPLACE_USER_MANAGEMENT_SERVICE_URL') || '',
 		}),
 	],
+	controllers: [ClerkWebhooksController],
+	providers: [CommunicationToMarketplaceContextMapper],
 })
 export class ClerkWebhooksModule {}

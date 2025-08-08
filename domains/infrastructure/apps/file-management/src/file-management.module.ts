@@ -1,15 +1,20 @@
-import { APP_NAMES, BootstrapModule, CloudinaryModule } from '@app/nest/modules';
+import { BootstrapModule, CloudinaryModule } from '@app/nest/modules';
+import { CloudinaryACL } from '@domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
+import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace-context-mapper';
 import { Module } from '@nestjs/common';
-import { CoreModule } from './core/core.module';
+import { FileManagementController } from './core/file-management.controller';
+import { FileManagementService } from './core/file-management.service';
 
 @Module({
 	imports: [
 		BootstrapModule.forRoot({
-			additionalModules: [CloudinaryModule.register()],
-			appName: APP_NAMES.FILE_MANAGEMENT,
+			appName: 'file-management',
+			domain: 'infrastructure',
 			protocol: 'grpc',
 		}),
-		CoreModule,
+		CloudinaryModule,
 	],
+	controllers: [FileManagementController],
+	providers: [FileManagementService, CloudinaryACL, InfrastructureToMarketplaceContextMapper],
 })
 export class FileManagementModule {}

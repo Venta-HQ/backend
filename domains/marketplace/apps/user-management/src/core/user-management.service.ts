@@ -1,70 +1,57 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
+import { MarketplaceToLocationContextMapper } from '@domains/marketplace/contracts/context-mappers/marketplace-to-location-context-mapper';
+import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
+import { User, UserSubscription } from '@prisma/client';
 
-interface UserLocationData {
-	lat: number;
-	long: number;
-}
-
-interface UserProfile {
-	clerkId: string;
-	createdAt: Date;
-	id: string;
-	lat?: number;
-	long?: number;
-	updatedAt: Date;
-}
-
-interface UserRegistrationData {
-	clerkId: string;
-	source?: 'clerk_webhook' | 'manual' | 'admin';
-}
-
+/**
+ * Service for managing user profiles and operations
+ */
 @Injectable()
 export class UserManagementService {
 	private readonly logger = new Logger(UserManagementService.name);
 
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly locationContextMapper: MarketplaceToLocationContextMapper,
+		private readonly clerkACL: ClerkAntiCorruptionLayer,
+		private readonly locationMapper: MarketplaceToLocationContextMapper,
 	) {}
 
 	/**
 	 * Register a new user in the marketplace
-	 * Domain method for user registration with business logic
 	 */
-	async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
-		this.logger.log('Starting user registration process', {
-			clerkId: registrationData.clerkId,
-			source: registrationData.source || 'unknown',
+	async registerUser(request: Marketplace.Contracts.UserRegistrationRequest): Promise<Marketplace.Core.User> {
+		this.logger.debug('Processing user registration', {
+			clerkId: request.clerkId,
+			source: request.source,
 		});
 
 		try {
+			// Create user in database
 			const user = await this.prisma.db.user.create({
 				data: {
-					clerkId: registrationData.clerkId,
+					clerkId: request.clerkId,
+					isActive: true,
+				},
+				include: {
+					UserSubscription: true,
 				},
 			});
 
-			this.logger.log('User registration completed successfully', {
-				clerkId: registrationData.clerkId,
-				source: registrationData.source,
-				userId: user.id,
-			});
-
-			return user;
+			// Convert to domain model
+			return this.toDomainUser(user);
 		} catch (error) {
 			this.logger.error('Failed to register user', {
-				clerkId: registrationData.clerkId,
-				error,
-				source: registrationData.source,
+				error: error.message,
+				clerkId: request.clerkId,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to register user', {
-				clerkId: registrationData.clerkId,
-				operation: 'register_user',
-				source: registrationData.source,
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_CREATION_FAILED', 'Failed to register user', {
+				clerkId: request.clerkId,
+				source: request.source,
 			});
 		}
 	}
@@ -72,174 +59,90 @@ export class UserManagementService {
 	/**
 	 * Get user profile by ID
 	 */
-	async getUserById(userId: string): Promise<UserProfile | null> {
-		this.logger.log('Getting user profile', { userId });
+	async getUserById(userId: string): Promise<Marketplace.Core.User | null> {
+		this.logger.debug('Retrieving user profile', { userId });
 
 		try {
 			const user = await this.prisma.db.user.findUnique({
 				where: { id: userId },
+				include: {
+					UserSubscription: true,
+				},
 			});
 
 			if (!user) {
-				this.logger.log('User not found', { userId });
 				return null;
 			}
 
-			this.logger.log('User profile retrieved successfully', { userId });
-			return user;
+			// Convert to domain model
+			return this.toDomainUser(user);
 		} catch (error) {
-			this.logger.error('Failed to get user profile', error.stack, { error, userId });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to retrieve user profile', {
-				operation: 'get_user_by_id',
+			this.logger.error('Failed to get user profile', {
+				error: error.message,
+				userId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_NOT_FOUND', 'Failed to retrieve user profile', {
 				userId,
 			});
 		}
 	}
 
 	/**
-	 * Update user location from location service events
-	 * This method is called when the location service publishes a location.user_location_updated event
-	 * It doesn't require user authorization since it's a system-level operation
+	 * Update user location
 	 */
-	async updateUserLocation(userId: string, location: UserLocationData): Promise<UserProfile> {
-		this.logger.log('Updating user location from location service', { location, userId });
+	async updateUserLocation(request: Marketplace.Contracts.UserLocationUpdate): Promise<Marketplace.Core.User> {
+		this.logger.debug('Processing user location update', {
+			userId: request.userId,
+			location: request.location,
+		});
 
 		try {
-			// Transform location data using context mapper for location services format
-			const locationServicesData = this.locationContextMapper.toLocationServicesUserUpdate(userId, {
-				lat: location.lat,
-				lng: location.long,
+			// Convert to location services format
+			const locationData = this.locationMapper.toLocationServicesUserUpdate({
+				userId: request.userId,
+				coordinates: request.location,
+				timestamp: request.timestamp,
 			});
 
-			// Update user location in database
+			// Update user location
 			const user = await this.prisma.db.user.update({
+				where: { id: request.userId },
 				data: {
-					lat: locationServicesData.coordinates.latitude,
-					long: locationServicesData.coordinates.longitude,
+					lat: locationData.coordinates.lat,
+					long: locationData.coordinates.lng,
 				},
-				where: {
-					id: userId,
+				include: {
+					UserSubscription: true,
 				},
 			});
 
-			this.logger.log('User location updated successfully', {
-				location: `${locationServicesData.coordinates.latitude}, ${locationServicesData.coordinates.longitude}`,
-				userId,
+			// Convert to domain model
+			return this.toDomainUser(user, {
+				lat: user.lat || 0,
+				lng: user.long || 0,
+				userId: user.id,
+				updatedAt: user.updatedAt.toISOString(),
 			});
-
-			return user;
 		} catch (error) {
-			this.logger.error('Failed to update user location in database', error.stack, { error, userId });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to update user location', {
-				operation: 'update_user_location',
-				userId,
+			this.logger.error('Failed to update user location', {
+				error: error.message,
+				userId: request.userId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_UPDATE_FAILED', 'Failed to update user location', {
+				userId: request.userId,
 			});
 		}
 	}
 
 	/**
-	 * Create user profile (legacy method - use registerUser for new registrations)
-	 */
-	async createUserProfile(clerkId: string): Promise<UserProfile> {
-		this.logger.log('Creating new user profile', { clerkId });
-
-		try {
-			const user = await this.prisma.db.user.create({
-				data: {
-					clerkId,
-				},
-			});
-
-			this.logger.log('User profile created successfully', { clerkId, userId: user.id });
-
-			return user;
-		} catch (error) {
-			this.logger.error('Failed to create user profile', error.stack, { clerkId, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user profile', {
-				clerkId,
-				operation: 'create_user_profile',
-			});
-		}
-	}
-
-	/**
-	 * Handle user communication events using context mapper
-	 */
-	async handleUserCommunicationEvent(userId: string, eventData: any): Promise<void> {
-		this.logger.log('Handling user communication event', { userId, eventType: eventData.type });
-
-		try {
-			// Transform communication event data using inbound context mapper
-			const marketplaceEventData = this.communicationToMarketplaceMapper.toMarketplaceWebhookEvent({
-				type: eventData.type,
-				data: {
-					userId,
-					...eventData,
-				},
-				timestamp: new Date().toISOString(),
-				source: 'communication',
-			});
-
-			// Process the transformed event data
-			// This could involve updating user preferences, notification settings, etc.
-			this.logger.log('User communication event processed successfully', {
-				userId,
-				eventType: marketplaceEventData.eventType,
-			});
-		} catch (error) {
-			this.logger.error('Failed to handle user communication event', error.stack, { userId, error });
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.INTERNAL_SERVER_ERROR,
-				'Failed to handle user communication event',
-				{
-					operation: 'handle_user_communication_event',
-					userId,
-				},
-			);
-		}
-	}
-
-	/**
-	 * Handle user infrastructure operations using context mapper
-	 */
-	async handleUserInfrastructureOperation(userId: string, operationData: any): Promise<void> {
-		this.logger.log('Handling user infrastructure operation', { userId, operationType: operationData.type });
-
-		try {
-			// Transform infrastructure operation data using context mapper
-			const infrastructureData = this.infrastructureContextMapper.toInfrastructureEvent({
-				type: operationData.type,
-				data: { userId, ...operationData.data },
-				metadata: operationData.metadata,
-			});
-
-			// Process the transformed infrastructure data
-			// This could involve file operations, database operations, etc.
-			this.logger.log('User infrastructure operation processed successfully', {
-				userId,
-				operationType: infrastructureData.eventType,
-			});
-		} catch (error) {
-			this.logger.error('Failed to handle user infrastructure operation', error.stack, { userId, error });
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.INTERNAL_SERVER_ERROR,
-				'Failed to handle user infrastructure operation',
-				{
-					operation: 'handle_user_infrastructure_operation',
-					userId,
-				},
-			);
-		}
-	}
-
-	/**
-	 * Delete user profile and all associated data
-	 * Domain method for user deletion with cleanup
+	 * Delete user profile
 	 */
 	async deleteUserProfile(clerkId: string): Promise<void> {
-		this.logger.log('Starting user profile deletion process', { clerkId });
+		this.logger.debug('Processing user deletion', { clerkId });
 
 		try {
 			// Delete user and all associated data (cascade)
@@ -247,13 +150,54 @@ export class UserManagementService {
 				where: { clerkId },
 			});
 
-			this.logger.log('User profile and associated data deleted successfully', { clerkId });
+			// Emit event
+			const event: Marketplace.Events.UserDeleted = {
+				userId: clerkId,
+				timestamp: new Date().toISOString(),
+			};
+
+			this.logger.debug('User deleted successfully', { clerkId });
 		} catch (error) {
-			this.logger.error('Failed to delete user profile', error.stack, { clerkId, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete user profile', {
+			this.logger.error('Failed to delete user', {
+				error: error.message,
 				clerkId,
-				operation: 'delete_user_profile',
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal('USER_DELETION_FAILED', 'Failed to delete user', {
+				clerkId,
 			});
 		}
+	}
+
+	/**
+	 * Convert Prisma user to domain user
+	 */
+	private toDomainUser(
+		user: User & { UserSubscription?: UserSubscription | null },
+		location?: Marketplace.Core.UserLocation,
+	): Marketplace.Core.User {
+		return {
+			id: user.id,
+			email: user.email,
+			firstName: user.firstName || undefined,
+			lastName: user.lastName || undefined,
+			createdAt: user.createdAt.toISOString(),
+			updatedAt: user.updatedAt.toISOString(),
+			isActive: user.isActive,
+			subscription: user.UserSubscription
+				? {
+						id: user.UserSubscription.id,
+						userId: user.UserSubscription.userId,
+						status: user.UserSubscription.status,
+						provider: user.UserSubscription.provider,
+						externalId: user.UserSubscription.externalId,
+						productId: user.UserSubscription.productId,
+						startDate: user.UserSubscription.startDate.toISOString(),
+						endDate: user.UserSubscription.endDate?.toISOString(),
+					}
+				: undefined,
+			location,
+		};
 	}
 }

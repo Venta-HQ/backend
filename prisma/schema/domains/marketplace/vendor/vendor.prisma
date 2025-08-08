@@ -10,7 +10,7 @@ model Vendor {
     phone        String?
     email        String?
     website      String?
-    open         Boolean @default(false)
+    isOpen       Boolean @default(false)
     primaryImage String?
 
     // Metadata

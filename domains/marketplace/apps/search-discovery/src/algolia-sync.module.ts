@@ -1,17 +1,21 @@
-import { AlgoliaModule, APP_NAMES, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
+import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { AlgoliaSyncController } from './algolia-sync.controller';
 import { AlgoliaSyncService } from './algolia-sync.service';
+import { AlgoliaACL } from './anti-corruption-layers/algolia-acl';
+import { NatsACL } from './anti-corruption-layers/nats-acl.js';
+import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-marketplace-context-mapper';
 
 @Module({
-	controllers: [AlgoliaSyncController],
 	imports: [
 		BootstrapModule.forRoot({
-			additionalModules: [AlgoliaModule.register(), NatsQueueModule],
-			appName: APP_NAMES.ALGOLIA_SYNC,
+			appName: 'search-discovery',
+			domain: 'marketplace',
 			protocol: 'nats',
 		}),
+		AlgoliaModule,
+		NatsQueueModule,
 	],
-	providers: [AlgoliaSyncService],
+	providers: [AlgoliaSyncController, AlgoliaSyncService, AlgoliaACL, NatsACL, SearchToMarketplaceContextMapper],
 })
 export class AlgoliaSyncModule {}

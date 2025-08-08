@@ -1,315 +1,88 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { TransformationUtils } from '@app/utils';
+import { AppError } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
-import { ClerkUserData } from '../types/auth/auth.types';
+import { Marketplace } from '../types/context-mapping.types';
 
 /**
- * Anti-Corruption Layer for Clerk Integration
- *
- * Protects the Marketplace domain from Clerk's external API changes
- * and translates Clerk data to marketplace domain format
+ * Anti-Corruption Layer for Clerk integration
  */
 @Injectable()
 export class ClerkAntiCorruptionLayer {
-	private readonly logger = new Logger('ClerkAntiCorruptionLayer');
+	private readonly logger = new Logger(ClerkAntiCorruptionLayer.name);
+
+	/**
+	 * Validate user identity data
+	 */
+	validateUserIdentity(data: unknown): data is { id: string } {
+		try {
+			if (!data || typeof data !== 'object') return false;
+			const { id } = data as { id: string };
+			return typeof id === 'string' && id.length > 0;
+		} catch (error) {
+			this.logger.error('Failed to validate user identity', {
+				error: error.message,
+				data,
+			});
+			return false;
+		}
+	}
 
 	/**
 	 * Validate Clerk user data
 	 */
-	private validateClerkUser(data: unknown): data is ClerkUserData {
-		if (!data || typeof data !== 'object') return false;
-		const d = data as Partial<ClerkUserData>;
+	validateClerkUser(data: unknown): data is Marketplace.External.ClerkUser {
+		try {
+			if (!data || typeof data !== 'object') return false;
+			const user = data as Marketplace.External.ClerkUser;
 
-		return (
-			typeof d.id === 'string' &&
-			(!d.email_addresses ||
-				(Array.isArray(d.email_addresses) &&
-					d.email_addresses.every(
-						(email) =>
-							typeof email.email_address === 'string' &&
-							(!email.verification || ['verified', 'unverified'].includes(email.verification.status)),
-					))) &&
-			(!d.first_name || typeof d.first_name === 'string') &&
-			(!d.last_name || typeof d.last_name === 'string') &&
-			(!d.metadata || Object.values(d.metadata).every((value) => typeof value === 'string'))
-		);
-	}
-
-	/**
-	 * Create a validation error with consistent formatting
-	 */
-	private createValidationError(message: string, context: Record<string, unknown>): AppError {
-		return new AppError(ErrorType.VALIDATION, 'INVALID_EXTERNAL_DATA', message, context);
-	}
-
-	/**
-	 * Validate user creation data from Clerk
-	 */
-	public validateUserCreationData(data: { clerkId: string }): { clerkId: string } {
-		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
-			throw this.createValidationError('Invalid Clerk user creation data', { data });
+			return (
+				typeof user.id === 'string' &&
+				Array.isArray(user.email_addresses) &&
+				user.email_addresses.every(
+					(email) =>
+						typeof email.email_address === 'string' &&
+						(!email.verification ||
+							email.verification.status === 'verified' ||
+							email.verification.status === 'unverified'),
+				) &&
+				(!user.first_name || typeof user.first_name === 'string') &&
+				(!user.last_name || typeof user.last_name === 'string') &&
+				typeof user.created_at === 'string' &&
+				typeof user.updated_at === 'string'
+			);
+		} catch (error) {
+			this.logger.error('Failed to validate Clerk user', {
+				error: error.message,
+				data,
+			});
+			return false;
 		}
-		return data;
 	}
 
 	/**
-	 * Validate user update data from Clerk
+	 * Convert Clerk user to domain user
 	 */
-	public validateUserUpdateData(data: {
-		clerkId: string;
-		updates: {
-			email?: string;
-			firstName?: string;
-			lastName?: string;
-			metadata?: Record<string, unknown>;
+	toDomainUser(user: Marketplace.External.ClerkUser): Marketplace.Core.User {
+		return {
+			id: user.id,
+			email: user.email_addresses[0]?.email_address || null,
+			firstName: user.first_name,
+			lastName: user.last_name,
+			createdAt: user.created_at,
+			updatedAt: user.updated_at,
+			isActive: true,
 		};
-	}): {
-		clerkId: string;
-		updates: {
-			email?: string;
-			firstName?: string;
-			lastName?: string;
-			metadata?: Record<string, unknown>;
-		};
-	} {
-		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
-			throw this.createValidationError('Invalid Clerk user update data - missing clerkId', { data });
-		}
-
-		if (!data.updates || typeof data.updates !== 'object') {
-			throw this.createValidationError('Invalid Clerk user update data - missing updates', { data });
-		}
-
-		const { email, firstName, lastName, metadata } = data.updates;
-
-		if (email !== undefined && typeof email !== 'string') {
-			throw this.createValidationError('Invalid Clerk user update data - invalid email', { data });
-		}
-
-		if (firstName !== undefined && typeof firstName !== 'string') {
-			throw this.createValidationError('Invalid Clerk user update data - invalid firstName', { data });
-		}
-
-		if (lastName !== undefined && typeof lastName !== 'string') {
-			throw this.createValidationError('Invalid Clerk user update data - invalid lastName', { data });
-		}
-
-		if (metadata !== undefined && (typeof metadata !== 'object' || Array.isArray(metadata))) {
-			throw this.createValidationError('Invalid Clerk user update data - invalid metadata', { data });
-		}
-
-		return data;
 	}
 
 	/**
-	 * Validate user deletion data from Clerk
+	 * Handle Clerk error
 	 */
-	public validateUserDeletionData(data: { clerkId: string }): { clerkId: string } {
-		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
-			throw this.createValidationError('Invalid Clerk user deletion data', { data });
-		}
-		return data;
-	}
+	handleClerkError(error: unknown, context: { operation: string; userId?: string }): never {
+		this.logger.error('Clerk operation failed', {
+			error: error instanceof Error ? error.message : 'Unknown error',
+			operation: context.operation,
+			userId: context.userId,
+		});
 
-	/**
-	 * Validate marketplace user data
-	 */
-	private validateMarketplaceUser(data: unknown): boolean {
-		if (!data || typeof data !== 'object') return false;
-		const d = data as Record<string, unknown>;
-
-		return (
-			typeof d.email === 'string' &&
-			(!d.firstName || typeof d.firstName === 'string') &&
-			(!d.lastName || typeof d.lastName === 'string') &&
-			(!d.metadata || (typeof d.metadata === 'object' && !Array.isArray(d.metadata)))
-		);
-	}
-
-	// ============================================================================
-	// Clerk → Marketplace Translation
-	// ============================================================================
-
-	/**
-	 * Translate Clerk user data to marketplace user format
-	 */
-	toMarketplaceUser(clerkUser: any) {
-		try {
-			if (!this.validateClerkUser(clerkUser)) {
-				throw new Error('Invalid Clerk user data');
-			}
-
-			const result = {
-				clerkId: clerkUser.id,
-				email: TransformationUtils.extractEmail(clerkUser),
-				firstName: TransformationUtils.extractString(clerkUser, ['firstName']),
-				lastName: TransformationUtils.extractString(clerkUser, ['lastName']),
-				metadata: TransformationUtils.extractMetadata(clerkUser),
-				createdAt: TransformationUtils.extractCreatedAt(clerkUser),
-				updatedAt: TransformationUtils.extractUpdatedAt(clerkUser),
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate Clerk user', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate Clerk user update to marketplace format
-	 */
-	toMarketplaceUserUpdate(clerkUser: any, previousUser?: any) {
-		try {
-			if (!this.validateClerkUser(clerkUser)) {
-				throw new Error('Invalid Clerk user data');
-			}
-
-			// Extract changes by comparing with previous user
-			const changes: Record<string, any> = {};
-
-			if (previousUser) {
-				const currentEmail = TransformationUtils.extractEmail(clerkUser);
-				const previousEmail = TransformationUtils.extractEmail(previousUser);
-				if (currentEmail !== previousEmail) {
-					changes.email = currentEmail;
-				}
-
-				const currentFirstName = TransformationUtils.extractString(clerkUser, ['firstName']);
-				const previousFirstName = TransformationUtils.extractString(previousUser, ['firstName']);
-				if (currentFirstName !== previousFirstName) {
-					changes.firstName = currentFirstName;
-				}
-
-				const currentLastName = TransformationUtils.extractString(clerkUser, ['lastName']);
-				const previousLastName = TransformationUtils.extractString(previousUser, ['lastName']);
-				if (currentLastName !== previousLastName) {
-					changes.lastName = currentLastName;
-				}
-
-				// Check for metadata changes
-				const currentMetadata = TransformationUtils.extractMetadata(clerkUser);
-				const previousMetadata = TransformationUtils.extractMetadata(previousUser);
-				if (JSON.stringify(currentMetadata) !== JSON.stringify(previousMetadata)) {
-					changes.metadata = currentMetadata;
-				}
-			} else {
-				// New user - include all fields
-				changes.email = TransformationUtils.extractEmail(clerkUser);
-				changes.firstName = TransformationUtils.extractString(clerkUser, ['firstName']);
-				changes.lastName = TransformationUtils.extractString(clerkUser, ['lastName']);
-				changes.metadata = TransformationUtils.extractMetadata(clerkUser);
-			}
-
-			const result = {
-				clerkId: clerkUser.id,
-				changes,
-				updatedAt: TransformationUtils.extractUpdatedAt(clerkUser),
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate Clerk user update', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate Clerk user deletion to marketplace format
-	 */
-	toMarketplaceUserDeletion(clerkUserId: string) {
-		try {
-			if (!clerkUserId || typeof clerkUserId !== 'string') {
-				throw new Error('Invalid Clerk user ID');
-			}
-
-			const result = {
-				clerkId: clerkUserId,
-				deletedAt: new Date().toISOString(),
-			};
-
-			return result;
-		} catch (error) {
-			this.logger.error('Failed to translate Clerk user deletion', error);
-			throw error;
-		}
-	}
-
-	// ============================================================================
-	// Marketplace → Clerk Translation
-	// ============================================================================
-
-	/**
-	 * Translate marketplace user to Clerk format for API calls
-	 */
-	toClerkUser(marketplaceUser: {
-		email: string;
-		firstName?: string;
-		lastName?: string;
-		metadata?: Record<string, any>;
-	}) {
-		try {
-			// Validate marketplace user data
-			if (!this.validateMarketplaceUser(marketplaceUser)) {
-				throw new Error('Invalid marketplace user data');
-			}
-
-			// Translate to Clerk format
-			const clerkUser = {
-				emailAddress: [marketplaceUser.email],
-				firstName: marketplaceUser.firstName || '',
-				lastName: marketplaceUser.lastName || '',
-				publicMetadata: marketplaceUser.metadata || {},
-			};
-
-			return clerkUser;
-		} catch (error) {
-			this.logger.error('Failed to translate marketplace user to Clerk format', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate marketplace user update to Clerk format
-	 */
-	toClerkUserUpdate(
-		marketplaceUserId: string,
-		updates: {
-			email?: string;
-			firstName?: string;
-			lastName?: string;
-			metadata?: Record<string, any>;
-		},
-	) {
-		try {
-			// Validate marketplace user update data
-			if (!updates || Object.keys(updates).length === 0) {
-				throw new Error('Invalid marketplace user update data');
-			}
-
-			// Translate to Clerk format
-			const clerkUpdate: Record<string, any> = {};
-
-			if (updates.email) {
-				clerkUpdate.emailAddress = [updates.email];
-			}
-
-			if (updates.firstName !== undefined) {
-				clerkUpdate.firstName = updates.firstName;
-			}
-
-			if (updates.lastName !== undefined) {
-				clerkUpdate.lastName = updates.lastName;
-			}
-
-			if (updates.metadata) {
-				clerkUpdate.publicMetadata = updates.metadata;
-			}
-
-			return clerkUpdate;
-		} catch (error) {
-			this.logger.error('Failed to translate marketplace user update to Clerk format', error);
-			throw error;
-		}
+		throw AppError.internal('CLERK_SERVICE_ERROR', 'Clerk operation failed', context);
 	}
 }

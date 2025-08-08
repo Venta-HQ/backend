@@ -2,12 +2,14 @@ import { algoliasearch, BatchResponse, SearchClient, UpdatedAtWithObjectIdRespon
 import { Injectable, Logger } from '@nestjs/common';
 
 // Define proper types for Algolia operations
-export interface AlgoliaObject {
-	[key: string]: string | number | boolean | Date | null | undefined;
+export interface AlgoliaObject
+	extends Record<string, string | number | boolean | Date | null | undefined | object | any[]> {
+	objectID: string;
 }
 
-export interface AlgoliaUpdateAttributes {
-	[key: string]: string | number | boolean | Date | null | undefined;
+export interface AlgoliaUpdateAttributes
+	extends Record<string, string | number | boolean | Date | null | undefined | object | any[]> {
+	objectID: string;
 }
 
 @Injectable()
