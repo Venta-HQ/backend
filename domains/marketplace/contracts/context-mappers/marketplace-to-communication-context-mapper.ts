@@ -1,9 +1,9 @@
+import { Injectable, Logger } from '@nestjs/common';
 import {
 	MarketplaceExternalSubscriptionData,
 	MarketplaceExternalUserData,
 	MarketplaceExternalUserMapping,
-} from '@app/apitypes/domains/marketplace';
-import { Injectable, Logger } from '@nestjs/common';
+} from '../types';
 
 /**
  * Context Mapper for Marketplace → Communication domain

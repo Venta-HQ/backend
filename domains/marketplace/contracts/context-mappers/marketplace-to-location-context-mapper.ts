@@ -1,11 +1,11 @@
+import { TransformationUtils, ValidationUtils } from '@app/utils';
+import { Injectable, Logger } from '@nestjs/common';
 import {
 	MarketplaceLocationBounds,
 	MarketplaceLocationUpdate,
 	MarketplaceUserLocation,
 	MarketplaceVendorLocation,
-} from '@app/apitypes/domains/marketplace';
-import { TransformationUtils, ValidationUtils } from '@app/utils';
-import { Injectable, Logger } from '@nestjs/common';
+} from '../types';
 
 /**
  * Context Mapper for Marketplace → Location Services communication

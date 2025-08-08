@@ -1,6 +1,2 @@
-// Domain exports
-export * from './domains/marketplace';
-export * from './domains/location-services';
-
-// Shared exports (includes unified event registry and base types)
+// Export shared event types and utilities
 export * from './shared';
