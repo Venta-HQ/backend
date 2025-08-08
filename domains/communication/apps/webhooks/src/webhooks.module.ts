@@ -1,17 +1,17 @@
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { BootstrapModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { ClerkWebhooksModule } from './clerk/clerk-webhooks.module';
-import { RevenueCatWebhooksModule } from './revenuecat/revenuecat-webhooks.module';
+import { ConfigModule } from '@nestjs/config';
+import { CoreModule } from './core/core.module';
 
 @Module({
 	imports: [
 		BootstrapModule.forRoot({
-			appName: APP_NAMES.CLERK_WEBHOOKS,
-			domain: 'communication', // DDD domain for communication services
+			appName: 'webhooks',
+			domain: 'communication',
 			protocol: 'http',
 		}),
-		ClerkWebhooksModule,
-		RevenueCatWebhooksModule,
+		ConfigModule,
+		CoreModule,
 	],
 })
 export class WebhooksModule {}

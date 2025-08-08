@@ -1,11 +1,7 @@
-import { BootstrapModule, EventService, PrismaModule, PrometheusService, RedisModule } from '@app/nest/modules';
+import { BootstrapModule, EventService, PrismaModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { UserLocationGateway } from './gateways/user-location.gateway';
-import { VendorLocationGateway } from './gateways/vendor-location.gateway';
-import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
-import { UserConnectionManagerService } from './services/user-connection-manager.service';
-import { VendorConnectionManagerService } from './services/vendor-connection-manager.service';
+import { CoreModule } from './core/core.module';
 
 @Module({
 	imports: [
@@ -17,18 +13,8 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 		ConfigModule,
 		PrismaModule,
 		RedisModule,
+		CoreModule,
 	],
-	providers: [
-		UserLocationGateway,
-		VendorLocationGateway,
-		UserConnectionManagerService,
-		VendorConnectionManagerService,
-		EventService,
-		{
-			provide: WEBSOCKET_METRICS,
-			useFactory: (prometheusService: PrometheusService) => createWebSocketMetrics(prometheusService),
-			inject: [PrometheusService],
-		},
-	],
+	providers: [EventService],
 })
 export class RealTimeModule {}

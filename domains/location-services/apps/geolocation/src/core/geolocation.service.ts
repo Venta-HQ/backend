@@ -1,104 +1,44 @@
-import { Redis } from 'ioredis';
+import Redis from 'ioredis';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
-import { retryOperation } from '@app/utils';
-import { LocationExternalServiceACL } from '@domains/location-services/contracts/anti-corruption-layers/location-external-service-acl';
-import { LocationToMarketplaceContextMapper } from '@domains/location-services/contracts/context-mappers/location-to-marketplace-context-mapper';
 import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { LocationTrackingService } from './location-tracking.service';
 
-/**
- * Geolocation service for location services domain
- */
 @Injectable()
 export class GeolocationService {
 	private readonly logger = new Logger(GeolocationService.name);
 
 	constructor(
-		private readonly prisma: PrismaService,
-		private readonly redis: Redis,
-		private readonly locationACL: LocationExternalServiceACL,
-		private readonly contextMapper: LocationToMarketplaceContextMapper,
+		@InjectRedis() private readonly redis: Redis,
+		private readonly locationTrackingService: LocationTrackingService,
 	) {}
 
-	/**
-	 * Update vendor location in Redis geospatial store
-	 */
-	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate): Promise<void> {
+	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate) {
 		this.logger.debug('Processing vendor location update', {
 			entityId: request.entityId,
 			coordinates: request.coordinates,
 		});
 
 		try {
-			// Validate request
-			if (!this.locationACL.validateLocationUpdate(request as unknown)) {
-				throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
-					operation: 'update_vendor_location',
-					entityId: request.entityId,
+			// Validate coordinates
+			if (!this.locationTrackingService.validateCoordinates(request.coordinates)) {
+				throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+					operation: 'validate_coordinates',
 					coordinates: request.coordinates,
 				});
 			}
 
-			// Validate vendor exists
-			const vendor = await this.prisma.db.vendor.findUnique({
-				where: { id: request.entityId },
-			});
+			// Update vendor location in Redis
+			await this.redis.geoadd('vendor_locations', request.coordinates.lng, request.coordinates.lat, request.entityId);
 
-			if (!vendor) {
-				throw AppError.notFound('VENDOR_NOT_FOUND', ErrorCodes.VENDOR_NOT_FOUND, {
-					operation: 'update_vendor_location',
-					vendorId: request.entityId,
-				});
-			}
-
-			// Convert to Redis format
-			const geoMember = this.locationACL.toRedisMember(request.entityId, request.coordinates);
-
-			try {
-				// Update Redis geospatial store with retry
-				await retryOperation(
-					async () => {
-						await this.redis.geoadd('vendor_locations', geoMember.longitude, geoMember.latitude, geoMember.key);
-					},
-					'Update vendor location in Redis',
-					{ logger: this.logger },
-				);
-			} catch (error) {
-				throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
-					operation: 'update_vendor_location_redis',
-					entityId: request.entityId,
-					coordinates: request.coordinates,
-				});
-			}
-
-			try {
-				// Update vendor in database
-				await this.prisma.db.vendor.update({
-					where: { id: request.entityId },
-					data: {
-						lat: request.coordinates.lat,
-						long: request.coordinates.lng,
-						updatedAt: new Date(),
-					},
-				});
-			} catch (error) {
-				throw AppError.internal('DATABASE_ERROR', ErrorCodes.DATABASE_ERROR, {
-					operation: 'update_vendor_location_db',
-					entityId: request.entityId,
-					coordinates: request.coordinates,
-				});
-			}
-
-			// Emit event
-			const event: LocationServices.Events.LocationUpdated = {
-				entityId: request.entityId,
+			// Update vendor status
+			await this.locationTrackingService.updateVendorStatus(request.entityId, {
 				coordinates: request.coordinates,
 				timestamp: new Date().toISOString(),
-				metadata: request.metadata,
-			};
+			});
 
-			this.logger.debug('Vendor location updated successfully', {
+			this.logger.debug('Successfully updated vendor location', {
 				entityId: request.entityId,
 				coordinates: request.coordinates,
 			});
@@ -109,111 +49,100 @@ export class GeolocationService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_UPDATE_FAILED', ErrorCodes.LOCATION_UPDATE_FAILED, {
+
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE, {
 				operation: 'update_vendor_location',
 				entityId: request.entityId,
-				coordinates: request.coordinates,
+				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}
 
-	/**
-	 * Get vendors within a geographic bounding box
-	 */
-	async getVendorsInArea(
+	async getNearbyVendors(
 		request: LocationServices.Contracts.GeospatialQuery,
 	): Promise<LocationServices.Core.VendorLocation[]> {
-		this.logger.debug('Processing geospatial query', {
+		this.logger.debug('Processing nearby vendors request', {
 			bounds: request.bounds,
 			limit: request.limit,
-			activeOnly: request.activeOnly,
 		});
 
 		try {
-			// Validate request
-			if (!this.locationACL.validateGeospatialQuery(request as unknown)) {
-				throw AppError.validation('LOCATION_INVALID_COORDINATES', ErrorCodes.LOCATION_INVALID_COORDINATES, {
-					operation: 'get_vendors_in_area',
+			// Validate coordinates
+			if (
+				!this.locationTrackingService.validateCoordinates(request.bounds.sw) ||
+				!this.locationTrackingService.validateCoordinates(request.bounds.ne)
+			) {
+				throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+					operation: 'validate_coordinates',
 					bounds: request.bounds,
 				});
 			}
 
-			let vendorIds: any[];
-			try {
-				// Get vendor IDs within bounds using Redis geospatial query
-				vendorIds = await retryOperation(
-					async () => {
-						return this.redis.georadius(
-							'vendor_locations',
-							request.bounds.ne.lng,
-							request.bounds.ne.lat,
-							'5000', // 5km radius
-							'km',
-							'WITHCOORD',
-							'WITHDIST',
-							'COUNT',
-							request.limit || 100,
-						);
-					},
-					'Get vendors in area from Redis',
-					{ logger: this.logger },
-				);
-			} catch (error) {
-				throw AppError.internal('LOCATION_REDIS_OPERATION_FAILED', ErrorCodes.LOCATION_REDIS_OPERATION_FAILED, {
-					operation: 'get_vendors_in_area_redis',
-					bounds: request.bounds,
-				});
-			}
+			const centerLat = (request.bounds.sw.lat + request.bounds.ne.lat) / 2;
+			const centerLng = (request.bounds.sw.lng + request.bounds.ne.lng) / 2;
+			const radius = this.calculateRadius(request.bounds);
 
-			if (!vendorIds?.length) {
-				return [];
-			}
+			// Get nearby vendor IDs from Redis
+			const nearbyVendors = await this.redis.georadius(
+				'vendor_locations',
+				centerLng.toString(),
+				centerLat.toString(),
+				radius.toString(),
+				'km',
+				'WITHCOORD',
+				...(request.limit ? ['COUNT', request.limit.toString()] : []),
+			);
 
-			try {
-				// Get vendor details from database
-				const vendors = await this.prisma.db.vendor.findMany({
-					where: {
-						id: {
-							in: vendorIds.map((v: any) => v[0]),
+			// Get vendor statuses
+			const vendorStatuses = await Promise.all(
+				nearbyVendors.map(async ([member, [lng, lat]]) => {
+					const status = await this.locationTrackingService.getVendorStatus(member);
+					return {
+						entityId: member,
+						coordinates: {
+							lat: Number(lat),
+							lng: Number(lng),
 						},
-						...(request.activeOnly && { open: true }),
-					},
-					select: {
-						id: true,
-						lat: true,
-						long: true,
-						open: true,
-						updatedAt: true,
-					},
-				});
+						updatedAt: status.lastUpdate,
+						isActive: status.isActive,
+					};
+				}),
+			);
 
-				// Convert to domain format
-				return vendors.map((vendor) => ({
-					entityId: vendor.id,
-					coordinates: {
-						lat: vendor.lat || 0,
-						lng: vendor.long || 0,
-					},
-					updatedAt: vendor.updatedAt.toISOString(),
-					isActive: vendor.open,
-				}));
-			} catch (error) {
-				throw AppError.internal('DATABASE_ERROR', ErrorCodes.DATABASE_ERROR, {
-					operation: 'get_vendors_in_area_db',
-					bounds: request.bounds,
-				});
-			}
+			return request.activeOnly ? vendorStatuses.filter((status) => status.isActive) : vendorStatuses;
 		} catch (error) {
-			this.logger.error('Failed to get vendors in area', {
+			this.logger.error('Failed to get nearby vendors', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				bounds: request.bounds,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_QUERY_FAILED', ErrorCodes.LOCATION_QUERY_FAILED, {
-				operation: 'get_vendors_in_area',
+
+			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY, {
+				operation: 'get_nearby_vendors',
 				bounds: request.bounds,
+				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
+	}
+
+	private calculateRadius(bounds: LocationServices.Core.GeospatialBounds): number {
+		const R = 6371; // Earth's radius in km
+		const lat1 = (bounds.sw.lat * Math.PI) / 180;
+		const lat2 = (bounds.ne.lat * Math.PI) / 180;
+		const lon1 = (bounds.sw.lng * Math.PI) / 180;
+		const lon2 = (bounds.ne.lng * Math.PI) / 180;
+
+		const dLat = lat2 - lat1;
+		const dLon = lon2 - lon1;
+
+		const a =
+			Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+			Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+		const d = R * c;
+
+		// Return diagonal distance of the bounding box
+		return d / 2; // Divide by 2 to get radius from center
 	}
 }

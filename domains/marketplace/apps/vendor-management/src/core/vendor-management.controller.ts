@@ -40,14 +40,14 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorLookupById(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_ID, ErrorCodes.INVALID_VENDOR_ID, {
+				throw AppError.validation(ErrorCodes.ERR_VENDOR_INVALID_ID, {
 					vendorId: (request as any)?.id || 'undefined',
 				});
 			}
 
 			const vendor = await this.vendorManagementService.getVendorById(request.id);
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
+				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
 					vendorId: request.id,
 				});
 			}
@@ -60,7 +60,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				vendorId: request.id,
 			});
 		}
@@ -73,7 +73,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorCreateData(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_VENDOR_INVALID_DATA, {
 					userId: (request as any)?.userId || 'undefined',
 				});
 			}
@@ -90,7 +90,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.VENDOR_CREATION_FAILED, ErrorCodes.VENDOR_CREATION_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_VENDOR_CREATE, {
 				userId: request.userId,
 			});
 		}
@@ -103,7 +103,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorUpdateData(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_VENDOR_INVALID_DATA, {
 					vendorId: (request as any)?.id || 'undefined',
 				});
 			}
@@ -120,7 +120,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.VENDOR_UPDATE_FAILED, ErrorCodes.VENDOR_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_VENDOR_UPDATE, {
 				vendorId: request.id,
 			});
 		}
@@ -136,7 +136,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 		try {
 			// Validate input
 			if (!this.vendorACL.validateVendorLocationUpdate(request)) {
-				throw AppError.validation(ErrorCodes.INVALID_LOCATION_DATA, ErrorCodes.INVALID_LOCATION_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_USER_INVALID_LOCATION, {
 					vendorId: (request as any)?.vendorId || 'undefined',
 					location: (request as any)?.location || 'undefined',
 				});
@@ -155,7 +155,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.LOCATION_UPDATE_FAILED, ErrorCodes.LOCATION_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE, {
 				vendorId: request.vendorId,
 			});
 		}
@@ -182,7 +182,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.LOCATION_QUERY_FAILED, ErrorCodes.LOCATION_QUERY_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY, {
 				neBounds: request.neLocation,
 				swBounds: request.swLocation,
 			});

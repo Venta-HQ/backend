@@ -1,0 +1,88 @@
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SignedWebhookGuard } from '@app/nest/guards';
+import { GrpcInstance } from '@app/nest/modules';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
+import { CommunicationToMarketplaceContextMapper } from '@domains/communication/contracts/context-mappers/communication-to-marketplace-context-mapper';
+import { Communication } from '@domains/communication/contracts/types/context-mapping.types';
+import { RevenueCatWebhookPayload } from '@domains/communication/contracts/types/external/revenuecat.types';
+import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+
+@Controller()
+export class RevenueCatWebhooksController {
+	private readonly logger = new Logger(RevenueCatWebhooksController.name);
+
+	constructor(
+		@Inject(USER_MANAGEMENT_SERVICE_NAME)
+		private readonly client: GrpcInstance<UserManagementServiceClient>,
+		private readonly contextMapper: CommunicationToMarketplaceContextMapper,
+	) {}
+
+	@Post()
+	@UseGuards(SignedWebhookGuard(process.env.REVENUECAT_WEBHOOK_SECRET || ''))
+	async handleRevenueCatEvent(
+		@Body(new SchemaValidatorPipe(Communication.Validation.WebhookEventSchema))
+		event: RevenueCatWebhookPayload,
+	): Promise<{ message: string }> {
+		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
+			eventType: event.event.type,
+			userId: event.event.app_user_id,
+		});
+
+		try {
+			switch (event.event.type) {
+				case 'INITIAL_PURCHASE': {
+					try {
+						const marketplaceEvent = this.contextMapper.toMarketplaceSubscriptionEvent({
+							type: event.event.type,
+							source: 'revenuecat',
+							payload: event,
+							timestamp: new Date(event.event.purchased_at_ms).toISOString(),
+						});
+
+						await this.client.invoke('handleSubscriptionCreated', {
+							clerkUserId: marketplaceEvent.userId,
+							data: {
+								eventId: event.event.transaction_id,
+								productId: event.event.product_id,
+								transactionId: marketplaceEvent.subscriptionId,
+							},
+							providerId: marketplaceEvent.subscriptionId,
+						});
+					} catch (error) {
+						throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+							operation: 'handle_revenuecat_initial_purchase',
+							eventId: event.event.transaction_id,
+							userId: event.event.app_user_id,
+							service: 'revenuecat',
+							error: error instanceof Error ? error.message : 'Unknown error',
+						});
+					}
+					break;
+				}
+
+				default:
+					throw AppError.validation(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
+						operation: 'handle_revenuecat_event',
+						eventType: event.event.type,
+						userId: event.event.app_user_id,
+					});
+			}
+
+			return { message: 'Event processed successfully' };
+		} catch (error) {
+			this.logger.error('Failed to handle RevenueCat webhook event', {
+				error: error instanceof Error ? error.message : 'Unknown error',
+				eventType: event.event.type,
+				userId: event.event.app_user_id,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
+				operation: 'handle_revenuecat_event',
+				eventType: event.event.type,
+				userId: event.event.app_user_id,
+			});
+		}
+	}
+}

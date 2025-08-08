@@ -1,9 +1,9 @@
 import { AuthGuard } from '@app/nest/guards';
 import { APP_NAMES, BootstrapModule, ClerkModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { APP_GUARD, RouterModule } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { modules, routes } from './router';
+import { CoreModule } from './core/core.module';
 
 @Module({
 	imports: [
@@ -17,8 +17,7 @@ import { modules, routes } from './router';
 						ttl: 60000,
 					},
 				]),
-				...modules,
-				RouterModule.register(routes),
+				CoreModule,
 			],
 			appName: APP_NAMES.GATEWAY,
 			domain: 'infrastructure', // DDD domain for infrastructure services

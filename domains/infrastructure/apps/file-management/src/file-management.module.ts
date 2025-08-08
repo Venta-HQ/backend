@@ -1,9 +1,7 @@
-import { BootstrapModule, CloudinaryModule } from '@app/nest/modules';
-import { CloudinaryACL } from '@domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace-context-mapper';
+import { BootstrapModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { FileManagementController } from './core/file-management.controller';
-import { FileManagementService } from './core/file-management.service';
+import { ConfigModule } from '@nestjs/config';
+import { CoreModule } from './core/core.module';
 
 @Module({
 	imports: [
@@ -12,9 +10,8 @@ import { FileManagementService } from './core/file-management.service';
 			domain: 'infrastructure',
 			protocol: 'grpc',
 		}),
-		CloudinaryModule,
+		ConfigModule,
+		CoreModule,
 	],
-	controllers: [FileManagementController],
-	providers: [FileManagementService, CloudinaryACL, InfrastructureToMarketplaceContextMapper],
 })
 export class FileManagementModule {}

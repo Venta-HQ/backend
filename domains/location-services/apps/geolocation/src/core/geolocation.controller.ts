@@ -1,20 +1,21 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
+import { GrpcAuthGuard } from '@app/nest/guards';
+import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GeolocationService } from './geolocation.service';
 
-/**
- * gRPC controller for geolocation operations
- */
 @Controller()
+@UseGuards(GrpcAuthGuard)
 export class GeolocationController {
 	private readonly logger = new Logger(GeolocationController.name);
 
 	constructor(private readonly geolocationService: GeolocationService) {}
 
 	@GrpcMethod('GeolocationService', 'UpdateVendorLocation')
-	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate): Promise<void> {
+	@UsePipes(new SchemaValidatorPipe(LocationServices.Validation.LocationUpdateSchema))
+	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate) {
 		this.logger.debug('Handling vendor location update request', {
 			entityId: request.entityId,
 			coordinates: request.coordinates,
@@ -22,6 +23,7 @@ export class GeolocationController {
 
 		try {
 			await this.geolocationService.updateVendorLocation(request);
+			return { success: true };
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -29,39 +31,35 @@ export class GeolocationController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_UPDATE_FAILED', ErrorCodes.LOCATION_UPDATE_FAILED, {
-				operation: 'grpc_update_vendor_location',
+
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE, {
+				operation: 'update_vendor_location',
 				entityId: request.entityId,
-				coordinates: request.coordinates,
 			});
 		}
 	}
 
-	@GrpcMethod('GeolocationService', 'GetVendorsInArea')
-	async getVendorsInArea(
-		request: LocationServices.Contracts.GeospatialQuery,
-	): Promise<{ vendors: LocationServices.Core.VendorLocation[] }> {
-		this.logger.debug('Handling geospatial query request', {
+	@GrpcMethod('GeolocationService', 'GetNearbyVendors')
+	@UsePipes(new SchemaValidatorPipe(LocationServices.Validation.GeospatialQuerySchema))
+	async getNearbyVendors(request: LocationServices.Contracts.GeospatialQuery) {
+		this.logger.debug('Handling nearby vendors request', {
 			bounds: request.bounds,
 			limit: request.limit,
-			activeOnly: request.activeOnly,
 		});
 
 		try {
-			const vendors = await this.geolocationService.getVendorsInArea(request);
-			return { vendors };
+			return await this.geolocationService.getNearbyVendors(request);
 		} catch (error) {
-			this.logger.error('Failed to get vendors in area', {
+			this.logger.error('Failed to get nearby vendors', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				bounds: request.bounds,
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_QUERY_FAILED', ErrorCodes.LOCATION_QUERY_FAILED, {
-				operation: 'grpc_get_vendors_in_area',
+
+			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY, {
+				operation: 'get_nearby_vendors',
 				bounds: request.bounds,
-				limit: request.limit,
-				activeOnly: request.activeOnly,
 			});
 		}
 	}

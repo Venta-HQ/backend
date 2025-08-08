@@ -1,143 +1,194 @@
-import { Logger } from '@nestjs/common';
+import { z } from 'zod';
 
 /**
- * Shared Validation Utilities
- * 
- * Truly shared validation logic that can be used across all domains.
- * These utilities are domain-agnostic and don't create cross-domain dependencies.
+ * Generic validation utilities for common data types and patterns.
+ * These utilities are domain-agnostic and can be used across any project.
+ *
+ * @module validation
  */
-export class ValidationUtils {
-	private static logger = new Logger('ValidationUtils');
 
-	// ============================================================================
-	// Generic Data Validation
-	// ============================================================================
+/**
+ * Validates if a string is a valid UUID v4.
+ *
+ * @param uuid - The string to validate
+ * @returns true if the string is a valid UUID v4, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidUUID('123e4567-e89b-12d3-a456-426614174000') // true
+ * isValidUUID('not-a-uuid') // false
+ * ```
+ */
+export function isValidUUID(uuid: string): boolean {
+	return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(uuid);
+}
 
-	/**
-	 * Validate that a value is a non-empty string
-	 */
-	static isValidString(value: any): boolean {
-		return typeof value === 'string' && value.length > 0;
-	}
+/**
+ * Validates if a string is a valid email address format.
+ * Note: This is a basic validation and doesn't guarantee email deliverability.
+ *
+ * @param email - The string to validate
+ * @returns true if the string is a valid email format, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidEmail('user@example.com') // true
+ * isValidEmail('invalid-email') // false
+ * ```
+ */
+export function isValidEmail(email: string): boolean {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
 
-	/**
-	 * Validate that a value is a valid email
-	 */
-	static isValidEmail(email: any): boolean {
-		return this.isValidString(email) && email.includes('@');
-	}
+/**
+ * Validates if a string matches a basic phone number format.
+ * Accepts numbers with optional country code, spaces, dashes, and parentheses.
+ * Minimum length of 10 digits (excluding formatting characters).
+ *
+ * @param phone - The string to validate
+ * @returns true if the string matches basic phone format, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isValidPhone('+1 (555) 123-4567') // true
+ * isValidPhone('5551234567') // true
+ * isValidPhone('123') // false
+ * ```
+ */
+export function isValidPhone(phone: string): boolean {
+	return /^\+?[\d\s-()]{10,}$/.test(phone);
+}
 
-	/**
-	 * Validate that a value is a positive number
-	 */
-	static isValidPositiveNumber(value: any): boolean {
-		return typeof value === 'number' && value > 0;
-	}
+/**
+ * Zod schema for validating pagination parameters.
+ * Provides type-safe validation with sensible defaults.
+ *
+ * @returns A Zod schema for pagination parameters
+ * - page: Optional positive integer (default: 1)
+ * - limit: Optional positive integer between 1-100 (default: 20)
+ *
+ * @example
+ * ```typescript
+ * const query = { page: '2', limit: '50' };
+ * const result = paginationSchema.safeParse({
+ *   page: parseInt(query.page),
+ *   limit: parseInt(query.limit),
+ * });
+ * if (result.success) {
+ *   // result.data is { page: 2, limit: 50 }
+ * }
+ * ```
+ */
+export const paginationSchema = z.object({
+	page: z.number().int().min(1).optional().default(1),
+	limit: z.number().int().min(1).max(100).optional().default(20),
+});
 
-	/**
-	 * Validate that a value is a valid object (not null, not array)
-	 */
-	static isValidObject(value: any): boolean {
-		return value && typeof value === 'object' && !Array.isArray(value);
-	}
+/**
+ * Zod schema for validating date range parameters.
+ * Ensures the end date is not before the start date.
+ *
+ * @returns A Zod schema for date range parameters
+ * - startDate: ISO datetime string
+ * - endDate: ISO datetime string (must be >= startDate)
+ *
+ * @example
+ * ```typescript
+ * const range = {
+ *   startDate: '2024-01-01T00:00:00Z',
+ *   endDate: '2024-12-31T23:59:59Z',
+ * };
+ * const result = dateRangeSchema.safeParse(range);
+ * if (result.success) {
+ *   // result.data has valid date range
+ * } else {
+ *   // result.error.message might be 'End date must be after start date'
+ * }
+ * ```
+ */
+export const dateRangeSchema = z
+	.object({
+		startDate: z.string().datetime(),
+		endDate: z.string().datetime(),
+	})
+	.refine((data) => new Date(data.startDate) <= new Date(data.endDate), {
+		message: 'End date must be after start date',
+	});
 
-	/**
-	 * Validate that a value is a valid array
-	 */
-	static isValidArray(value: any): boolean {
-		return Array.isArray(value) && value.length > 0;
-	}
+/**
+ * Zod schema for validating geographic coordinates.
+ * Ensures latitude and longitude are within valid ranges.
+ *
+ * @returns A Zod schema for coordinate validation
+ * - lat: number between -90 and 90 (inclusive)
+ * - long: number between -180 and 180 (inclusive)
+ *
+ * @example
+ * ```typescript
+ * const point = {
+ *   lat: 40.7128,
+ *   long: -74.006,
+ * };
+ * const result = coordinatesSchema.safeParse(point);
+ * if (result.success) {
+ *   // result.data has valid coordinates
+ * } else {
+ *   // result.error.message might indicate invalid lat/long
+ * }
+ * ```
+ */
+export const coordinatesSchema = z.object({
+	lat: z.number().min(-90).max(90),
+	long: z.number().min(-180).max(180),
+});
 
-	/**
-	 * Validate that a value is a valid Buffer
-	 */
-	static isValidBuffer(value: any): boolean {
-		return Buffer.isBuffer(value) && value.length > 0;
-	}
+/**
+ * Type guard for checking if a value is a plain object (not an array, null, or other object types).
+ *
+ * @param value - The value to check
+ * @returns true if the value is a plain object, false otherwise
+ *
+ * @example
+ * ```typescript
+ * isPlainObject({}) // true
+ * isPlainObject({ key: 'value' }) // true
+ * isPlainObject([]) // false
+ * isPlainObject(null) // false
+ * isPlainObject(new Date()) // false
+ * ```
+ */
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-	// ============================================================================
-	// Location Validation (Truly Shared)
-	// ============================================================================
-
-	/**
-	 * Validate location coordinates (latitude/longitude)
-	 */
-	static isValidLocation(location: { lat: number; lng: number }): boolean {
-		const isValid =
-			typeof location.lat === 'number' &&
-			location.lat >= -90 &&
-			location.lat <= 90 &&
-			typeof location.lng === 'number' &&
-			location.lng >= -180 &&
-			location.lng <= 180;
-
-		if (!isValid) {
-			this.logger.warn('Invalid location coordinates', { location });
-		}
-
-		return isValid;
-	}
-
-	/**
-	 * Validate location bounds
-	 */
-	static isValidBounds(bounds: {
-		northEast: { lat: number; lng: number };
-		southWest: { lat: number; lng: number };
-	}): boolean {
-		const isValid =
-			this.isValidLocation(bounds.northEast) &&
-			this.isValidLocation(bounds.southWest) &&
-			bounds.northEast.lat > bounds.southWest.lat &&
-			bounds.northEast.lng > bounds.southWest.lng;
-
-		if (!isValid) {
-			this.logger.warn('Invalid location bounds', { bounds });
-		}
-
-		return isValid;
-	}
-
-	// ============================================================================
-	// Data Sanitization (Truly Shared)
-	// ============================================================================
-
-	/**
-	 * Sanitize object for external APIs (convert complex types to strings)
-	 */
-	static sanitizeObject(obj: Record<string, any>): Record<string, any> {
-		const sanitized: Record<string, any> = {};
-
-		for (const [key, value] of Object.entries(obj)) {
-			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-				sanitized[key] = value;
-			} else if (value === null || value === undefined) {
-				continue;
-			} else {
-				sanitized[key] = JSON.stringify(value);
-			}
-		}
-
-		return sanitized;
-	}
-
-	// ============================================================================
-	// Timestamp Utilities (Truly Shared)
-	// ============================================================================
-
-	/**
-	 * Extract timestamp from various formats
-	 */
-	static extractTimestamp(data: any, fallback?: string): string {
-		return data.createdAt || data.created_at || data.updatedAt || data.updated_at || fallback || new Date().toISOString();
-	}
-
-	/**
-	 * Validate timestamp format
-	 */
-	static isValidTimestamp(timestamp: any): boolean {
-		if (!this.isValidString(timestamp)) return false;
-		const date = new Date(timestamp);
-		return !isNaN(date.getTime());
-	}
-} 
+/**
+ * Safely parses data using a Zod schema, returning the typed data or null on failure.
+ * This is a more ergonomic alternative to Zod's built-in safeParse when you just want
+ * the data or null, without the success/error wrapper.
+ *
+ * @param schema - The Zod schema to validate against
+ * @param data - The data to validate
+ * @returns The validated and typed data if successful, null otherwise
+ *
+ * @example
+ * ```typescript
+ * const userSchema = z.object({
+ *   id: z.string(),
+ *   age: z.number().min(0),
+ * });
+ *
+ * const validData = safeParse(userSchema, {
+ *   id: '123',
+ *   age: 25,
+ * }); // Returns { id: '123', age: 25 }
+ *
+ * const invalidData = safeParse(userSchema, {
+ *   id: '123',
+ *   age: -1,
+ * }); // Returns null
+ * ```
+ */
+export function safeParse<T>(schema: z.ZodSchema<T>, data: unknown): T | null {
+	const result = schema.safeParse(data);
+	return result.success ? result.data : null;
+}
