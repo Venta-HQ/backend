@@ -2,8 +2,6 @@ import { Module } from '@nestjs/common';
 // Anti-Corruption Layers
 import { ClerkAntiCorruptionLayer } from './anti-corruption-layers/clerk-anti-corruption-layer';
 import { RevenueCatAntiCorruptionLayer } from './anti-corruption-layers/revenuecat-anti-corruption-layer';
-import { MarketplaceToCommunicationContextMapper } from './context-mappers/marketplace-to-communication-context-mapper';
-import { MarketplaceToInfrastructureContextMapper } from './context-mappers/marketplace-to-infrastructure-context-mapper';
 // Context Mappers
 import { MarketplaceToLocationContextMapper } from './context-mappers/marketplace-to-location-context-mapper';
 
@@ -17,8 +15,6 @@ import { MarketplaceToLocationContextMapper } from './context-mappers/marketplac
 	providers: [
 		// Context Mappers
 		MarketplaceToLocationContextMapper,
-		MarketplaceToCommunicationContextMapper,
-		MarketplaceToInfrastructureContextMapper,
 
 		// Anti-Corruption Layers
 		ClerkAntiCorruptionLayer,
@@ -27,8 +23,6 @@ import { MarketplaceToLocationContextMapper } from './context-mappers/marketplac
 	exports: [
 		// Context Mappers
 		MarketplaceToLocationContextMapper,
-		MarketplaceToCommunicationContextMapper,
-		MarketplaceToInfrastructureContextMapper,
 
 		// Anti-Corruption Layers
 		ClerkAntiCorruptionLayer,

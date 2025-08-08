@@ -1,9 +1,6 @@
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
-import { CommunicationToMarketplaceContextMapper } from '../../../../../communication/contracts/context-mappers/communication-to-marketplace-context-mapper';
-import { MarketplaceToCommunicationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-communication-context-mapper';
-import { MarketplaceToInfrastructureContextMapper } from '../../../../contracts/context-mappers/marketplace-to-infrastructure-context-mapper';
 import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
 
 interface UserLocationData {
@@ -32,9 +29,6 @@ export class UserService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly locationContextMapper: MarketplaceToLocationContextMapper,
-		private readonly communicationContextMapper: MarketplaceToCommunicationContextMapper,
-		private readonly communicationToMarketplaceMapper: CommunicationToMarketplaceContextMapper,
-		private readonly infrastructureContextMapper: MarketplaceToInfrastructureContextMapper,
 	) {}
 
 	/**

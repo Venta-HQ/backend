@@ -1,6 +1,5 @@
 import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { InfrastructureToMarketplaceContextMapper } from './context-mappers/infrastructure-to-marketplace-context-mapper';
 
 /**
  * Infrastructure Contracts Module
@@ -10,7 +9,7 @@ import { InfrastructureToMarketplaceContextMapper } from './context-mappers/infr
  */
 @Module({
 	imports: [PrometheusModule.register()],
-	providers: [InfrastructureToMarketplaceContextMapper],
-	exports: [InfrastructureToMarketplaceContextMapper],
+	providers: [],
+	exports: [],
 })
 export class InfrastructureContractsModule {}
