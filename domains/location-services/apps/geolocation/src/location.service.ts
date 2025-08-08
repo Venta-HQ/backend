@@ -1,9 +1,9 @@
 import Redis from 'ioredis';
 import { z } from 'zod';
-import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@app/apitypes';
 import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { EventService, PrismaService } from '@app/nest/modules';
 import { retryOperation } from '@app/utils';
+import { GrpcLocationUpdateSchema, GrpcVendorLocationRequestSchema } from '@domains/location-services/contracts/types';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 
@@ -54,8 +54,6 @@ export class LocationService {
 				{ logger: this.logger },
 			);
 
-
-
 			this.logger.log('Vendor location updated successfully', {
 				location: `${data.location.lat}, ${data.location.long}`,
 				vendorId: data.entityId,
@@ -104,8 +102,6 @@ export class LocationService {
 				'Update user location in Redis',
 				{ logger: this.logger },
 			);
-
-
 
 			this.logger.log('User location updated successfully', {
 				location: `${data.location.lat}, ${data.location.long}`,

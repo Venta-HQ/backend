@@ -1,5 +1,5 @@
-import { BaseEvent } from '@app/eventtypes';
 import { NatsQueueService } from '@app/nest/modules';
+import { BaseEvent } from '@domains/marketplace/events';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { AlgoliaSyncService } from './algolia-sync.service';
 

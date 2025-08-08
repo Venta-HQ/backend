@@ -29,7 +29,15 @@
 			"@app/eventtypes": ["libs/eventtypes/src"],
 			"@app/eventtypes/*": ["libs/eventtypes/src/*"],
 			"@app/utils": ["libs/utils/src"],
-			"@app/config": ["libs/nest/modules/config"]
+			"@app/config": ["libs/nest/modules/config"],
+			"@domains/marketplace": ["domains/marketplace"],
+			"@domains/marketplace/*": ["domains/marketplace/*"],
+			"@domains/location-services": ["domains/location-services"],
+			"@domains/location-services/*": ["domains/location-services/*"],
+			"@domains/communication": ["domains/communication"],
+			"@domains/communication/*": ["domains/communication/*"],
+			"@domains/infrastructure": ["domains/infrastructure"],
+			"@domains/infrastructure/*": ["domains/infrastructure/*"]
 		}
 	}
 }

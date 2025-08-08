@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@app/apitypes';
+import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@domains/location-services/contracts/types';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';

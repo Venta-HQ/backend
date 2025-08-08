@@ -1,11 +1,11 @@
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
-import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@app/apitypes';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
 import { retryOperation } from '@app/utils';
+import { VendorLocationUpdateData, VendorLocationUpdateDataSchema } from '@domains/location-services/contracts/types';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
 import {

@@ -14,6 +14,10 @@ export default defineConfig({
 			'@app/proto': resolve(__dirname, './libs/proto/src/lib/domains'),
 			'@app/utils': resolve(__dirname, './libs/utils/src'),
 			'@test/helpers': resolve(__dirname, './test/helpers'),
+			'@domains/marketplace': resolve(__dirname, './domains/marketplace'),
+			'@domains/location-services': resolve(__dirname, './domains/location-services'),
+			'@domains/communication': resolve(__dirname, './domains/communication'),
+			'@domains/infrastructure': resolve(__dirname, './domains/infrastructure'),
 		},
 	},
 	test: {
