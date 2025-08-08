@@ -316,59 +316,89 @@ interface MarketplaceLocationContract {
 }
 ```
 
-#### **2. Use Domain-Specific Naming**
+#### **2. Use Domain-Specific Validation**
 
 ```typescript
-// ✅ Good: Domain-specific names
-interface MarketplaceLocationContract {
-	updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void>;
-}
-
-interface LocationMarketplaceContract {
-	getVendorBusinessData(vendorId: string): Promise<VendorBusinessData | null>;
-}
-
-// ❌ Bad: Generic names
-interface LocationContract {
-	updateLocation(entityId: string, coordinates: any): Promise<void>;
-}
-```
-
-#### **3. Implement Contracts Efficiently**
-
-```typescript
-// ✅ Good: Clean implementation with translation
+// ✅ Good: Focused validation methods
 @Injectable()
-export class LocationContractImpl implements MarketplaceLocationContract {
-	constructor(
-		private locationGrpcClient: LocationServiceClient,
-		private contextMapper: MarketplaceLocationContextMapper,
-	) {}
+export class LocationMarketplaceContextMapper {
+	private validateLocationData(data: any): boolean {
+		return data && 
+			typeof data.latitude === 'number' &&
+			typeof data.longitude === 'number' &&
+			typeof data.timestamp === 'string';
+	}
 
-	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
-		// 1. Translate using context mapping
-		const grpcRequest = this.contextMapper.toGrpcRequest(vendorId, location);
+	toMarketplaceLocation(locationData: any) {
+		if (!this.validateLocationData(locationData)) {
+			throw new Error('Invalid location data');
+		}
 
-		// 2. Call gRPC service
-		await this.locationGrpcClient.updateLocation(grpcRequest);
+		return {
+			lat: locationData.latitude,
+			lng: locationData.longitude,
+			timestamp: locationData.timestamp,
+		};
 	}
 }
 
-// ❌ Bad: Complex implementation
+// ❌ Bad: Generic validation
 @Injectable()
-export class LocationContractImpl implements MarketplaceLocationContract {
-	async updateVendorLocation(vendorId: string, location: any): Promise<void> {
-		// Complex business logic mixed with transport logic
-		const request = {
-			entityId: vendorId,
-			coordinates: location,
-			trackingStatus: 'active',
-			accuracy: 5.0,
-			lastUpdateTime: new Date().toISOString(),
-			metadata: { /* complex metadata */ },
-			options: { /* complex options */ },
-		};
-		await this.locationGrpcClient.updateLocation(request);
+export class LocationMarketplaceContextMapper {
+	validateData(data: any): boolean {
+		return data && Object.keys(data).length > 0;
+	}
+
+	toMarketplaceLocation(locationData: any) {
+		if (!this.validateData(locationData)) {
+			throw new Error('Invalid data');
+		}
+		// Unsafe transformation...
+	}
+}
+```
+
+#### **3. Implement Simple Error Handling**
+
+```typescript
+// ✅ Good: Simple error handling with clear messages
+@Injectable()
+export class LocationMarketplaceContextMapper {
+	private readonly logger = new Logger('LocationMarketplaceContextMapper');
+
+	toMarketplaceLocation(locationData: any) {
+		try {
+			if (!this.validateLocationData(locationData)) {
+				throw new Error('Invalid location data');
+			}
+
+			return {
+				lat: locationData.latitude,
+				lng: locationData.longitude,
+				timestamp: locationData.timestamp,
+			};
+		} catch (error) {
+			this.logger.error('Failed to translate location data', error);
+			throw error;
+		}
+	}
+}
+
+// ❌ Bad: Complex error handling
+@Injectable()
+export class LocationMarketplaceContextMapper {
+	toMarketplaceLocation(locationData: any) {
+		this.logTranslationStart('toMarketplaceLocation', { data: locationData });
+		try {
+			this.validateSourceData(locationData);
+			const result = this.transformData(locationData);
+			this.validateTargetData(result);
+			this.logTranslationSuccess('toMarketplaceLocation', result);
+			return result;
+		} catch (error) {
+			this.logTranslationError('toMarketplaceLocation', error, locationData);
+			throw this.createTransformationError(error, locationData);
+		}
 	}
 }
 ```
@@ -378,95 +408,191 @@ export class LocationContractImpl implements MarketplaceLocationContract {
 #### **Domain-Specific Organization**
 
 ```
-libs/apitypes/src/domains/
-├── marketplace/
-│   ├── context-mapping.types.ts    # Marketplace → Other domains
-│   ├── domain-contracts.types.ts   # What Marketplace can call
-│   └── index.ts                    # Clean exports
-├── location-services/
-│   ├── context-mapping.types.ts    # Location → Other domains
-│   ├── domain-contracts.types.ts   # What Location can call
-│   └── index.ts                    # Clean exports
-└── communication/
-    ├── context-mapping.types.ts    # Communication → Other domains
-    ├── domain-contracts.types.ts   # What Communication can call
-    └── index.ts                    # Clean exports
+apps/marketplace/contracts/
+├── context-mappers/
+│   ├── marketplace-location-context-mapper.ts    # Marketplace → Location
+│   ├── marketplace-communication-context-mapper.ts # Marketplace → Communication
+│   └── marketplace-infrastructure-context-mapper.ts # Marketplace → Infrastructure
+├── anti-corruption-layers/
+│   ├── clerk-anti-corruption-layer.ts    # Clerk → Marketplace
+│   └── revenuecat-anti-corruption-layer.ts # RevenueCat → Marketplace
+└── marketplace-contracts.module.ts        # Module exports
+
+apps/location-services/contracts/
+├── context-mappers/
+│   └── location-marketplace-context-mapper.ts    # Location → Marketplace
+├── anti-corruption-layers/
+│   └── location-external-service-acl.ts    # External → Location
+└── location-contracts.module.ts            # Module exports
+
+apps/communication/contracts/
+├── context-mappers/
+│   └── communication-marketplace-context-mapper.ts # Communication → Marketplace
+└── communication-contracts.module.ts       # Module exports
+
+apps/infrastructure/contracts/
+├── context-mappers/
+│   └── infrastructure-marketplace-context-mapper.ts # Infrastructure → Marketplace
+└── infrastructure-contracts.module.ts      # Module exports
 ```
 
 #### **Implementation Organization**
 
-```
-apps/marketplace/src/
-├── contracts/
-│   ├── location/
-│   │   ├── location-contract.impl.ts    # Implements MarketplaceLocationContract
-│   │   └── location-context-mapper.ts   # Translates data
-│   └── communication/
-│       ├── communication-contract.impl.ts
-│       └── communication-context-mapper.ts
-└── services/
-    └── vendor.service.ts              # Uses contracts
+```typescript
+// ✅ Good: Simple context mapper
+@Injectable()
+export class LocationMarketplaceContextMapper {
+	private readonly logger = new Logger('LocationMarketplaceContextMapper');
+
+	// Private validation methods
+	private validateLocationData(data: any): boolean {
+		return data && 
+			typeof data.latitude === 'number' &&
+			typeof data.longitude === 'number' &&
+			typeof data.timestamp === 'string';
+	}
+
+	// Public translation methods
+	toMarketplaceLocation(locationData: any) {
+		try {
+			if (!this.validateLocationData(locationData)) {
+				throw new Error('Invalid location data');
+			}
+
+			return {
+				lat: locationData.latitude,
+				lng: locationData.longitude,
+				timestamp: locationData.timestamp,
+			};
+		} catch (error) {
+			this.logger.error('Failed to translate location data', error);
+			throw error;
+		}
+	}
+}
+
+// ✅ Good: Simple module
+@Module({
+	providers: [LocationMarketplaceContextMapper],
+	exports: [LocationMarketplaceContextMapper],
+})
+export class LocationContractsModule {}
 ```
 
 ### **🧪 Testing Strategy**
 
-#### **Contract Testing**
+#### **Context Mapper Testing**
 
 ```typescript
-// Test the contract implementation
-describe('LocationContractImpl', () => {
-	let contract: MarketplaceLocationContract;
-	let mockGrpcClient: jest.Mocked<LocationServiceClient>;
-	let mockContextMapper: jest.Mocked<MarketplaceLocationContextMapper>;
+// Test the context mapper
+describe('LocationMarketplaceContextMapper', () => {
+	let mapper: LocationMarketplaceContextMapper;
+	let mockLogger: jest.Mocked<Logger>;
 
 	beforeEach(() => {
-		mockGrpcClient = createMockGrpcClient();
-		mockContextMapper = createMockContextMapper();
-		contract = new LocationContractImpl(mockGrpcClient, mockContextMapper);
+		mockLogger = { error: jest.fn() } as any;
+		mapper = new LocationMarketplaceContextMapper();
+		(mapper as any).logger = mockLogger;
 	});
 
-	it('should update vendor location', async () => {
-		// Arrange
-		const vendorId = 'vendor-123';
-		const location = { lat: 40.7128, lng: -74.006 };
-		const grpcRequest = { entityId: vendorId, coordinates: location };
+	describe('toMarketplaceLocation', () => {
+		it('should transform valid location data', () => {
+			// Arrange
+			const locationData = {
+				latitude: 40.7128,
+				longitude: -74.006,
+				timestamp: '2024-01-01T00:00:00Z',
+			};
 
-		mockContextMapper.toGrpcRequest.mockReturnValue(grpcRequest);
-		mockGrpcClient.updateLocation.mockResolvedValue({});
+			// Act
+			const result = mapper.toMarketplaceLocation(locationData);
 
-		// Act
-		await contract.updateVendorLocation(vendorId, location);
+			// Assert
+			expect(result).toEqual({
+				lat: 40.7128,
+				lng: -74.006,
+				timestamp: '2024-01-01T00:00:00Z',
+			});
+			expect(mockLogger.error).not.toHaveBeenCalled();
+		});
 
-		// Assert
-		expect(mockContextMapper.toGrpcRequest).toHaveBeenCalledWith(vendorId, location);
-		expect(mockGrpcClient.updateLocation).toHaveBeenCalledWith(grpcRequest);
+		it('should throw error for invalid location data', () => {
+			// Arrange
+			const invalidData = {
+				latitude: 'invalid',
+				longitude: -74.006,
+			};
+
+			// Act & Assert
+			expect(() => mapper.toMarketplaceLocation(invalidData)).toThrow('Invalid location data');
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'Failed to translate location data',
+				expect.any(Error)
+			);
+		});
 	});
 });
 ```
 
-#### **Service Testing**
+#### **Anti-Corruption Layer Testing**
 
 ```typescript
-// Test the service using the contract
-describe('VendorService', () => {
-	let service: VendorService;
-	let mockLocationContract: jest.Mocked<MarketplaceLocationContract>;
+// Test the anti-corruption layer
+describe('LocationExternalServiceACL', () => {
+	let acl: LocationExternalServiceACL;
+	let mockLogger: jest.Mocked<Logger>;
 
 	beforeEach(() => {
-		mockLocationContract = createMockLocationContract();
-		service = new VendorService(mockLocationContract);
+		mockLogger = { error: jest.fn() } as any;
+		acl = new LocationExternalServiceACL();
+		(acl as any).logger = mockLogger;
 	});
 
-	it('should update vendor location through contract', async () => {
-		// Arrange
-		const vendorId = 'vendor-123';
-		const location = { lat: 40.7128, lng: -74.006 };
+	describe('toLocationServicesGeocodingResult', () => {
+		it('should transform valid geocoding response', () => {
+			// Arrange
+			const externalResponse = {
+				status: 'OK',
+				results: [{
+					formatted_address: '123 Main St',
+					geometry: {
+						location: { lat: 40.7128, lng: -74.006 },
+					},
+					place_id: 'place123',
+				}],
+			};
 
-		// Act
-		await service.updateVendorLocation(vendorId, location);
+			// Act
+			const result = acl.toLocationServicesGeocodingResult(externalResponse);
 
-		// Assert
-		expect(mockLocationContract.updateVendorLocation).toHaveBeenCalledWith(vendorId, location);
+			// Assert
+			expect(result).toEqual({
+				address: '123 Main St',
+				coordinates: {
+					latitude: 40.7128,
+					longitude: -74.006,
+				},
+				placeId: 'place123',
+				timestamp: expect.any(String),
+			});
+			expect(mockLogger.error).not.toHaveBeenCalled();
+		});
+
+		it('should throw error for invalid response', () => {
+			// Arrange
+			const invalidResponse = {
+				status: 'ERROR',
+				results: [],
+			};
+
+			// Act & Assert
+			expect(() => acl.toLocationServicesGeocodingResult(invalidResponse))
+				.toThrow('Invalid geocoding response data');
+			expect(mockLogger.error).toHaveBeenCalledWith(
+				'Failed to translate geocoding result',
+				expect.any(Error)
+			);
+		});
 	});
 });
 ```
