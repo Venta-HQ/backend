@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
-import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap } from '@app/eventtypes';
+import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap } from '@domains/marketplace/events';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';

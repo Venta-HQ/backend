@@ -18,6 +18,7 @@ export default defineConfig({
 			'@domains/location-services': resolve(__dirname, './domains/location-services'),
 			'@domains/communication': resolve(__dirname, './domains/communication'),
 			'@domains/infrastructure': resolve(__dirname, './domains/infrastructure'),
+			'@test/helpers': resolve(__dirname, './test/helpers'),
 		},
 	},
 	test: {

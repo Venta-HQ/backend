@@ -1,5 +1,4 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { AuthedRequest, CreateVendorData, CreateVendorSchema, UpdateVendorData } from '@app/apitypes';
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
@@ -7,6 +6,12 @@ import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorManagementServiceClient,
 } from '@app/proto/marketplace/vendor-management';
+import {
+	AuthedRequest,
+	CreateVendorData,
+	CreateVendorSchema,
+	UpdateVendorData,
+} from '@domains/infrastructure/contracts/types';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
 
 @Controller()

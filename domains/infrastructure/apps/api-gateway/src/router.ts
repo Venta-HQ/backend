@@ -1,7 +1,7 @@
+import { ClerkWebhooksModule } from '@domains/communication/apps/webhooks/src/clerk/clerk-webhooks.module';
+import { RevenueCatWebhooksModule } from '@domains/communication/apps/webhooks/src/revenuecat/revenuecat-webhooks.module';
+import { UploadModule } from '@domains/infrastructure/apps/file-management/src/upload/upload.module';
 import { Routes } from '@nestjs/core';
-import { ClerkWebhooksModule } from '../../../communication/webhooks/src/clerk/clerk-webhooks.module';
-import { RevenueCatWebhooksModule } from '../../../communication/webhooks/src/revenuecat/revenuecat-webhooks.module';
-import { UploadModule } from '../../file-management/src/upload/upload.module';
 import { UserModule } from './user/user.module';
 import { VendorModule } from './vendor/vendor.module';
 

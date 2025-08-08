@@ -2,44 +2,23 @@
 
 ## Purpose
 
-The API Types library provides centralized type definitions, schemas, and validation for the Venta backend system. It ensures type safety and consistency across all microservices by providing a single source of truth for all API-related types.
+The API Types library provides shared type definitions and validation schemas that are used across multiple domains in the Venta backend system. This library focuses on truly shared, non-domain-specific types that are needed by multiple parts of the system.
 
 ## Overview
 
 This library provides:
-- **Domain-specific types** organized by business domain following DDD principles
+
 - **Shared types** for common functionality across domains
 - **Validation schemas** using Zod for runtime type checking
-- **Protocol buffer types** for gRPC communication
 - **Helper functions** for common type operations
-- **DDD-aligned structure** reflecting business domains
+- **Cross-domain utilities** for shared functionality
 
 ## Organization
 
-### Domain Structure
+### Library Structure
 
 ```
 libs/apitypes/src/
-├── domains/
-│   ├── marketplace/           # Marketplace domain types
-│   │   ├── user/
-│   │   │   ├── user.schemas.ts
-│   │   │   └── index.ts
-│   │   ├── vendor/
-│   │   │   ├── vendor.schemas.ts
-│   │   │   └── index.ts
-│   │   ├── subscription/
-│   │   │   ├── subscription.types.ts
-│   │   │   └── index.ts
-│   │   └── index.ts
-│   ├── location-services/     # Location services domain types
-│   │   ├── location.schemas.ts
-│   │   ├── location.types.ts
-│   │   └── index.ts
-│   ├── communication/         # Communication domain types
-│   │   └── index.ts           # Placeholder for future types
-│   └── infrastructure/        # Infrastructure domain types
-│       └── index.ts           # Placeholder for future types
 ├── shared/
 │   └── helpers/               # Shared helper functions
 │       ├── helpers.ts
@@ -47,91 +26,42 @@ libs/apitypes/src/
 └── index.ts                   # Main export file
 ```
 
-### Domain Organization
+### Domain-Specific Types
 
-Each domain contains:
-- **Schemas**: Zod validation schemas for request/response validation
-- **Types**: TypeScript type definitions
-- **Index**: Domain-specific exports
+Domain-specific types have been moved to their respective domain folders:
 
-### DDD Domain Structure
-
-The library follows the established DDD domains:
-
-- **Marketplace**: User management, vendor management, and subscription types
-- **Location Services**: Location tracking and geospatial types
-- **Communication**: Webhook and messaging types
-- **Infrastructure**: System and operational types
+- Marketplace types → `domains/marketplace/contracts/types`
+- Location Services types → `domains/location-services/contracts/types`
+- Communication types → `domains/communication/contracts/types`
+- Infrastructure types → `domains/infrastructure/contracts/types`
 
 ## Usage
-
-### Importing Domain Types
-
-```typescript
-import { 
-  UserCreateSchema, 
-  UserUpdateSchema,
-  UserResponseSchema 
-} from '@app/apitypes';
-
-// Use schemas for validation
-const validatedData = UserCreateSchema.parse(requestBody);
-```
-
-### Importing Domain-Specific Types
-
-```typescript
-import { 
-  VendorCreateData,
-  VendorUpdateData,
-  VendorProfile 
-} from '@app/apitypes/domains/marketplace/vendor';
-
-// Type-safe vendor operations
-function updateVendor(id: string, data: VendorUpdateData): Promise<VendorProfile> {
-  // TypeScript ensures correct data structure
-}
-```
 
 ### Importing Shared Types
 
 ```typescript
-import { 
-  GrpcLocationUpdateSchema,
-  VendorLocationRequestSchema 
-} from '@app/apitypes/domains/location-services';
+import { BaseResponse, CommonFilters, PaginatedResult } from '@app/apitypes';
 
-// Use location-specific schemas
-const locationData = GrpcLocationUpdateSchema.parse(requestBody);
+// Use shared types for common patterns
+interface UserListResponse extends PaginatedResult<User> {
+	totalCount: number;
+}
 ```
 
-## Event Types
-
-**Note**: Event types have been moved to the dedicated `@app/eventtypes` library for better separation of concerns.
+### Using Helper Functions
 
 ```typescript
-// Import event types from the dedicated library
-import { 
-  EventDataMap, 
-  AvailableEventSubjects,
-  ALL_EVENT_SCHEMAS 
-} from '@app/eventtypes';
+import { createPagination, formatResponse, validateId } from '@app/apitypes/shared/helpers';
 
-// Type-safe event emission
-await eventService.emit('vendor.created', {
-  id: 'vendor-123',
-  name: 'My Vendor',
-  // TypeScript ensures all required fields are provided
-});
+// Use shared helper functions
+const pagination = createPagination(page, limit);
 ```
 
 ## Benefits
 
-- **DDD-aligned organization** reflecting business domains
+- **Clear separation** between shared and domain-specific types
+- **Reduced duplication** through shared utilities
+- **Consistent patterns** for common operations
 - **Type safety** across all microservices
-- **Centralized validation** with Zod schemas
-- **Consistent patterns** for all API types
-- **Easy discovery** of available types by domain
-- **Reduced duplication** through shared types
-- **Clear separation** between API types and event types
-- **Business-focused structure** that domain experts can understand 
+- **Focused scope** on truly shared functionality
+- **Better maintainability** through proper separation of concerns

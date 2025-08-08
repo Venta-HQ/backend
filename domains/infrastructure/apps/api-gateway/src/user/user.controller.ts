@@ -1,8 +1,8 @@
 import { catchError } from 'rxjs';
-import { AuthedRequest } from '@app/apitypes';
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
+import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
 
 @Controller()

@@ -1,5 +1,5 @@
-import { LocationEventDataMap, locationEventSchemas } from '../domains/location-services/location.events';
-import { VendorEventDataMap, vendorEventSchemas } from '../domains/marketplace/vendor/vendor.events';
+import { LocationEventDataMap, locationEventSchemas } from '@domains/location-services/events/location.events';
+import { VendorEventDataMap, vendorEventSchemas } from '@domains/marketplace/events/vendor/vendor.events';
 
 /**
  * Combine all domain event schemas

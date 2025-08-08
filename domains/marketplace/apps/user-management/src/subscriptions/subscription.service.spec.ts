@@ -1,5 +1,5 @@
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
 import { clearMocks, data, errors, mockPrisma } from '@test/helpers/test-utils';
-import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
 import { SubscriptionService } from './subscription.service';
 
 describe('SubscriptionService', () => {

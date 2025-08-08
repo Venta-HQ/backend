@@ -37,7 +37,9 @@
 			"@domains/communication": ["domains/communication"],
 			"@domains/communication/*": ["domains/communication/*"],
 			"@domains/infrastructure": ["domains/infrastructure"],
-			"@domains/infrastructure/*": ["domains/infrastructure/*"]
+			"@domains/infrastructure/*": ["domains/infrastructure/*"],
+			"@test/helpers": ["test/helpers"],
+			"@test/helpers/*": ["test/helpers/*"]
 		}
 	}
 }

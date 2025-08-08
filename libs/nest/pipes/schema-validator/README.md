@@ -7,6 +7,7 @@ The Schema Validator Pipe provides Zod-based request data validation for the Ven
 ## Overview
 
 This pipe provides:
+
 - Zod-based request data validation
 - Structured validation error responses
 - TypeScript integration with Zod schemas
@@ -23,16 +24,16 @@ Apply schema validation to controller endpoints:
 
 ```typescript
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
-import { userCreateSchema } from '@app/apitypes';
+import { userCreateSchema } from '@domains/marketplace/contracts/types';
 
 @Controller('users')
 export class UserController {
-  @Post()
-  @UsePipes(new SchemaValidatorPipe(userCreateSchema))
-  async createUser(@Body() data: CreateUserRequest) {
-    // Data is automatically validated before reaching this method
-    return this.userService.createUser(data);
-  }
+	@Post()
+	@UsePipes(new SchemaValidatorPipe(userCreateSchema))
+	async createUser(@Body() data: CreateUserRequest) {
+		// Data is automatically validated before reaching this method
+		return this.userService.createUser(data);
+	}
 }
 ```
 
@@ -42,31 +43,27 @@ Use different schemas for different operations:
 
 ```typescript
 import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
-import { 
-  userCreateSchema, 
-  userUpdateSchema,
-  userLoginSchema 
-} from '@app/apitypes';
+import { userCreateSchema, userLoginSchema, userUpdateSchema } from '@domains/marketplace/contracts/types';
 
 @Controller('users')
 export class UserController {
-  @Post('register')
-  @UsePipes(new SchemaValidatorPipe(userCreateSchema))
-  async register(@Body() data: CreateUserRequest) {
-    return this.userService.createUser(data);
-  }
+	@Post('register')
+	@UsePipes(new SchemaValidatorPipe(userCreateSchema))
+	async register(@Body() data: CreateUserRequest) {
+		return this.userService.createUser(data);
+	}
 
-  @Post('login')
-  @UsePipes(new SchemaValidatorPipe(userLoginSchema))
-  async login(@Body() data: LoginRequest) {
-    return this.authService.login(data);
-  }
+	@Post('login')
+	@UsePipes(new SchemaValidatorPipe(userLoginSchema))
+	async login(@Body() data: LoginRequest) {
+		return this.authService.login(data);
+	}
 
-  @Put(':id')
-  @UsePipes(new SchemaValidatorPipe(userUpdateSchema))
-  async updateUser(@Param('id') id: string, @Body() data: UpdateUserRequest) {
-    return this.userService.updateUser(id, data);
-  }
+	@Put(':id')
+	@UsePipes(new SchemaValidatorPipe(userUpdateSchema))
+	async updateUser(@Param('id') id: string, @Body() data: UpdateUserRequest) {
+		return this.userService.updateUser(id, data);
+	}
 }
 ```
 
@@ -75,26 +72,26 @@ export class UserController {
 Validate route parameters:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { z } from 'zod';
+import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 
 const idParamSchema = z.object({
-  id: z.string().uuid('Invalid user ID format')
+	id: z.string().uuid('Invalid user ID format'),
 });
 
 @Controller('users')
 export class UserController {
-  @Get(':id')
-  @UsePipes(new SchemaValidatorPipe(idParamSchema))
-  async getUser(@Param() params: { id: string }) {
-    return this.userService.getUser(params.id);
-  }
+	@Get(':id')
+	@UsePipes(new SchemaValidatorPipe(idParamSchema))
+	async getUser(@Param() params: { id: string }) {
+		return this.userService.getUser(params.id);
+	}
 
-  @Delete(':id')
-  @UsePipes(new SchemaValidatorPipe(idParamSchema))
-  async deleteUser(@Param() params: { id: string }) {
-    return this.userService.deleteUser(params.id);
-  }
+	@Delete(':id')
+	@UsePipes(new SchemaValidatorPipe(idParamSchema))
+	async deleteUser(@Param() params: { id: string }) {
+		return this.userService.deleteUser(params.id);
+	}
 }
 ```
 
@@ -103,24 +100,24 @@ export class UserController {
 Validate query parameters:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { z } from 'zod';
+import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 
 const searchQuerySchema = z.object({
-  page: z.coerce.number().min(1).default(1),
-  limit: z.coerce.number().min(1).max(100).default(10),
-  search: z.string().optional(),
-  sort: z.enum(['asc', 'desc']).default('asc'),
-  filter: z.enum(['all', 'active', 'inactive']).default('all')
+	page: z.coerce.number().min(1).default(1),
+	limit: z.coerce.number().min(1).max(100).default(10),
+	search: z.string().optional(),
+	sort: z.enum(['asc', 'desc']).default('asc'),
+	filter: z.enum(['all', 'active', 'inactive']).default('all'),
 });
 
 @Controller('users')
 export class UserController {
-  @Get()
-  @UsePipes(new SchemaValidatorPipe(searchQuerySchema))
-  async getUsers(@Query() query: any) {
-    return this.userService.getUsers(query);
-  }
+	@Get()
+	@UsePipes(new SchemaValidatorPipe(searchQuerySchema))
+	async getUsers(@Query() query: any) {
+		return this.userService.getUsers(query);
+	}
 }
 ```
 
@@ -129,25 +126,25 @@ export class UserController {
 Handle validation errors with custom logic:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { AppError, ErrorCodes } from '@app/nest/errors';
+import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 
 @Controller('users')
 export class UserController {
-  @Post()
-  @UsePipes(new SchemaValidatorPipe(userCreateSchema))
-  async createUser(@Body() data: CreateUserRequest) {
-    try {
-      return await this.userService.createUser(data);
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        throw new AppError('Validation failed', ErrorCodes.BAD_REQUEST, {
-          details: error.errors
-        });
-      }
-      throw error;
-    }
-  }
+	@Post()
+	@UsePipes(new SchemaValidatorPipe(userCreateSchema))
+	async createUser(@Body() data: CreateUserRequest) {
+		try {
+			return await this.userService.createUser(data);
+		} catch (error) {
+			if (error instanceof z.ZodError) {
+				throw new AppError('Validation failed', ErrorCodes.BAD_REQUEST, {
+					details: error.errors,
+				});
+			}
+			throw error;
+		}
+	}
 }
 ```
 
@@ -156,17 +153,17 @@ export class UserController {
 Apply schema validation globally to all endpoints:
 
 ```typescript
+import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { Module } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 
 @Module({
-  providers: [
-    {
-      provide: APP_PIPE,
-      useClass: SchemaValidatorPipe,
-    },
-  ],
+	providers: [
+		{
+			provide: APP_PIPE,
+			useClass: SchemaValidatorPipe,
+		},
+	],
 })
 export class AppModule {}
 ```
@@ -180,28 +177,28 @@ import { z } from 'zod';
 
 // Custom user validation schema
 const customUserSchema = z.object({
-  email: z.string().email('Invalid email format'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  age: z.number().min(18, 'Must be at least 18 years old').optional()
+	email: z.string().email('Invalid email format'),
+	password: z.string().min(8, 'Password must be at least 8 characters'),
+	name: z.string().min(2, 'Name must be at least 2 characters'),
+	age: z.number().min(18, 'Must be at least 18 years old').optional(),
 });
 
 // Custom pagination schema
 const paginationSchema = z.object({
-  page: z.coerce.number().positive('Page must be positive'),
-  limit: z.coerce.number().min(1).max(100, 'Limit must be between 1 and 100'),
-  sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).default('asc')
+	page: z.coerce.number().positive('Page must be positive'),
+	limit: z.coerce.number().min(1).max(100, 'Limit must be between 1 and 100'),
+	sortBy: z.string().optional(),
+	sortOrder: z.enum(['asc', 'desc']).default('asc'),
 });
 
 // Usage
 @Controller('users')
 export class UserController {
-  @Get()
-  @UsePipes(new SchemaValidatorPipe(paginationSchema))
-  async getUsers(@Query() query: any) {
-    return this.userService.getUsers(query);
-  }
+	@Get()
+	@UsePipes(new SchemaValidatorPipe(paginationSchema))
+	async getUsers(@Query() query: any) {
+		return this.userService.getUsers(query);
+	}
 }
 ```
 
@@ -258,4 +255,4 @@ VALIDATION_STRIP_UNKNOWN=true
 
 - **Zod** for schema validation and data transformation
 - **NestJS** for pipe framework and dependency injection
-- **TypeScript** for type definitions 
+- **TypeScript** for type definitions

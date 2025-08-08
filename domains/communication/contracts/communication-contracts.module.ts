@@ -1,4 +1,4 @@
-import { PrometheusModule } from '@app/nest/modules/monitoring/prometheus/prometheus.module';
+import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { CommunicationToMarketplaceContextMapper } from './context-mappers/communication-to-marketplace-context-mapper';
 
