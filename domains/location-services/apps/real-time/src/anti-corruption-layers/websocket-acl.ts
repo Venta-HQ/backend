@@ -1,4 +1,4 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
 import { RealTime } from '../types/context-mapping.types';
 
@@ -60,7 +60,7 @@ export class WebSocketACL {
 			};
 		} catch (error) {
 			this.logger.error('Failed to convert WebSocket message to domain format', { error });
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT);
+			throw AppError.validation('INVALID_INPUT', 'Invalid WebSocket message format');
 		}
 	}
 
@@ -74,14 +74,14 @@ export class WebSocketACL {
 		});
 
 		if (error.message.includes('rate limit')) {
-			throw AppError.validation('WS_RATE_LIMIT_EXCEEDED', ErrorCodes.WS_RATE_LIMIT_EXCEEDED, context);
+			throw AppError.validation('WS_RATE_LIMIT_EXCEEDED', 'Rate limit exceeded', context);
 		}
 
 		if (error.message.includes('unauthorized')) {
-			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', ErrorCodes.VENDOR_UNAUTHORIZED, context);
+			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Unauthorized operation', context);
 		}
 
-		throw AppError.internal('INTERNAL_SERVER_ERROR', ErrorCodes.INTERNAL_SERVER_ERROR, context);
+		throw AppError.internal('NATS_OPERATION_FAILED', 'Operation failed', context);
 	}
 
 	/**

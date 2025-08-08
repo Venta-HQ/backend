@@ -23,7 +23,6 @@ export const ErrorCodes = {
 	INVALID_SUBSCRIPTION_DATA: 'Invalid subscription data',
 	INVALID_SUBSCRIPTION_OPTIONS: 'Invalid subscription options',
 	INVALID_USER_DATA: 'Invalid user data',
-	INVALID_VENDOR_DATA: 'Invalid vendor data',
 	LOCATION_INVALID_COORDINATES: 'Invalid location coordinates',
 	LOCATION_QUERY_FAILED: 'Location query failed',
 	LOCATION_REDIS_OPERATION_FAILED: 'Location Redis operation failed',

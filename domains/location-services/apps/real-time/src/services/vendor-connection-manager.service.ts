@@ -1,227 +1,202 @@
 import Redis from 'ioredis';
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { retryOperation } from '@app/utils';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-import { WebSocketACL } from '../anti-corruption-layers/websocket-acl';
-import { RealTime } from '../types/context-mapping.types';
 
-/**
- * Service for managing vendor WebSocket connections
- */
+export interface VendorConnectionInfo {
+	connectedAt: Date;
+	socketId: string;
+	vendorId: string;
+}
+
+interface VendorRoomMembership {
+	vendorId: string;
+	userId: string;
+}
+
 @Injectable()
 export class VendorConnectionManagerService {
 	private readonly logger = new Logger(VendorConnectionManagerService.name);
 
-	constructor(
-		@InjectRedis() private readonly redis: Redis,
-		private readonly websocketACL: WebSocketACL,
-	) {}
+	constructor(@InjectRedis() private readonly redis: Redis) {}
 
 	/**
 	 * Register a vendor connection for location updates
+	 * Domain method for vendor connection management
 	 */
 	async registerVendor(vendorId: string, socketId: string): Promise<void> {
-		this.logger.debug('Processing vendor registration', {
-			socketId,
-			vendorId,
-		});
+		this.logger.log('Registering vendor connection for location updates', { socketId, vendorId });
 
 		try {
-			// Create connection record
-			const connection: RealTime.Core.ClientConnection = {
-				id: socketId,
-				userId: vendorId,
-				connectedAt: new Date().toISOString(),
-				subscriptions: [],
-				metadata: {
-					type: 'vendor',
-					vendorId,
+			// Store vendor -> socket mapping with retry
+			await retryOperation(
+				async () => {
+					await this.redis.set(`vendor:${vendorId}:socketId`, socketId);
+					await this.redis.set(`socket:${socketId}:vendorId`, vendorId);
+					await this.redis.set(
+						`vendor_connection:${socketId}`,
+						JSON.stringify({
+							connectedAt: new Date().toISOString(),
+							socketId,
+							vendorId,
+						}),
+					);
 				},
-			};
+				'Register vendor connection in Redis',
+				{ logger: this.logger },
+			);
 
-			// Store connection mappings
-			await this.redis
-				.multi()
-				.set(`vendor:${vendorId}:socketId`, socketId)
-				.set(`socket:${socketId}:vendorId`, vendorId)
-				.set(`vendor_connection:${socketId}`, JSON.stringify(connection))
-				.exec();
-
-			this.logger.debug('Vendor registration completed', {
-				socketId,
-				vendorId,
-			});
+			this.logger.log('Vendor connection registered successfully', { socketId, vendorId });
 		} catch (error) {
-			this.logger.error('Failed to register vendor', {
-				error: error.message,
+			this.logger.error('Failed to register vendor connection', error.stack, { error, socketId, vendorId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to register vendor connection', {
 				socketId,
 				vendorId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to register vendor connection');
 		}
 	}
 
 	/**
 	 * Handle vendor disconnection
+	 * Domain method for vendor connection cleanup
 	 */
 	async handleDisconnect(socketId: string): Promise<void> {
-		this.logger.debug('Processing vendor disconnection', { socketId });
+		this.logger.log('Handling vendor disconnection', { socketId });
 
 		try {
-			const connection = await this.getConnectionInfo(socketId);
-			if (!connection) {
-				this.logger.warn('No vendor connection found for disconnection', { socketId });
+			const connectionInfo = await this.getConnectionInfo(socketId);
+			if (!connectionInfo) {
+				this.logger.warn('No vendor connection info found for disconnection', { socketId });
 				return;
 			}
 
-			await this.handleVendorDisconnect(connection.userId, socketId);
+			await this.handleVendorDisconnect(connectionInfo.vendorId, socketId);
 		} catch (error) {
-			this.logger.error('Failed to handle vendor disconnection', {
-				error: error.message,
+			this.logger.error('Failed to handle vendor disconnection', error.stack, { error, socketId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to handle vendor disconnection', {
 				socketId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to handle vendor disconnection');
 		}
 	}
 
 	/**
 	 * Handle vendor disconnection with cleanup
+	 * Domain method for vendor connection cleanup
 	 */
 	private async handleVendorDisconnect(vendorId: string, socketId: string): Promise<void> {
-		this.logger.debug('Cleaning up vendor connection', {
-			socketId,
-			vendorId,
-		});
+		this.logger.log('Cleaning up vendor connection', { socketId, vendorId });
 
 		try {
-			// Get all users in vendor's room
-			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
-
-			// Clean up all vendor data
-			await this.redis
-				.multi()
-				.zrem('vendor_locations', vendorId)
-				.del(`vendor:${vendorId}:socketId`)
-				.del(`socket:${socketId}:vendorId`)
-				.del(`room:${vendorId}:users`)
-				.del(`vendor_connection:${socketId}`)
-				.exec();
-
-			// Remove vendor from all users' room lists
-			if (usersInRoom.length > 0) {
-				const pipeline = this.redis.pipeline();
-				for (const userId of usersInRoom) {
-					pipeline.srem(`user:${userId}:rooms`, vendorId);
-				}
-				await pipeline.exec();
+			// Remove vendor from all rooms
+			const vendorRooms = await this.redis.smembers(`vendor:${vendorId}:rooms`);
+			for (const roomId of vendorRooms) {
+				await this.redis.srem(`room:${roomId}:vendors`, vendorId);
 			}
 
-			this.logger.debug('Vendor connection cleanup completed', {
+			// Clean up vendor mappings
+			await this.redis.del(`vendor:${vendorId}:socketId`);
+			await this.redis.del(`socket:${socketId}:vendorId`);
+			await this.redis.del(`vendor:${vendorId}:rooms`);
+			await this.redis.del(`vendor_connection:${socketId}`);
+
+			this.logger.log('Vendor connection cleanup completed successfully', {
+				roomsCleaned: vendorRooms.length,
 				socketId,
-				usersAffected: usersInRoom.length,
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to cleanup vendor connection', {
-				error: error.message,
+			this.logger.error('Failed to cleanup vendor connection', error.stack, { error, socketId, vendorId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to cleanup vendor connection', {
 				socketId,
 				vendorId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to cleanup vendor connection');
 		}
 	}
 
 	/**
 	 * Get all users in a vendor room
+	 * Domain method for vendor room membership retrieval
 	 */
 	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
-		this.logger.debug('Retrieving vendor room users', { vendorId });
+		this.logger.log('Getting vendor room users', { vendorId });
 
 		try {
-			const usersInRoom = await this.redis.smembers(`room:${vendorId}:users`);
+			const userIds = await this.redis.smembers(`room:${vendorId}:users`);
 
-			this.logger.debug('Retrieved vendor room users', {
-				userCount: usersInRoom.length,
+			this.logger.log('Vendor room users retrieved successfully', {
+				userCount: userIds.length,
 				vendorId,
 			});
 
-			return usersInRoom;
+			return userIds;
 		} catch (error) {
-			this.logger.error('Failed to get vendor room users', {
-				error: error.message,
+			this.logger.error('Failed to get vendor room users', error.stack, { error, vendorId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor room users', {
 				vendorId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor room users');
 		}
 	}
 
 	/**
 	 * Get connection info for a vendor socket
+	 * Domain method for connection info retrieval
 	 */
-	async getConnectionInfo(socketId: string): Promise<RealTime.Core.ClientConnection | null> {
+	async getConnectionInfo(socketId: string): Promise<VendorConnectionInfo | null> {
 		try {
 			const connectionData = await this.redis.get(`vendor_connection:${socketId}`);
 			if (!connectionData) {
 				return null;
 			}
 
-			const connection = JSON.parse(connectionData);
-			const parsed = RealTime.Validation.ClientConnectionSchema.safeParse(connection);
-			if (!parsed.success) {
-				throw new Error('Invalid connection data structure');
+			const data = JSON.parse(connectionData);
+			if (!data.socketId || !data.vendorId || !data.connectedAt) {
+				throw AppError.validation('INVALID_INPUT', 'Invalid connection data structure', {
+					socketId,
+					data,
+				});
 			}
 
-			return connection;
+			return {
+				socketId: data.socketId,
+				vendorId: data.vendorId,
+				connectedAt: new Date(data.connectedAt),
+			};
 		} catch (error) {
-			this.logger.error('Failed to get vendor connection info', {
-				error: error.message,
+			this.logger.error('Failed to get connection info', error.stack, { error, socketId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor connection info', {
 				socketId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor connection info');
 		}
 	}
 
 	/**
 	 * Get socket ID for a vendor
+	 * Domain method for vendor socket mapping retrieval
 	 */
 	async getVendorSocketId(vendorId: string): Promise<string | null> {
 		try {
 			return await this.redis.get(`vendor:${vendorId}:socketId`);
 		} catch (error) {
-			this.logger.error('Failed to get vendor socket ID', {
-				error: error.message,
+			this.logger.error('Failed to get vendor socket ID', error.stack, { error, vendorId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor socket ID', {
 				vendorId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get vendor socket ID');
 		}
 	}
 
 	/**
 	 * Get vendor ID for a socket
+	 * Domain method for socket vendor mapping retrieval
 	 */
 	async getSocketVendorId(socketId: string): Promise<string | null> {
 		try {
 			return await this.redis.get(`socket:${socketId}:vendorId`);
 		} catch (error) {
-			this.logger.error('Failed to get socket vendor ID', {
-				error: error.message,
+			this.logger.error('Failed to get socket vendor ID', error.stack, { error, socketId });
+			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get socket vendor ID', {
 				socketId,
 			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal('REDIS_OPERATION_FAILED', 'Failed to get socket vendor ID');
 		}
 	}
 }

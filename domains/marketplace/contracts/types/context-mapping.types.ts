@@ -17,15 +17,17 @@ export namespace Marketplace {
 			id: string;
 			userId: string;
 			status: 'active' | 'cancelled' | 'expired';
-			provider: string;
+			provider: 'revenuecat';
 			externalId: string;
 			productId: string;
 			startDate: string;
-			endDate: string;
+			endDate?: string;
 		}
+
 		export interface UserVendorRequest {
 			userId: string;
 		}
+
 		export interface VendorCreateData {
 			name: string;
 			description: string;
@@ -47,12 +49,17 @@ export namespace Marketplace {
 			userId: string;
 		}
 
-		export interface VendorLocation {
-			lat: number;
-			lng: number;
+		export interface VendorLocationUpdate {
 			vendorId: string;
-			updatedAt: string;
+			location: Location;
+			timestamp: string;
 		}
+
+		export interface GeospatialBounds {
+			neBounds: Location;
+			swBounds: Location;
+		}
+
 		/**
 		 * User avatar
 		 */
@@ -102,20 +109,6 @@ export namespace Marketplace {
 			ownerId: string;
 			createdAt: string;
 			updatedAt: string;
-		}
-
-		/**
-		 * User subscription
-		 */
-		export interface UserSubscription {
-			id: string;
-			userId: string;
-			status: 'active' | 'cancelled' | 'expired';
-			provider: 'revenuecat';
-			externalId: string;
-			productId: string;
-			startDate: string;
-			endDate?: string;
 		}
 
 		/**
@@ -279,26 +272,6 @@ export namespace Marketplace {
 	// Types for domain events
 	// ============================================================================
 	export namespace Events {
-		export interface VendorCreated {
-			vendorId: string;
-			ownerId: string;
-			timestamp: string;
-		}
-
-		export interface VendorUpdated {
-			vendorId: string;
-			updatedFields: string[];
-			timestamp: string;
-		}
-
-		export interface VendorLocationChanged {
-			vendorId: string;
-			location: {
-				lat: number;
-				lng: number;
-			};
-			timestamp: string;
-		}
 		/**
 		 * Vendor events
 		 */

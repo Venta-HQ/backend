@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { Server, Socket } from 'socket.io';
-import { AppError } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
 import { EventService, GrpcInstance } from '@app/nest/modules';
 import { SchemaValidatorPipe } from '@app/nest/pipes';
@@ -126,7 +126,9 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 	) {
 		const vendorId = socket.vendorId;
 		if (!vendorId) {
-			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Vendor not authenticated');
+			throw AppError.unauthorized('VENDOR_UNAUTHORIZED', 'Vendor not authenticated', {
+				socketId: socket.id,
+			});
 		}
 
 		this.logger.debug('Processing vendor location update', {
@@ -178,7 +180,10 @@ export class VendorLocationGateway implements OnGatewayInit, OnGatewayConnection
 			this.metrics.vendor_websocket_errors_total.inc({ type: 'location_update' });
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location');
+			throw AppError.internal('LOCATION_UPDATE_FAILED', 'Failed to update vendor location', {
+				vendorId,
+				coordinates: { lat: data.lat, lng: data.lng },
+			});
 		}
 	}
 }
