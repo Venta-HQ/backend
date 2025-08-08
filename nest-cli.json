@@ -1,67 +1,67 @@
 {
 	"$schema": "https://json.schemastore.org/nest-cli",
 	"collection": "@nestjs/schematics",
-	"sourceRoot": "apps/infrastructure/services/api-gateway/src",
+	"sourceRoot": "domains/infrastructure/apps/api-gateway/src",
 	"compilerOptions": {
 		"deleteOutDir": true,
 		"webpack": true,
-		"tsConfigPath": "apps/infrastructure/services/api-gateway/tsconfig.app.json"
+		"tsConfigPath": "domains/infrastructure/apps/api-gateway/tsconfig.app.json"
 	},
 	"monorepo": true,
-	"root": "apps/infrastructure/services/api-gateway",
+	"root": "domains/infrastructure/apps/api-gateway",
 	"projects": {
 		"user-management": {
 			"type": "application",
-			"root": "apps/marketplace/services/user-management",
+			"root": "domains/marketplace/apps/user-management",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": ["libs/proto/src/definitions/domains/marketplace/user-management/user-management.proto"],
-				"tsConfigPath": "apps/marketplace/services/user-management/tsconfig.app.json"
+				"tsConfigPath": "domains/marketplace/apps/user-management/tsconfig.app.json"
 			}
 		},
 		"vendor-management": {
 			"type": "application",
-			"root": "apps/marketplace/services/vendor-management",
+			"root": "domains/marketplace/apps/vendor-management",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": ["libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"],
-				"tsConfigPath": "apps/marketplace/services/vendor-management/tsconfig.app.json"
+				"tsConfigPath": "domains/marketplace/apps/vendor-management/tsconfig.app.json"
 			}
 		},
 		"search-discovery": {
 			"type": "application",
-			"root": "apps/marketplace/services/search-discovery",
+			"root": "domains/marketplace/apps/search-discovery",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"tsConfigPath": "apps/marketplace/services/search-discovery/tsconfig.app.json"
+				"tsConfigPath": "domains/marketplace/apps/search-discovery/tsconfig.app.json"
 			}
 		},
 		"geolocation": {
 			"type": "application",
-			"root": "apps/location-services/services/geolocation",
+			"root": "domains/location-services/apps/geolocation",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": ["libs/proto/src/definitions/domains/location-services/geolocation/geolocation.proto"],
-				"tsConfigPath": "apps/location-services/services/geolocation/tsconfig.app.json"
+				"tsConfigPath": "domains/location-services/apps/geolocation/tsconfig.app.json"
 			}
 		},
 		"real-time-location": {
 			"type": "application",
-			"root": "apps/location-services/services/real-time",
+			"root": "domains/location-services/apps/real-time",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": ["libs/proto/src/definitions/domains/location-services/geolocation/geolocation.proto"],
-				"tsConfigPath": "apps/location-services/services/real-time/tsconfig.app.json"
+				"tsConfigPath": "domains/location-services/apps/real-time/tsconfig.app.json"
 			}
 		},
 		"api-gateway": {
 			"type": "application",
-			"root": "apps/infrastructure/services/api-gateway",
+			"root": "domains/infrastructure/apps/api-gateway",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
@@ -69,25 +69,25 @@
 					"libs/proto/src/definitions/domains/marketplace/user-management/user-management.proto",
 					"libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"
 				],
-				"tsConfigPath": "apps/infrastructure/services/api-gateway/tsconfig.app.json"
+				"tsConfigPath": "domains/infrastructure/apps/api-gateway/tsconfig.app.json"
 			}
 		},
 		"file-management": {
 			"type": "application",
-			"root": "apps/infrastructure/services/file-management",
+			"root": "domains/infrastructure/apps/file-management",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"tsConfigPath": "apps/infrastructure/services/file-management/tsconfig.app.json"
+				"tsConfigPath": "domains/infrastructure/apps/file-management/tsconfig.app.json"
 			}
 		},
 		"webhooks": {
 			"type": "application",
-			"root": "apps/communication/services/webhooks",
+			"root": "domains/communication/apps/webhooks",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"tsConfigPath": "apps/communication/services/webhooks/tsconfig.app.json"
+				"tsConfigPath": "domains/communication/apps/webhooks/tsconfig.app.json"
 			}
 		},
 		"nest/modules": {
