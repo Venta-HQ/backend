@@ -7,21 +7,25 @@ Welcome to the Venta Backend documentation. This documentation provides comprehe
 ## 📋 Core Documentation
 
 ### Architecture & Design
+
 - [Architecture Guide](./architecture-guide.md) - System architecture overview
 - [Concepts Guide](./concepts-guide.md) - Key concepts and patterns
 - [gRPC Guide](./grpc-ddd-guide.md) - gRPC in DDD architecture
 
 ### Development
+
 - [Developer Guide](./developer-guide.md) - Development patterns and practices
 - [API Documentation](./api-docs.md) - API endpoints and usage
 - [Request Context Guide](./request-context-guide.md) - Request context handling
 
 ### Testing & Quality
+
 - [Testing Guide](./testing-guide.md) - Testing patterns and practices
 - [Monitoring Guide](./monitoring-guide.md) - Monitoring and observability
 - [Deployment Guide](./deployment-guide.md) - Deployment and operations
 
 ### Post-Migration
+
 - [Post-Migration Plan](./post-migration-plan.md) - Future improvements and optimizations
 
 ## 📂 Archived Documentation
@@ -40,11 +44,13 @@ Our documentation is continuously updated to reflect the latest patterns and pra
 ## 🎯 Quick Start
 
 1. **Understanding the Architecture**
+
    - Start with the [Architecture Guide](./architecture-guide.md)
    - Review the [Concepts Guide](./concepts-guide.md)
    - Understand [gRPC in DDD](./grpc-ddd-guide.md)
 
 2. **Development Setup**
+
    - Follow the [Developer Guide](./developer-guide.md)
    - Review [API Documentation](./api-docs.md)
    - Understand [Request Context](./request-context-guide.md)
@@ -57,11 +63,13 @@ Our documentation is continuously updated to reflect the latest patterns and pra
 ## 📝 Documentation Best Practices
 
 1. **Keep It Current**
+
    - Update docs when patterns change
    - Remove outdated information
    - Add examples for new patterns
 
 2. **Be Clear and Concise**
+
    - Use clear language
    - Include practical examples
    - Explain the "why" not just the "how"
@@ -74,11 +82,13 @@ Our documentation is continuously updated to reflect the latest patterns and pra
 ## 🤝 Contributing
 
 1. **Documentation Updates**
+
    - Keep examples up to date
    - Add clarifications where needed
    - Fix any errors or typos
 
 2. **New Content**
+
    - Add new guides as needed
    - Include practical examples
    - Follow existing format
