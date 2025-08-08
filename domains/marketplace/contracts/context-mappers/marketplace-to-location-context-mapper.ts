@@ -1,73 +1,86 @@
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
-import { Injectable, Logger } from '@nestjs/common';
 import { Marketplace } from '../types/context-mapping.types';
 
 /**
- * Context Mapper for translating between Marketplace and Location Services domains
+ * Maps vendor location data from marketplace domain to location services domain
  */
-@Injectable()
-export class MarketplaceToLocationContextMapper {
-	private readonly logger = new Logger(MarketplaceToLocationContextMapper.name);
-
-	/**
-	 * Convert marketplace vendor location to location services format
-	 */
-	toLocationServicesVendorUpdate(
-		vendorId: string,
-		location: Marketplace.Location,
-	): LocationServices.Contracts.EntityLocationUpdate {
-		return {
-			entityId: vendorId,
-			entityType: 'vendor',
-			coordinates: this.toLocationCoordinates(location),
-			timestamp: new Date().toISOString(),
-		};
+export function toLocationVendorLocation(
+	data: Marketplace.Core.VendorLocationUpdate,
+): LocationServices.Location.Core.VendorLocationUpdate {
+	if (!data.location) {
+		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+			vendorId: data.vendorId,
+			message: 'Location data is required',
+		});
 	}
 
-	/**
-	 * Convert marketplace user location to location services format
-	 */
-	toLocationServicesUserUpdate(
-		userId: string,
-		location: Marketplace.Location,
-	): LocationServices.Contracts.EntityLocationUpdate {
-		return {
-			entityId: userId,
-			entityType: 'user',
-			coordinates: this.toLocationCoordinates(location),
-			timestamp: new Date().toISOString(),
-		};
+	return {
+		vendorId: data.vendorId,
+		lat: data.location.lat,
+		long: data.location.long,
+	};
+}
+
+/**
+ * Maps user location data from marketplace domain to location services domain
+ */
+export function toLocationUserLocation(
+	data: Marketplace.Core.UserLocation,
+): LocationServices.Location.Core.UserLocationUpdate {
+	if (!data) {
+		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+			message: 'Location data is required',
+		});
 	}
 
-	/**
-	 * Convert marketplace location bounds to location services format
-	 */
-	toLocationServicesBounds(bounds: Marketplace.LocationBounds): LocationServices.Contracts.GeospatialBounds {
-		return {
-			southwest: this.toLocationCoordinates(bounds.swBounds),
-			northeast: this.toLocationCoordinates(bounds.neBounds),
-		};
+	return {
+		userId: data.userId,
+		neLocation: {
+			lat: data.lat,
+			long: data.long,
+		},
+		swLocation: {
+			lat: data.lat,
+			long: data.long,
+		},
+	};
+}
+
+/**
+ * Maps geospatial bounds from marketplace domain to location services domain
+ */
+export function toLocationGeospatialBounds(
+	data: Marketplace.Core.LocationBounds,
+): LocationServices.Location.Contracts.VendorLocationRequest {
+	if (!data.neBounds || !data.swBounds) {
+		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+			message: 'Both neBounds and swBounds are required',
+		});
 	}
 
-	/**
-	 * Convert location services vendor data to marketplace format
-	 */
-	toMarketplaceVendorLocation(locationData: LocationServices.VendorLocation): Marketplace.VendorLocation {
-		return {
-			vendorId: locationData.vendorId,
-			lat: locationData.coordinates.latitude,
-			lng: locationData.coordinates.longitude,
-			updatedAt: locationData.updatedAt,
-		};
-	}
+	return {
+		neLocation: {
+			lat: data.neBounds.lat,
+			long: data.neBounds.long,
+		},
+		swLocation: {
+			lat: data.swBounds.lat,
+			long: data.swBounds.long,
+		},
+	};
+}
 
-	/**
-	 * Convert marketplace coordinates to location services format
-	 */
-	private toLocationCoordinates(location: Marketplace.Location): LocationServices.Coordinates {
-		return {
-			latitude: location.lat,
-			longitude: location.lng,
-		};
-	}
+/**
+ * Maps vendor location data from location services domain to marketplace domain
+ */
+export function fromLocationVendorLocation(
+	data: LocationServices.Location.Internal.VendorLocation,
+): Marketplace.Core.VendorLocation {
+	return {
+		vendorId: data.vendorId,
+		lat: data.coordinates.lat,
+		long: data.coordinates.long,
+		updatedAt: new Date().toISOString(),
+	};
 }

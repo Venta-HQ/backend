@@ -49,7 +49,8 @@ export class UserManagementService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_CREATE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_user',
 				clerkId: request.clerkId,
 				source: request.source,
 			});
@@ -82,7 +83,8 @@ export class UserManagementService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_NOT_FOUND, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'get_user_by_id',
 				userId,
 			});
 		}
@@ -129,7 +131,8 @@ export class UserManagementService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_UPDATE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'update_user_location',
 				userId: request.userId,
 			});
 		}
@@ -160,7 +163,8 @@ export class UserManagementService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_DELETE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'delete_user',
 				clerkId,
 			});
 		}

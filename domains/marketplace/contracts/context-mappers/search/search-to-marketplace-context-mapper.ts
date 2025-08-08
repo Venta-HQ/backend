@@ -53,7 +53,7 @@ export class SearchToMarketplaceContextMapper {
 		id: string;
 		location: {
 			lat: number;
-			lng: number;
+			long: number;
 		};
 		timestamp: string;
 	}): SearchDiscovery.Core.LocationUpdate {
@@ -61,7 +61,7 @@ export class SearchToMarketplaceContextMapper {
 			objectID: update.id,
 			_geoloc: {
 				lat: update.location.lat,
-				lng: update.location.lng,
+				long: update.location.long,
 			},
 			timestamp: update.timestamp,
 		};

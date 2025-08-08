@@ -43,7 +43,7 @@ export class VendorManagementService {
 					email: true,
 					phone: true,
 					website: true,
-					open: true,
+					isOpen: true,
 					primaryImage: true,
 					lat: true,
 					long: true,
@@ -63,7 +63,7 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.open,
+				open: vendor.isOpen,
 				primaryImage: vendor.primaryImage || '',
 				location:
 					vendor.lat && vendor.long
@@ -77,7 +77,7 @@ export class VendorManagementService {
 			};
 		} catch (error) {
 			this.logger.error('Failed to get vendor', error.stack, { error, vendorId });
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'get_vendor_by_id',
 				vendorId,
 			});
@@ -101,15 +101,13 @@ export class VendorManagementService {
 			});
 
 			if (!user) {
-				throw AppError.notFound(ErrorCodes.USER_NOT_FOUND, ErrorCodes.USER_NOT_FOUND, {
-					operation: 'create_vendor',
+				throw AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, {
 					userId: data.userId,
 				});
 			}
 
 			if (user.vendors.length > 0) {
-				throw AppError.validation(ErrorCodes.VENDOR_LIMIT_EXCEEDED, ErrorCodes.VENDOR_LIMIT_EXCEEDED, {
-					operation: 'create_vendor',
+				throw AppError.validation(ErrorCodes.ERR_VENDOR_LIMIT, {
 					userId: data.userId,
 				});
 			}
@@ -147,7 +145,7 @@ export class VendorManagementService {
 				error,
 				userId: data.userId,
 			});
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_vendor',
 				userId: data.userId,
 			});
@@ -168,15 +166,13 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
-					operation: 'update_vendor',
+				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
 					vendorId: data.id,
 				});
 			}
 
 			if (vendor.ownerId !== data.userId) {
-				throw AppError.unauthorized(ErrorCodes.VENDOR_UNAUTHORIZED, ErrorCodes.VENDOR_UNAUTHORIZED, {
-					operation: 'update_vendor',
+				throw AppError.unauthorized(ErrorCodes.ERR_VENDOR_UNAUTHORIZED, {
 					userId: data.userId,
 					vendorId: data.id,
 				});
@@ -213,7 +209,7 @@ export class VendorManagementService {
 				error,
 				vendorId: data.id,
 			});
-			throw AppError.internal(ErrorCodes.DATABASE_ERROR, ErrorCodes.DATABASE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'update_vendor',
 				vendorId: data.id,
 			});
@@ -237,8 +233,7 @@ export class VendorManagementService {
 			});
 
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.VENDOR_NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, {
-					operation: 'update_vendor_location',
+				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
 					vendorId: data.vendorId,
 				});
 			}
@@ -262,7 +257,7 @@ export class VendorManagementService {
 				vendorId: updatedVendor.id,
 				location: {
 					lat: updatedVendor.lat || 0,
-					lng: updatedVendor.long || 0,
+					long: updatedVendor.long || 0,
 				},
 				timestamp: updatedVendor.updatedAt.toISOString(),
 			});
@@ -274,8 +269,7 @@ export class VendorManagementService {
 				location: data.location,
 				vendorId: data.vendorId,
 			});
-			throw AppError.internal(ErrorCodes.LOCATION_UPDATE_FAILED, ErrorCodes.LOCATION_UPDATE_FAILED, {
-				operation: 'update_vendor_location',
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
 				vendorId: data.vendorId,
 			});
 		}
@@ -313,7 +307,7 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.open,
+				open: vendor.isOpen,
 				primaryImage: vendor.primaryImage || '',
 				location:
 					vendor.lat && vendor.long
@@ -330,9 +324,8 @@ export class VendorManagementService {
 				bounds,
 				error,
 			});
-			throw AppError.internal(ErrorCodes.LOCATION_QUERY_FAILED, ErrorCodes.LOCATION_QUERY_FAILED, {
-				operation: 'get_vendors_in_area',
-				bounds,
+			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
+				message: 'Failed to query vendors in area',
 			});
 		}
 	}

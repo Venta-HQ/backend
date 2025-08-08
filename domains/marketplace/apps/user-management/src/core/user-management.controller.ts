@@ -40,7 +40,8 @@ export class UserManagementController implements UserManagementServiceController
 		try {
 			// Validate request
 			if (!this.clerkACL.validateUserIdentity(request as unknown)) {
-				throw AppError.validation(ErrorCodes.ERR_USER_INVALID_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					message: 'Invalid user identity data',
 					userId: request.id,
 				});
 			}
@@ -63,7 +64,8 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_CREATE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_user',
 				userId: request.id,
 			});
 		}
@@ -78,7 +80,8 @@ export class UserManagementController implements UserManagementServiceController
 		try {
 			// Validate request
 			if (!this.clerkACL.validateUserIdentity(request as unknown)) {
-				throw AppError.validation(ErrorCodes.ERR_USER_INVALID_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					message: 'Invalid user identity data',
 					userId: request.id,
 				});
 			}
@@ -98,7 +101,8 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_DELETE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'delete_user',
 				userId: request.id,
 			});
 		}
@@ -114,7 +118,8 @@ export class UserManagementController implements UserManagementServiceController
 		try {
 			// Validate request
 			if (!this.revenueCatACL.validateSubscriptionData(request.data as unknown)) {
-				throw AppError.validation(ErrorCodes.ERR_SUB_INVALID_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					message: 'Invalid subscription data',
 					userId: request.clerkUserId,
 				});
 			}
@@ -146,7 +151,8 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_SUB_CREATE, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_subscription',
 				userId: request.clerkUserId,
 			});
 		}
@@ -175,7 +181,8 @@ export class UserManagementController implements UserManagementServiceController
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_USER_VENDORS_FETCH, {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'get_user_vendors',
 				userId: request.userId,
 			});
 		}

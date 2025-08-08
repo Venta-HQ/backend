@@ -1,4 +1,4 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { AuthService } from '../core';
@@ -17,7 +17,9 @@ export class WsAuthGuard implements CanActivate {
 		if (!token) {
 			this.logger.warn('WebSocket connection attempt without token');
 			throw new WsException(
-				new AppError(ErrorType.UNAUTHORIZED, 'WS_AUTHENTICATION_FAILED', ErrorCodes.WS_AUTHENTICATION_FAILED),
+				AppError.unauthorized(ErrorCodes.ERR_WS_AUTH_FAILED, {
+					userId: client.handshake.query?.userId?.toString(),
+				}),
 			);
 		}
 
@@ -35,7 +37,9 @@ export class WsAuthGuard implements CanActivate {
 		} catch (error) {
 			this.logger.warn('WebSocket authentication failed', { error: error.message });
 			throw new WsException(
-				new AppError(ErrorType.UNAUTHORIZED, 'WS_AUTHENTICATION_FAILED', ErrorCodes.WS_AUTHENTICATION_FAILED),
+				AppError.unauthorized(ErrorCodes.ERR_WS_AUTH_FAILED, {
+					userId: client.handshake.query?.userId?.toString(),
+				}),
 			);
 		}
 	}

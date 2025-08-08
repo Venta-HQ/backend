@@ -3,7 +3,8 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError, ErrorType } from './app-error';
+import { AppError } from './app-error';
+import { ErrorCodes } from './errorcodes';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -52,14 +53,11 @@ export class AppExceptionFilter implements ExceptionFilter {
 			// Check if this HttpException was created from an AppError
 			if (response && response.error && response.error.type && response.error.code) {
 				// This is an HttpException created from an AppError, reconstruct it
-				const appError = new AppError(
-					response.error.type as ErrorType,
-					response.error.code,
-					response.error.message,
-					response.error.details,
-					response.error.path,
-					response.error.requestId,
-				);
+				const appError = AppError.internal(response.error.code, {
+					...response.error.details,
+					path: response.error.path,
+					requestId: response.error.requestId,
+				});
 				// Override the timestamp with the original one
 				Object.defineProperty(appError, 'timestamp', {
 					configurable: false,
@@ -69,53 +67,63 @@ export class AppExceptionFilter implements ExceptionFilter {
 				return appError;
 			}
 
-			// Determine error type based on status code
-			let errorType: ErrorType;
-			let code: string;
-
+			// Determine error code based on status code
 			switch (status) {
 				case 400:
-					errorType = ErrorType.VALIDATION;
-					code = 'VALIDATION_ERROR';
-					break;
+					return AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+						message: response.message || exception.message || 'Validation error',
+						originalError: response,
+						statusCode: status,
+					});
 				case 401:
-					errorType = ErrorType.AUTHENTICATION;
-					code = 'UNAUTHORIZED';
-					break;
+					return AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
+						message: response.message || exception.message || 'Unauthorized',
+						originalError: response,
+						statusCode: status,
+					});
 				case 403:
-					errorType = ErrorType.AUTHORIZATION;
-					code = 'FORBIDDEN';
-					break;
+					return AppError.unauthorized(ErrorCodes.ERR_INSUFFICIENT_PERMISSIONS, {
+						message: response.message || exception.message || 'Forbidden',
+						originalError: response,
+						statusCode: status,
+					});
 				case 404:
-					errorType = ErrorType.NOT_FOUND;
-					code = 'NOT_FOUND';
-					break;
+					return AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+						message: response.message || exception.message || 'Not found',
+						originalError: response,
+						statusCode: status,
+					});
 				case 409:
-					errorType = ErrorType.CONFLICT;
-					code = 'CONFLICT';
-					break;
+					return AppError.validation(ErrorCodes.ERR_RESOURCE_EXISTS, {
+						message: response.message || exception.message || 'Resource already exists',
+						originalError: response,
+						statusCode: status,
+					});
 				case 429:
-					errorType = ErrorType.RATE_LIMIT;
-					code = 'RATE_LIMIT';
-					break;
+					return AppError.validation(ErrorCodes.ERR_RATE_LIMIT, {
+						message: response.message || exception.message || 'Rate limit exceeded',
+						originalError: response,
+						statusCode: status,
+					});
 				case 502:
-					errorType = ErrorType.EXTERNAL_SERVICE;
-					code = 'EXTERNAL_SERVICE_ERROR';
-					break;
+					return AppError.externalService(ErrorCodes.ERR_SERVICE_UNAVAILABLE, {
+						message: response.message || exception.message || 'External service error',
+						originalError: response,
+						statusCode: status,
+					});
 				default:
-					errorType = ErrorType.INTERNAL;
-					code = 'INTERNAL_ERROR';
+					return AppError.internal(ErrorCodes.ERR_INTERNAL, {
+						message: response.message || exception.message || 'Internal server error',
+						originalError: response,
+						statusCode: status,
+					});
 			}
-
-			return new AppError(errorType, code, response.message || exception.message || 'Internal server error', {
-				originalError: response,
-				statusCode: status,
-			});
 		}
 
 		if (exception instanceof RpcException) {
 			const error = exception.getError() as any;
-			return AppError.internal(error.message || 'gRPC error', {
+			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
+				message: error.message || 'gRPC error',
 				code: error.code,
 				originalError: error,
 			});
@@ -123,15 +131,24 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 		if (exception instanceof WsException) {
 			const error = exception.getError() as any;
-			return AppError.internal(error.message || 'WebSocket error', { originalError: error });
+			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
+				message: error.message || 'WebSocket error',
+				originalError: error,
+			});
 		}
 
 		// For unknown errors, create a generic internal error
 		if (exception instanceof Error) {
-			return AppError.internal(exception.message, { stack: exception.stack });
+			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
+				message: exception.message,
+				stack: exception.stack,
+			});
 		}
 
-		return AppError.internal('An unknown error occurred', { originalError: exception });
+		return AppError.internal(ErrorCodes.ERR_UNKNOWN, {
+			message: 'An unknown error occurred',
+			originalError: exception,
+		});
 	}
 
 	private handleHttpException(error: AppError, host: ArgumentsHost) {
@@ -140,10 +157,10 @@ export class AppExceptionFilter implements ExceptionFilter {
 		const request = ctx.getRequest();
 
 		// Add request context to error
-		error.path = request.url;
-		error.requestId = request.headers['x-request-id'] as string;
+		(error as any).path = request.url;
+		(error as any).requestId = request.headers['x-request-id'] as string;
 
-		const httpException = error.toHttpException();
+		const httpException = (error as any).toHttpException();
 		const status = httpException.getStatus();
 		const responseBody = httpException.getResponse();
 
@@ -156,10 +173,10 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 		// Add context information if available
 		if (context && context.get) {
-			error.requestId = context.get('request-id');
+			(error as any).requestId = context.get('request-id');
 		}
 
-		const grpcException = error.toGrpcException();
+		const grpcException = (error as any).toGrpcException();
 		// Error is created but not used directly - it's thrown by the framework
 		grpcException.getError() as any;
 
@@ -174,10 +191,10 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 		// Add context information if available
 		if (data && data.requestId) {
-			error.requestId = data.requestId;
+			(error as any).requestId = data.requestId;
 		}
 
-		const wsException = error.toWsException();
+		const wsException = (error as any).toWsException();
 		const wsError = wsException.getError() as any;
 
 		// Emit error to WebSocket client

@@ -51,20 +51,19 @@ export class RevenueCatWebhooksController {
 						});
 					} catch (error) {
 						throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
-							operation: 'handle_revenuecat_initial_purchase',
+							service: 'revenuecat',
+							message: error instanceof Error ? error.message : 'Unknown error',
 							eventId: event.event.transaction_id,
 							userId: event.event.app_user_id,
-							service: 'revenuecat',
-							error: error instanceof Error ? error.message : 'Unknown error',
 						});
 					}
 					break;
 				}
 
 				default:
-					throw AppError.validation(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
-						operation: 'handle_revenuecat_event',
-						eventType: event.event.type,
+					throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+						field: 'event_type',
+						message: `Unsupported event type: ${event.event.type}`,
 						userId: event.event.app_user_id,
 					});
 			}
@@ -78,8 +77,8 @@ export class RevenueCatWebhooksController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
-				operation: 'handle_revenuecat_event',
+			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_INVALID, {
+				source: 'revenuecat',
 				eventType: event.event.type,
 				userId: event.event.app_user_id,
 			});

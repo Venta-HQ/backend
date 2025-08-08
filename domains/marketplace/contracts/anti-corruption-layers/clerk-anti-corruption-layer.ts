@@ -16,8 +16,8 @@ export class ClerkAntiCorruptionLayer {
 	validateUserIdentity(data: unknown): data is { id: string } {
 		const result = GrpcUserIdentitySchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('USER_INVALID_CREDENTIALS', ErrorCodes.USER_INVALID_CREDENTIALS, {
-				operation: 'validate_user_identity',
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				message: 'Invalid user identity data',
 				errors: result.error.errors,
 				userId: (data as any)?.id || 'undefined',
 			});
@@ -31,8 +31,7 @@ export class ClerkAntiCorruptionLayer {
 	validateClerkUser(data: unknown): data is Marketplace.External.ClerkUser {
 		const result = ClerkUserSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('USER_INVALID_DATA', ErrorCodes.USER_INVALID_DATA, {
-				operation: 'validate_clerk_user',
+			throw AppError.validation(ErrorCodes.ERR_USER_INVALID_DATA, {
 				errors: result.error.errors,
 				userId: (data as any)?.id || 'undefined',
 			});
@@ -45,10 +44,9 @@ export class ClerkAntiCorruptionLayer {
 	 */
 	toDomainUser(user: Marketplace.External.ClerkUser): Marketplace.Core.User {
 		if (!user?.id || !user?.email_addresses?.[0]?.email_address) {
-			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_domain_user',
-				userId: user?.id || 'undefined',
+			throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
 				field: !user?.id ? 'id' : 'email_address',
+				userId: user?.id || 'undefined',
 			});
 		}
 
@@ -73,10 +71,11 @@ export class ClerkAntiCorruptionLayer {
 			userId: context.userId,
 		});
 
-		throw AppError.externalService('CLERK_SERVICE_ERROR', ErrorCodes.CLERK_SERVICE_ERROR, {
+		throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			service: 'clerk',
+			message: error instanceof Error ? error.message : 'Unknown error',
 			operation: context.operation,
 			userId: context.userId,
-			error: error instanceof Error ? error.message : 'Unknown error',
 		});
 	}
 }

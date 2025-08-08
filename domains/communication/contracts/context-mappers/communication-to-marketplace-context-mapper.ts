@@ -1,81 +1,68 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
-import { Injectable, Logger } from '@nestjs/common';
 import { Communication } from '../types/context-mapping.types';
-import { ClerkWebhookPayload } from '../types/external/clerk.types';
-import { RevenueCatWebhookPayload } from '../types/external/revenuecat.types';
 
 /**
- * Context Mapper for translating between Communication and Marketplace domains
+ * Maps user event data from communication domain to marketplace domain
  */
-@Injectable()
-export class CommunicationToMarketplaceContextMapper {
-	private readonly logger = new Logger(CommunicationToMarketplaceContextMapper.name);
-
-	/**
-	 * Convert webhook event to marketplace user event
-	 */
-	toMarketplaceUserEvent(event: Communication.WebhookEvent<ClerkWebhookPayload>): Marketplace.Events.UserCreated {
-		if (!event?.payload?.data?.id || !event.timestamp) {
-			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_marketplace_user_event',
-				field: !event?.payload?.data?.id ? 'payload.data.id' : 'timestamp',
-			});
-		}
-
-		return {
-			userId: event.payload.data.id,
-			timestamp: event.timestamp,
-		};
+export function toMarketplaceUserEvent(data: Communication.Core.WebhookEvent): Marketplace.Contracts.UserEventData {
+	if (!data.data || typeof data.data !== 'object' || !('userId' in data.data)) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: 'userId',
+			message: 'Required field is missing in webhook data',
+		});
 	}
 
-	/**
-	 * Convert webhook event to marketplace subscription event
-	 */
-	toMarketplaceSubscriptionEvent(
-		event: Communication.WebhookEvent<RevenueCatWebhookPayload>,
-	): Marketplace.Events.UserSubscriptionChanged {
-		if (!event?.payload?.event?.transaction_id || !event?.payload?.event?.app_user_id || !event.timestamp) {
-			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_marketplace_subscription_event',
-				field: !event?.payload?.event?.transaction_id
-					? 'payload.event.transaction_id'
-					: !event?.payload?.event?.app_user_id
-						? 'payload.event.app_user_id'
-						: 'timestamp',
-			});
-		}
+	return {
+		userId: data.data.userId as string,
+		eventType: data.type as Marketplace.Contracts.UserEventData['eventType'],
+		timestamp: data.timestamp,
+		metadata: data.data,
+	};
+}
 
-		const subscriptionId = event.payload.event.transaction_id;
-		const status = this.getSubscriptionStatus(event.payload.event.type);
-
-		return {
-			userId: event.payload.event.app_user_id,
-			subscriptionId,
-			status,
-			timestamp: event.timestamp,
-		};
+/**
+ * Maps subscription event data from communication domain to marketplace domain
+ */
+export function toMarketplaceSubscriptionEvent(
+	data: Communication.Core.WebhookEvent,
+): Marketplace.Events.UserSubscriptionChanged {
+	if (
+		!data.data ||
+		typeof data.data !== 'object' ||
+		!('userId' in data.data) ||
+		!('subscriptionId' in data.data) ||
+		!('status' in data.data)
+	) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: !('userId' in data.data) ? 'userId' : !('subscriptionId' in data.data) ? 'subscriptionId' : 'status',
+			message: 'Required field is missing in webhook data',
+		});
 	}
 
-	/**
-	 * Get subscription status from webhook event type
-	 */
-	private getSubscriptionStatus(
-		type: RevenueCatWebhookPayload['event']['type'],
-	): Marketplace.Core.UserSubscription['status'] {
-		switch (type) {
-			case 'INITIAL_PURCHASE':
-			case 'RENEWAL':
-				return 'active';
-			case 'CANCELLATION':
-				return 'cancelled';
-			case 'EXPIRATION':
-				return 'expired';
-			default:
-				throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
-					operation: 'get_subscription_status',
-					eventType: type,
-				});
-		}
+	return {
+		userId: data.data.userId as string,
+		subscriptionId: data.data.subscriptionId as string,
+		status: data.data.status as Marketplace.Core.UserSubscription['status'],
+		timestamp: data.timestamp,
+	};
+}
+
+/**
+ * Maps vendor event data from communication domain to marketplace domain
+ */
+export function toMarketplaceVendorEvent(
+	data: Communication.Core.WebhookEvent,
+): Marketplace.Events.VendorCreated | Marketplace.Events.VendorDeleted {
+	if (!data.data || typeof data.data !== 'object' || !('vendorId' in data.data)) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: 'vendorId',
+			message: 'Required field is missing in webhook data',
+		});
 	}
+
+	return {
+		vendorId: data.data.vendorId as string,
+		timestamp: data.timestamp,
+	};
 }

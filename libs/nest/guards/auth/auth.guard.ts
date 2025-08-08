@@ -16,7 +16,7 @@ export class AuthGuard implements CanActivate {
 
 		if (!token) {
 			this.logger.debug('No token found in authorization header');
-			throw AppError.unauthorized('INVALID_TOKEN', ErrorCodes.INVALID_TOKEN);
+			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
 		}
 
 		try {
@@ -38,7 +38,7 @@ export class AuthGuard implements CanActivate {
 			} else {
 				this.logger.error('Authentication failed with unknown error', error.stack, { error });
 			}
-			throw AppError.unauthorized('INVALID_TOKEN', ErrorCodes.INVALID_TOKEN);
+			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
 		}
 	}
 }

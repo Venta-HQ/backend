@@ -54,7 +54,7 @@ export class VendorConnectionManagerService {
 				socketId,
 				vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'register_vendor',
 				socketId,
 				vendorId,
@@ -72,9 +72,9 @@ export class VendorConnectionManagerService {
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
-					operation: 'handle_disconnect',
-					socketId,
+				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+					type: 'connection',
+					id: socketId,
 				});
 			}
 
@@ -86,7 +86,7 @@ export class VendorConnectionManagerService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'handle_disconnect',
 				socketId,
 			});
@@ -124,7 +124,7 @@ export class VendorConnectionManagerService {
 				socketId,
 				vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'handle_vendor_disconnect',
 				socketId,
 				vendorId,
@@ -153,7 +153,7 @@ export class VendorConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_vendor_room_users',
 				vendorId,
 			});
@@ -173,9 +173,8 @@ export class VendorConnectionManagerService {
 
 			const data = JSON.parse(connectionData);
 			if (!data.socketId || !data.vendorId || !data.connectedAt) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					operation: 'get_connection_info',
-					socketId,
+				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+					field: 'connection_data',
 					message: 'Invalid connection data structure',
 				});
 			}
@@ -192,7 +191,7 @@ export class VendorConnectionManagerService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_connection_info',
 				socketId,
 			});
@@ -211,7 +210,7 @@ export class VendorConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_vendor_socket_id',
 				vendorId,
 			});
@@ -230,7 +229,7 @@ export class VendorConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_socket_vendor_id',
 				socketId,
 			});

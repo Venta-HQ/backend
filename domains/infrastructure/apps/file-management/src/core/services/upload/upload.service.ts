@@ -49,11 +49,9 @@ export class UploadService {
 				size: file.size,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_UPLOAD, {
-				domain: 'infrastructure',
-				operation: 'upload_file',
-				error: error.message,
+			throw AppError.internal(ErrorCodes.ERR_INFRA_UPLOAD_FAILED, {
 				filename: file.originalname,
+				message: error.message,
 			});
 		}
 	}

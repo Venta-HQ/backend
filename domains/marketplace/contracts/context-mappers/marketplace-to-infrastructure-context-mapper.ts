@@ -1,54 +1,88 @@
-import { Injectable } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Marketplace } from '../types/context-mapping.types';
 
 /**
- * Context mapper for translating between Marketplace and Infrastructure domains
+ * Maps vendor creation data from marketplace domain to infrastructure domain
  */
-@Injectable()
-export class MarketplaceToInfrastructureContextMapper {
-	/**
-	 * Convert user avatar to infrastructure file upload
-	 */
-	toInfrastructureFileUpload(avatar: Marketplace.Core.UserAvatar): Infrastructure.Contracts.FileUpload {
-		return {
-			fileId: avatar.fileId,
-			url: avatar.url,
-			uploadedAt: avatar.uploadedAt,
-			context: 'user_avatar',
-		};
+export function toInfrastructureVendorCreate(
+	data: Marketplace.Core.VendorCreateData,
+): Infrastructure.Contracts.VendorCreateRequest {
+	if (!data.userId) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: 'userId',
+			message: 'Required field is missing',
+		});
 	}
 
-	/**
-	 * Convert vendor logo to infrastructure file upload
-	 */
-	toInfrastructureFileUpload(logo: Marketplace.Core.VendorLogo): Infrastructure.Contracts.FileUpload {
-		return {
-			fileId: logo.fileId,
-			url: logo.url,
-			uploadedAt: logo.uploadedAt,
-			context: 'vendor_logo',
-		};
+	return {
+		name: data.name,
+		description: data.description,
+		email: data.email,
+		phone: data.phone,
+		website: data.website,
+		imageUrl: data.imageUrl,
+		userId: data.userId,
+	};
+}
+
+/**
+ * Maps vendor update data from marketplace domain to infrastructure domain
+ */
+export function toInfrastructureVendorUpdate(
+	data: Marketplace.Core.VendorUpdateData,
+): Infrastructure.Contracts.VendorUpdateRequest {
+	if (!data.id || !data.userId) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: !data.id ? 'id' : 'userId',
+			message: 'Required field is missing',
+		});
 	}
 
-	/**
-	 * Convert infrastructure file upload result to user avatar
-	 */
-	toUserAvatar(result: Infrastructure.Contracts.FileUploadResult): Marketplace.Core.UserAvatar {
-		return {
-			fileId: result.fileId,
-			url: result.url,
-			uploadedAt: result.timestamp,
-		};
+	return {
+		id: data.id,
+		name: data.name,
+		description: data.description,
+		email: data.email,
+		phone: data.phone,
+		website: data.website,
+		imageUrl: data.imageUrl,
+		userId: data.userId,
+	};
+}
+
+/**
+ * Maps file upload data from marketplace domain to infrastructure domain
+ */
+export function toInfrastructureFileUpload(data: {
+	userId: string;
+	file: Express.Multer.File;
+}): Infrastructure.Contracts.FileUploadRequest {
+	if (!data.userId || !data.file) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: !data.userId ? 'userId' : 'file',
+			message: 'Required field is missing',
+		});
 	}
 
-	/**
-	 * Convert infrastructure file upload result to vendor logo
-	 */
-	toVendorLogo(result: Infrastructure.Contracts.FileUploadResult): Marketplace.Core.VendorLogo {
-		return {
-			fileId: result.fileId,
-			url: result.url,
-			uploadedAt: result.timestamp,
-		};
+	return {
+		userId: data.userId,
+		file: data.file,
+	};
+}
+
+/**
+ * Maps user data from marketplace domain to infrastructure domain
+ */
+export function toInfrastructureUserRequest(data: { userId: string }): Infrastructure.Contracts.UserRequest {
+	if (!data.userId) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+			field: 'userId',
+			message: 'Required field is missing',
+		});
 	}
+
+	return {
+		userId: data.userId,
+	};
 }

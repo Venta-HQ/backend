@@ -44,11 +44,11 @@ export class ClerkWebhooksController {
 							id: marketplaceEvent.userId,
 						});
 					} catch (error) {
-						throw AppError.externalService(ErrorCodes.ERR_CLERK_SERVICE, {
-							operation: 'handle_clerk_user_created',
+						throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+							service: 'clerk',
+							message: error instanceof Error ? error.message : 'Unknown error',
 							eventId: event.id,
 							userId: event.data.id,
-							error: error instanceof Error ? error.message : 'Unknown error',
 						});
 					}
 					break;
@@ -67,20 +67,20 @@ export class ClerkWebhooksController {
 							id: marketplaceEvent.userId,
 						});
 					} catch (error) {
-						throw AppError.externalService(ErrorCodes.ERR_CLERK_SERVICE, {
-							operation: 'handle_clerk_user_deleted',
+						throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+							service: 'clerk',
+							message: error instanceof Error ? error.message : 'Unknown error',
 							eventId: event.id,
 							userId: event.data.id,
-							error: error instanceof Error ? error.message : 'Unknown error',
 						});
 					}
 					break;
 				}
 
 				default:
-					throw AppError.validation(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
-						operation: 'handle_clerk_event',
-						eventType: event.type,
+					throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+						field: 'event_type',
+						message: `Unsupported event type: ${event.type}`,
 						eventId: event.id,
 					});
 			}
@@ -94,8 +94,8 @@ export class ClerkWebhooksController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_PROCESSING, {
-				operation: 'handle_clerk_event',
+			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_INVALID, {
+				source: 'clerk',
 				eventType: event.type,
 				eventId: event.id,
 			});

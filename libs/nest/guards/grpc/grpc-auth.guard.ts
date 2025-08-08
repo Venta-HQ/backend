@@ -21,7 +21,7 @@ export class GrpcAuthGuard implements CanActivate {
 
 		if (!token) {
 			this.logger.debug('No token found in gRPC metadata');
-			throw new RpcException(new AppError('INVALID_TOKEN', ErrorCodes.INVALID_TOKEN));
+			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
 		}
 
 		try {
@@ -42,7 +42,9 @@ export class GrpcAuthGuard implements CanActivate {
 			if (!internalUser) {
 				this.logger.warn(`User not found in database for clerk ID: ${tokenContents.sub}`);
 				throw new RpcException(
-					new AppError('USER_NOT_FOUND', ErrorCodes.USER_NOT_FOUND, { userId: tokenContents.sub }),
+					AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, {
+						userId: tokenContents.sub,
+					}),
 				);
 			}
 
@@ -74,7 +76,7 @@ export class GrpcAuthGuard implements CanActivate {
 			} else {
 				this.logger.error('Authentication failed with unknown error', error.stack, { error });
 			}
-			throw new RpcException(new AppError('INVALID_TOKEN', ErrorCodes.INVALID_TOKEN));
+			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
 		}
 	}
 

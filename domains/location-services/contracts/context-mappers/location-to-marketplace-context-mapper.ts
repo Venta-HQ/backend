@@ -1,61 +1,65 @@
+import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
-import { Injectable, Logger } from '@nestjs/common';
 import { LocationServices } from '../types/context-mapping.types';
 
 /**
- * Context Mapper for translating between Location Services and Marketplace domains
+ * Maps vendor location data from location services domain to marketplace domain
  */
-@Injectable()
-export class LocationToMarketplaceContextMapper {
-	private readonly logger = new Logger(LocationToMarketplaceContextMapper.name);
+export function toMarketplaceVendorLocation(
+	data: LocationServices.Location.Core.VendorLocationUpdate,
+): Marketplace.Core.VendorLocation {
+	return {
+		vendorId: data.vendorId,
+		lat: data.lat,
+		long: data.long,
+		updatedAt: new Date().toISOString(),
+	};
+}
 
-	/**
-	 * Convert location services coordinates to marketplace format
-	 */
-	toMarketplaceLocation(coordinates: LocationServices.Core.Coordinates): Marketplace.Core.Location {
-		return {
-			lat: coordinates.lat,
-			lng: coordinates.lng,
-		};
+/**
+ * Maps user location data from location services domain to marketplace domain
+ */
+export function toMarketplaceUserLocation(
+	data: LocationServices.Location.Core.UserLocationUpdate,
+): Marketplace.Core.UserLocation {
+	if (!data.neLocation || !data.swLocation) {
+		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+			message: 'Both neLocation and swLocation are required',
+		});
 	}
 
-	/**
-	 * Convert location services bounds to marketplace format
-	 */
-	toMarketplaceBounds(bounds: LocationServices.Core.GeospatialBounds): Marketplace.Core.LocationBounds {
-		return {
-			swBounds: this.toMarketplaceLocation(bounds.sw),
-			neBounds: this.toMarketplaceLocation(bounds.ne),
-		};
+	// For user location, we use the center point between neLocation and swLocation
+	const lat = (data.neLocation.lat + data.swLocation.lat) / 2;
+	const long = (data.neLocation.long + data.swLocation.long) / 2;
+
+	return {
+		userId: data.userId || '',
+		lat,
+		long,
+		updatedAt: new Date().toISOString(),
+	};
+}
+
+/**
+ * Maps geospatial bounds from location services domain to marketplace domain
+ */
+export function toMarketplaceGeospatialBounds(
+	data: LocationServices.Location.Contracts.VendorLocationRequest,
+): Marketplace.Core.LocationBounds {
+	if (!data.neLocation || !data.swLocation) {
+		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+			message: 'Both neLocation and swLocation are required',
+		});
 	}
 
-	/**
-	 * Convert location services vendor data to marketplace format
-	 */
-	toMarketplaceVendorLocation(locationData: LocationServices.Core.VendorLocation): Marketplace.Core.VendorLocation {
-		return {
-			vendorId: locationData.entityId,
-			...this.toMarketplaceLocation(locationData.coordinates),
-			updatedAt: locationData.updatedAt,
-		};
-	}
-
-	/**
-	 * Convert marketplace location update to location services format
-	 */
-	fromMarketplaceLocationUpdate(
-		update: Marketplace.Contracts.VendorLocationUpdate,
-	): LocationServices.Contracts.LocationUpdate {
-		return {
-			entityId: update.vendorId,
-			coordinates: {
-				lat: update.location.lat,
-				lng: update.location.lng,
-			},
-			metadata: {
-				source: 'vendor',
-				timestamp: update.timestamp,
-			},
-		};
-	}
+	return {
+		neBounds: {
+			lat: data.neLocation.lat,
+			long: data.neLocation.long,
+		},
+		swBounds: {
+			lat: data.swLocation.lat,
+			long: data.swLocation.long,
+		},
+	};
 }

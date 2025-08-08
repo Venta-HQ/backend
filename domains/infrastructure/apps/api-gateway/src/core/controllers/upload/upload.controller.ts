@@ -23,9 +23,9 @@ export class UploadController {
 			fileFilter: (req, file, cb) => {
 				if (!file.mimetype.startsWith('image/')) {
 					cb(
-						AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-							providedType: file.mimetype,
-							allowedTypes: ['image/*'],
+						AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+							field: 'mimetype',
+							value: file.mimetype,
 							message: 'Only image files are allowed',
 						}),
 						false,
@@ -44,10 +44,8 @@ export class UploadController {
 
 		try {
 			if (!file) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					domain: 'infrastructure',
-					operation: 'upload_image',
-					message: 'No file provided',
+				throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+					field: 'file',
 				});
 			}
 
@@ -70,11 +68,9 @@ export class UploadController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_UPLOAD, {
-				domain: 'infrastructure',
-				operation: 'upload_image',
-				error: error.message,
+			throw AppError.internal(ErrorCodes.ERR_INFRA_UPLOAD_FAILED, {
 				filename: file?.originalname,
+				message: error.message,
 			});
 		}
 	}

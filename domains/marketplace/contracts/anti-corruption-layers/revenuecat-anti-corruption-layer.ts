@@ -16,8 +16,7 @@ export class RevenueCatAntiCorruptionLayer {
 	validateSubscriptionData(data: unknown): data is Marketplace.External.RevenueCatSubscription {
 		const result = GrpcSubscriptionDataSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
-				operation: 'validate_subscription_data',
+			throw AppError.validation(ErrorCodes.ERR_SUB_INVALID_DATA, {
 				errors: result.error.errors,
 				data,
 			});
@@ -31,8 +30,7 @@ export class RevenueCatAntiCorruptionLayer {
 	validateRevenueCatSubscription(data: unknown): data is Marketplace.External.RevenueCatSubscription {
 		const result = RevenueCatSubscriptionSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation('INVALID_SUBSCRIPTION_DATA', ErrorCodes.INVALID_SUBSCRIPTION_DATA, {
-				operation: 'validate_revenuecat_subscription',
+			throw AppError.validation(ErrorCodes.ERR_SUB_INVALID_DATA, {
 				errors: result.error.errors,
 				userId: (data as any)?.user_id || 'undefined',
 			});
@@ -45,10 +43,7 @@ export class RevenueCatAntiCorruptionLayer {
 	 */
 	toDomainSubscription(subscription: Marketplace.External.RevenueCatSubscription): Marketplace.Core.UserSubscription {
 		if (!subscription?.id || !subscription?.user_id || !subscription?.product_id || !subscription?.transaction_id) {
-			throw AppError.validation('MISSING_REQUIRED_FIELD', ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_domain_subscription',
-				userId: subscription?.user_id || 'undefined',
-				subscriptionId: subscription?.id || 'undefined',
+			throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
 				field: !subscription?.id
 					? 'id'
 					: !subscription?.user_id
@@ -56,6 +51,8 @@ export class RevenueCatAntiCorruptionLayer {
 						: !subscription?.product_id
 							? 'product_id'
 							: 'transaction_id',
+				userId: subscription?.user_id || 'undefined',
+				subscriptionId: subscription?.id || 'undefined',
 			});
 		}
 
@@ -81,11 +78,11 @@ export class RevenueCatAntiCorruptionLayer {
 			userId: context.userId,
 		});
 
-		throw AppError.externalService('EXTERNAL_SERVICE_UNAVAILABLE', ErrorCodes.EXTERNAL_SERVICE_UNAVAILABLE, {
-			operation: context.operation,
+		throw AppError.externalService(ErrorCodes.ERR_SERVICE_UNAVAILABLE, {
 			service: 'revenuecat',
+			message: error instanceof Error ? error.message : 'Unknown error',
+			operation: context.operation,
 			userId: context.userId,
-			error: error instanceof Error ? error.message : 'Unknown error',
 		});
 	}
 }

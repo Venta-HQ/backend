@@ -43,7 +43,8 @@ export class VendorController {
 		try {
 			// Validate request
 			if (!this.vendorACL.validateVendorCreateData(data)) {
-				throw AppError.validation(ErrorCodes.ERR_VENDOR_INVALID_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					message: 'Invalid vendor data',
 					userId: req.userId,
 				});
 			}
@@ -77,7 +78,8 @@ export class VendorController {
 		try {
 			// Validate request
 			if (!this.vendorACL.validateVendorUpdateData(data)) {
-				throw AppError.validation(ErrorCodes.ERR_VENDOR_INVALID_DATA, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					message: 'Invalid vendor update data',
 					userId: req.userId,
 					vendorId: id,
 				});

@@ -43,7 +43,7 @@ export class AlgoliaSyncService {
 
 			// Validate record
 			if (!this.algoliaACL.validateSearchRecord(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_RECORD, {
+				throw AppError.validation(ErrorCodes.ERR_SEARCH_INDEX_INVALID, {
 					vendorId: event.vendorId,
 				});
 			}
@@ -95,8 +95,10 @@ export class AlgoliaSyncService {
 
 			// Validate record
 			if (!this.algoliaACL.validateSearchUpdate(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_UPDATE, {
+				throw AppError.validation(ErrorCodes.ERR_SEARCH_SYNC_FAILED, {
 					vendorId: event.vendorId,
+					type: 'vendor',
+					id: event.vendorId,
 				});
 			}
 
@@ -182,15 +184,17 @@ export class AlgoliaSyncService {
 				id: event.vendorId,
 				location: {
 					lat: event.location.lat,
-					lng: event.location.long,
+					long: event.location.long,
 				},
 				timestamp: event.timestamp,
 			});
 
 			// Validate record
 			if (!this.algoliaACL.validateLocationUpdate(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_SEARCH_UPDATE, {
+				throw AppError.validation(ErrorCodes.ERR_SEARCH_SYNC_FAILED, {
 					vendorId: event.vendorId,
+					type: 'vendor',
+					id: event.vendorId,
 				});
 			}
 
@@ -203,7 +207,7 @@ export class AlgoliaSyncService {
 				vendorId: event.vendorId,
 				location: {
 					lat: event.location.lat,
-					lng: event.location.long,
+					long: event.location.long,
 				},
 				timestamp: new Date().toISOString(),
 			};
@@ -212,7 +216,7 @@ export class AlgoliaSyncService {
 				vendorId: event.vendorId,
 				location: {
 					lat: event.location.lat,
-					lng: event.location.long,
+					long: event.location.long,
 				},
 			});
 		} catch (error) {

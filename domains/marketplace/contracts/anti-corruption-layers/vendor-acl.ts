@@ -40,10 +40,9 @@ export class VendorACL {
 	validateVendorLookupById(data: unknown): data is VendorLookupByIdData {
 		const result = GrpcVendorLookupDataSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_ID, ErrorCodes.INVALID_VENDOR_ID, {
-				operation: 'validate_vendor_lookup',
+			throw AppError.validation(ErrorCodes.ERR_INVALID_UUID, {
+				uuid: (data as any)?.id || 'undefined',
 				errors: result.error.errors,
-				vendorId: (data as any)?.id || 'undefined',
 			});
 		}
 		return true;
@@ -56,8 +55,8 @@ export class VendorACL {
 	validateVendorCreateData(data: unknown): data is VendorCreateData {
 		const result = GrpcVendorCreateDataSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
-				operation: 'validate_vendor_create',
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				message: 'Invalid vendor data',
 				errors: result.error.errors,
 				userId: (data as any)?.userId || 'undefined',
 			});
@@ -72,8 +71,8 @@ export class VendorACL {
 	validateVendorUpdateData(data: unknown): data is VendorUpdateData {
 		const result = GrpcVendorUpdateDataSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation(ErrorCodes.INVALID_VENDOR_DATA, ErrorCodes.INVALID_VENDOR_DATA, {
-				operation: 'validate_vendor_update',
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				message: 'Invalid vendor update data',
 				errors: result.error.errors,
 				vendorId: (data as any)?.id || 'undefined',
 				userId: (data as any)?.userId || 'undefined',
@@ -89,11 +88,10 @@ export class VendorACL {
 	validateVendorLocationUpdate(data: unknown): data is VendorLocationUpdate {
 		const result = GrpcVendorLocationDataSchema.safeParse(data);
 		if (!result.success) {
-			throw AppError.validation(ErrorCodes.VENDOR_INVALID_LOCATION, ErrorCodes.VENDOR_INVALID_LOCATION, {
-				operation: 'validate_vendor_location',
-				errors: result.error.errors,
+			throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+				lat: (data as any)?.location?.lat || 'undefined',
+				long: (data as any)?.location?.long || 'undefined',
 				vendorId: (data as any)?.vendorId || 'undefined',
-				location: (data as any)?.location || 'undefined',
 			});
 		}
 		return true;
@@ -111,10 +109,9 @@ export class VendorACL {
 	 */
 	toDomainVendorCreateData(data: Marketplace.Core.VendorCreateData): Marketplace.Core.VendorCreateData {
 		if (!data?.userId || !data?.name) {
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_domain_vendor_create',
-				userId: data?.userId || 'undefined',
+			throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
 				field: !data?.userId ? 'userId' : 'name',
+				userId: data?.userId || 'undefined',
 			});
 		}
 
@@ -134,11 +131,10 @@ export class VendorACL {
 	 */
 	toDomainVendorUpdateData(data: Marketplace.Core.VendorUpdateData): Marketplace.Core.VendorUpdateData {
 		if (!data?.id || !data?.userId) {
-			throw AppError.validation(ErrorCodes.MISSING_REQUIRED_FIELD, ErrorCodes.MISSING_REQUIRED_FIELD, {
-				operation: 'to_domain_vendor_update',
+			throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
+				field: !data?.id ? 'id' : 'userId',
 				vendorId: data?.id || 'undefined',
 				userId: data?.userId || 'undefined',
-				field: !data?.id ? 'id' : 'userId',
 			});
 		}
 
@@ -162,11 +158,10 @@ export class VendorACL {
 		location?: { lat: number; long: number };
 	}): Marketplace.Core.VendorLocationUpdate {
 		if (!data?.vendorId || !data?.location?.lat || !data?.location?.long) {
-			throw AppError.validation(ErrorCodes.VENDOR_INVALID_LOCATION, ErrorCodes.VENDOR_INVALID_LOCATION, {
-				operation: 'to_domain_vendor_location',
+			throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+				lat: data?.location?.lat || 'undefined',
+				long: data?.location?.long || 'undefined',
 				vendorId: data?.vendorId || 'undefined',
-				location: data?.location || 'undefined',
-				field: !data?.vendorId ? 'vendorId' : !data?.location?.lat ? 'location.lat' : 'location.long',
 			});
 		}
 
@@ -188,17 +183,11 @@ export class VendorACL {
 		swLocation?: { lat: number; long: number };
 	}): Marketplace.Core.GeospatialBounds {
 		if (!data?.neLocation?.lat || !data?.neLocation?.long || !data?.swLocation?.lat || !data?.swLocation?.long) {
-			throw AppError.validation(ErrorCodes.LOCATION_INVALID_COORDINATES, ErrorCodes.LOCATION_INVALID_COORDINATES, {
-				operation: 'to_domain_geospatial_bounds',
-				neLocation: data?.neLocation || 'undefined',
-				swLocation: data?.swLocation || 'undefined',
-				field: !data?.neLocation?.lat
-					? 'neLocation.lat'
-					: !data?.neLocation?.long
-						? 'neLocation.long'
-						: !data?.swLocation?.lat
-							? 'swLocation.lat'
-							: 'swLocation.long',
+			throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+				neLat: data?.neLocation?.lat || 'undefined',
+				neLong: data?.neLocation?.long || 'undefined',
+				swLat: data?.swLocation?.lat || 'undefined',
+				swLong: data?.swLocation?.long || 'undefined',
 			});
 		}
 
@@ -213,5 +202,4 @@ export class VendorACL {
 			},
 		};
 	}
-	d;
 }

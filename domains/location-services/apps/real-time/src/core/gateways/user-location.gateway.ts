@@ -1,245 +1,205 @@
 import { Server, Socket } from 'socket.io';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { WsAuthGuard, WsRateLimitGuards } from '@app/nest/guards';
-import { EventService, GrpcInstance } from '@app/nest/modules';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@app/proto/location-services/geolocation';
-import { UpdateUserLocationData, UpdateUserLocationDataSchema } from '@domains/location-services/contracts/types';
-import { Inject, Injectable, Logger, UseGuards } from '@nestjs/common';
+import { AuthenticatedSocket } from '@app/nest/guards/types';
+import { WsAuthGuard } from '@app/nest/guards/ws-auth';
+import { WsRateLimitGuard } from '@app/nest/guards/ws-rate-limit';
+import { GeolocationService } from '@domains/location-services/apps/geolocation/src/core/geolocation.service';
+import { Logger, UseGuards } from '@nestjs/common';
 import {
-	ConnectedSocket,
-	MessageBody,
 	OnGatewayConnection,
 	OnGatewayDisconnect,
-	OnGatewayInit,
 	SubscribeMessage,
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { WEBSOCKET_METRICS, WebSocketGatewayMetrics } from '../metrics.provider';
 import { UserConnectionManagerService } from '../user-connection-manager.service';
 
-// Extend Socket interface to include user properties
-interface AuthenticatedSocket extends Socket {
-	clerkId?: string;
-	userId?: string;
-}
+@WebSocketGateway({
+	namespace: 'user',
+	cors: {
+		origin: '*',
+	},
+})
+@UseGuards(WsAuthGuard, WsRateLimitGuard)
+export class UserLocationGateway implements OnGatewayConnection, OnGatewayDisconnect {
+	@WebSocketServer()
+	server: Server;
 
-@Injectable()
-@WebSocketGateway({ namespace: '/user' })
-@UseGuards(WsAuthGuard) // Require authentication for all user connections
-export class UserLocationGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 	private readonly logger = new Logger(UserLocationGateway.name);
 
 	constructor(
-		@Inject(GEOLOCATION_SERVICE_NAME) private readonly locationService: GrpcInstance<GeolocationServiceClient>,
-		private readonly connectionManager: UserConnectionManagerService,
-		private readonly eventService: EventService,
-		@Inject(WEBSOCKET_METRICS) private readonly metrics: WebSocketGatewayMetrics,
+		private readonly userConnectionManager: UserConnectionManagerService,
+		private readonly geolocationService: GeolocationService,
 	) {}
 
-	afterInit() {
-		// Gateway initialization complete
-		// Note: GrpcInstance is automatically initialized and ready to use
-		// No manual service initialization needed like with ClientGrpc pattern
-	}
-
-	@WebSocketServer() server!: Server;
-
+	/**
+	 * Handle new WebSocket connections
+	 */
 	async handleConnection(client: AuthenticatedSocket) {
-		this.logger.log(`User client connected: ${client.id}`);
-
 		try {
-			if (!client.userId) {
-				throw AppError.unauthorized(ErrorCodes.ERR_USER_NOT_FOUND, {
+			const userId = client.handshake.query.userId?.toString();
+
+			if (!userId) {
+				this.logger.warn('User connection attempt without userId', {
+					socketId: client.id,
+				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
 					operation: 'handle_user_connection',
 					socketId: client.id,
 				});
 			}
 
-			// Record connection metrics
-			this.metrics.user_websocket_connections_total.inc({ status: 'connected', type: 'user' });
-			this.metrics.user_websocket_connections_active.inc({ type: 'user' });
+			// Register the user connection
+			await this.userConnectionManager.registerUser(client.id, userId);
 
-			// Register user connection
-			await this.connectionManager.registerUser(client.userId, client.id);
+			// Get all vendor rooms this user is in
+			const vendorRooms = await this.userConnectionManager.getUserVendorRooms(userId);
 
-			// Emit user connected event
-			await this.eventService.emit('location.user.connected', {
-				userId: client.userId,
-				socketId: client.id,
-				timestamp: new Date().toISOString(),
+			// Join all vendor rooms
+			vendorRooms.forEach((vendorId) => {
+				client.join(vendorId);
 			});
 
-			this.logger.log(`User ${client.userId} registered with socket ${client.id}`);
+			this.logger.log('User connected', {
+				socketId: client.id,
+				userId,
+			});
 		} catch (error) {
 			this.logger.error('Failed to handle user connection', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				clientId: client.id,
+				socketId: client.id,
 			});
 
-			// Record error metrics
-			this.metrics.user_websocket_errors_total.inc({ type: 'connection' });
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS, {
+			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
 				operation: 'handle_user_connection',
 				socketId: client.id,
 			});
-		} finally {
-			if (!client.connected) {
-				client.disconnect();
-			}
 		}
 	}
 
-	async handleDisconnect(client: AuthenticatedSocket) {
-		this.logger.log(`User client disconnected: ${client.id}`);
-
+	/**
+	 * Handle WebSocket disconnections
+	 */
+	async handleDisconnect(client: Socket) {
 		try {
-			// Record disconnection metrics
-			this.metrics.user_websocket_disconnections_total.inc({ reason: 'disconnect', type: 'user' });
-			this.metrics.user_websocket_connections_active.dec({ type: 'user' });
+			const connectionInfo = await this.userConnectionManager.getConnectionInfo(client.id);
 
-			// Get user ID before removing connection
-			const userId = await this.connectionManager.getSocketUserId(client.id);
-			if (!userId) {
-				throw AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, {
+			if (!connectionInfo) {
+				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
 					operation: 'handle_user_disconnection',
 					socketId: client.id,
+					type: 'user',
 				});
 			}
 
-			await this.connectionManager.handleDisconnect(client.id);
+			// Get all vendor rooms this user is in before disconnecting
+			const vendorRooms = await this.userConnectionManager.getUserVendorRooms(connectionInfo.userId);
 
-			// Emit user disconnected event
-			await this.eventService.emit('location.user.disconnected', {
-				userId,
+			// Handle user disconnection
+			await this.userConnectionManager.handleUserDisconnect(client.id, connectionInfo.userId);
+
+			// Leave all vendor rooms
+			vendorRooms.forEach((vendorId) => {
+				client.leave(vendorId);
+			});
+
+			this.logger.log('User disconnected', {
 				socketId: client.id,
-				timestamp: new Date().toISOString(),
-				reason: 'client_disconnect',
+				userId: connectionInfo.userId,
 			});
 		} catch (error) {
 			this.logger.error('Failed to handle user disconnection', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				clientId: client.id,
+				socketId: client.id,
 			});
 
-			// Record error metrics
-			this.metrics.user_websocket_errors_total.inc({ type: 'disconnection' });
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS, {
+			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
 				operation: 'handle_user_disconnection',
 				socketId: client.id,
 			});
 		}
 	}
 
-	@SubscribeMessage('updateUserLocation')
-	@UseGuards(WsRateLimitGuards.standard) // 15 location updates per minute
-	async updateUserLocation(
-		@MessageBody(new SchemaValidatorPipe(UpdateUserLocationDataSchema)) data: UpdateUserLocationData,
-		@ConnectedSocket() socket: AuthenticatedSocket,
+	/**
+	 * Handle user location updates
+	 */
+	@SubscribeMessage('update_location')
+	async handleLocationUpdate(
+		socket: Socket,
+		data: { neLocation: { lat: number; long: number }; swLocation: { lat: number; long: number } },
 	) {
-		const userId = socket.userId;
-		if (!userId) {
-			throw AppError.unauthorized(ErrorCodes.ERR_USER_NOT_FOUND, {
-				operation: 'update_user_location',
-				socketId: socket.id,
-			});
-		}
-
-		const { neLocation, swLocation } = data;
-
 		try {
-			// Record location update metrics
-			this.metrics.location_updates_total.inc({ status: 'success', type: 'user' });
+			const userId = await this.userConnectionManager.getSocketUserId(socket.id);
 
-			// Get vendors in the user's current location
-			const { vendors } = await this.locationService
-				.invoke('vendorLocations', {
-					neLocation: {
-						lat: neLocation.lat,
-						long: neLocation.long,
-					},
-					swLocation: {
-						lat: swLocation.lat,
-						long: swLocation.long,
-					},
-				})
-				.toPromise();
-
-			const currentRooms = await this.connectionManager.getUserVendorRooms(userId);
-			const vendorIds = (vendors ?? []).map((vendor) => vendor.id);
-
-			// Find rooms to leave (vendors no longer in range)
-			const roomsToLeave = currentRooms.filter((room) => !vendorIds.includes(room));
-
-			// Find rooms to join (new vendors in range)
-			const roomsToJoin = vendorIds.filter((room) => !currentRooms.includes(room));
-
-			// Leave rooms for vendors no longer in range
-			if (roomsToLeave.length) {
-				for (const room of roomsToLeave) {
-					await this.connectionManager.removeUserFromVendorRoom({ userId, vendorId: room });
-					socket.leave(room);
-
-					// Emit user left vendor area event
-					await this.eventService.emit('location.user.left_vendor_area', {
-						userId,
-						vendorId: room,
-						timestamp: new Date().toISOString(),
-					});
-				}
-				this.logger.debug(`User ${userId} left ${roomsToLeave.length} vendor rooms`);
+			if (!userId) {
+				this.logger.warn('Location update from unregistered user', {
+					socketId: socket.id,
+				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
+					operation: 'update_user_location',
+					socketId: socket.id,
+				});
 			}
 
-			// Join rooms for new vendors in range
-			if (roomsToJoin.length) {
-				for (const room of roomsToJoin) {
-					await this.connectionManager.addUserToVendorRoom({ userId, vendorId: room });
-					socket.join(room);
+			// Calculate center point for user location
+			const centerLat = (data.neLocation.lat + data.swLocation.lat) / 2;
+			const centerLong = (data.neLocation.long + data.swLocation.long) / 2;
 
-					// Emit user entered vendor area event
-					await this.eventService.emit('location.user.entered_vendor_area', {
-						userId,
-						vendorId: room,
-						timestamp: new Date().toISOString(),
-					});
+			// Get nearby vendors based on user's location bounds
+			const nearbyVendors = await this.geolocationService.getNearbyVendors({
+				bounds: {
+					ne: {
+						lat: data.neLocation.lat,
+						long: data.neLocation.long,
+					},
+					sw: {
+						lat: data.swLocation.lat,
+						long: data.swLocation.long,
+					},
+				},
+			});
+
+			// Join rooms for nearby vendors
+			nearbyVendors.forEach((vendor) => {
+				socket.join(vendor.vendorId);
+				this.userConnectionManager.addUserToVendorRoom(userId, vendor.vendorId);
+			});
+
+			// Get current vendor rooms
+			const currentRooms = await this.userConnectionManager.getUserVendorRooms(userId);
+
+			// Leave rooms for vendors that are no longer nearby
+			currentRooms.forEach((vendorId) => {
+				if (!nearbyVendors.some((vendor) => vendor.vendorId === vendorId)) {
+					socket.leave(vendorId);
+					this.userConnectionManager.removeUserFromVendorRoom(userId, vendorId);
 				}
-				this.logger.debug(`User ${userId} joined ${roomsToJoin.length} vendor rooms`);
-			}
+			});
 
-			// Emit updated vendor list to user
-			socket.emit('vendor_channels', vendors ?? []);
-
-			// Emit user location updated event
-			await this.eventService.emit('location.user.location_updated', {
+			// Notify user about successful update
+			socket.emit('location_updated', {
 				userId,
 				location: {
-					lat: (neLocation.lat + swLocation.lat) / 2, // Use center point
-					lng: (neLocation.long + swLocation.long) / 2,
+					lat: centerLat,
+					long: centerLong,
 				},
-				timestamp: new Date().toISOString(),
+				nearbyVendors,
 			});
 
-			this.logger.debug(`User ${userId} location updated, now tracking ${vendorIds.length} vendors`);
+			this.logger.log('User location updated', {
+				socketId: socket.id,
+				userId,
+				location: data,
+			});
 		} catch (error) {
 			this.logger.error('Failed to update user location', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				userId,
-				location: { neLocation, swLocation },
+				socketId: socket.id,
 			});
 
-			// Record error metrics
-			this.metrics.user_websocket_errors_total.inc({ type: 'location_update' });
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
 				operation: 'update_user_location',
-				userId,
-				location: { neLocation, swLocation },
+				socketId: socket.id,
 			});
 		}
 	}

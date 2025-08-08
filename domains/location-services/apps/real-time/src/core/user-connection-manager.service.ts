@@ -54,7 +54,7 @@ export class UserConnectionManagerService {
 				socketId,
 				userId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'register_user',
 				socketId,
 				userId,
@@ -72,9 +72,9 @@ export class UserConnectionManagerService {
 		try {
 			const connectionInfo = await this.getConnectionInfo(socketId);
 			if (!connectionInfo) {
-				throw AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, {
-					operation: 'handle_disconnect',
-					socketId,
+				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+					type: 'connection',
+					id: socketId,
 				});
 			}
 
@@ -86,7 +86,7 @@ export class UserConnectionManagerService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'handle_disconnect',
 				socketId,
 			});
@@ -124,7 +124,7 @@ export class UserConnectionManagerService {
 				socketId,
 				userId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'handle_user_disconnect',
 				socketId,
 				userId,
@@ -156,7 +156,7 @@ export class UserConnectionManagerService {
 				userId: membership.userId,
 				vendorId: membership.vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'add_user_to_vendor_room',
 				userId: membership.userId,
 				vendorId: membership.vendorId,
@@ -188,7 +188,7 @@ export class UserConnectionManagerService {
 				userId: membership.userId,
 				vendorId: membership.vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'remove_user_from_vendor_room',
 				userId: membership.userId,
 				vendorId: membership.vendorId,
@@ -217,7 +217,7 @@ export class UserConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_user_vendor_rooms',
 				userId,
 			});
@@ -237,9 +237,8 @@ export class UserConnectionManagerService {
 
 			const parsed = JSON.parse(connectionData);
 			if (!parsed || typeof parsed !== 'object' || !('userId' in parsed)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					operation: 'get_connection_info',
-					socketId,
+				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+					field: 'connection_data',
 					message: 'Invalid connection data structure',
 				});
 			}
@@ -252,7 +251,7 @@ export class UserConnectionManagerService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_connection_info',
 				socketId,
 			});
@@ -271,7 +270,7 @@ export class UserConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_user_socket_id',
 				userId,
 			});
@@ -290,7 +289,7 @@ export class UserConnectionManagerService {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
 				operation: 'get_socket_user_id',
 				socketId,
 			});

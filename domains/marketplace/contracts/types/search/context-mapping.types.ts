@@ -56,7 +56,7 @@ export namespace SearchDiscovery {
 			updatedAt: string;
 			_geoloc?: {
 				lat: number;
-				lng: number;
+				long: number;
 			};
 		}
 
@@ -78,7 +78,7 @@ export namespace SearchDiscovery {
 			objectID: string;
 			_geoloc: {
 				lat: number;
-				lng: number;
+				long: number;
 			};
 			timestamp: string;
 		}
@@ -101,7 +101,7 @@ export namespace SearchDiscovery {
 			ownerId: string;
 			location?: {
 				lat: number;
-				lng: number;
+				long: number;
 			};
 			createdAt: string;
 			updatedAt: string;
@@ -117,7 +117,7 @@ export namespace SearchDiscovery {
 			limit?: number;
 			location?: {
 				lat: number;
-				lng: number;
+				long: number;
 				radius: number;
 			};
 		}
@@ -203,7 +203,7 @@ export namespace SearchDiscovery {
 			vendorId: string;
 			location: {
 				lat: number;
-				lng: number;
+				long: number;
 			};
 			timestamp: string;
 		}
@@ -245,7 +245,7 @@ export namespace SearchDiscovery {
 			_geoloc: z
 				.object({
 					lat: z.number().min(-90).max(90),
-					lng: z.number().min(-180).max(180),
+					long: z.number().min(-180).max(180),
 				})
 				.optional(),
 		});
@@ -260,7 +260,7 @@ export namespace SearchDiscovery {
 			objectID: z.string(),
 			_geoloc: z.object({
 				lat: z.number().min(-90).max(90),
-				lng: z.number().min(-180).max(180),
+				long: z.number().min(-180).max(180),
 			}),
 			timestamp: z.string().datetime(),
 		});
