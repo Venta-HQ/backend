@@ -1,5 +1,7 @@
 # Domain Contracts & Context Mapping Guide
 
+> **Note**: This guide has been updated to reflect our current DDD implementation and best practices. It replaces the previous domain-focused-contracts-guide.md.
+
 ## Overview
 
 This guide explains our unified approach to domain contracts and context mappings in Domain-Driven Design (DDD). We use **consistent patterns** throughout the system to ensure maintainability, type safety, and clear domain boundaries.

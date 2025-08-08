@@ -1,131 +1,89 @@
-# Venta Backend Documentation
+# 📚 Venta Backend Documentation
 
-Welcome to the Venta Backend documentation! This comprehensive guide covers everything you need to know about our microservices architecture, development practices, and deployment strategies.
+## 🎯 Overview
 
-## 📚 Documentation Index
+Welcome to the Venta Backend documentation. This documentation provides comprehensive information about our DDD-based architecture, development patterns, and best practices.
 
-### 🏗️ Architecture & Design
+## 📋 Core Documentation
 
-- **[DDD Migration Guide](./ddd-migration-guide.md)** - Complete Domain-Driven Design migration strategy and implementation
-- **[DDD Migration Status](./ddd-migration-status.md)** - Current progress and next steps for DDD implementation
-- **[Domain Contracts Guide](./domain-contracts-guide.md)** - Comprehensive guide on domain contracts and context mappings
-- **[Development Guide](./development-guide.md)** - Setup, development workflow, and coding standards
-- **[Deployment Guide](./deployment-guide.md)** - Production deployment and infrastructure management
-- **[DDD Best Practices](./ddd-best-practices.md)** - Domain-Driven Design patterns and guidelines
+### Architecture & Design
+- [Architecture Guide](./architecture-guide.md) - System architecture overview
+- [Concepts Guide](./concepts-guide.md) - Key concepts and patterns
+- [gRPC Guide](./grpc-ddd-guide.md) - gRPC in DDD architecture
 
-### 🔄 Event-Driven Architecture
+### Development
+- [Developer Guide](./developer-guide.md) - Development patterns and practices
+- [API Documentation](./api-docs.md) - API endpoints and usage
+- [Request Context Guide](./request-context-guide.md) - Request context handling
 
-- **[Event Pattern Enforcement](./event-pattern-enforcement.md)** - Type-safe event naming and domain boundary enforcement
-- **[Testing Strategy](./testing-strategy.md)** - Comprehensive testing approach and guidelines
-- **[Unified Error Handling](./unified-error-handling.md)** - Consistent error handling across the system
+### Testing & Quality
+- [Testing Guide](./testing-guide.md) - Testing patterns and practices
+- [Monitoring Guide](./monitoring-guide.md) - Monitoring and observability
+- [Deployment Guide](./deployment-guide.md) - Deployment and operations
+
+### Post-Migration
+- [Post-Migration Plan](./post-migration-plan.md) - Future improvements and optimizations
+
+## 📂 Archived Documentation
+
+Historical documentation from the DDD migration process is available in the [archived](./archived) directory:
+
+- [Product Understanding Questionnaire](./archived/product-understanding-questionnaire.md)
+- [DDD Migration Guide](./archived/ddd-migration-guide.md)
+- [DDD Migration Status](./archived/ddd-migration-status.md)
+- [DDD Context Mapping Refactor](./archived/ddd-context-mapping-refactor-summary.md)
+
+## 🔄 Documentation Updates
+
+Our documentation is continuously updated to reflect the latest patterns and practices. If you notice any inconsistencies or have suggestions for improvements, please create an issue or pull request.
 
 ## 🎯 Quick Start
 
-### For Developers
+1. **Understanding the Architecture**
+   - Start with the [Architecture Guide](./architecture-guide.md)
+   - Review the [Concepts Guide](./concepts-guide.md)
+   - Understand [gRPC in DDD](./grpc-ddd-guide.md)
 
-1. **Setup**: Follow the [Development Guide](./development-guide.md) to get your local environment running
-2. **Architecture**: Understand the DDD approach in the [DDD Migration Guide](./ddd-migration-guide.md)
-3. **Domain Communication**: Learn about domain contracts in the [Domain Contracts Guide](./domain-contracts-guide.md)
-4. **Testing**: Review the [Testing Strategy](./testing-strategy.md) for best practices
+2. **Development Setup**
+   - Follow the [Developer Guide](./developer-guide.md)
+   - Review [API Documentation](./api-docs.md)
+   - Understand [Request Context](./request-context-guide.md)
 
-### For DevOps
+3. **Quality & Operations**
+   - Learn about [Testing](./testing-guide.md)
+   - Set up [Monitoring](./monitoring-guide.md)
+   - Review [Deployment](./deployment-guide.md)
 
-1. **Deployment**: Use the [Deployment Guide](./deployment-guide.md) for production deployments
-2. **Architecture**: Review the [DDD Migration Status](./ddd-migration-status.md) for current implementation state
-3. **Error Handling**: Understand the [Unified Error Handling](./unified-error-handling.md) approach
+## 📝 Documentation Best Practices
 
-### For Domain Teams
+1. **Keep It Current**
+   - Update docs when patterns change
+   - Remove outdated information
+   - Add examples for new patterns
 
-1. **Domain Contracts**: Review the [Domain Contracts Guide](./domain-contracts-guide.md) for implementation patterns
-2. **Event Patterns**: Understand the [Event Pattern Enforcement](./event-pattern-enforcement.md) for consistent event naming
-3. **Best Practices**: Follow the [DDD Best Practices](./ddd-best-practices.md) for domain modeling
+2. **Be Clear and Concise**
+   - Use clear language
+   - Include practical examples
+   - Explain the "why" not just the "how"
 
-## 🔧 System Overview
+3. **Cross-Reference**
+   - Link related documents
+   - Avoid duplication
+   - Maintain a clear hierarchy
 
-The Venta Backend is a microservices-based system built with:
+## 🤝 Contributing
 
-- **NestJS** - Framework for building scalable server-side applications
-- **gRPC** - High-performance inter-service communication
-- **NATS** - Event-driven messaging and streaming
-- **PostgreSQL** - Primary database with Prisma ORM
-- **Redis** - Caching and session management
-- **Docker** - Containerization and deployment
-- **Kubernetes** - Orchestration and scaling
+1. **Documentation Updates**
+   - Keep examples up to date
+   - Add clarifications where needed
+   - Fix any errors or typos
 
-## 📊 Service Architecture
+2. **New Content**
+   - Add new guides as needed
+   - Include practical examples
+   - Follow existing format
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Client Apps   │    │   Mobile Apps   │    │   Web Apps      │
-└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
-          │                      │                      │
-          └──────────────────────┼──────────────────────┘
-                                 │
-                    ┌─────────────▼─────────────┐
-                    │      API Gateway          │
-                    │   (apps/gateway)          │
-                    └─────────────┬─────────────┘
-                                  │
-        ┌─────────────────────────┼─────────────────────────┐
-        │                         │                         │
-┌───────▼────────┐    ┌───────────▼──────────┐    ┌────────▼────────┐
-│  User Service  │    │  Vendor Service      │    │ Location Service│
-│ (apps/user)    │    │ (apps/vendor)        │    │(apps/location)  │
-└────────────────┘    └──────────────────────┘    └─────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│                WebSocket Gateway                            │
-│           (apps/websocket-gateway)                         │
-│                    Real-time connections                    │
-└─────────────────────────────────────────────────────────────┘
-
-                    ┌─────────────▼─────────────┐
-                    │    Algolia Sync           │
-                    │  (apps/algolia-sync)      │
-                    └───────────────────────────┘
-```
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- pnpm package manager
-- Docker and Docker Compose
-- PostgreSQL and Redis
-
-### Quick Setup
-
-```bash
-# Clone and setup
-git clone <repository-url>
-cd venta-backend
-pnpm install
-
-# Environment setup
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start services
-pnpm run docker:up
-pnpm run start:dev gateway
-```
-
-## 📈 Contributing
-
-1. **Fork** the repository
-2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
-4. **Push** to the branch (`git push origin feature/amazing-feature`)
-5. **Open** a Pull Request
-
-## 📞 Support
-
-- **Documentation Issues**: Create an issue in this repository
-- **Code Issues**: Use the main repository issue tracker
-- **Architecture Questions**: Review the [Architecture Overview](./architecture-overview.md)
-
----
-
-**Last Updated**: January 2025  
-**Version**: 1.0.0
+3. **Review Process**
+   - Technical review required
+   - Examples must be tested
+   - Follow style guide
