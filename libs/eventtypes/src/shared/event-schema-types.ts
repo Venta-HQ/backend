@@ -4,12 +4,16 @@ import { z } from 'zod';
 export const VALID_DOMAINS = [
 	'marketplace', // Business marketplace operations
 	'location', // Location and geospatial services
+	'communication', // External service communication
+	'infrastructure', // Infrastructure services
 ] as const;
 
 // Domain-subdomain mapping - duplicated for type-only usage
 export const DOMAIN_SUBDOMAINS: Record<ValidDomain, readonly string[]> = {
-	marketplace: ['user', 'vendor', 'search', 'reviews', 'favorites'],
+	marketplace: ['user', 'vendor', 'search', 'reviews', 'favorites', 'subscription'],
 	location: ['geolocation', 'proximity', 'real_time', 'geofencing', 'vendor', 'user'],
+	communication: ['webhook', 'notification', 'email', 'external_service'],
+	infrastructure: ['file', 'database', 'monitoring', 'messaging'],
 } as const;
 
 // Type definitions

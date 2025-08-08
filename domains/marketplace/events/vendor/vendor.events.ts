@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { createEventSchema } from '../../../shared/base.types';
-import { EnforceValidDomainEvents } from '../../../shared/event-schema-types';
+import { createEventSchema, EnforceValidDomainEvents } from '@app/eventtypes';
 
 // Vendor domain events with type enforcement
 export const vendorEventSchemas = {

@@ -15,15 +15,107 @@ export class ClerkAntiCorruptionLayer {
 	/**
 	 * Validate Clerk user data
 	 */
-	private validateClerkUser(data: any): boolean {
-		return data && data.id && typeof data.id === 'string';
+	private validateClerkUser(data: unknown): boolean {
+		if (!data || typeof data !== 'object') return false;
+		const d = data as Record<string, unknown>;
+
+		return (
+			typeof d.id === 'string' &&
+			(!d.email_addresses || Array.isArray(d.email_addresses)) &&
+			(!d.first_name || typeof d.first_name === 'string') &&
+			(!d.last_name || typeof d.last_name === 'string')
+		);
+	}
+
+	/**
+	 * Create a validation error with consistent formatting
+	 */
+	private createValidationError(message: string, context: Record<string, unknown>): AppError {
+		return new AppError(ErrorType.VALIDATION, 'INVALID_EXTERNAL_DATA', message, context);
+	}
+
+	/**
+	 * Validate user creation data from Clerk
+	 */
+	public validateUserCreationData(data: { clerkId: string }): { clerkId: string } {
+		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
+			throw this.createValidationError('Invalid Clerk user creation data', { data });
+		}
+		return data;
+	}
+
+	/**
+	 * Validate user update data from Clerk
+	 */
+	public validateUserUpdateData(data: {
+		clerkId: string;
+		updates: {
+			email?: string;
+			firstName?: string;
+			lastName?: string;
+			metadata?: Record<string, unknown>;
+		};
+	}): {
+		clerkId: string;
+		updates: {
+			email?: string;
+			firstName?: string;
+			lastName?: string;
+			metadata?: Record<string, unknown>;
+		};
+	} {
+		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
+			throw this.createValidationError('Invalid Clerk user update data - missing clerkId', { data });
+		}
+
+		if (!data.updates || typeof data.updates !== 'object') {
+			throw this.createValidationError('Invalid Clerk user update data - missing updates', { data });
+		}
+
+		const { email, firstName, lastName, metadata } = data.updates;
+
+		if (email !== undefined && typeof email !== 'string') {
+			throw this.createValidationError('Invalid Clerk user update data - invalid email', { data });
+		}
+
+		if (firstName !== undefined && typeof firstName !== 'string') {
+			throw this.createValidationError('Invalid Clerk user update data - invalid firstName', { data });
+		}
+
+		if (lastName !== undefined && typeof lastName !== 'string') {
+			throw this.createValidationError('Invalid Clerk user update data - invalid lastName', { data });
+		}
+
+		if (metadata !== undefined && (typeof metadata !== 'object' || Array.isArray(metadata))) {
+			throw this.createValidationError('Invalid Clerk user update data - invalid metadata', { data });
+		}
+
+		return data;
+	}
+
+	/**
+	 * Validate user deletion data from Clerk
+	 */
+	public validateUserDeletionData(data: { clerkId: string }): { clerkId: string } {
+		if (!data || !data.clerkId || typeof data.clerkId !== 'string') {
+			throw this.createValidationError('Invalid Clerk user deletion data', { data });
+		}
+		return data;
 	}
 
 	/**
 	 * Validate marketplace user data
 	 */
-	private validateMarketplaceUser(data: any): boolean {
-		return data && data.email && typeof data.email === 'string';
+	private validateMarketplaceUser(data: unknown): boolean {
+		if (!data || typeof data !== 'object') return false;
+		const d = data as Record<string, unknown>;
+
+		return (
+			typeof d.email === 'string' &&
+			(!d.firstName || typeof d.firstName === 'string') &&
+			(!d.lastName || typeof d.lastName === 'string') &&
+			(!d.metadata || (typeof d.metadata === 'object' && !Array.isArray(d.metadata)))
+		);
 	}
 
 	// ============================================================================

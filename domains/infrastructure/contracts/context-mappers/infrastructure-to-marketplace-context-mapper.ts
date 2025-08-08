@@ -1,231 +1,69 @@
-import { ValidationUtils } from '@app/utils';
 import { Injectable, Logger } from '@nestjs/common';
+import { InfrastructureDomainMapping, InfrastructureMarketplaceMapping } from '../types';
 
 /**
- * Context Mapper for Infrastructure → Marketplace communication
+ * Infrastructure to Marketplace Context Mapper
  *
- * Translates Infrastructure domain concepts to Marketplace domain concepts
- * This is an OUTBOUND context mapper from Infrastructure domain
+ * Translates infrastructure domain data structures to marketplace domain data structures.
+ * This is a directional mapper - it only handles infrastructure -> marketplace translations.
  */
 @Injectable()
 export class InfrastructureToMarketplaceContextMapper {
-	private readonly logger = new Logger('InfrastructureToMarketplaceContextMapper');
+	private readonly logger = new Logger(InfrastructureToMarketplaceContextMapper.name);
 
 	/**
-	 * Validate file upload result
+	 * Maps infrastructure file upload to marketplace format
 	 */
-	private validateFileUploadResult(data: any): boolean {
-		return (
-			data &&
-			typeof data.fileId === 'string' &&
-			typeof data.url === 'string' &&
-			typeof data.size === 'number' &&
-			typeof data.mimeType === 'string'
-		);
+	toMarketplaceFileManagement(
+		fileUpload: InfrastructureDomainMapping['fileUpload'],
+		operation: InfrastructureMarketplaceMapping['marketplaceFileManagement']['operation'],
+	): InfrastructureMarketplaceMapping['marketplaceFileManagement'] {
+		this.logger.debug('Mapping infrastructure file upload to marketplace format', {
+			fileId: fileUpload.fileId,
+			operation,
+			context: fileUpload.metadata.uploadedBy,
+		});
+
+		return {
+			operation,
+			fileId: fileUpload.fileId,
+			context: this.determineFileContext(fileUpload.metadata.mimeType),
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	/**
-	 * Validate file upload request
+	 * Maps infrastructure database operation to marketplace format
 	 */
-	private validateFileUploadRequest(data: any): boolean {
-		return (
-			data && data.file instanceof Buffer && typeof data.filename === 'string' && typeof data.mimeType === 'string'
-		);
+	toMarketplaceDatabase(
+		operation: InfrastructureMarketplaceMapping['marketplaceDatabase']['operation'],
+		table: InfrastructureMarketplaceMapping['marketplaceDatabase']['table'],
+	): InfrastructureMarketplaceMapping['marketplaceDatabase'] {
+		this.logger.debug('Mapping infrastructure database operation to marketplace format', {
+			operation,
+			table,
+		});
+
+		return {
+			operation,
+			table,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	/**
-	 * Validate database result
+	 * Determines file context based on mime type and other metadata
 	 */
-	private validateDatabaseResult(data: any): boolean {
-		return (
-			data &&
-			typeof data.operation === 'string' &&
-			typeof data.affectedRows === 'number' &&
-			typeof data.executionTime === 'number' &&
-			typeof data.success === 'boolean'
-		);
-	}
-
-	/**
-	 * Validate database request
-	 */
-	private validateDatabaseRequest(data: any): boolean {
-		return data && typeof data.query === 'string';
-	}
-
-	/**
-	 * Validate gateway result
-	 */
-	private validateGatewayResult(data: any): boolean {
-		return (
-			data &&
-			typeof data.route === 'string' &&
-			typeof data.statusCode === 'number' &&
-			typeof data.responseTime === 'number' &&
-			typeof data.success === 'boolean'
-		);
-	}
-
-	/**
-	 * Translate infrastructure file upload result to marketplace format
-	 */
-	toMarketplaceFileUploadResult(uploadResult: {
-		fileId: string;
-		url: string;
-		size: number;
-		mimeType: string;
-		metadata?: Record<string, any>;
-	}) {
-		try {
-			// Validate source data
-			if (!this.validateFileUploadResult(uploadResult)) {
-				throw new Error('Invalid file upload result data');
-			}
-
-			// Transform to marketplace format
-			const marketplaceFile = {
-				id: uploadResult.fileId,
-				url: uploadResult.url,
-				size: uploadResult.size,
-				type: uploadResult.mimeType,
-				metadata: uploadResult.metadata || {},
-				uploadedAt: new Date().toISOString(),
-			};
-
-			return marketplaceFile;
-		} catch (error) {
-			this.logger.error('Failed to translate file upload result', error);
-			throw error;
+	private determineFileContext(
+		mimeType: string,
+	): InfrastructureMarketplaceMapping['marketplaceFileManagement']['context'] {
+		if (mimeType.startsWith('image/')) {
+			return 'product_image';
 		}
-	}
-
-	/**
-	 * Translate marketplace file upload request to infrastructure format
-	 */
-	toInfrastructureFileUploadRequest(uploadRequest: {
-		file: Buffer;
-		filename: string;
-		mimeType: string;
-		folder?: string;
-		metadata?: Record<string, any>;
-	}) {
-		try {
-			// Validate source data
-			if (!this.validateFileUploadRequest(uploadRequest)) {
-				throw new Error('Invalid file upload request data');
-			}
-
-			// Transform to infrastructure format
-			const infrastructureRequest = {
-				content: uploadRequest.file,
-				name: uploadRequest.filename,
-				type: uploadRequest.mimeType,
-				path: uploadRequest.folder || 'uploads',
-				tags: uploadRequest.metadata || {},
-				uploadedAt: new Date().toISOString(),
-			};
-
-			return infrastructureRequest;
-		} catch (error) {
-			this.logger.error('Failed to translate file upload request', error);
-			throw error;
+		if (mimeType === 'application/pdf') {
+			return 'document';
 		}
-	}
-
-	/**
-	 * Translate infrastructure database operation result to marketplace format
-	 */
-	toMarketplaceDatabaseResult(databaseResult: {
-		operation: string;
-		affectedRows: number;
-		executionTime: number;
-		success: boolean;
-		error?: string;
-	}) {
-		try {
-			// Validate source data
-			if (!this.validateDatabaseResult(databaseResult)) {
-				throw new Error('Invalid database result data');
-			}
-
-			// Transform to marketplace format
-			const marketplaceResult = {
-				operation: databaseResult.operation,
-				rowsAffected: databaseResult.affectedRows,
-				duration: databaseResult.executionTime,
-				success: databaseResult.success,
-				error: databaseResult.error || null,
-				completedAt: new Date().toISOString(),
-			};
-
-			return marketplaceResult;
-		} catch (error) {
-			this.logger.error('Failed to translate database result', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate marketplace database request to infrastructure format
-	 */
-	toInfrastructureDatabaseRequest(databaseRequest: {
-		query: string;
-		params?: any[];
-		timeout?: number;
-		transaction?: boolean;
-	}) {
-		try {
-			// Validate source data
-			if (!this.validateDatabaseRequest(databaseRequest)) {
-				throw new Error('Invalid database request data');
-			}
-
-			// Transform to infrastructure format
-			const infrastructureRequest = {
-				sql: databaseRequest.query,
-				parameters: databaseRequest.params || [],
-				maxExecutionTime: databaseRequest.timeout || 30000,
-				useTransaction: databaseRequest.transaction || false,
-				requestedAt: new Date().toISOString(),
-			};
-
-			return infrastructureRequest;
-		} catch (error) {
-			this.logger.error('Failed to translate database request', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate infrastructure gateway routing result to marketplace format
-	 */
-	toMarketplaceGatewayResult(gatewayResult: {
-		route: string;
-		statusCode: number;
-		responseTime: number;
-		success: boolean;
-		error?: string;
-	}) {
-		try {
-			// Validate source data
-			if (!this.validateGatewayResult(gatewayResult)) {
-				throw new Error('Invalid gateway result data');
-			}
-
-			// Transform to marketplace format
-			const marketplaceResult = {
-				endpoint: gatewayResult.route,
-				status: gatewayResult.statusCode,
-				responseTime: gatewayResult.responseTime,
-				success: gatewayResult.success,
-				error: gatewayResult.error || null,
-				processedAt: new Date().toISOString(),
-			};
-
-			return marketplaceResult;
-		} catch (error) {
-			this.logger.error('Failed to translate gateway result', error);
-			throw error;
-		}
+		// Default to user_profile if context can't be determined
+		return 'user_profile';
 	}
 }

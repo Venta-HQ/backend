@@ -1,170 +1,59 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ValidationUtils } from '@app/utils';
+import {
+	CommunicationExternalSubscriptionData,
+	CommunicationExternalUserData,
+	CommunicationMarketplaceMapping,
+} from '../types';
 
 /**
- * Context Mapper for Communication → Marketplace communication
+ * Communication to Marketplace Context Mapper
  *
- * Translates Communication domain concepts to Marketplace domain concepts
- * This is an OUTBOUND context mapper from Communication domain
+ * Translates communication domain data structures to marketplace domain data structures.
+ * This is a directional mapper - it only handles communication -> marketplace translations.
  */
 @Injectable()
 export class CommunicationToMarketplaceContextMapper {
-	private readonly logger = new Logger('CommunicationToMarketplaceContextMapper');
+	private readonly logger = new Logger(CommunicationToMarketplaceContextMapper.name);
 
 	/**
-	 * Validate webhook data
+	 * Maps external user data to marketplace format
 	 */
-	private validateWebhookData(data: any): boolean {
-		return data && 
-			typeof data.type === 'string' && 
-			data.data && 
-			typeof data.timestamp === 'string' &&
-			typeof data.source === 'string';
+	toMarketplaceExternalUser(
+		userData: CommunicationExternalUserData,
+		marketplaceUserId: string,
+	): CommunicationMarketplaceMapping['externalUser'] {
+		this.logger.debug('Mapping external user data to marketplace format', {
+			externalUserId: userData.externalUserId,
+			service: userData.service,
+			marketplaceUserId,
+		});
+
+		return {
+			externalUserId: userData.externalUserId,
+			externalService: userData.service,
+			marketplaceUserId,
+			timestamp: new Date().toISOString(),
+		};
 	}
 
 	/**
-	 * Validate notification request data
+	 * Maps external subscription data to marketplace format
 	 */
-	private validateNotificationRequest(data: any): boolean {
-		return data && 
-			typeof data.userId === 'string' &&
-			['email', 'sms', 'push'].includes(data.type) &&
-			typeof data.template === 'string' &&
-			typeof data.data === 'object';
+	toMarketplaceExternalSubscription(
+		subscriptionData: CommunicationExternalSubscriptionData,
+		marketplaceSubscriptionId: string,
+	): CommunicationMarketplaceMapping['externalSubscription'] {
+		this.logger.debug('Mapping external subscription data to marketplace format', {
+			externalSubscriptionId: subscriptionData.externalSubscriptionId,
+			service: subscriptionData.service,
+			marketplaceSubscriptionId,
+		});
+
+		return {
+			externalSubscriptionId: subscriptionData.externalSubscriptionId,
+			externalService: subscriptionData.service,
+			marketplaceSubscriptionId,
+			timestamp: new Date().toISOString(),
+		};
 	}
-
-	/**
-	 * Translate communication webhook event to marketplace format
-	 */
-	toMarketplaceWebhookEvent(
-		webhookData: {
-			type: string;
-			data: any;
-			timestamp: string;
-			source: string;
-		},
-	) {
-		try {
-			// Validate source data
-			if (!this.validateWebhookData(webhookData)) {
-				throw new Error('Invalid webhook data');
-			}
-
-			// Transform to marketplace format
-			const marketplaceEvent = {
-				eventType: webhookData.type,
-				eventData: webhookData.data,
-				occurredAt: webhookData.timestamp,
-				source: webhookData.source,
-				processedAt: new Date().toISOString(),
-			};
-
-			return marketplaceEvent;
-		} catch (error) {
-			this.logger.error('Failed to translate webhook event', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate marketplace notification request to communication format
-	 */
-	toCommunicationNotificationRequest(
-		notificationRequest: {
-			userId: string;
-			type: 'email' | 'sms' | 'push';
-			template: string;
-			data: Record<string, any>;
-			priority?: 'low' | 'normal' | 'high';
-		},
-	) {
-		try {
-			// Validate source data
-			if (!this.validateNotificationRequest(notificationRequest)) {
-				throw new Error('Invalid notification request data');
-			}
-
-			// Transform to communication format
-			const communicationRequest = {
-				recipient: notificationRequest.userId,
-				channel: notificationRequest.type,
-				templateId: notificationRequest.template,
-				variables: notificationRequest.data,
-				priority: notificationRequest.priority || 'normal',
-				scheduledAt: new Date().toISOString(),
-			};
-
-			return communicationRequest;
-		} catch (error) {
-			this.logger.error('Failed to translate notification request', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate communication delivery status to marketplace format
-	 */
-	toMarketplaceDeliveryStatus(
-		deliveryStatus: {
-			messageId: string;
-			status: 'sent' | 'delivered' | 'failed' | 'bounced';
-			timestamp: string;
-			details?: Record<string, any>;
-		},
-	) {
-		try {
-			// Validate source data
-			if (!deliveryStatus?.messageId || !deliveryStatus?.status || !deliveryStatus?.timestamp) {
-				throw new Error('Invalid delivery status data');
-			}
-
-			// Transform to marketplace format
-			const marketplaceStatus = {
-				notificationId: deliveryStatus.messageId,
-				status: deliveryStatus.status,
-				updatedAt: deliveryStatus.timestamp,
-				metadata: deliveryStatus.details || {},
-			};
-
-			return marketplaceStatus;
-		} catch (error) {
-			this.logger.error('Failed to translate delivery status', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Translate marketplace webhook configuration to communication format
-	 */
-	toCommunicationWebhookConfig(
-		webhookConfig: {
-			url: string;
-			events: string[];
-			secret?: string;
-			headers?: Record<string, string>;
-		},
-	) {
-		try {
-			// Validate source data
-			if (!webhookConfig?.url || !webhookConfig?.events?.length) {
-				throw new Error('Invalid webhook configuration data');
-			}
-
-			// Transform to communication format
-			const communicationConfig = {
-				endpoint: webhookConfig.url,
-				eventTypes: webhookConfig.events,
-				authentication: webhookConfig.secret ? { type: 'secret', value: webhookConfig.secret } : undefined,
-				customHeaders: webhookConfig.headers || {},
-				active: true,
-			};
-
-			return communicationConfig;
-		} catch (error) {
-			this.logger.error('Failed to translate webhook configuration', error);
-			throw error;
-		}
-	}
-
-
-} 
+}

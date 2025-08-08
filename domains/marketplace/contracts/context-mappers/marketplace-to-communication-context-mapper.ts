@@ -194,7 +194,7 @@ export class MarketplaceToCommunicationContextMapper {
 	/**
 	 * Validate communication response data
 	 */
-	validateCommunicationResponse(data: any): boolean {
+	validateCommunicationResponse(data: unknown): boolean {
 		const isValid =
 			data &&
 			typeof data.externalUserId === 'string' &&

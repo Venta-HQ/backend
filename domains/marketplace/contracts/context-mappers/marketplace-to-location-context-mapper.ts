@@ -20,7 +20,7 @@ export class MarketplaceToLocationContextMapper {
 	/**
 	 * Validate source data from marketplace domain
 	 */
-	private validateSourceData(data: any): boolean {
+	private validateSourceData(data: unknown): boolean {
 		if (data.location) {
 			return ValidationUtils.isValidLocation(data.location);
 		}
@@ -33,7 +33,7 @@ export class MarketplaceToLocationContextMapper {
 	/**
 	 * Validate target data from location services domain
 	 */
-	private validateTargetData(data: any): boolean {
+	private validateTargetData(data: unknown): boolean {
 		// Basic validation for location services data
 		return (
 			data &&

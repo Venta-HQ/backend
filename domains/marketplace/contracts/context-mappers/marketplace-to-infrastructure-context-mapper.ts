@@ -358,7 +358,7 @@ export class MarketplaceToInfrastructureContextMapper {
 	/**
 	 * Validate infrastructure response data
 	 */
-	validateInfrastructureResponse(data: any): boolean {
+	validateInfrastructureResponse(data: unknown): boolean {
 		const isValid =
 			data &&
 			typeof data.fileId === 'string' &&
