@@ -11,6 +11,7 @@
 		"build": "nest build",
 		"format": "prettier --write \"domains/**/*.ts\" \"libs/**/*.ts\"",
 		"lint": "eslint \"{src,domains,libs,test}/**/*.ts\" --fix",
+		"typecheck": "tsc --noEmit",
 		"test": "vitest",
 		"test:run": "vitest run",
 		"test:coverage": "vitest run --coverage",
