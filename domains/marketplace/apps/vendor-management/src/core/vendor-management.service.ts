@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { VendorACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
-import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
 import {
@@ -22,7 +20,6 @@ export class VendorManagementService {
 
 	constructor(
 		private readonly prisma: PrismaService,
-		private readonly vendorACL: VendorACL,
 		private readonly eventService: EventService,
 	) {}
 
@@ -63,9 +60,9 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.isOpen,
+				isOpen: vendor.isOpen,
 				primaryImage: vendor.primaryImage || '',
-				location:
+				coordinates:
 					vendor.lat && vendor.long
 						? {
 								lat: vendor.lat,
@@ -131,7 +128,7 @@ export class VendorManagementService {
 			});
 
 			// Emit vendor created event
-			await this.eventService.emit('marketplace.vendor.created', {
+			await this.eventService.emit('marketplace.vendor.onboarded', {
 				vendorId: vendor.id,
 				ownerId: vendor.ownerId,
 				timestamp: vendor.createdAt.toISOString(),
@@ -197,7 +194,7 @@ export class VendorManagementService {
 			});
 
 			// Emit vendor updated event
-			await this.eventService.emit('marketplace.vendor.updated', {
+			await this.eventService.emit('marketplace.vendor.profile_updated', {
 				vendorId: updatedVendor.id,
 				updatedFields: ['name', 'description', 'email', 'phone', 'website', 'primaryImage'],
 				timestamp: updatedVendor.updatedAt.toISOString(),
@@ -222,7 +219,7 @@ export class VendorManagementService {
 	 */
 	async updateVendorLocation(data: VendorLocationUpdate): Promise<void> {
 		this.logger.log('Updating vendor location', {
-			location: `${data.location?.lat}, ${data.location?.long}`,
+			location: `${data.coordinates?.lat}, ${data.coordinates?.long}`,
 			vendorId: data.vendorId,
 		});
 
@@ -242,13 +239,13 @@ export class VendorManagementService {
 			const updatedVendor = await this.prisma.db.vendor.update({
 				where: { id: data.vendorId },
 				data: {
-					lat: data.location!.lat,
-					long: data.location!.long,
+					lat: data.coordinates!.lat,
+					long: data.coordinates!.long,
 				},
 			});
 
 			this.logger.log('Vendor location updated successfully', {
-				location: `${data.location?.lat}, ${data.location?.long}`,
+				location: `${data.coordinates?.lat}, ${data.coordinates?.long}`,
 				vendorId: data.vendorId,
 			});
 
@@ -266,7 +263,7 @@ export class VendorManagementService {
 
 			this.logger.error('Failed to update vendor location', error.stack, {
 				error,
-				location: data.location,
+				location: data.coordinates,
 				vendorId: data.vendorId,
 			});
 			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
@@ -307,9 +304,9 @@ export class VendorManagementService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				open: vendor.isOpen,
+				isOpen: vendor.isOpen,
 				primaryImage: vendor.primaryImage || '',
-				location:
+				coordinates:
 					vendor.lat && vendor.long
 						? {
 								lat: vendor.lat,

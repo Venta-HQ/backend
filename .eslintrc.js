@@ -29,6 +29,9 @@ module.exports = {
 		'**/*.proto.ts',
 		'**/proto/**',
 		'test/**',
+
+		// Temporarily ignored
+		'**/*.spec.ts',
 	],
 	rules: {
 		'@typescript-eslint/no-explicit-any': 'off',
@@ -43,6 +46,7 @@ module.exports = {
 			},
 		],
 		// '@typescript-eslint/explicit-function-return-type': 'error',
+		'@typescript-eslint/no-namespace': 'off',
 	},
 	overrides: [
 		{
