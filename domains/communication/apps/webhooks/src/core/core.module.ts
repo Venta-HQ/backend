@@ -1,9 +1,0 @@
-import { Module } from '@nestjs/common';
-import { ClerkWebhooksController } from './controllers/clerk/clerk-webhooks.controller';
-import { RevenueCatWebhooksController } from './controllers/revenuecat/revenuecat-webhooks.controller';
-
-@Module({
-	controllers: [ClerkWebhooksController, RevenueCatWebhooksController],
-	providers: [],
-})
-export class CoreModule {}

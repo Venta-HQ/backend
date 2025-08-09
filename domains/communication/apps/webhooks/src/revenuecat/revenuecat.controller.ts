@@ -9,8 +9,8 @@ import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller()
-export class RevenueCatWebhooksController {
-	private readonly logger = new Logger(RevenueCatWebhooksController.name);
+export class RevenueCatController {
+	private readonly logger = new Logger(RevenueCatController.name);
 	private readonly contextMapper = CommunicationToMarketplaceContextMapper;
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)

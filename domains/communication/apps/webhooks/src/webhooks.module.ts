@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { BootstrapModule } from '@venta/nest/modules';
-import { CoreModule } from './core/core.module';
+import { ClerkModule } from './clerk/clerk.module';
+import { RevenueCatModule } from './revenuecat/revenuecat.module';
 
 @Module({
 	imports: [
@@ -11,7 +12,8 @@ import { CoreModule } from './core/core.module';
 			protocol: 'http',
 		}),
 		ConfigModule,
-		CoreModule,
+		ClerkModule,
+		RevenueCatModule,
 	],
 })
 export class WebhooksModule {}
