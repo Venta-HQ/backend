@@ -79,7 +79,7 @@ describe('BootstrapService', () => {
 			const originalEnv = process.env.ALLOWED_ORIGINS;
 			process.env.ALLOWED_ORIGINS = 'https://app1.com,https://app2.com';
 
-			const origins = (process.env.ALLOWED_ORIGINS as string)?.split(',') || [
+			const origins = (process.env.ALLOWED_ORIGINS)?.split(',') || [
 				'http://localhost:3000',
 				'http://localhost:3001',
 			];

@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AlgoliaACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/search/algolia-acl';
+import { AlgoliaACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/search/algolia.acl';
 import { SearchToMarketplaceContextMapper } from '@venta/domains/marketplace/contracts/context-mappers/search/search-to-marketplace.context-mapper';
 import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
-import { SearchDiscovery } from '@venta/domains/marketplace/contracts/types/search/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AlgoliaService } from '@venta/nest/modules';
 
@@ -52,13 +51,6 @@ export class AlgoliaSyncService {
 			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
 			await this.algoliaService.createObject(indexConfig.name, searchRecord);
 
-			// Emit event
-			const syncEvent: SearchDiscovery.Events.VendorIndexed = {
-				vendorId: event.vendorId,
-				operation: 'create',
-				timestamp: new Date().toISOString(),
-			};
-
 			this.logger.debug('Vendor indexed successfully', {
 				vendorId: event.vendorId,
 			});
@@ -106,14 +98,6 @@ export class AlgoliaSyncService {
 			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
 			await this.algoliaService.updateObject(indexConfig.name, event.vendorId, searchRecord);
 
-			// Emit event
-			const syncEvent: SearchDiscovery.Events.VendorIndexed = {
-				vendorId: event.vendorId,
-				operation: 'update',
-				timestamp: new Date().toISOString(),
-				updatedFields: event.updatedFields,
-			};
-
 			this.logger.debug('Vendor index updated successfully', {
 				vendorId: event.vendorId,
 				updatedFields: event.updatedFields,
@@ -144,13 +128,6 @@ export class AlgoliaSyncService {
 			// Delete record
 			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
 			await this.algoliaService.deleteObject(indexConfig.name, event.vendorId);
-
-			// Emit event
-			const syncEvent: SearchDiscovery.Events.VendorIndexed = {
-				vendorId: event.vendorId,
-				operation: 'delete',
-				timestamp: new Date().toISOString(),
-			};
 
 			this.logger.debug('Vendor removed from index successfully', {
 				vendorId: event.vendorId,
@@ -201,16 +178,6 @@ export class AlgoliaSyncService {
 			// Update record
 			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
 			await this.algoliaService.updateObject(indexConfig.name, event.vendorId, searchRecord);
-
-			// Emit event
-			const syncEvent: SearchDiscovery.Events.VendorLocationIndexed = {
-				vendorId: event.vendorId,
-				location: {
-					lat: event.location.lat,
-					long: event.location.long,
-				},
-				timestamp: new Date().toISOString(),
-			};
 
 			this.logger.debug('Vendor location updated successfully', {
 				vendorId: event.vendorId,

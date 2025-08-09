@@ -78,20 +78,6 @@ export class FileManagementService {
 				});
 			}
 
-			// Emit event
-			const event: Infrastructure.Events.FileUploaded = {
-				file: {
-					fileId: uploadResult.fileId,
-					filename: uploadResult.filename,
-					mimetype: uploadResult.mimetype,
-					size: uploadResult.size,
-					timestamp: uploadResult.timestamp,
-					uploadedBy: uploadResult.uploadedBy,
-					context: uploadResult.context,
-				},
-				timestamp: new Date().toISOString(),
-			};
-
 			this.logger.debug('File upload completed', {
 				fileId: uploadResult.fileId,
 				url: uploadResult.url,

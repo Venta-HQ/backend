@@ -54,7 +54,7 @@ export abstract class BaseWebSocketGatewayTest {
 		this.gateway.server = { emit: vi.fn() } as any;
 
 		// Manually assign the mock connection manager to bypass DI issues
-		(this.gateway as any).connectionManager = this.mockConnectionManager;
+		(this.gateway).connectionManager = this.mockConnectionManager;
 	}
 
 	protected async teardownGateway() {

@@ -152,12 +152,6 @@ export class UserManagementService {
 				where: { clerkId },
 			});
 
-			// Emit event
-			const event: Marketplace.Events.UserDeleted = {
-				userId: clerkId,
-				timestamp: new Date().toISOString(),
-			};
-
 			this.logger.debug('User deleted successfully', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user', {

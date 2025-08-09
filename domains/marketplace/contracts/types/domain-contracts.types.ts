@@ -6,12 +6,7 @@
  */
 
 import { Observable } from 'rxjs';
-import {
-	MarketplaceLocationBounds,
-	MarketplaceLocationUpdate,
-	MarketplaceUserLocation,
-	MarketplaceVendorLocation,
-} from './context-mapping.types';
+import { Marketplace } from './context-mapping.types';
 
 // ============================================================================
 // Marketplace ↔ Location Services Contract
@@ -44,22 +39,25 @@ export interface MarketplaceLocationContract {
 	/**
 	 * Get vendors in a specific geographic area
 	 */
-	getVendorsInArea(bounds: MarketplaceLocationBounds): Promise<MarketplaceVendorLocation[]>;
+	getVendorsInArea(bounds: Marketplace.Core.LocationBounds): Promise<Marketplace.Core.VendorLocation[]>;
 
 	/**
 	 * Subscribe to real-time vendor location updates
 	 */
-	subscribeToVendorLocation(vendorId: string): Observable<MarketplaceLocationUpdate>;
+	subscribeToVendorLocation(vendorId: string): Observable<Marketplace.Core.VendorLocationUpdate>;
 
 	/**
 	 * Subscribe to real-time user location updates
 	 */
-	subscribeToUserLocation(userId: string): Observable<MarketplaceLocationUpdate>;
+	subscribeToUserLocation(userId: string): Observable<Marketplace.Core.UserLocationUpdate>;
 
 	/**
 	 * Get nearby vendors within a radius
 	 */
-	getNearbyVendors(center: { lat: number; lng: number }, radiusInMeters: number): Promise<MarketplaceVendorLocation[]>;
+	getNearbyVendors(
+		center: { lat: number; lng: number },
+		radiusInMeters: number,
+	): Promise<Marketplace.Core.VendorLocation[]>;
 }
 
 // ============================================================================

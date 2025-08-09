@@ -1,6 +1,6 @@
-import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
-import { CommunicationToMarketplaceContextMapper } from '@venta/domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
-import { Communication } from '@venta/domains/communication/contracts/types/context-mapping.types';
+import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import * as CommunicationToMarketplaceContextMapper from '@venta/domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
+import { WebhookEventSchema } from '@venta/domains/communication/contracts/schemas/communication.schemas';
 import { RevenueCatWebhookPayload } from '@venta/domains/communication/contracts/types/external/revenuecat.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SignedWebhookGuard } from '@venta/nest/guards';
@@ -11,17 +11,16 @@ import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@vent
 @Controller()
 export class RevenueCatWebhooksController {
 	private readonly logger = new Logger(RevenueCatWebhooksController.name);
-
+	private readonly contextMapper = CommunicationToMarketplaceContextMapper;
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
 		private readonly client: GrpcInstance<UserManagementServiceClient>,
-		private readonly contextMapper: CommunicationToMarketplaceContextMapper,
 	) {}
 
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.REVENUECAT_WEBHOOK_SECRET || ''))
 	async handleRevenueCatEvent(
-		@Body(new SchemaValidatorPipe(Communication.Validation.WebhookEventSchema))
+		@Body(new SchemaValidatorPipe(WebhookEventSchema))
 		event: RevenueCatWebhookPayload,
 	): Promise<{ message: string }> {
 		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {

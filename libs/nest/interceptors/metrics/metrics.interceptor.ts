@@ -109,13 +109,13 @@ export class MetricsInterceptor implements NestInterceptor {
 
 			const duration = metrics.getDuration() / 1000; // Convert to seconds
 
-			this.metrics!.requestDuration.observe(labels, duration);
-			this.metrics!.requestTotal.inc(labels);
+			this.metrics.requestDuration.observe(labels, duration);
+			this.metrics.requestTotal.inc(labels);
 
 			// Record request size if available
 			const requestSize = metrics.getRequestSize();
 			if (requestSize > 0) {
-				this.metrics!.requestSize.observe(
+				this.metrics.requestSize.observe(
 					{ method: labels.method, protocol: labels.protocol, route: labels.route },
 					requestSize,
 				);
@@ -124,7 +124,7 @@ export class MetricsInterceptor implements NestInterceptor {
 			// Record response size if available
 			const responseSize = metrics.getResponseSize();
 			if (responseSize > 0) {
-				this.metrics!.responseSize.observe(
+				this.metrics.responseSize.observe(
 					{ method: labels.method, protocol: labels.protocol, route: labels.route },
 					responseSize,
 				);

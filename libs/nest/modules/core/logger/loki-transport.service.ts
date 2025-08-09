@@ -117,7 +117,7 @@ export class LokiTransportService {
 			}
 
 			const timestamp = Math.floor(Date.now() * 1000000).toString();
-			streams.get(labelKey)!.push([timestamp, JSON.stringify(log)]);
+			streams.get(labelKey).push([timestamp, JSON.stringify(log)]);
 		});
 
 		return {

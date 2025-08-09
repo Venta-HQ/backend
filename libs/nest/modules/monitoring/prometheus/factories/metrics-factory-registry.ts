@@ -21,7 +21,7 @@ export class MetricsFactoryRegistry {
 
 		if (!factory) {
 			// Fallback to HTTP factory for unknown context types
-			return this.factories.get('http')!;
+			return this.factories.get('http');
 		}
 
 		return factory;

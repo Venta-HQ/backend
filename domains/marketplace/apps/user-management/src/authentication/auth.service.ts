@@ -1,13 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
-import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
 import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk.acl';
-
-interface UserIdentityData {
-	clerkId: string;
-	source?: 'clerk_webhook' | 'manual' | 'admin';
-}
 
 interface IntegrationData {
 	clerkUserId: string;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createEventSchema, EnforceValidDomainEvents } from '@venta/eventtypes';
+import type { EnforceValidDomainEvents } from '@venta/eventtypes';
 
 // Communication domain events with type enforcement
 export const communicationEventSchemas = {} as const satisfies EnforceValidDomainEvents<'communication'>;

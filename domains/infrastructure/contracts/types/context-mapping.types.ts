@@ -1,12 +1,4 @@
 // No runtime zod usage here; schemas imported from ../schemas
-import {
-	CreateVendorSchema as BaseCreateVendorSchema,
-	FileMetadataSchema as BaseFileMetadataSchema,
-	FileUploadSchema as BaseFileUploadDataSchema,
-	UpdateVendorSchema as BaseUpdateVendorSchema,
-	UserSchema as BaseUserDataSchema,
-	UserVendorRequestSchema as BaseUserVendorRequestSchema,
-} from '../schemas/contracts.schemas';
 import type { FileUploadData as BaseFileUploadData } from './file/file.types';
 import { UserData as BaseUserData, UserVendorRequest as BaseUserVendorRequest } from './user/user.types';
 import {

@@ -178,7 +178,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 		const grpcException = (error as any).toGrpcException();
 		// Error is created but not used directly - it's thrown by the framework
-		grpcException.getError() as any;
+		grpcException.getError();
 
 		// For gRPC, we need to throw the exception to be handled by the gRPC framework
 		throw grpcException;
@@ -195,7 +195,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 
 		const wsException = (error as any).toWsException();
-		const wsError = wsException.getError() as any;
+		const wsError = wsException.getError();
 
 		// Emit error to WebSocket client
 		client.emit('error', wsError);

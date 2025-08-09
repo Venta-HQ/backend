@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrometheusModule } from '@venta/nest/modules';
 import { LocationExternalServiceACL } from './anti-corruption-layers/location-external-service.acl';
-import * as LocationToMarketplaceContextMapper from './context-mappers/location-to-marketplace.context-mapper';
 
 /**
  * Location Services Contracts Module

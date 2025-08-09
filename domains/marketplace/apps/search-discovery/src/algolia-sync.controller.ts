@@ -1,10 +1,10 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { NatsACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/nats.acl';
 import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { SearchDiscovery } from '@venta/domains/marketplace/contracts/types/search/context-mapping.types';
+import { AppError } from '@venta/nest/errors';
 import { NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';
-import { NatsACL } from './anti-corruption-layers/nats-acl.js';
-import { SearchDiscovery } from './types/context-mapping.types';
 
 /**
  * Controller for handling vendor events and syncing with Algolia
@@ -114,17 +114,6 @@ export class AlgoliaSyncController implements OnModuleInit {
 					return;
 			}
 
-			// Emit sync completed event
-			const syncEvent: SearchDiscovery.Events.IndexSyncCompleted = {
-				indexName: 'vendor',
-				timestamp: new Date().toISOString(),
-				recordCount: 1,
-				metadata: {
-					eventId: event.meta.eventId,
-					subject,
-				},
-			};
-
 			this.logger.debug('Index sync completed successfully', {
 				subject,
 				eventId: event.meta.eventId,
@@ -135,20 +124,6 @@ export class AlgoliaSyncController implements OnModuleInit {
 				subject,
 				eventId: event.meta.eventId,
 			});
-
-			// Emit sync failed event
-			const syncError: SearchDiscovery.Events.IndexSyncFailed = {
-				indexName: 'vendor',
-				timestamp: new Date().toISOString(),
-				error: {
-					code: error instanceof AppError ? error.code : 'ALGOLIA_SERVICE_ERROR',
-					message: error.message,
-				},
-				metadata: {
-					eventId: event.meta.eventId,
-					subject,
-				},
-			};
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal('ALGOLIA_SYNC_FAILED', 'Failed to sync vendor with Algolia', {
@@ -187,17 +162,6 @@ export class AlgoliaSyncController implements OnModuleInit {
 			if (subject === 'location.vendor.location_updated') {
 				await this.algoliaSyncService.updateVendorLocation(event.data);
 
-				// Emit sync completed event
-				const syncEvent: SearchDiscovery.Events.IndexSyncCompleted = {
-					indexName: 'vendor',
-					timestamp: new Date().toISOString(),
-					recordCount: 1,
-					metadata: {
-						eventId: event.meta.eventId,
-						subject,
-					},
-				};
-
 				this.logger.debug('Location sync completed successfully', {
 					subject,
 					eventId: event.meta.eventId,
@@ -211,20 +175,6 @@ export class AlgoliaSyncController implements OnModuleInit {
 				subject,
 				eventId: event.meta.eventId,
 			});
-
-			// Emit sync failed event
-			const syncError: SearchDiscovery.Events.IndexSyncFailed = {
-				indexName: 'vendor',
-				timestamp: new Date().toISOString(),
-				error: {
-					code: error instanceof AppError ? error.code : 'ALGOLIA_SERVICE_ERROR',
-					message: error.message,
-				},
-				metadata: {
-					eventId: event.meta.eventId,
-					subject,
-				},
-			};
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal('ALGOLIA_SYNC_FAILED', 'Failed to sync vendor location with Algolia', {

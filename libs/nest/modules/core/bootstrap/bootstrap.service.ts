@@ -162,10 +162,10 @@ export class BootstrapService {
 			let mainApp;
 			if ('package' in options.main) {
 				// gRPC service
-				mainApp = await this.bootstrapGrpc(options.main as GrpcBootstrapOptions);
+				mainApp = await this.bootstrapGrpc(options.main);
 			} else {
 				// NATS service
-				mainApp = await this.bootstrapNats(options.main as NatsBootstrapOptions);
+				mainApp = await this.bootstrapNats(options.main);
 			}
 			apps.push(mainApp);
 

@@ -55,6 +55,12 @@ export namespace Marketplace {
 			timestamp: string;
 		}
 
+		export interface UserLocationUpdate {
+			userId: string;
+			location: LocationServices.Location.Core.Coordinates;
+			timestamp: string;
+		}
+
 		export interface GeospatialBounds {
 			ne: LocationServices.Location.Core.Coordinates;
 			sw: LocationServices.Location.Core.Coordinates;

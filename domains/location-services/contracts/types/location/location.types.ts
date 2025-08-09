@@ -4,9 +4,7 @@ import {
 	GeospatialQuerySchema as BaseGeospatialQuerySchema,
 	GrpcLocationSchema as BaseGrpcLocationSchema,
 	GrpcLocationUpdateSchema as BaseGrpcLocationUpdateSchema,
-	GrpcVendorLocationRequestSchema as BaseGrpcVendorLocationRequestSchema,
 	LocationDataSchema as BaseLocationDataSchema,
-	LocationUpdateDataSchema as BaseLocationUpdateDataSchema,
 	UpdateUserLocationDataSchema as BaseUpdateUserLocationDataSchema,
 	VendorLocationRequestSchema as BaseVendorLocationRequestSchema,
 	VendorLocationUpdateDataSchema as BaseVendorLocationUpdateDataSchema,
@@ -73,6 +71,4 @@ export namespace Location {
 
 		export type GeoMember = z.infer<typeof BaseGeoMemberSchema>;
 	}
-
-	// Validation schemas are defined in '../schemas/location.schemas'
 }

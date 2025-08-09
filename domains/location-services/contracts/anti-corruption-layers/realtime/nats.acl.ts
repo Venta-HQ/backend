@@ -53,8 +53,8 @@ export class NatsACL {
 			}
 
 			return {
-				type: (data as LocationServices.RealTime.Core.Message).type,
-				payload: (data as LocationServices.RealTime.Core.Message).payload as T,
+				type: (data).type,
+				payload: (data).payload as T,
 				timestamp: new Date().toISOString(),
 			};
 		} catch (error) {
