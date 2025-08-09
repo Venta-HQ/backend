@@ -1,5 +1,5 @@
+import { MetricsService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
-import { MetricsService } from '@venta/nest/modules';
 
 export interface ContractMetricsConfig {
 	domain: string;

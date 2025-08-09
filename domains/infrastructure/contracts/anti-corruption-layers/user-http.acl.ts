@@ -1,5 +1,5 @@
-import { AppError } from '@app/nest/errors';
-import { UserVendorRequestSchema } from '@domains/infrastructure/contracts/types/user/user.schemas';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import { UserVendorRequestSchema } from '@domains/infrastructure/contracts/schemas/user/user.schemas';
 import { Injectable, Logger } from '@nestjs/common';
 import { Infrastructure } from '../types/context-mapping.types';
 
@@ -13,7 +13,7 @@ export class UserHttpACL {
 	/**
 	 * Validate user vendor request data
 	 */
-	validateUserVendorRequest(data: unknown): data is Infrastructure.Core.UserVendorRequest {
+	validateUserVendorRequest(data: unknown): data is Infrastructure.Contracts.UserVendorRequest {
 		try {
 			const result = UserVendorRequestSchema.safeParse(data);
 			if (!result.success) {
@@ -36,12 +36,24 @@ export class UserHttpACL {
 	 * Handle user error
 	 */
 	handleUserError(error: unknown, context: { operation: string; userId?: string }): never {
+		// If it's already an AppError, rethrow it
+		if (error instanceof AppError) {
+			throw error;
+		}
+
+		// Log the error with context
 		this.logger.error('User operation failed', {
 			error: error instanceof Error ? error.message : 'Unknown error',
 			operation: context.operation,
 			userId: context.userId,
+			stack: error instanceof Error ? error.stack : undefined,
 		});
 
-		throw AppError.internal('USER_OPERATION_FAILED', 'User operation failed', context);
+		// Throw standardized error
+		throw AppError.internal(ErrorCodes.ERR_INFRA_GATEWAY_ERROR, {
+			message: 'User operation failed',
+			operation: context.operation,
+			userId: context.userId,
+		});
 	}
 }

@@ -6,13 +6,13 @@ import {
 	VendorUpdateData,
 } from '@app/proto/marketplace/vendor-management';
 import { Injectable, Logger } from '@nestjs/common';
-import { Marketplace } from '../types/context-mapping.types';
 import {
 	GrpcVendorCreateDataSchema,
 	GrpcVendorLocationDataSchema,
 	GrpcVendorLookupDataSchema,
 	GrpcVendorUpdateDataSchema,
-} from '../types/vendor/vendor.schemas';
+} from '../schemas/vendor/vendor.schemas';
+import { Marketplace } from '../types/context-mapping.types';
 
 /**
  * Anti-Corruption Layer for vendor data validation and transformation
@@ -192,11 +192,11 @@ export class VendorACL {
 		}
 
 		return {
-			neBounds: {
+			ne: {
 				lat: data.neLocation.lat,
 				long: data.neLocation.long,
 			},
-			swBounds: {
+			sw: {
 				lat: data.swLocation.lat,
 				long: data.swLocation.long,
 			},

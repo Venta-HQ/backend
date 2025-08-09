@@ -1,20 +1,18 @@
-import { catchError } from 'rxjs';
+import { catchError, firstValueFrom } from 'rxjs';
 import { AuthGuard } from '@app/nest/guards';
 import { GrpcInstance } from '@app/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
-import { UserHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/user-http-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace-context-mapper';
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
+import { UserHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/user-http.acl';
+import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
+import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
-
-type AuthedRequest = Infrastructure.Internal.AuthedRequest;
 
 @Controller('users')
 export class UserController {
+	private readonly contextMapper = InfrastructureToMarketplaceContextMapper;
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>,
 		private readonly userACL: UserHttpACL,
-		private readonly contextMapper: InfrastructureToMarketplaceContextMapper,
 	) {}
 
 	@Get('/vendors')
@@ -24,15 +22,14 @@ export class UserController {
 			// Convert to gRPC request
 			const grpcData = this.contextMapper.toGrpcUserVendorRequest(req.userId);
 
-			return await this.client
-				.invoke('getUserVendors', grpcData)
-				.pipe(
+			return await firstValueFrom(
+				this.client.invoke('getUserVendors', grpcData).pipe(
 					catchError((error: Error) => {
 						// The AppExceptionFilter will handle the error conversion
 						throw error;
 					}),
-				)
-				.toPromise();
+				),
+			);
 		} catch (error) {
 			this.userACL.handleUserError(error, {
 				operation: 'get_user_vendors',

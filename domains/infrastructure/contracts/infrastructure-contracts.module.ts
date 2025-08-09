@@ -1,5 +1,8 @@
 import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { CloudinaryACL } from './anti-corruption-layers/cloudinary.acl';
+import { UserHttpACL } from './anti-corruption-layers/user-http.acl';
+import { VendorHttpACL } from './anti-corruption-layers/vendor-http.acl';
 
 /**
  * Infrastructure Contracts Module
@@ -9,7 +12,20 @@ import { Module } from '@nestjs/common';
  */
 @Module({
 	imports: [PrometheusModule.register()],
-	providers: [],
-	exports: [],
+	providers: [
+		// Context Mappers (as functions, export the namespace for DI via custom providers if needed)
+		// For now, we expose via exports barrel; functions are not DI providers.
+
+		// ACLs
+		CloudinaryACL,
+		UserHttpACL,
+		VendorHttpACL,
+	],
+	exports: [
+		// ACLs
+		CloudinaryACL,
+		UserHttpACL,
+		VendorHttpACL,
+	],
 })
 export class InfrastructureContractsModule {}

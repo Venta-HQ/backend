@@ -10,8 +10,8 @@ import {
 	UserVendorData,
 	UserVendorsResponse,
 } from '@app/proto/marketplace/user-management';
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
-import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';

@@ -102,6 +102,9 @@ export const ErrorsMap = {
 	ERR_SUB_NOT_FOUND: 'Subscription not found for user "{userId}"',
 	ERR_SUB_INVALID_DATA: 'Invalid subscription data: {message}',
 	ERR_SUB_UPDATE_FAILED: 'Failed to update subscription for user "{userId}"',
+
+	// Event Bus
+	ERR_EVENT_OPERATION_FAILED: 'Event operation failed: {operation}',
 } as const;
 
 /**

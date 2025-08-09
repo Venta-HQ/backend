@@ -1,7 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
-import { MarketplaceToLocationContextMapper } from '@domains/marketplace/contracts/context-mappers/marketplace-to-location-context-mapper';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import * as MarketplaceToLocationContextMapper from '@domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
 import { User as PrismaUser, UserSubscription as PrismaUserSubscription } from '@prisma/client';
@@ -16,7 +16,7 @@ export class UserManagementService {
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly clerkACL: ClerkAntiCorruptionLayer,
-		private readonly locationMapper: MarketplaceToLocationContextMapper,
+		// Mappers are pure functions; no DI field
 	) {}
 
 	/**
@@ -101,17 +101,19 @@ export class UserManagementService {
 
 		try {
 			// Convert to location services format
-			const locationData = this.locationMapper.toLocationServicesUserUpdate(request.userId, {
-				coordinates: request.location,
-				timestamp: request.timestamp,
+			const locationData = MarketplaceToLocationContextMapper.toLocationUserLocation({
+				userId: request.userId,
+				lat: request.location.lat,
+				long: request.location.long,
+				updatedAt: new Date().toISOString(),
 			});
 
 			// Update user location
 			const user = await this.prisma.db.user.update({
 				where: { id: request.userId },
 				data: {
-					lat: locationData.coordinates.lat,
-					long: locationData.coordinates.long,
+					lat: locationData.lat,
+					long: locationData.long,
 				},
 				include: {
 					subscription: true,

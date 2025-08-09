@@ -59,7 +59,7 @@ export class NatsACL {
 			};
 		} catch (error) {
 			this.logger.error('Failed to convert NATS message to domain format', { error });
-			throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 				operation: 'to_domain_message',
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
@@ -78,7 +78,7 @@ export class NatsACL {
 			};
 		} catch (error) {
 			this.logger.error('Failed to convert domain message to NATS format', { error });
-			throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 				operation: 'to_nats_message',
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
@@ -97,7 +97,7 @@ export class NatsACL {
 		const operation = context.operation || 'nats_operation';
 
 		if (error.message.includes('publish')) {
-			throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 				operation,
 				...context,
 				type: 'publish',
@@ -105,14 +105,14 @@ export class NatsACL {
 		}
 
 		if (error.message.includes('subscribe')) {
-			throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, {
+			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 				operation,
 				...context,
 				type: 'subscribe',
 			});
 		}
 
-		throw AppError.internal(ErrorCodes.ERR_NATS_OPERATION, {
+		throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 			operation,
 			...context,
 		});

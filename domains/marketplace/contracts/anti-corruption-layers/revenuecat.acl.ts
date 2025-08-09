@@ -1,7 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
+import { GrpcSubscriptionDataSchema, RevenueCatSubscriptionSchema } from '../schemas/user/user.schemas';
 import { Marketplace } from '../types/context-mapping.types';
-import { GrpcSubscriptionDataSchema, RevenueCatSubscriptionSchema } from '../types/user/user.schemas';
 
 /**
  * Anti-Corruption Layer for RevenueCat integration

@@ -1,7 +1,10 @@
-import { AppError } from '@app/nest/errors';
-import { CreateVendorSchema, UpdateVendorSchema } from '@domains/infrastructure/contracts/types/vendor/vendor.schemas';
+import { AppError, ErrorCodes } from '@app/nest/errors';
+import {
+	CreateVendorSchema,
+	UpdateVendorSchema,
+} from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
+import { CreateVendorData, UpdateVendorData } from '@domains/infrastructure/contracts/types/vendor/vendor.types';
 import { Injectable, Logger } from '@nestjs/common';
-import { Infrastructure } from '../types/context-mapping.types';
 
 /**
  * Anti-Corruption Layer for vendor HTTP data validation
@@ -13,7 +16,7 @@ export class VendorHttpACL {
 	/**
 	 * Validate vendor creation data
 	 */
-	validateVendorCreateData(data: unknown): data is Infrastructure.Core.VendorCreateData {
+	validateVendorCreateData(data: unknown): data is CreateVendorData {
 		try {
 			const result = CreateVendorSchema.safeParse(data);
 			if (!result.success) {
@@ -35,7 +38,7 @@ export class VendorHttpACL {
 	/**
 	 * Validate vendor update data
 	 */
-	validateVendorUpdateData(data: unknown): data is Infrastructure.Core.VendorUpdateData {
+	validateVendorUpdateData(data: unknown): data is UpdateVendorData {
 		try {
 			const result = UpdateVendorSchema.safeParse(data);
 			if (!result.success) {
@@ -58,12 +61,24 @@ export class VendorHttpACL {
 	 * Handle vendor error
 	 */
 	handleVendorError(error: unknown, context: { operation: string; vendorId?: string }): never {
+		// If it's already an AppError, rethrow it
+		if (error instanceof AppError) {
+			throw error;
+		}
+
+		// Log the error with context
 		this.logger.error('Vendor operation failed', {
 			error: error instanceof Error ? error.message : 'Unknown error',
 			operation: context.operation,
 			vendorId: context.vendorId,
+			stack: error instanceof Error ? error.stack : undefined,
 		});
 
-		throw AppError.internal('VENDOR_OPERATION_FAILED', 'Vendor operation failed', context);
+		// Throw standardized error
+		throw AppError.internal(ErrorCodes.ERR_INFRA_GATEWAY_ERROR, {
+			message: 'Vendor operation failed',
+			operation: context.operation,
+			vendorId: context.vendorId,
+		});
 	}
 }

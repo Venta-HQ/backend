@@ -1,6 +1,6 @@
 import { CloudinaryService } from '@app/nest/modules';
 import { CloudinaryACL } from '@domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace-context-mapper';
+import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
 import { Module } from '@nestjs/common';
 import { UploadController } from './controllers/upload/upload.controller';
 import { UploadService } from './services/upload/upload.service';

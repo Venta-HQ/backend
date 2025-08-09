@@ -50,3 +50,19 @@ export function toMarketplaceVendorUpdate(
 		userId: data.userId,
 	};
 }
+
+/**
+ * Maps user vendor request from infrastructure domain to marketplace domain
+ */
+export function toGrpcUserVendorRequest(userId: string): Marketplace.Core.UserVendorRequest {
+	if (!userId) {
+		throw AppError.validation(ErrorCodes.ERR_MISSING_REQUIRED_FIELD, {
+			field: 'userId',
+			message: 'User ID is required',
+		});
+	}
+
+	return {
+		userId,
+	};
+}

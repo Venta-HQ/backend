@@ -7,20 +7,20 @@ import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorManagementServiceClient,
 } from '@app/proto/marketplace/vendor-management';
-import { VendorHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/vendor-http-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace-context-mapper';
+import { VendorHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/vendor-http.acl';
+import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
+import { CreateVendorSchema } from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
+import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
-import { CreateVendorSchema } from '@domains/infrastructure/contracts/types/vendor/vendor.schemas';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
-
-type AuthedRequest = Infrastructure.Internal.AuthedRequest;
 
 @Controller('vendors')
 export class VendorController {
+	private readonly contextMapper = InfrastructureToMarketplaceContextMapper;
+
 	constructor(
 		@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>,
 		private readonly vendorACL: VendorHttpACL,
-		private readonly contextMapper: InfrastructureToMarketplaceContextMapper,
 	) {}
 
 	@Get('/:id')
@@ -50,7 +50,10 @@ export class VendorController {
 			}
 
 			// Convert to gRPC request
-			const grpcData = this.contextMapper.toGrpcVendorCreateData(data, req.userId);
+			const grpcData = this.contextMapper.toMarketplaceVendorCreate({
+				...data,
+				userId: req.userId,
+			});
 
 			return await firstValueFrom(
 				this.client.invoke('createVendor', grpcData).pipe(
@@ -86,7 +89,11 @@ export class VendorController {
 			}
 
 			// Convert to gRPC request
-			const grpcData = this.contextMapper.toGrpcVendorUpdateData(data, id, req.userId);
+			const grpcData = this.contextMapper.toMarketplaceVendorUpdate({
+				...data,
+				id,
+				userId: req.userId,
+			});
 
 			return await firstValueFrom(
 				this.client.invoke('updateVendor', grpcData).pipe(

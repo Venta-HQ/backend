@@ -1,7 +1,12 @@
 import { Express } from 'express';
+import { lastValueFrom } from 'rxjs';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { GrpcInstance } from '@app/nest/modules';
-import { FILE_MANAGEMENT_SERVICE_NAME, FileManagementServiceClient } from '@app/proto/infrastructure/file-management';
+import {
+	FILE_MANAGEMENT_SERVICE_NAME,
+	FileManagementServiceClient,
+	FileType,
+} from '@app/proto/infrastructure/file-management';
 import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 
@@ -49,15 +54,16 @@ export class UploadController {
 				});
 			}
 
-			const result = await this.fileManagementClient
-				.invoke('uploadImage', {
+			const result = await lastValueFrom(
+				this.fileManagementClient.invoke('uploadImage', {
 					content: file.buffer,
 					filename: file.originalname,
 					mimetype: file.mimetype,
 					size: file.size,
+					type: FileType.AVATAR,
 					uploadedBy: 'system', // TODO: Get from auth context
-				})
-				.toPromise();
+				}),
+			);
 
 			return result;
 		} catch (error) {

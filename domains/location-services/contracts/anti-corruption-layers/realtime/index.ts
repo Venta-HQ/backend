@@ -1,2 +1,2 @@
-export * from './nats-acl';
-export * from './websocket-acl';
+export * from './nats.acl';
+export * from './websocket.acl';

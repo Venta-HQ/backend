@@ -1,7 +1,7 @@
 import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
-import { LocationExternalServiceACL } from './anti-corruption-layers/location-external-service-acl';
-import { LocationToMarketplaceContextMapper } from './context-mappers/location-to-marketplace-context-mapper';
+import { LocationExternalServiceACL } from './anti-corruption-layers/location-external-service.acl';
+import * as LocationToMarketplaceContextMapper from './context-mappers/location-to-marketplace.context-mapper';
 
 /**
  * Location Services Contracts Module
@@ -11,7 +11,7 @@ import { LocationToMarketplaceContextMapper } from './context-mappers/location-t
  */
 @Module({
 	imports: [PrometheusModule.register()],
-	providers: [LocationToMarketplaceContextMapper, LocationExternalServiceACL],
-	exports: [LocationToMarketplaceContextMapper, LocationExternalServiceACL],
+	providers: [LocationExternalServiceACL],
+	exports: [LocationExternalServiceACL],
 })
 export class LocationContractsModule {}

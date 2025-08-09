@@ -36,7 +36,7 @@ export class LocationTrackingService {
 				entityId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS, {
+			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
 				operation: 'update_vendor_status',
 				entityId,
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -70,7 +70,7 @@ export class LocationTrackingService {
 				entityId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_vendor_status',
 				entityId,
 				error: error instanceof Error ? error.message : 'Unknown error',

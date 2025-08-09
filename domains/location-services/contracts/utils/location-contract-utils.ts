@@ -1,5 +1,5 @@
+import { ValidationUtils } from '@app/utils';
 import { Logger } from '@nestjs/common';
-import { ValidationUtils, TransformationUtils } from '@app/utils';
 
 /**
  * Location Services Contract Utilities
@@ -60,4 +60,4 @@ export class LocationContractUtils {
 
 		return isValid;
 	}
-} 
+}

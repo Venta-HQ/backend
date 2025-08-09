@@ -1,4 +1,4 @@
-import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
 import { clearMocks, data, errors, mockPrisma } from '@test/helpers/test-utils';
 import { SubscriptionService } from './subscription.service';
 

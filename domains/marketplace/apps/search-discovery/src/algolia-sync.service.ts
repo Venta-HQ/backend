@@ -1,7 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { AlgoliaService } from '@app/nest/modules';
 import { AlgoliaACL } from '@domains/marketplace/contracts/anti-corruption-layers/search/algolia-acl';
-import { SearchToMarketplaceContextMapper } from '@domains/marketplace/contracts/context-mappers/search/search-to-marketplace-context-mapper';
+import { SearchToMarketplaceContextMapper } from '@domains/marketplace/contracts/context-mappers/search/search-to-marketplace.context-mapper';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';

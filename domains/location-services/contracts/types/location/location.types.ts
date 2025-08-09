@@ -10,7 +10,7 @@ import {
 	UpdateUserLocationDataSchema as BaseUpdateUserLocationDataSchema,
 	VendorLocationRequestSchema as BaseVendorLocationRequestSchema,
 	VendorLocationUpdateDataSchema as BaseVendorLocationUpdateDataSchema,
-} from '../location.schemas';
+} from '../../schemas/location.schemas';
 
 export namespace Location {
 	export namespace Core {
@@ -74,16 +74,5 @@ export namespace Location {
 		export type GeoMember = z.infer<typeof BaseGeoMemberSchema>;
 	}
 
-	export namespace Validation {
-		export const LocationSchema = BaseLocationDataSchema;
-		export const LocationUpdateSchema = BaseLocationUpdateDataSchema;
-		export const VendorLocationUpdateSchema = BaseVendorLocationUpdateDataSchema;
-		export const UserLocationUpdateSchema = BaseUpdateUserLocationDataSchema;
-		export const GrpcLocationSchema = BaseGrpcLocationSchema;
-		export const GrpcLocationUpdateSchema = BaseGrpcLocationUpdateSchema;
-		export const GrpcVendorLocationRequestSchema = BaseGrpcVendorLocationRequestSchema;
-		export const GeoMemberSchema = BaseGeoMemberSchema;
-		export const GeospatialQuerySchema = BaseGeospatialQuerySchema;
-		export const VendorLocationRequestSchema = BaseVendorLocationRequestSchema;
-	}
+	// Validation schemas are defined in '../schemas/location.schemas'
 }

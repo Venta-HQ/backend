@@ -4,7 +4,12 @@ import {
 	FileUploadDataSchema as BaseFileUploadDataSchema,
 	type FileUploadData as BaseFileUploadData,
 } from './file/file.types';
-import { UserDataSchema as BaseUserDataSchema, type UserData as BaseUserData } from './user/user.types';
+import {
+	UserDataSchema as BaseUserDataSchema,
+	UserVendorRequestSchema as BaseUserVendorRequestSchema,
+	type UserData as BaseUserData,
+	type UserVendorRequest as BaseUserVendorRequest,
+} from './user/user.types';
 import {
 	CreateVendorSchema as BaseCreateVendorSchema,
 	UpdateVendorSchema as BaseUpdateVendorSchema,
@@ -37,6 +42,8 @@ export namespace Infrastructure {
 		export interface UserRequest {
 			userId: string;
 		}
+
+		export type UserVendorRequest = BaseUserVendorRequest;
 	}
 
 	export namespace Internal {
@@ -62,6 +69,7 @@ export namespace Infrastructure {
 		export const UserSchema = BaseUserDataSchema;
 		export const CreateVendorSchema = BaseCreateVendorSchema;
 		export const UpdateVendorSchema = BaseUpdateVendorSchema;
+		export const UserVendorRequestSchema = BaseUserVendorRequestSchema;
 
 		export const VendorCreateRequestSchema = BaseCreateVendorSchema.extend({
 			userId: z.string().uuid(),

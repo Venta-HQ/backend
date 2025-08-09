@@ -1,7 +1,6 @@
 import { BootstrapModule, PrismaModule } from '@app/nest/modules';
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk-anti-corruption-layer';
-import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
-import { MarketplaceToLocationContextMapper } from '@domains/marketplace/contracts/context-mappers/marketplace-to-location-context-mapper';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
 import { Module } from '@nestjs/common';
 import { UserManagementController } from './user-management.controller';
 import { UserManagementService } from './user-management.service';
@@ -16,11 +15,6 @@ import { UserManagementService } from './user-management.service';
 		PrismaModule,
 	],
 	controllers: [UserManagementController],
-	providers: [
-		UserManagementService,
-		ClerkAntiCorruptionLayer,
-		RevenueCatAntiCorruptionLayer,
-		MarketplaceToLocationContextMapper,
-	],
+	providers: [UserManagementService, ClerkAntiCorruptionLayer, RevenueCatAntiCorruptionLayer],
 })
 export class CoreModule {}

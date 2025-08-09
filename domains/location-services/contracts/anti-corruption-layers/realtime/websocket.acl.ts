@@ -129,20 +129,20 @@ export class WebSocketACL {
 		}
 
 		if (error.message.includes('unauthorized')) {
-			throw AppError.unauthorized(ErrorCodes.ERR_WS_AUTH, {
+			throw AppError.unauthorized(ErrorCodes.ERR_WS_AUTH_FAILED, {
 				operation,
 				...context,
 			});
 		}
 
 		if (error.message.includes('connection')) {
-			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION, {
+			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
 				operation,
 				...context,
 			});
 		}
 
-		throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION, {
+		throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
 			operation,
 			...context,
 		});

@@ -2,7 +2,7 @@ import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
-import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk-anti-corruption-layer';
+import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk.acl';
 
 interface UserIdentityData {
 	clerkId: string;
@@ -32,8 +32,9 @@ export class AuthService {
 		this.logger.log('Handling user identity creation from external auth provider', { clerkId: id });
 
 		try {
-			// Use anti-corruption layer to validate and transform Clerk data
-			const validatedClerkData = this.clerkACL.validateUserCreationData({ clerkId: id });
+			// Use anti-corruption layer to validate Clerk user identity
+			this.clerkACL.validateUserIdentity({ id });
+			const validatedClerkData = { clerkId: id };
 
 			const userExists = await this.prisma.db.user.count({
 				where: {
@@ -64,9 +65,9 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity creation', error.stack, { clerkId: id, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity creation', {
-				clerkId: id,
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'handle_user_created',
+				clerkId: id,
 			});
 		}
 	}
@@ -79,8 +80,9 @@ export class AuthService {
 		this.logger.log('Handling user identity deletion from external auth provider', { clerkId: id });
 
 		try {
-			// Use anti-corruption layer to validate and transform Clerk data
-			const validatedClerkData = this.clerkACL.validateUserDeletionData({ clerkId: id });
+			// Use anti-corruption layer to validate Clerk user identity
+			this.clerkACL.validateUserIdentity({ id });
+			const validatedClerkData = { clerkId: id };
 
 			// Get user before deletion for potential event emission
 			const user = await this.prisma.db.user.findFirst({
@@ -104,9 +106,9 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity deletion', error.stack, { clerkId: id, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to handle user identity deletion', {
-				clerkId: id,
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'handle_user_deleted',
+				clerkId: id,
 			});
 		}
 	}
@@ -146,9 +148,9 @@ export class AuthService {
 				providerId: integrationData.providerId,
 				error,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create authentication integration record', {
-				clerkUserId: integrationData.clerkUserId,
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_auth_integration',
+				clerkUserId: integrationData.clerkUserId,
 				providerId: integrationData.providerId,
 			});
 		}
@@ -192,7 +194,7 @@ export class AuthService {
 			}
 		} catch (error) {
 			this.logger.error('Failed to delete authentication integration record', error.stack, { providerId, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to delete authentication integration record', {
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'delete_auth_integration',
 				providerId,
 			});

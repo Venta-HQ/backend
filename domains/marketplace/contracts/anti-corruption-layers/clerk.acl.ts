@@ -1,7 +1,7 @@
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
+import { ClerkUserSchema, GrpcUserIdentitySchema } from '../schemas/user/user.schemas';
 import { Marketplace } from '../types/context-mapping.types';
-import { ClerkUserSchema, GrpcUserIdentitySchema } from '../types/user/user.schemas';
 
 /**
  * Anti-Corruption Layer for Clerk integration

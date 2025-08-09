@@ -46,20 +46,20 @@ export function toMarketplaceUserLocation(
 export function toMarketplaceGeospatialBounds(
 	data: LocationServices.Location.Contracts.VendorLocationRequest,
 ): Marketplace.Core.LocationBounds {
-	if (!data.neLocation || !data.swLocation) {
+	if (!data.bounds || !data.bounds.sw || !data.bounds.ne) {
 		throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
 			message: 'Both neLocation and swLocation are required',
 		});
 	}
 
 	return {
-		neBounds: {
-			lat: data.neLocation.lat,
-			long: data.neLocation.long,
+		ne: {
+			lat: data.bounds.ne.lat,
+			long: data.bounds.ne.long,
 		},
-		swBounds: {
-			lat: data.swLocation.lat,
-			long: data.swLocation.long,
+		sw: {
+			lat: data.bounds.sw.lat,
+			long: data.bounds.sw.long,
 		},
 	};
 }

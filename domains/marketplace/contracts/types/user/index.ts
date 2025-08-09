@@ -1,2 +1,3 @@
-// User domain types and schemas
-export * from './user.schemas';
+// User domain types
+// Note: schemas moved to contracts/schemas/user/user.schemas
+export * from '../../schemas/user/user.schemas';

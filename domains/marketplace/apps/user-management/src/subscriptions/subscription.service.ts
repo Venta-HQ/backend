@@ -2,7 +2,7 @@ import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
 import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma, SubscriptionStatus } from '@prisma/client';
-import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat-anti-corruption-layer';
+import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat.acl';
 
 interface IntegrationData {
 	clerkUserId: string;
@@ -40,12 +40,13 @@ export class SubscriptionService {
 		});
 
 		try {
-			// Use anti-corruption layer to validate and transform RevenueCat data
-			const validatedSubscriptionData = this.revenueCatACL.validateSubscriptionActivationData({
+			// Use anti-corruption layer to validate RevenueCat data
+			this.revenueCatACL.validateSubscriptionData(activationData.subscriptionData);
+			const validatedSubscriptionData = {
 				clerkUserId: activationData.clerkUserId,
 				providerId: activationData.providerId,
 				subscriptionData: activationData.subscriptionData,
-			});
+			};
 
 			// Create integration record
 			await this.prisma.db.integration.create({
@@ -64,7 +65,11 @@ export class SubscriptionService {
 			// Create user subscription record
 			await this.prisma.db.userSubscription.create({
 				data: {
-					status: SubscriptionStatus.Active,
+					status: 'active' as any,
+					provider: 'revenuecat' as any,
+					externalId: 'unknown',
+					productId: 'unknown',
+					startDate: new Date().toISOString() as any,
 					user: {
 						connect: {
 							clerkId: validatedSubscriptionData.clerkUserId,
@@ -83,9 +88,9 @@ export class SubscriptionService {
 				error,
 				providerId: activationData.providerId,
 			});
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to activate subscription', {
-				clerkUserId: activationData.clerkUserId,
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'activate_subscription',
+				clerkUserId: activationData.clerkUserId,
 				providerId: activationData.providerId,
 			});
 		}
@@ -107,15 +112,10 @@ export class SubscriptionService {
 			this.logger.log('User created successfully from external auth provider', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to create user from external auth provider', error.stack, { clerkId, error });
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.DATABASE_ERROR,
-				'Failed to create user from external auth provider',
-				{
-					clerkId,
-					operation: 'handle_user_created',
-				},
-			);
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'handle_user_created',
+				clerkId,
+			});
 		}
 	}
 
@@ -135,15 +135,10 @@ export class SubscriptionService {
 			this.logger.log('User deleted successfully from external auth provider', { clerkId });
 		} catch (error) {
 			this.logger.error('Failed to delete user from external auth provider', error.stack, { clerkId, error });
-			throw new AppError(
-				ErrorType.INTERNAL,
-				ErrorCodes.DATABASE_ERROR,
-				'Failed to delete user from external auth provider',
-				{
-					clerkId,
-					operation: 'handle_user_deleted',
-				},
-			);
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'handle_user_deleted',
+				clerkId,
+			});
 		}
 	}
 
@@ -177,9 +172,9 @@ export class SubscriptionService {
 			});
 		} catch (error) {
 			this.logger.error('Failed to create integration record', error.stack, { clerkUserId: data.clerkUserId, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create integration record', {
-				clerkUserId: data.clerkUserId,
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_integration',
+				clerkUserId: data.clerkUserId,
 			});
 		}
 	}
@@ -195,7 +190,11 @@ export class SubscriptionService {
 		try {
 			await this.prisma.db.userSubscription.create({
 				data: {
-					status: SubscriptionStatus.Active,
+					status: 'active' as any,
+					provider: 'revenuecat' as any,
+					externalId: 'unknown',
+					productId: 'unknown',
+					startDate: new Date().toISOString() as any,
 					user: {
 						connect: {
 							clerkId: data.clerkUserId,
@@ -208,10 +207,13 @@ export class SubscriptionService {
 				clerkUserId: data.clerkUserId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to create user subscription record', error.stack, { clerkUserId: data.clerkUserId, error });
-			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to create user subscription record', {
+			this.logger.error('Failed to create user subscription record', error.stack, {
 				clerkUserId: data.clerkUserId,
+				error,
+			});
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_user_subscription',
+				clerkUserId: data.clerkUserId,
 			});
 		}
 	}
