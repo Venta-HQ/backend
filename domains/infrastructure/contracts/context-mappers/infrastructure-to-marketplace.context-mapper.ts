@@ -1,4 +1,4 @@
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { CreateVendorData, UpdateVendorData } from '../types/vendor/vendor.types';
 

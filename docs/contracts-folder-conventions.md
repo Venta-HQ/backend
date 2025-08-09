@@ -90,7 +90,7 @@ domains/<domain>/contracts/
 - ACLs (injectable):
 
   ```ts
-  import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+  import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
 
   @Injectable()
   export class MyService {
@@ -101,7 +101,7 @@ domains/<domain>/contracts/
 - Mappers (functions; not providers):
 
   ```ts
-  import * as MarketplaceToLocation from '@domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
+  import * as MarketplaceToLocation from '@venta/domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
 
   const dto = MarketplaceToLocation.toLocationVendorLocation(input);
   ```
@@ -109,7 +109,7 @@ domains/<domain>/contracts/
 - Schemas:
 
   ```ts
-  import { CreateVendorSchema } from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
+  import { CreateVendorSchema } from '@venta/domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
   ```
 
 - Public entrypoint:
@@ -119,7 +119,7 @@ domains/<domain>/contracts/
   	ClerkAntiCorruptionLayer,
   	MarketplaceContractsModule,
   	MarketplaceToLocationContextMapper,
-  } from '@domains/marketplace/contracts';
+  } from '@venta/domains/marketplace/contracts';
 
   // namespace re-export
   ```

@@ -1,5 +1,5 @@
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { LocationServices } from '../../types/context-mapping.types';
 
 /**

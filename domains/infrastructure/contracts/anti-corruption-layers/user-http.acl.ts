@@ -1,5 +1,5 @@
-import { UserVendorRequestSchema } from '@domains/infrastructure/contracts/schemas/user/user.schemas';
 import { Injectable, Logger } from '@nestjs/common';
+import { UserVendorRequestSchema } from '@venta/domains/infrastructure/contracts/schemas/user/user.schemas';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Infrastructure } from '../types/context-mapping.types';
 

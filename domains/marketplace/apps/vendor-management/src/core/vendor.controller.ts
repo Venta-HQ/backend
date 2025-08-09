@@ -1,6 +1,6 @@
-import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@domains/marketplace/contracts/types';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@venta/domains/marketplace/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {

@@ -1,5 +1,5 @@
-import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable } from '@nestjs/common';
+import { SearchDiscovery } from '@venta/domains/marketplace/contracts/types/search/context-mapping.types';
 
 /**
  * Context mapper for translating between Search & Discovery and Marketplace domains

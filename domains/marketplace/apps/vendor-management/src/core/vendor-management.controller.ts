@@ -1,6 +1,6 @@
-import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { VendorACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 import {

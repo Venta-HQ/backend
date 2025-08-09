@@ -1,9 +1,9 @@
 import {
 	CommunicationEventDataMap,
 	communicationEventSchemas,
-} from '@domains/communication/events/communication.events';
-import { LocationEventDataMap, locationEventSchemas } from '@domains/location-services/events/location.events';
-import { VendorEventDataMap, vendorEventSchemas } from '@domains/marketplace/events/vendor/vendor.events';
+} from '@venta/domains/communication/events/communication.events';
+import { LocationEventDataMap, locationEventSchemas } from '@venta/domains/location-services/events/location.events';
+import { VendorEventDataMap, vendorEventSchemas } from '@venta/domains/marketplace/events/vendor/vendor.events';
 import { ValidDomain, ValidSubdomain } from './event-schema-types';
 
 /**

@@ -1,6 +1,6 @@
-import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';

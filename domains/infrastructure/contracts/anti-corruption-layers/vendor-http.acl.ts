@@ -1,9 +1,9 @@
+import { Injectable, Logger } from '@nestjs/common';
 import {
 	CreateVendorSchema,
 	UpdateVendorSchema,
-} from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
-import { CreateVendorData, UpdateVendorData } from '@domains/infrastructure/contracts/types/vendor/vendor.types';
-import { Injectable, Logger } from '@nestjs/common';
+} from '@venta/domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
+import { CreateVendorData, UpdateVendorData } from '@venta/domains/infrastructure/contracts/types/vendor/vendor.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**

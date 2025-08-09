@@ -1,7 +1,7 @@
-import { WebSocketACL } from '@domains/location-services/contracts/anti-corruption-layers/realtime';
-import { RealtimeToMarketplaceContextMapper } from '@domains/location-services/contracts/context-mappers/realtime';
-import { LocationContractsModule } from '@domains/location-services/contracts/location-contracts.module';
 import { Module } from '@nestjs/common';
+import { WebSocketACL } from '@venta/domains/location-services/contracts/anti-corruption-layers/realtime';
+import { RealtimeToMarketplaceContextMapper } from '@venta/domains/location-services/contracts/context-mappers/realtime';
+import { LocationContractsModule } from '@venta/domains/location-services/contracts/location-contracts.module';
 import { PrometheusService } from '@venta/nest/modules';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';

@@ -1,6 +1,6 @@
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { FileManagementService } from '../../../core/services/file-management/file-management.service';

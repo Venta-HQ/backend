@@ -1,10 +1,10 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { VendorHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/vendor-http.acl';
-import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
-import { CreateVendorSchema } from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
-import { AuthedRequest } from '@domains/infrastructure/contracts/types';
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
+import { VendorHttpACL } from '@venta/domains/infrastructure/contracts/anti-corruption-layers/vendor-http.acl';
+import * as InfrastructureToMarketplaceContextMapper from '@venta/domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
+import { CreateVendorSchema } from '@venta/domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
+import { AuthedRequest } from '@venta/domains/infrastructure/contracts/types';
+import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';

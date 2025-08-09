@@ -1,5 +1,5 @@
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';

@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
-import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 @Injectable()

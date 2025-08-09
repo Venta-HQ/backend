@@ -1,7 +1,7 @@
-import { CommunicationToMarketplaceContextMapper } from '@domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
-import { Communication } from '@domains/communication/contracts/types/context-mapping.types';
-import { RevenueCatWebhookPayload } from '@domains/communication/contracts/types/external/revenuecat.types';
 import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import { CommunicationToMarketplaceContextMapper } from '@venta/domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
+import { Communication } from '@venta/domains/communication/contracts/types/context-mapping.types';
+import { RevenueCatWebhookPayload } from '@venta/domains/communication/contracts/types/external/revenuecat.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SignedWebhookGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';

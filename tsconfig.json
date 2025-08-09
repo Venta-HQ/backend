@@ -23,7 +23,7 @@
 			"@venta/eventtypes": ["libs/eventtypes/src"],
 			"@venta/eventtypes/*": ["libs/eventtypes/src/*"],
 			"@venta/utils": ["libs/utils/src"],
-			"@domains/*": ["domains/*"],
+			"@venta/domains/*": ["domains/*"],
 			"@test/helpers": ["test/helpers"],
 			"@test/helpers/*": ["test/helpers/*"]
 		}

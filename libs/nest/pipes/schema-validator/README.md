@@ -23,7 +23,7 @@ This pipe provides:
 Apply schema validation to controller endpoints:
 
 ```typescript
-import { userCreateSchema } from '@domains/marketplace/contracts/types';
+import { userCreateSchema } from '@venta/domains/marketplace/contracts/types';
 import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Controller('users')
@@ -42,7 +42,7 @@ export class UserController {
 Use different schemas for different operations:
 
 ```typescript
-import { userCreateSchema, userLoginSchema, userUpdateSchema } from '@domains/marketplace/contracts/types';
+import { userCreateSchema, userLoginSchema, userUpdateSchema } from '@venta/domains/marketplace/contracts/types';
 import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Controller('users')

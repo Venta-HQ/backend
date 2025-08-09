@@ -1,4 +1,4 @@
-import { Communication } from '@domains/communication/contracts/types/context-mapping.types';
+import { Communication } from '@venta/domains/communication/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Marketplace } from '../types/context-mapping.types';
 

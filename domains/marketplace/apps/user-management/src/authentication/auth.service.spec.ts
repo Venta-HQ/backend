@@ -1,6 +1,6 @@
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
 import { IntegrationType } from '@prisma/client';
 import { clearMocks, data, mockPrisma } from '@test/helpers/test-utils';
+import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
 import { AuthService } from './auth.service';
 
 describe('AuthService', () => {

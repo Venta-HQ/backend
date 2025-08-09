@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**

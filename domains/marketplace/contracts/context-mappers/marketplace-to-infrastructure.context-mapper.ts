@@ -1,4 +1,4 @@
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
+import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Marketplace } from '../types/context-mapping.types';
 

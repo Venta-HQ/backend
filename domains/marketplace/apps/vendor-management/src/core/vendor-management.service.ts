@@ -1,6 +1,6 @@
-import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { VendorACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
 import {

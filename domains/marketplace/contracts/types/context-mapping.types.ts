@@ -6,7 +6,7 @@
  */
 
 import { z } from 'zod';
-import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
+import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
 
 export namespace Marketplace {
 	// ============================================================================

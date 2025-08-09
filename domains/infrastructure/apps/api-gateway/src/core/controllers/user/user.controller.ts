@@ -1,8 +1,8 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { UserHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/user-http.acl';
-import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
-import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
+import { UserHttpACL } from '@venta/domains/infrastructure/contracts/anti-corruption-layers/user-http.acl';
+import * as InfrastructureToMarketplaceContextMapper from '@venta/domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
+import { AuthedRequest } from '@venta/domains/infrastructure/contracts/types';
 import { AuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';

@@ -1,7 +1,7 @@
-import { CloudinaryACL } from '@domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
-import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { CloudinaryACL } from '@venta/domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
+import { InfrastructureToMarketplaceContextMapper } from '@venta/domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
+import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { CloudinaryService } from '@venta/nest/modules';
 

@@ -1,8 +1,8 @@
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
-import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import { RevenueCatAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
