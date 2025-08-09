@@ -1,9 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { AppError, ErrorCodes } from '@app/nest/errors';
-import { AuthenticatedSocket } from '@app/nest/guards/types';
-import { WsAuthGuard } from '@app/nest/guards/ws-auth';
-import { WsRateLimitGuard } from '@app/nest/guards/ws-rate-limit';
-import { GeolocationService } from '@domains/location-services/apps/geolocation/src/core/geolocation.service';
+import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@app/nest/guards';
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Logger, UseGuards } from '@nestjs/common';
 import {
 	OnGatewayConnection,
@@ -29,7 +27,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
-		private readonly geolocationService: GeolocationService,
+		private readonly geolocationService: LocationServices.Location.Contracts.GeolocationService,
 	) {}
 
 	/**

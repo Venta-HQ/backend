@@ -38,6 +38,18 @@ export namespace Location {
 				};
 			};
 		};
+
+		export interface GeolocationService {
+			updateVendorLocation(request: {
+				entityId: string;
+				coordinates: {
+					lat: number;
+					long: number;
+				};
+			}): Promise<void>;
+
+			getNearbyVendors(request: VendorLocationRequest): Promise<Internal.VendorLocation[]>;
+		}
 	}
 
 	export namespace Internal {

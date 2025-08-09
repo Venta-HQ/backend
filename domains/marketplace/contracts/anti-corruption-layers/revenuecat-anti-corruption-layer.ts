@@ -78,7 +78,7 @@ export class RevenueCatAntiCorruptionLayer {
 			userId: context.userId,
 		});
 
-		throw AppError.externalService(ErrorCodes.ERR_SERVICE_UNAVAILABLE, {
+		throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
 			service: 'revenuecat',
 			message: error instanceof Error ? error.message : 'Unknown error',
 			operation: context.operation,
