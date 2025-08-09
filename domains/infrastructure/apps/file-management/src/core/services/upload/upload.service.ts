@@ -1,3 +1,4 @@
+import { PassThrough } from 'stream';
 import { v2 as cloudinary } from 'cloudinary';
 import { Injectable, Logger } from '@nestjs/common';
 import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
@@ -73,8 +74,7 @@ export class UploadService {
 				});
 			});
 
-			const stream = require('stream');
-			const bufferStream = new stream.PassThrough();
+			const bufferStream = new PassThrough();
 			bufferStream.end(buffer);
 			bufferStream.pipe(upload);
 		});
