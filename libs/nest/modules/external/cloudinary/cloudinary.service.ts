@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiOptions, UploadApiResponse } from 'cloudinary';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -14,8 +14,8 @@ export class CloudinaryService {
 		});
 	}
 
-	async uploadBuffer(buffer: Buffer, options: cloudinary.UploadApiOptions = {}) {
-		return new Promise<cloudinary.UploadApiResponse>((resolve, reject) => {
+	async uploadBuffer(buffer: Buffer, options: UploadApiOptions = {}) {
+		return new Promise<UploadApiResponse>((resolve, reject) => {
 			const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
 				if (error) return reject(error);
 				if (!result) return reject(new Error('No result from Cloudinary'));
