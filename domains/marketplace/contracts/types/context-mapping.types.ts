@@ -6,6 +6,7 @@
  */
 
 import { z } from 'zod';
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 
 export namespace Marketplace {
 	// ============================================================================
@@ -51,13 +52,13 @@ export namespace Marketplace {
 
 		export interface VendorLocationUpdate {
 			vendorId: string;
-			location: Location;
+			location: LocationServices.Location.Core.Coordinates;
 			timestamp: string;
 		}
 
 		export interface GeospatialBounds {
-			neBounds: Location;
-			swBounds: Location;
+			ne: LocationServices.Location.Core.Coordinates;
+			sw: LocationServices.Location.Core.Coordinates;
 		}
 
 		/**
@@ -114,10 +115,7 @@ export namespace Marketplace {
 		/**
 		 * Location data
 		 */
-		export interface Location {
-			lat: number;
-			long: number;
-		}
+		export type Location = LocationServices.Location.Core.Coordinates;
 
 		export interface UserLocation extends Location {
 			userId: string;
@@ -129,10 +127,7 @@ export namespace Marketplace {
 			updatedAt: string;
 		}
 
-		export interface LocationBounds {
-			swBounds: Location;
-			neBounds: Location;
-		}
+		export type LocationBounds = LocationServices.Location.Internal.LocationBounds;
 	}
 
 	// ============================================================================
@@ -188,7 +183,7 @@ export namespace Marketplace {
 
 		export interface UserLocationUpdate {
 			userId: string;
-			location: Core.Location;
+			location: LocationServices.Location.Core.Coordinates;
 			timestamp: string;
 		}
 
@@ -203,7 +198,7 @@ export namespace Marketplace {
 		 */
 		export interface VendorLocationUpdate {
 			vendorId: string;
-			location: Core.Location;
+			location: LocationServices.Location.Core.Coordinates;
 			timestamp: string;
 		}
 
@@ -223,10 +218,7 @@ export namespace Marketplace {
 	// Zod schemas for validating domain types
 	// ============================================================================
 	export namespace Validation {
-		export const LocationSchema = z.object({
-			lat: z.number().min(-90).max(90),
-			long: z.number().min(-180).max(180),
-		});
+		export const LocationSchema = LocationServices.Location.Validation.LocationSchema;
 
 		export const VendorSchema = z.object({
 			id: z.string().uuid(),
@@ -289,7 +281,7 @@ export namespace Marketplace {
 
 		export interface VendorLocationChanged {
 			vendorId: string;
-			location: Core.Location;
+			location: LocationServices.Location.Core.Coordinates;
 			timestamp: string;
 		}
 
@@ -315,7 +307,7 @@ export namespace Marketplace {
 
 		export interface UserLocationChanged {
 			userId: string;
-			location: Core.Location;
+			location: LocationServices.Location.Core.Coordinates;
 			timestamp: string;
 		}
 

@@ -13,12 +13,12 @@ export const protobufPackage = "location_services.geolocation";
 
 export interface LocationUpdate {
   entityId: string;
-  location: Location | undefined;
+  coordinates: Location | undefined;
 }
 
 export interface VendorLocationRequest {
-  neLocation: Location | undefined;
-  swLocation: Location | undefined;
+  ne: Location | undefined;
+  sw: Location | undefined;
 }
 
 export interface VendorLocationResponse {
@@ -26,13 +26,13 @@ export interface VendorLocationResponse {
 }
 
 export interface VendorLocation {
-  id: string;
-  location: Location | undefined;
+  vendorId: string;
+  coordinates: Location | undefined;
 }
 
 export interface Location {
-  long: number;
   lat: number;
+  long: number;
 }
 
 export interface Empty {

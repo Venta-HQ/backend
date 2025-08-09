@@ -1,24 +1,25 @@
 import { z } from 'zod';
 import { createEventSchema, EnforceValidDomainEvents } from '@app/eventtypes';
+import { LocationServices } from '../contracts/types/context-mapping.types';
 
 // Location domain events with type enforcement
 export const locationEventSchemas = {
 	'location.vendor.location_updated': createEventSchema({
 		vendorId: z.string(),
-		location: z.object({
-			lat: z.number().min(-90).max(90),
-			lng: z.number().min(-180).max(180),
-		}),
-		timestamp: z.string().default(() => new Date().toISOString()),
+		location: LocationServices.Location.Validation.LocationSchema,
+		timestamp: z
+			.string()
+			.datetime()
+			.default(() => new Date().toISOString()),
 	}).withContext(['vendorId']),
 
 	'location.user.location_updated': createEventSchema({
 		userId: z.string(),
-		location: z.object({
-			lat: z.number().min(-90).max(90),
-			lng: z.number().min(-180).max(180),
-		}),
-		timestamp: z.string().default(() => new Date().toISOString()),
+		location: LocationServices.Location.Validation.LocationSchema,
+		timestamp: z
+			.string()
+			.datetime()
+			.default(() => new Date().toISOString()),
 	}).withContext(['userId']),
 } as const satisfies EnforceValidDomainEvents<'location'>;
 

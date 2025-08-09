@@ -26,6 +26,8 @@ export const ErrorsMap = {
 	ERR_INVALID_UUID: 'Invalid UUID format for "{uuid}"',
 	ERR_INVALID_EMAIL: 'Invalid email format for "{email}"',
 	ERR_INVALID_PHONE: 'Invalid phone number format for "{phone}"',
+	ERR_INVALID_COORDINATES: 'Invalid coordinates: lat={lat}, long={long}',
+	ERR_MISSING_REQUIRED_FIELD: 'Required field "{field}" is missing',
 
 	// Database
 	ERR_DB_CONNECTION: 'Database connection error',
@@ -38,6 +40,7 @@ export const ErrorsMap = {
 	ERR_EXTERNAL_SERVICE: 'External service "{service}" error: {message}',
 	ERR_SERVICE_UNAVAILABLE: 'Service "{service}" is currently unavailable',
 	ERR_SERVICE_TIMEOUT: 'Service "{service}" request timed out',
+	ERR_REDIS_OPERATION_FAILED: 'Redis operation "{operation}" failed: {errorType}',
 
 	// Rate Limiting
 	ERR_RATE_LIMIT: 'Rate limit exceeded. Try again in {seconds} seconds',

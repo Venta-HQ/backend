@@ -14,8 +14,8 @@ export class GeolocationController {
 	constructor(private readonly geolocationService: GeolocationService) {}
 
 	@GrpcMethod('GeolocationService', 'UpdateVendorLocation')
-	@UsePipes(new SchemaValidatorPipe(LocationServices.Validation.LocationUpdateSchema))
-	async updateVendorLocation(request: LocationServices.Contracts.LocationUpdate) {
+	@UsePipes(new SchemaValidatorPipe(LocationServices.Location.Validation.LocationUpdateSchema))
+	async updateVendorLocation(request: LocationServices.Location.Core.LocationUpdate) {
 		this.logger.debug('Handling vendor location update request', {
 			entityId: request.entityId,
 			coordinates: request.coordinates,
@@ -32,7 +32,7 @@ export class GeolocationController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
 				operation: 'update_vendor_location',
 				entityId: request.entityId,
 			});
@@ -40,11 +40,10 @@ export class GeolocationController {
 	}
 
 	@GrpcMethod('GeolocationService', 'GetNearbyVendors')
-	@UsePipes(new SchemaValidatorPipe(LocationServices.Validation.GeospatialQuerySchema))
-	async getNearbyVendors(request: LocationServices.Contracts.GeospatialQuery) {
+	@UsePipes(new SchemaValidatorPipe(LocationServices.Location.Validation.VendorLocationRequestSchema))
+	async getNearbyVendors(request: LocationServices.Location.Contracts.VendorLocationRequest) {
 		this.logger.debug('Handling nearby vendors request', {
 			bounds: request.bounds,
-			limit: request.limit,
 		});
 
 		try {
@@ -57,7 +56,7 @@ export class GeolocationController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY, {
+			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
 				operation: 'get_nearby_vendors',
 				bounds: request.bounds,
 			});

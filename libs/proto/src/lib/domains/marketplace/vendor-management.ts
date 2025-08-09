@@ -51,12 +51,12 @@ export interface VendorUpdateResponse {
 
 export interface VendorLocationUpdate {
   vendorId: string;
-  location: Location | undefined;
+  coordinates: Location | undefined;
 }
 
 export interface VendorLocationRequest {
-  swLocation: Location | undefined;
-  neLocation: Location | undefined;
+  ne: Location | undefined;
+  sw: Location | undefined;
 }
 
 export interface VendorLocationResponse {
@@ -66,7 +66,7 @@ export interface VendorLocationResponse {
 export interface Vendor {
   id: string;
   /** These lat/long values are used to show locations on the map without subscription to live location */
-  location:
+  coordinates:
     | Location
     | undefined;
   /** General details */
@@ -75,7 +75,7 @@ export interface Vendor {
   phone: string;
   email: string;
   website: string;
-  open: boolean;
+  isOpen: boolean;
   primaryImage: string;
   /** Metadata - using strings instead of google.protobuf.Timestamp */
   createdAt: string;
@@ -83,8 +83,8 @@ export interface Vendor {
 }
 
 export interface Location {
-  long: number;
   lat: number;
+  long: number;
 }
 
 export interface Empty {

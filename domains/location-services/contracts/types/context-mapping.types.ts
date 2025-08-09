@@ -14,5 +14,6 @@ export namespace LocationServices {
 		export import Core = LocationTypes.Core;
 		export import Contracts = LocationTypes.Contracts;
 		export import Internal = LocationTypes.Internal;
+		export import Validation = LocationTypes.Validation;
 	}
 }

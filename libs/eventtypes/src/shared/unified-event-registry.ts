@@ -1,5 +1,10 @@
+import {
+	CommunicationEventDataMap,
+	communicationEventSchemas,
+} from '@domains/communication/events/communication.events';
 import { LocationEventDataMap, locationEventSchemas } from '@domains/location-services/events/location.events';
 import { VendorEventDataMap, vendorEventSchemas } from '@domains/marketplace/events/vendor/vendor.events';
+import { ValidDomain, ValidSubdomain } from './event-schema-types';
 
 /**
  * Combine all domain event schemas
@@ -8,7 +13,7 @@ import { VendorEventDataMap, vendorEventSchemas } from '@domains/marketplace/eve
 export const ALL_EVENT_SCHEMAS = {
 	...vendorEventSchemas,
 	...locationEventSchemas,
-	// Add other domain schemas here as they're created
+	...communicationEventSchemas,
 } as const;
 
 /**
@@ -22,12 +27,12 @@ export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
  * This provides type safety for the second parameter of emit
  * Combines all domain event data mappings
  */
-export type EventDataMap = VendorEventDataMap & LocationEventDataMap;
+export type EventDataMap = VendorEventDataMap & LocationEventDataMap & CommunicationEventDataMap;
 
 /**
  * Get all event names for a specific domain
  */
-export function getEventsForDomain(domain: string): AvailableEventSubjects[] {
+export function getEventsForDomain(domain: ValidDomain): AvailableEventSubjects[] {
 	return Object.keys(ALL_EVENT_SCHEMAS).filter((eventName) =>
 		eventName.startsWith(`${domain}.`),
 	) as AvailableEventSubjects[];
@@ -36,7 +41,10 @@ export function getEventsForDomain(domain: string): AvailableEventSubjects[] {
 /**
  * Get all event names for a specific subdomain
  */
-export function getEventsForSubdomain(domain: string, subdomain: string): AvailableEventSubjects[] {
+export function getEventsForSubdomain<TDomain extends ValidDomain>(
+	domain: TDomain,
+	subdomain: ValidSubdomain<TDomain>,
+): AvailableEventSubjects[] {
 	return Object.keys(ALL_EVENT_SCHEMAS).filter((eventName) =>
 		eventName.startsWith(`${domain}.${subdomain}.`),
 	) as AvailableEventSubjects[];

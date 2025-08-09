@@ -3,8 +3,8 @@ import { z } from 'zod';
 /**
  * Base event interface that all events should extend
  */
-export interface BaseEvent {
-	context?: Record<string, any>;
+export interface BaseEvent<T = unknown> {
+	context?: Record<string, unknown>;
 	meta: {
 		eventId: string;
 		source: string;
@@ -14,7 +14,7 @@ export interface BaseEvent {
 		domain?: string;
 		subdomain?: string;
 	};
-	data: any;
+	data: T;
 }
 
 /**
@@ -22,7 +22,7 @@ export interface BaseEvent {
  */
 export interface ContextConfig {
 	fields: string[];
-	extract?: (data: any) => Record<string, any>;
+	extract?: (data: unknown) => Record<string, unknown>;
 }
 
 /**
@@ -51,12 +51,12 @@ export function createEventSchema<T extends z.ZodRawShape>(shape: T) {
 /**
  * Event handler function type
  */
-export type EventHandler<T = any> = (event: T) => Promise<void>;
+export type EventHandler<T = unknown> = (event: BaseEvent<T>) => Promise<void>;
 
 /**
  * Queue handler configuration
  */
-export interface QueueHandler {
-	handler: EventHandler;
+export interface QueueHandler<T = unknown> {
+	handler: EventHandler<T>;
 	subject: string;
 }

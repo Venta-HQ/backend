@@ -11,6 +11,14 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "infrastructure.file_management";
 
+/** Helper Types */
+export enum FileType {
+  AVATAR = 0,
+  LOGO = 1,
+  DOCUMENT = 2,
+  UNRECOGNIZED = -1,
+}
+
 /** Service Function Types */
 export interface UploadImageRequest {
   content: Uint8Array;
@@ -18,15 +26,13 @@ export interface UploadImageRequest {
   mimetype: string;
   size: number;
   uploadedBy: string;
+  type: FileType;
 }
 
 export interface FileUploadResponse {
+  fileId: string;
   url: string;
-  publicId: string;
-  format: string;
-  width: number;
-  height: number;
-  bytes: number;
+  uploadedAt: string;
 }
 
 export interface Empty {

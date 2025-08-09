@@ -11,12 +11,12 @@ service GeolocationService {
 
 message LocationUpdate {
     string entityId = 1;
-    Location location = 2;
+    Location coordinates = 2;
 }
 
 message VendorLocationRequest {
-    Location neLocation = 1;
-    Location swLocation = 2;
+    Location ne = 1;
+    Location sw = 2;
 }
 
 message VendorLocationResponse {
@@ -24,15 +24,15 @@ message VendorLocationResponse {
 }
 
 message VendorLocation {
-    string id = 1;
-    Location location = 2;
+    string vendorId = 1;
+    Location coordinates = 2;
 }
 
 // Helper Types
 
 message Location {
-    double long = 1;
-    double lat = 2;
+    double lat = 1;
+    double long = 2;
 }
 
 message Empty {
