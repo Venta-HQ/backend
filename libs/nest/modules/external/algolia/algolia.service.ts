@@ -1,26 +1,24 @@
-import { algoliasearch, BatchResponse, SearchClient, UpdatedAtWithObjectIdResponse } from 'algoliasearch';
+import { algoliasearch } from 'algoliasearch';
 import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
 
 // Define proper types for Algolia operations
-export interface AlgoliaObject
-	extends Record<string, string | number | boolean | Date | null | undefined | object | any[]> {
+export interface AlgoliaObject extends Record<string, unknown> {
 	objectID: string;
+	id: string;
 }
 
-export interface AlgoliaUpdateAttributes
-	extends Record<string, string | number | boolean | Date | null | undefined | object | any[]> {
-	objectID: string;
-}
+export type AlgoliaUpdateAttributes = Partial<AlgoliaObject>;
 
 @Injectable()
 export class AlgoliaService {
-	private client: SearchClient;
+	private client: ReturnType<typeof algoliasearch>;
 	private readonly logger = new Logger(AlgoliaService.name);
 
 	constructor(applicationId: string, apiKey: string) {
 		if (!applicationId || !apiKey) {
-			throw AppError.internal('ALGOLIA_SERVICE_ERROR', ErrorCodes.ALGOLIA_SERVICE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'algolia',
 				operation: 'initialize_client',
 				message: 'Missing Algolia credentials',
 			});
@@ -29,16 +27,17 @@ export class AlgoliaService {
 		try {
 			this.client = algoliasearch(applicationId, apiKey);
 		} catch (error) {
-			throw AppError.internal('ALGOLIA_SERVICE_ERROR', ErrorCodes.ALGOLIA_SERVICE_ERROR, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'algolia',
 				operation: 'initialize_client',
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}
 
-	async createObject(indexName: string, body: AlgoliaObject): Promise<UpdatedAtWithObjectIdResponse> {
+	async createObject(indexName: string, body: AlgoliaObject): Promise<AlgoliaObject> {
 		if (!indexName || !body?.objectID) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				operation: 'create_object',
 				indexName,
 				objectID: body?.objectID,
@@ -47,12 +46,15 @@ export class AlgoliaService {
 		}
 
 		try {
-			return await this.client.saveObject({
-				body,
+			const result = await this.client.addOrUpdateObject({
 				indexName,
+				objectID: body.objectID,
+				body,
 			});
+			return { ...body, objectID: result.objectID };
 		} catch (error) {
-			throw AppError.externalService('ALGOLIA_SERVICE_ERROR', ErrorCodes.ALGOLIA_SERVICE_ERROR, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'algolia',
 				operation: 'create_object',
 				indexName,
 				objectID: body.objectID,
@@ -65,9 +67,9 @@ export class AlgoliaService {
 		indexName: string,
 		entityId: string,
 		attributesToUpdate: AlgoliaUpdateAttributes,
-	): Promise<UpdatedAtWithObjectIdResponse | null> {
+	): Promise<AlgoliaObject | null> {
 		if (!indexName || !entityId || !attributesToUpdate) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				operation: 'update_object',
 				indexName,
 				entityId,
@@ -76,43 +78,38 @@ export class AlgoliaService {
 		}
 
 		try {
-			const { hits } = await this.client.searchSingleIndex({
+			const { results } = await this.client.searchSingleIndex({
 				indexName,
 				searchParams: {
-					query: entityId,
-					restrictSearchableAttributes: ['id'],
+					filters: `id:${entityId}`,
 				},
 			});
 
-			if (!hits.length) {
+			const hits = results[0]?.hits;
+
+			if (!hits?.length) {
 				this.logger.warn('Attempted to update an algolia record that did not exist', {
 					entityId,
 					indexName,
 					searchParams: {
-						query: entityId,
-						restrictSearchableAttributes: ['id'],
+						filters: `id:${entityId}`,
 					},
 				});
 				return null;
 			}
 
-			// Convert attributes to Algolia-compatible format
-			const algoliaAttributes: Record<string, string> = {};
-			for (const [key, value] of Object.entries(attributesToUpdate)) {
-				if (value !== null && value !== undefined) {
-					// Convert non-string values to strings for Algolia
-					algoliaAttributes[key] = typeof value === 'string' ? value : String(value);
-				}
-			}
-
-			return await this.client.partialUpdateObject({
-				attributesToUpdate: algoliaAttributes,
-				createIfNotExists: false,
+			const existingObject = hits[0];
+			const result = await this.client.partialUpdateObject({
 				indexName,
-				objectID: hits[0].objectID,
+				objectID: existingObject.objectID,
+				attributesToUpdate,
+				createIfNotExists: false,
 			});
+
+			return { ...existingObject, ...attributesToUpdate, objectID: result.objectID };
 		} catch (error) {
-			throw AppError.externalService('ALGOLIA_SERVICE_ERROR', ErrorCodes.ALGOLIA_SERVICE_ERROR, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'algolia',
 				operation: 'update_object',
 				indexName,
 				entityId,
@@ -121,9 +118,9 @@ export class AlgoliaService {
 		}
 	}
 
-	async deleteObject(indexName: string, entityId: string): Promise<BatchResponse[]> {
+	async deleteObject(indexName: string, entityId: string): Promise<string[]> {
 		if (!indexName || !entityId) {
-			throw AppError.validation('INVALID_INPUT', ErrorCodes.INVALID_INPUT, {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				operation: 'delete_object',
 				indexName,
 				entityId,
@@ -132,32 +129,35 @@ export class AlgoliaService {
 		}
 
 		try {
-			const { hits } = await this.client.searchSingleIndex({
+			const { results } = await this.client.searchSingleIndex({
 				indexName,
 				searchParams: {
-					query: entityId,
-					restrictSearchableAttributes: ['id'],
+					filters: `id:${entityId}`,
 				},
 			});
 
-			if (!hits.length) {
+			const hits = results[0]?.hits;
+
+			if (!hits?.length) {
 				this.logger.warn('Attempted to delete an algolia record that did not exist', {
 					entityId,
 					indexName,
 					searchParams: {
-						query: entityId,
-						restrictSearchableAttributes: ['id'],
+						filters: `id:${entityId}`,
 					},
 				});
 				return [];
 			}
 
-			return await this.client.deleteObjects({
+			const objectIDs = hits.map((hit) => hit.objectID);
+			await this.client.deleteObjects({
 				indexName,
-				objectIDs: hits.map((hit) => hit.objectID),
+				objectIDs,
 			});
+			return objectIDs;
 		} catch (error) {
-			throw AppError.externalService('ALGOLIA_SERVICE_ERROR', ErrorCodes.ALGOLIA_SERVICE_ERROR, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'algolia',
 				operation: 'delete_object',
 				indexName,
 				entityId,

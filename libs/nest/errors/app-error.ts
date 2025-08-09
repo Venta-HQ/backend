@@ -6,6 +6,7 @@ export enum ErrorType {
 	UNAUTHORIZED = 'UNAUTHORIZED',
 	VALIDATION = 'VALIDATION',
 	EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+	FORBIDDEN = 'FORBIDDEN',
 }
 
 export class AppError extends Error {
