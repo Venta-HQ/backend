@@ -1,6 +1,11 @@
 import { vi } from 'vitest';
-import { createGrpcErrorMock, createGrpcSuccessMock, mockGrpcClient, mockRequest } from '@test/helpers/test-utils';
 import { CreateVendorData, UpdateVendorData } from '@venta/domains/infrastructure/contracts/types';
+import {
+	createGrpcErrorMock,
+	createGrpcSuccessMock,
+	mockGrpcClient,
+	mockRequest,
+} from '@venta/test/helpers/test-utils';
 import { VendorController } from './vendor.controller';
 
 // Mock the proto imports to avoid module resolution issues

@@ -1,21 +1,10 @@
-import { z } from 'zod';
-import { CloudinaryUploadOptionsSchema, FileUploadSchema } from '../../schemas/file/file.schemas';
-
-// File metadata schema
-export const FileMetadataSchema = z.object({
-	fieldname: z.string(),
-	originalname: z.string(),
-	encoding: z.string(),
-	mimetype: z.string(),
-	size: z.number(),
-	buffer: z.instanceof(Buffer),
-});
-
-// Base file upload data schema
-export const FileUploadDataSchema = z.object({
-	file: FileMetadataSchema,
-	type: z.enum(['avatar', 'logo', 'document']),
-});
+import type { z } from 'zod';
+import {
+	CloudinaryUploadOptionsSchema,
+	FileMetadataSchema,
+	FileUploadDataSchema,
+	FileUploadSchema,
+} from '../../schemas/file/file.schemas';
 
 // Type for file metadata
 export type FileMetadata = z.infer<typeof FileMetadataSchema>;

@@ -1,5 +1,5 @@
-import { clearMocks, data, errors, mockPrisma } from '@test/helpers/test-utils';
 import { RevenueCatAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
+import { clearMocks, data, errors, mockPrisma } from '@venta/test/helpers/test-utils';
 import { SubscriptionService } from './subscription.service';
 
 describe('SubscriptionService', () => {

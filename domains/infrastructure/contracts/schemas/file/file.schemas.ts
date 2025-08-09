@@ -14,3 +14,17 @@ export const CloudinaryUploadOptionsSchema = z.object({
 	folder: z.string().min(1),
 	publicId: z.string().min(1),
 });
+
+export const FileMetadataSchema = z.object({
+	fieldname: z.string(),
+	originalname: z.string(),
+	encoding: z.string(),
+	mimetype: z.string(),
+	size: z.number(),
+	buffer: z.instanceof(Buffer),
+});
+
+export const FileUploadDataSchema = z.object({
+	file: FileMetadataSchema,
+	type: z.enum(['avatar', 'logo', 'document']),
+});
