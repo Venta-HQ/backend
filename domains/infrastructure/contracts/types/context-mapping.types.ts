@@ -1,18 +1,19 @@
 import { z } from 'zod';
 import {
+	UserDataSchema as BaseUserDataSchema,
+	UserVendorRequestSchema as BaseUserVendorRequestSchema,
+} from '../schemas/user/user.schemas';
+import {
+	CreateVendorSchema as BaseCreateVendorSchema,
+	UpdateVendorSchema as BaseUpdateVendorSchema,
+} from '../schemas/vendor/vendor.schemas';
+import {
 	FileMetadataSchema as BaseFileMetadataSchema,
 	FileUploadDataSchema as BaseFileUploadDataSchema,
 	type FileUploadData as BaseFileUploadData,
 } from './file/file.types';
+import { UserData as BaseUserData, UserVendorRequest as BaseUserVendorRequest } from './user/user.types';
 import {
-	UserDataSchema as BaseUserDataSchema,
-	UserVendorRequestSchema as BaseUserVendorRequestSchema,
-	type UserData as BaseUserData,
-	type UserVendorRequest as BaseUserVendorRequest,
-} from './user/user.types';
-import {
-	CreateVendorSchema as BaseCreateVendorSchema,
-	UpdateVendorSchema as BaseUpdateVendorSchema,
 	type CreateVendorData as BaseCreateVendorData,
 	type UpdateVendorData as BaseUpdateVendorData,
 } from './vendor/vendor.types';
