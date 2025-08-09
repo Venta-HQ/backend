@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { UserVendorRequestSchema } from '@domains/infrastructure/contracts/schemas/user/user.schemas';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Infrastructure } from '../types/context-mapping.types';
 
 /**

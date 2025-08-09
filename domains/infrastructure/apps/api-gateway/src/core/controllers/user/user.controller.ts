@@ -1,11 +1,11 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { AuthGuard } from '@app/nest/guards';
-import { GrpcInstance } from '@app/nest/modules';
-import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { UserHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/user-http.acl';
 import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
 import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@venta/nest/guards';
+import { GrpcInstance } from '@venta/nest/modules';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller('users')
 export class UserController {

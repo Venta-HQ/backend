@@ -1,9 +1,9 @@
 import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { PrismaService } from '@venta/nest/modules';
 import { ClerkService } from '../../modules/external/clerk';
 import { AuthContext, AuthProtocol, AuthUser } from '../types';
 

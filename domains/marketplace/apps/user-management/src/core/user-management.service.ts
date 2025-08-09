@@ -1,10 +1,10 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
 import * as MarketplaceToLocationContextMapper from '@domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
 import { User as PrismaUser, UserSubscription as PrismaUserSubscription } from '@prisma/client';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { PrismaService } from '@venta/nest/modules';
 
 /**
  * Service for managing user profiles and operations

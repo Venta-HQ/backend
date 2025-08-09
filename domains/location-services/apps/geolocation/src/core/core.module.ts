@@ -1,6 +1,6 @@
-import { RedisModule } from '@app/nest/modules';
 import { LocationContractsModule } from '@domains/location-services/contracts/location-contracts.module';
 import { Module } from '@nestjs/common';
+import { RedisModule } from '@venta/nest/modules';
 import { GeolocationController } from './geolocation.controller';
 import { GeolocationService } from './geolocation.service';
 import { LocationTrackingService } from './location-tracking.service';

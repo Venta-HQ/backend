@@ -1,14 +1,14 @@
 import { Express } from 'express';
 import { lastValueFrom } from 'rxjs';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcInstance } from '@app/nest/modules';
+import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { GrpcInstance } from '@venta/nest/modules';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
 	FileManagementServiceClient,
 	FileType,
-} from '@app/proto/infrastructure/file-management';
-import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+} from '@venta/proto/infrastructure/file-management';
 
 @Controller('upload')
 export class UploadController {

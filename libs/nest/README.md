@@ -56,142 +56,137 @@ libs/nest/
 ### Bootstrap Configuration
 
 ```typescript
-import { BootstrapService } from '@app/nest/modules/core/bootstrap';
+import { BootstrapService } from '@venta/nest/modules/core/bootstrap';
 
 // Bootstrap a microservice with domain configuration
 const app = await BootstrapService.bootstrapNatsMicroservice({
-  domain: 'marketplace', // Explicit DDD domain
-  main: {
-    module: VendorManagementModule,
-    url: 'nats://localhost:4222',
-  },
-  health: {
-    module: HealthModule,
-    port: 3001,
-  },
+	domain: 'marketplace', // Explicit DDD domain
+	main: {
+		module: VendorManagementModule,
+		url: 'nats://localhost:4222',
+	},
+	health: {
+		module: HealthModule,
+		port: 3001,
+	},
 });
 ```
 
 ### Structured Logging
 
 ```typescript
-import { Logger } from '@app/nest/modules/core/logger';
+import { Logger } from '@venta/nest/modules/core/logger';
 
 export class VendorService {
-  private readonly logger = new Logger(VendorService.name);
+	private readonly logger = new Logger(VendorService.name);
 
-  async onboardVendor(data: VendorOnboardingData): Promise<string> {
-    this.logger.log('Starting vendor onboarding', {
-      vendorId: data.vendorId,
-      ownerId: data.ownerId,
-    });
+	async onboardVendor(data: VendorOnboardingData): Promise<string> {
+		this.logger.log('Starting vendor onboarding', {
+			vendorId: data.vendorId,
+			ownerId: data.ownerId,
+		});
 
-    try {
-      // Business logic
-      const vendor = await this.createVendor(data);
-      
-      this.logger.log('Vendor onboarded successfully', {
-        vendorId: vendor.id,
-        ownerId: vendor.ownerId,
-      });
+		try {
+			// Business logic
+			const vendor = await this.createVendor(data);
 
-      return vendor.id;
-    } catch (error) {
-      this.logger.error('Failed to onboard vendor', error.stack, {
-        error,
-        vendorId: data.vendorId,
-        ownerId: data.ownerId,
-      });
-      throw error;
-    }
-  }
+			this.logger.log('Vendor onboarded successfully', {
+				vendorId: vendor.id,
+				ownerId: vendor.ownerId,
+			});
+
+			return vendor.id;
+		} catch (error) {
+			this.logger.error('Failed to onboard vendor', error.stack, {
+				error,
+				vendorId: data.vendorId,
+				ownerId: data.ownerId,
+			});
+			throw error;
+		}
+	}
 }
 ```
 
 ### Event Emission
 
 ```typescript
-import { EventService } from '@app/nest/modules/messaging/events';
+import { EventService } from '@venta/nest/modules/messaging/events';
 
 export class VendorService {
-  constructor(private eventService: EventService) {}
+	constructor(private eventService: EventService) {}
 
-  async onboardVendor(data: VendorOnboardingData): Promise<string> {
-    const vendor = await this.createVendor(data);
-    
-    // Emit domain event with automatic context
-    await this.eventService.emit('marketplace.vendor_onboarded', {
-      vendorId: vendor.id,
-      ownerId: vendor.ownerId,
-      location: data.location,
-    });
+	async onboardVendor(data: VendorOnboardingData): Promise<string> {
+		const vendor = await this.createVendor(data);
 
-    return vendor.id;
-  }
+		// Emit domain event with automatic context
+		await this.eventService.emit('marketplace.vendor_onboarded', {
+			vendorId: vendor.id,
+			ownerId: vendor.ownerId,
+			location: data.location,
+		});
+
+		return vendor.id;
+	}
 }
 ```
 
 ### Error Handling
 
 ```typescript
-import { AppError, ErrorType, ErrorCodes } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
 
 export class VendorService {
-  async getVendorById(vendorId: string): Promise<Vendor> {
-    const vendor = await this.prisma.db.vendor.findUnique({
-      where: { id: vendorId },
-    });
+	async getVendorById(vendorId: string): Promise<Vendor> {
+		const vendor = await this.prisma.db.vendor.findUnique({
+			where: { id: vendorId },
+		});
 
-    if (!vendor) {
-      throw new AppError(
-        ErrorType.NOT_FOUND,
-        ErrorCodes.VENDOR_NOT_FOUND,
-        'Vendor not found',
-        { vendorId }
-      );
-    }
+		if (!vendor) {
+			throw new AppError(ErrorType.NOT_FOUND, ErrorCodes.VENDOR_NOT_FOUND, 'Vendor not found', { vendorId });
+		}
 
-    return vendor;
-  }
+		return vendor;
+	}
 }
 ```
 
 ### Authentication Guards
 
 ```typescript
-import { AuthGuard } from '@app/nest/guards/auth';
+import { AuthGuard } from '@venta/nest/guards/auth';
 
 @Controller('vendors')
 @UseGuards(AuthGuard)
 export class VendorController {
-  @Get(':id')
-  async getVendor(@Param('id') id: string, @Req() req: AuthedRequest) {
-    // req.userId is automatically populated by AuthGuard
-    return this.vendorService.getVendorById(id, req.userId);
-  }
+	@Get(':id')
+	async getVendor(@Param('id') id: string, @Req() req: AuthedRequest) {
+		// req.userId is automatically populated by AuthGuard
+		return this.vendorService.getVendorById(id, req.userId);
+	}
 }
 ```
 
 ### Database Integration
 
 ```typescript
-import { PrismaService } from '@app/nest/modules/data/prisma';
+import { PrismaService } from '@venta/nest/modules/data/prisma';
 
 export class VendorService {
-  constructor(private prisma: PrismaService) {}
+	constructor(private prisma: PrismaService) {}
 
-  async createVendor(data: CreateVendorData): Promise<Vendor> {
-    return this.prisma.db.vendor.create({
-      data: {
-        name: data.name,
-        ownerId: data.ownerId,
-        location: {
-          lat: data.location.lat,
-          lng: data.location.lng,
-        },
-      },
-    });
-  }
+	async createVendor(data: CreateVendorData): Promise<Vendor> {
+		return this.prisma.db.vendor.create({
+			data: {
+				name: data.name,
+				ownerId: data.ownerId,
+				location: {
+					lat: data.location.lat,
+					lng: data.location.lng,
+				},
+			},
+		});
+	}
 }
 ```
 
@@ -225,19 +220,19 @@ LOKI_PASSWORD="password"
 ```typescript
 // app.module.ts
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
-    }),
-    PrismaModule,
-    RedisModule,
-    EventModule.register({
-      appName: 'vendor-management',
-    }),
-    PrometheusModule,
-    HealthModule,
-  ],
+	imports: [
+		ConfigModule.forRoot({
+			isGlobal: true,
+			envFilePath: ['.env.local', '.env'],
+		}),
+		PrismaModule,
+		RedisModule,
+		EventModule.register({
+			appName: 'vendor-management',
+		}),
+		PrometheusModule,
+		HealthModule,
+	],
 })
 export class AppModule {}
 ```
@@ -249,17 +244,17 @@ export class AppModule {}
 ```typescript
 // Explicit domain configuration in bootstrap
 const app = await BootstrapService.bootstrapGrpcMicroservice({
-  domain: 'marketplace', // DDD domain
-  main: {
-    module: VendorManagementModule,
-    package: 'vendor_management',
-    protoPath: 'vendor-management.proto',
-    url: 'localhost:5000',
-  },
-  health: {
-    module: HealthModule,
-    port: 3001,
-  },
+	domain: 'marketplace', // DDD domain
+	main: {
+		module: VendorManagementModule,
+		package: 'vendor_management',
+		protoPath: 'vendor-management.proto',
+		url: 'localhost:5000',
+	},
+	health: {
+		module: HealthModule,
+		port: 3001,
+	},
 });
 ```
 
@@ -269,12 +264,12 @@ const app = await BootstrapService.bootstrapGrpcMicroservice({
 // Automatic domain context in errors
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    const appError = this.convertToAppError(exception);
-    this.addDomainContext(appError); // Automatically adds domain context
-    
-    return this.formatResponse(appError, host);
-  }
+	catch(exception: unknown, host: ArgumentsHost) {
+		const appError = this.convertToAppError(exception);
+		this.addDomainContext(appError); // Automatically adds domain context
+
+		return this.formatResponse(appError, host);
+	}
 }
 ```
 
@@ -286,14 +281,14 @@ export class AppExceptionFilter implements ExceptionFilter {
 // Automatic health check endpoints
 @Controller('health')
 export class HealthController {
-  @Get()
-  async check() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-    };
-  }
+	@Get()
+	async check() {
+		return {
+			status: 'ok',
+			timestamp: new Date().toISOString(),
+			uptime: process.uptime(),
+		};
+	}
 }
 ```
 
@@ -303,15 +298,15 @@ export class HealthController {
 // Automatic Prometheus metrics
 @Injectable()
 export class VendorMetrics {
-  private readonly vendorOnboardingTotal = new Counter({
-    name: 'vendor_onboarding_total',
-    help: 'Total number of vendor onboardings',
-    labelNames: ['status'],
-  });
+	private readonly vendorOnboardingTotal = new Counter({
+		name: 'vendor_onboarding_total',
+		help: 'Total number of vendor onboardings',
+		labelNames: ['status'],
+	});
 
-  recordOnboarding(success: boolean) {
-    this.vendorOnboardingTotal.inc({ status: success ? 'success' : 'failure' });
-  }
+	recordOnboarding(success: boolean) {
+		this.vendorOnboardingTotal.inc({ status: success ? 'success' : 'failure' });
+	}
 }
 ```
 
@@ -320,9 +315,9 @@ export class VendorMetrics {
 ```typescript
 // Automatic context extraction and Loki integration
 this.logger.log('Vendor onboarded', {
-  vendorId: vendor.id,
-  ownerId: vendor.ownerId,
-  location: vendor.location,
+	vendorId: vendor.id,
+	ownerId: vendor.ownerId,
+	location: vendor.location,
 });
 
 // Automatically includes:
@@ -366,26 +361,31 @@ pnpm dev:vendor-management
 ## Best Practices
 
 ### Domain Alignment
+
 - Always configure explicit domain in bootstrap
 - Use domain-specific error codes and messages
 - Organize code by business domains, not technical concerns
 
 ### Error Handling
+
 - Use `AppError` for all application errors
 - Include relevant context in error messages
 - Let the exception filter handle error formatting
 
 ### Logging
+
 - Use structured logging with business context
 - Include relevant identifiers in log data
 - Use appropriate log levels (debug, info, warn, error)
 
 ### Event Emission
+
 - Use domain event names (`marketplace.vendor_onboarded`)
 - Include business context in event data
 - Let the EventService handle metadata and context extraction
 
 ### Configuration
+
 - Use environment variables for configuration
 - Provide sensible defaults
 - Validate configuration at startup

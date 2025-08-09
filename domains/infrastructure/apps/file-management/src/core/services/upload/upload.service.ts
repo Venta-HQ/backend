@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**
  * File upload service for infrastructure domain

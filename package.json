@@ -6,8 +6,8 @@
 	"private": true,
 	"license": "UNLICENSED",
 	"scripts": {
-		"build-proto": "protoc -I /usr/local/include --plugin=protoc-gen-ts_proto=node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=libs/proto/src/lib -I libs/proto/src/definitions --ts_proto_opt=nestJs=true --ts_proto_opt=useDate=true --ts_proto_opt=addGrpcMetadata=true index.proto",
-		"prebuild": "npm run build-proto",
+		"build:proto": "protoc -I /usr/local/include --plugin=protoc-gen-ts_proto=node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=libs/proto/src/lib -I libs/proto/src/definitions --ts_proto_opt=nestJs=true --ts_proto_opt=useDate=true --ts_proto_opt=addGrpcMetadata=true index.proto",
+		"prebuild": "npm run build:proto",
 		"build": "nest build",
 		"format": "prettier --write \"domains/**/*.ts\" \"libs/**/*.ts\"",
 		"lint": "eslint \"{src,domains,libs,test}/**/*.ts\" --fix",
@@ -16,12 +16,7 @@
 		"test:coverage": "vitest run --coverage",
 		"test:ui": "vitest --ui",
 		"prisma:generate": "prisma generate",
-		"start:dev": "concurrently \"nest start gateway --watch\" \"nest start user --watch\" \"nest start vendor --watch\" \"nest start location --watch\" \"nest start websocket-gateway --watch\" \"nest start algolia-sync --watch\"",
-		"start:prod": "concurrently \"nest start gateway\" \"nest start user\" \"nest start vendor\" \"nest start location\" \"nest start websocket-gateway\" \"nest start algolia-sync\"",
-		"load:gateway": "node test/load/gateway-load-test.js",
-		"docker:up": "docker-compose up -d",
-		"docker:down": "docker-compose down",
-		"docker:logs": "docker-compose logs -f"
+		"start:dev": "concurrently \"nest start gateway --watch\" \"nest start user --watch\" \"nest start vendor --watch\" \"nest start location --watch\" \"nest start websocket-gateway --watch\" \"nest start algolia-sync --watch\""
 	},
 	"dependencies": {
 		"@clerk/backend": "^1.13.2",

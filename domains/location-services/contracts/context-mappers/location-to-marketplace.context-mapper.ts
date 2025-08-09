@@ -1,5 +1,5 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { LocationServices } from '../types/context-mapping.types';
 
 /**

@@ -1,5 +1,5 @@
-import { TransformationUtils, ValidationUtils } from '@app/utils';
 import { Logger } from '@nestjs/common';
+import { TransformationUtils, ValidationUtils } from '@venta/utils';
 
 /**
  * Marketplace Contract Utilities

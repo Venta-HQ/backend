@@ -1,9 +1,9 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { CloudinaryService } from '@app/nest/modules';
 import { CloudinaryACL } from '@domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
 import { InfrastructureToMarketplaceContextMapper } from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { CloudinaryService } from '@venta/nest/modules';
 
 /**
  * File management service for infrastructure domain

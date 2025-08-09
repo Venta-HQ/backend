@@ -1,7 +1,7 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma, SubscriptionStatus } from '@prisma/client';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
+import { PrismaService } from '@venta/nest/modules';
 import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat.acl';
 
 interface IntegrationData {

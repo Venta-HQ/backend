@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { SubscriptionController } from './subscription.controller';
 
 // Mock the proto imports to avoid module resolution issues
-vi.mock('@app/proto/user', () => ({
+vi.mock('@venta/proto/user', () => ({
 	RevenueCatSubscriptionData: vi.fn(),
 	USER_SERVICE_NAME: 'UserService',
 }));

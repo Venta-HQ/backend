@@ -1,8 +1,8 @@
 import { vi } from 'vitest';
-import { ErrorHandlingModule } from '@app/nest/errors';
-import { HealthModule, LoggerModule, PrometheusModule } from '@app/nest/modules';
 import { ConfigModule } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ErrorHandlingModule } from '@venta/nest/errors';
+import { HealthModule, LoggerModule, PrometheusModule } from '@venta/nest/modules';
 import { BootstrapModule, BootstrapOptions } from './bootstrap.module';
 
 describe('BootstrapModule', () => {

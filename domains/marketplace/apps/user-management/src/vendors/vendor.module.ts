@@ -1,5 +1,5 @@
-import { PrismaModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '@venta/nest/modules';
 import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
 

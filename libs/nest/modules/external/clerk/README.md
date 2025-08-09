@@ -22,7 +22,7 @@ This module provides:
 Register the Clerk module in your service:
 
 ```typescript
-import { ClerkModule } from '@app/nest/modules/clerk';
+import { ClerkModule } from '@venta/nest/modules/clerk';
 
 @Module({
 	imports: [ClerkModule.register()],
@@ -36,7 +36,7 @@ export class YourServiceModule {}
 Inject ClerkService for authentication operations:
 
 ```typescript
-import { ClerkService } from '@app/nest/modules/clerk';
+import { ClerkService } from '@venta/nest/modules/clerk';
 
 @Injectable()
 export class YourService {

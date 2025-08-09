@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 import { AuthController } from './auth.controller';
 
 // Mock the proto imports to avoid module resolution issues
-vi.mock('@app/proto/marketplace/user-management', () => ({
+vi.mock('@venta/proto/marketplace/user-management', () => ({
 	CreateUserResponse: vi.fn(),
 	USER_MANAGEMENT_SERVICE_NAME: 'UserManagementService',
 	UserIdentityData: vi.fn(),

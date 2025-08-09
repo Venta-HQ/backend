@@ -1,5 +1,8 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcAuthGuard } from '@app/nest/guards';
+import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
 	Empty,
 	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
@@ -13,10 +16,7 @@ import {
 	VendorManagementServiceController,
 	VendorUpdateData,
 	VendorUpdateResponse,
-} from '@app/proto/marketplace/vendor-management';
-import { VendorACL } from '@domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
-import { Controller, Logger, UseGuards } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/vendor-management';
 import { VendorManagementService } from './vendor-management.service';
 
 /**

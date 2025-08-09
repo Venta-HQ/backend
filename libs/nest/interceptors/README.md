@@ -7,6 +7,7 @@ The NestJS Interceptors Library provides reusable interceptors that can be used 
 ## Overview
 
 This library provides:
+
 - **Metrics interceptors** for collecting performance and monitoring data
 - **Request ID interceptors** for correlation ID propagation across services
 - **Protocol-specific interceptors** for gRPC, HTTP, and NATS
@@ -33,13 +34,17 @@ libs/nest/interceptors/
 ### Interceptor Types
 
 #### **Metrics Interceptors** (`metrics/`)
+
 Performance monitoring and observability:
+
 - **MetricsInterceptor**: Collects request duration, size, and count metrics
 - **Protocol-agnostic**: Works with HTTP, gRPC, and NATS
 - **Prometheus integration**: Exports metrics for monitoring
 
 #### **Request ID Interceptors** (`request-id/`)
+
 Request correlation and tracing:
+
 - **BaseRequestIdInterceptor**: Abstract base class for request ID extraction
 - **GrpcRequestIdInterceptor**: gRPC-specific request ID handling
 - **NatsRequestIdInterceptor**: NATS-specific correlation ID handling
@@ -49,15 +54,15 @@ Request correlation and tracing:
 ### Direct Import
 
 ```typescript
-import { MetricsInterceptor } from '@app/nest/interceptors';
+import { MetricsInterceptor } from '@venta/nest/interceptors';
 
 @Module({
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: MetricsInterceptor,
-    },
-  ],
+	providers: [
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: MetricsInterceptor,
+		},
+	],
 })
 export class YourModule {}
 ```
@@ -67,16 +72,16 @@ export class YourModule {}
 Modules can import and provide interceptors:
 
 ```typescript
-import { MetricsInterceptor } from '@app/nest/interceptors';
+import { MetricsInterceptor } from '@venta/nest/interceptors';
 
 @Module({
-  imports: [PrometheusModule],
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: MetricsInterceptor,
-    },
-  ],
+	imports: [PrometheusModule],
+	providers: [
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: MetricsInterceptor,
+		},
+	],
 })
 export class YourModule {}
 ```
@@ -84,22 +89,19 @@ export class YourModule {}
 ### Request ID Interceptors
 
 ```typescript
-import { 
-  GrpcRequestIdInterceptor, 
-  NatsRequestIdInterceptor 
-} from '@app/nest/interceptors';
+import { GrpcRequestIdInterceptor, NatsRequestIdInterceptor } from '@venta/nest/interceptors';
 
 @Module({
-  providers: [
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: GrpcRequestIdInterceptor,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: NatsRequestIdInterceptor,
-    },
-  ],
+	providers: [
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: GrpcRequestIdInterceptor,
+		},
+		{
+			provide: APP_INTERCEPTOR,
+			useClass: NatsRequestIdInterceptor,
+		},
+	],
 })
 export class YourModule {}
 ```
@@ -126,4 +128,4 @@ While interceptors are defined in this library, they are typically **provided by
 
 - **Modules to configure** interceptors with their specific dependencies
 - **Interceptors to remain** protocol-agnostic and reusable
-- **Clean separation** between interceptor logic and module configuration 
+- **Clean separation** between interceptor logic and module configuration

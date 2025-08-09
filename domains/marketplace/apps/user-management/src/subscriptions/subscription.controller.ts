@@ -1,12 +1,12 @@
-import { GrpcRevenueCatSubscriptionDataSchema } from '@app/apitypes';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcRevenueCatSubscriptionDataSchema } from '@venta/apitypes';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
 	CreateSubscriptionData,
 	CreateSubscriptionResponse,
 	USER_MANAGEMENT_SERVICE_NAME,
-} from '@app/proto/marketplace/user-management';
-import { Controller, Logger, UsePipes } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/user-management';
 import { SubscriptionService } from './subscription.service';
 
 @Controller()

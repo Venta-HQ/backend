@@ -7,6 +7,7 @@ The User Management service manages all user-related operations in the Venta bac
 ## Overview
 
 This microservice provides:
+
 - User account creation and management through Clerk webhook integration
 - Authentication state management and user session handling
 - User profile and preferences management with data validation
@@ -116,28 +117,23 @@ The service follows these patterns:
 The service uses the unified error handling system:
 
 ```typescript
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
 
 @Injectable()
 export class UserService {
-  async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
-    try {
-      const user = await this.prisma.db.user.create({
-        data: { clerkId: registrationData.clerkId },
-      });
-      return user;
-    } catch (error) {
-      throw new AppError(
-        ErrorType.INTERNAL,
-        ErrorCodes.DATABASE_ERROR,
-        'Failed to register user',
-        {
-          clerkId: registrationData.clerkId,
-          operation: 'register_user',
-        }
-      );
-    }
-  }
+	async registerUser(registrationData: UserRegistrationData): Promise<UserProfile> {
+		try {
+			const user = await this.prisma.db.user.create({
+				data: { clerkId: registrationData.clerkId },
+			});
+			return user;
+		} catch (error) {
+			throw new AppError(ErrorType.INTERNAL, ErrorCodes.DATABASE_ERROR, 'Failed to register user', {
+				clerkId: registrationData.clerkId,
+				operation: 'register_user',
+			});
+		}
+	}
 }
 ```
 

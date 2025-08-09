@@ -1,4 +1,4 @@
-# @app/utils
+# @venta/utils
 
 Generic utility functions and helpers that can be used across any project. These utilities are domain-agnostic and focus on common programming patterns and operations.
 
@@ -9,7 +9,7 @@ Generic utility functions and helpers that can be used across any project. These
 Type-safe runtime checks for common data types and structures.
 
 ```typescript
-import { isNonEmptyString, isValidArray, isValidNumber } from '@app/utils';
+import { isNonEmptyString, isValidArray, isValidNumber } from '@venta/utils';
 
 // String validation
 const input = getUserInput();
@@ -42,7 +42,7 @@ if (hasRequiredProperties<User>(obj, ['id', 'name'])) {
 Common validation patterns and schemas using Zod.
 
 ```typescript
-import { coordinatesSchema, paginationSchema, safeParse } from '@app/utils';
+import { coordinatesSchema, paginationSchema, safeParse } from '@venta/utils';
 
 // Pagination validation
 const query = { page: '2', limit: '20' };
@@ -72,7 +72,7 @@ const location = safeParse(coordinatesSchema, {
 Type-safe date manipulation and formatting functions.
 
 ```typescript
-import { endOfDay, formatDuration, getRelativeTimeString, parseDuration, startOfDay } from '@app/utils';
+import { endOfDay, formatDuration, getRelativeTimeString, parseDuration, startOfDay } from '@venta/utils';
 
 // Date boundaries
 const today = new Date();
@@ -96,7 +96,7 @@ console.log(getRelativeTimeString(date)); // "1d ago"
 Type-safe retry logic for async operations and observables.
 
 ```typescript
-import { retryObservable, retryOperation } from '@app/utils';
+import { retryObservable, retryOperation } from '@venta/utils';
 
 // Retry Promise-based operations
 async function fetchData() {
@@ -121,7 +121,7 @@ const data$ = retryObservable(source$, 'Stream user events', {
 Utilities for resolving Protocol Buffer file paths.
 
 ```typescript
-import { ProtoPathUtil } from '@app/utils';
+import { ProtoPathUtil } from '@venta/utils';
 
 // Resolve proto file path
 const protoPath = ProtoPathUtil.resolveProtoPath('user.proto');

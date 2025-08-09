@@ -1,5 +1,5 @@
-import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { PrometheusModule } from '@venta/nest/modules';
 
 /**
  * Communication Contracts Module

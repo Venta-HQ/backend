@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { EventService, PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
+import { EventService, PrismaService } from '@venta/nest/modules';
 import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location.context-mapper';
 
 export interface VendorOnboardingData {

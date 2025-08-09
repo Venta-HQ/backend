@@ -1,8 +1,8 @@
-import { ProtoPathUtil } from '@app/utils';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { ProtoPathUtil } from '@venta/utils';
 
 export interface HttpBootstrapOptions {
 	corsOptions?: {

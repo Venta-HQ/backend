@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z, ZodError } from 'zod';
-import { AppError } from '@app/nest/errors';
 import { ArgumentMetadata } from '@nestjs/common';
+import { AppError } from '@venta/nest/errors';
 import { SchemaValidatorPipe } from './schema-validator.pipe';
 
 describe('SchemaValidatorPipe', () => {

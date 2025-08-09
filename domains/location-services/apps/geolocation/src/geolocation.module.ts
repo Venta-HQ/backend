@@ -1,5 +1,5 @@
-import { APP_NAMES, BootstrapModule, EventsModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { APP_NAMES, BootstrapModule, EventsModule, RedisModule } from '@venta/nest/modules';
 import { LocationContractsModule } from '../../../contracts/location-contracts.module';
 import { CoreModule } from './core/core.module';
 

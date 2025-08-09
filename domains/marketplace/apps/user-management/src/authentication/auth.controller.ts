@@ -1,12 +1,12 @@
-import { GrpcClerkUserDataSchema } from '@app/apitypes';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { GrpcClerkUserDataSchema } from '@venta/apitypes';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
 	CreateUserResponse,
 	USER_MANAGEMENT_SERVICE_NAME,
 	UserIdentityData,
-} from '@app/proto/marketplace/user-management';
-import { Controller, Logger, UsePipes } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/user-management';
 import { AuthService } from './auth.service';
 
 @Controller()

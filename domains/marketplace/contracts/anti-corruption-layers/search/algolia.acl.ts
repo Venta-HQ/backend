@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { SearchDiscovery } from '@domains/marketplace/contracts/types/search/context-mapping.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**
  * Anti-Corruption Layer for Algolia integration

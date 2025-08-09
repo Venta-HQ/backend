@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthService } from '../core';
 import { AuthenticatedSocket, AuthProtocol } from '../types';
 

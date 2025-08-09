@@ -2,7 +2,7 @@
 
 ## Overview
 
-Currently, authentication and authorization are handled in various ways across the domains. We need to standardize this using `@app/nest/auth` to ensure consistent security patterns and reduce code duplication.
+Currently, authentication and authorization are handled in various ways across the domains. We need to standardize this using `@venta/nest/auth` to ensure consistent security patterns and reduce code duplication.
 
 ## Current State (Updated 2024-03-21)
 
@@ -266,7 +266,7 @@ Currently, authentication and authorization are handled in various ways across t
 
 ## Success Criteria
 
-1. All authentication flows use `@app/nest/auth`
+1. All authentication flows use `@venta/nest/auth`
 2. Consistent error handling for auth failures
 3. Type-safe role and permission checks
 4. Clear auth patterns for each protocol

@@ -1,10 +1,13 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
 	WsAuthGuard,
 	WsRateLimitGuardLenient,
 	WsRateLimitGuardStandard,
 	WsRateLimitGuardStatus,
 	WsRateLimitGuardStrict,
-} from '@app/nest/guards';
+} from '@venta/nest/guards';
 import {
 	APP_NAMES,
 	BootstrapModule,
@@ -12,15 +15,12 @@ import {
 	GrpcInstanceModule,
 	PrometheusService,
 	RedisModule,
-} from '@app/nest/modules';
+} from '@venta/nest/modules';
 import {
 	GEOLOCATION_PACKAGE_NAME,
 	GEOLOCATION_SERVICE_NAME,
 	GeolocationServiceClient,
-} from '@app/proto/location-services/geolocation';
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+} from '@venta/proto/location-services/geolocation';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';

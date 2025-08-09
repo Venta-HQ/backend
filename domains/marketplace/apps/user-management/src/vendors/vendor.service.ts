@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
+import { PrismaService } from '@venta/nest/modules';
 
 interface UserVendorSummary {
 	id: string;

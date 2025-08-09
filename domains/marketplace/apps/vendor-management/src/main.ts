@@ -1,5 +1,5 @@
-import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
+import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
 import { VendorManagementModule } from './vendor-management.module';
 
 async function bootstrap() {

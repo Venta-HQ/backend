@@ -7,6 +7,7 @@ The NestJS Shared Modules Library provides reusable NestJS modules, services, gu
 ## Overview
 
 This library provides:
+
 - **Core infrastructure modules** for essential service functionality
 - **Data and persistence modules** for database and caching operations
 - **External service integrations** for third-party APIs and services
@@ -52,34 +53,46 @@ libs/nest/modules/
 ### Module Categories
 
 #### **Core Modules** (`core/`)
+
 Essential infrastructure that every service needs:
+
 - **BootstrapModule**: Standardized service initialization
 - **ConfigModule**: Environment configuration management
 - **LoggerModule**: Structured logging with correlation IDs
 
 #### **Data Modules** (`data/`)
+
 Database and caching infrastructure:
+
 - **PrismaModule**: Database ORM and connection management
 - **RedisModule**: Caching, sessions, and distributed state
 
 #### **External Modules** (`external/`)
+
 Third-party service integrations:
+
 - **ClerkModule**: Authentication and user management
 - **AlgoliaModule**: Search indexing and querying
 - **UploadModule**: File upload and storage
 
 #### **Messaging Modules** (`messaging/`)
+
 Event-driven communication:
+
 - **EventsModule**: Type-safe event publishing and consuming
 - **NatsQueueModule**: NATS messaging with queue groups
 
 #### **Monitoring Modules** (`monitoring/`)
+
 Health checks and observability:
+
 - **HealthModule**: Service health check endpoints
 - **PrometheusModule**: Metrics collection and monitoring
 
 #### **Networking Modules** (`networking/`)
+
 Communication infrastructure:
+
 - **GrpcInstanceModule**: gRPC client management and retry logic
 - **RequestContextModule**: Request context and correlation ID handling
 
@@ -88,25 +101,16 @@ Communication infrastructure:
 ### Basic Service Configuration
 
 ```typescript
-import { 
-  BootstrapModule,
-  PrismaModule, 
-  RedisModule,
-  LoggerModule 
-} from '@app/nest/modules';
+import { BootstrapModule, LoggerModule, PrismaModule, RedisModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: 'Your Service',
-      protocol: 'grpc',
-      additionalModules: [
-        PrismaModule,
-        RedisModule,
-        LoggerModule,
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: 'Your Service',
+			protocol: 'grpc',
+			additionalModules: [PrismaModule, RedisModule, LoggerModule],
+		}),
+	],
 })
 export class YourModule {}
 ```
@@ -114,25 +118,20 @@ export class YourModule {}
 ### Service with External Integrations
 
 ```typescript
-import { 
-  BootstrapModule,
-  ClerkModule,
-  AlgoliaModule,
-  EventsModule 
-} from '@app/nest/modules';
+import { AlgoliaModule, BootstrapModule, ClerkModule, EventsModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: 'Your Service',
-      protocol: 'http',
-      additionalModules: [
-        ClerkModule.register(),
-        AlgoliaModule.register(),
-        EventsModule.register({ appName: 'Your Service' }),
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: 'Your Service',
+			protocol: 'http',
+			additionalModules: [
+				ClerkModule.register(),
+				AlgoliaModule.register(),
+				EventsModule.register({ appName: 'Your Service' }),
+			],
+		}),
+	],
 })
 export class YourModule {}
 ```
@@ -140,23 +139,16 @@ export class YourModule {}
 ### Service with Monitoring
 
 ```typescript
-import { 
-  BootstrapModule,
-  HealthModule,
-  PrometheusModule 
-} from '@app/nest/modules';
+import { BootstrapModule, HealthModule, PrometheusModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: 'Your Service',
-      protocol: 'grpc',
-      additionalModules: [
-        HealthModule,
-        PrometheusModule,
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: 'Your Service',
+			protocol: 'grpc',
+			additionalModules: [HealthModule, PrometheusModule],
+		}),
+	],
 })
 export class YourModule {}
 ```
@@ -176,4 +168,4 @@ export class YourModule {}
 2. **Create module**: Add your module to the correct group directory
 3. **Update index**: Add exports to the group's index.ts file
 4. **Document**: Update this README with module description
-5. **Test**: Ensure the module works across all service types 
+5. **Test**: Ensure the module works across all service types

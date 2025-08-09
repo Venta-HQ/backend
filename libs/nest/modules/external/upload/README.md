@@ -7,6 +7,7 @@ The Upload module provides file upload and media management capabilities for the
 ## Overview
 
 This module provides:
+
 - Cloudinary integration for cloud-based file storage
 - File upload and processing capabilities
 - Image optimization and transformation
@@ -22,11 +23,11 @@ This module provides:
 Register the upload module in your service:
 
 ```typescript
-import { UploadModule } from '@app/nest/modules/upload';
+import { UploadModule } from '@venta/nest/modules/upload';
 
 @Module({
-  imports: [UploadModule],
-  // ... other module configuration
+	imports: [UploadModule],
+	// ... other module configuration
 })
 export class YourServiceModule {}
 ```
@@ -36,21 +37,21 @@ export class YourServiceModule {}
 Inject UploadService for file handling operations:
 
 ```typescript
-import { UploadService } from '@app/nest/modules/upload';
+import { UploadService } from '@venta/nest/modules/upload';
 
 @Injectable()
 export class YourService {
-  constructor(private readonly uploadService: UploadService) {}
+	constructor(private readonly uploadService: UploadService) {}
 
-  async uploadFile(file: Express.Multer.File) {
-    const result = await this.uploadService.uploadFile(file);
-    return result;
-  }
+	async uploadFile(file: Express.Multer.File) {
+		const result = await this.uploadService.uploadFile(file);
+		return result;
+	}
 
-  async uploadImage(file: Express.Multer.File, options?: any) {
-    const result = await this.uploadService.uploadImage(file, options);
-    return result;
-  }
+	async uploadImage(file: Express.Multer.File, options?: any) {
+		const result = await this.uploadService.uploadImage(file, options);
+		return result;
+	}
 }
 ```
 
@@ -190,23 +191,23 @@ Integrate with controllers for file uploads:
 ```typescript
 @Controller('upload')
 export class UploadController {
-  constructor(private readonly uploadService: UploadService) {}
+	constructor(private readonly uploadService: UploadService) {}
 
-  @Post('file')
-  @UseInterceptors(FileInterceptor('file'))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
-    await this.uploadService.validateFile(file);
-    const result = await this.uploadService.uploadFile(file);
-    return result;
-  }
+	@Post('file')
+	@UseInterceptors(FileInterceptor('file'))
+	async uploadFile(@UploadedFile() file: Express.Multer.File) {
+		await this.uploadService.validateFile(file);
+		const result = await this.uploadService.uploadFile(file);
+		return result;
+	}
 
-  @Post('image')
-  @UseInterceptors(FileInterceptor('image'))
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
-    await this.uploadService.validateFile(file);
-    const result = await this.uploadService.uploadImage(file);
-    return result;
-  }
+	@Post('image')
+	@UseInterceptors(FileInterceptor('image'))
+	async uploadImage(@UploadedFile() file: Express.Multer.File) {
+		await this.uploadService.validateFile(file);
+		const result = await this.uploadService.uploadImage(file);
+		return result;
+	}
 }
 ```
 
@@ -247,4 +248,4 @@ IMAGE_FORMAT=auto
 - **Cloudinary** for cloud-based file storage and processing
 - **NestJS** for module framework and dependency injection
 - **Multer** for file upload handling
-- **TypeScript** for type definitions and compile-time safety 
+- **TypeScript** for type definitions and compile-time safety

@@ -1,5 +1,5 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthService } from '../core';
 import { AuthenticatedRequest, AuthProtocol } from '../types';
 

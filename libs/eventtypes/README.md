@@ -40,7 +40,7 @@ Domain-specific events have been moved to their respective domain folders:
 ### Base Event Interface
 
 ```typescript
-import { BaseEvent } from '@app/eventtypes';
+import { BaseEvent } from '@venta/eventtypes';
 
 interface MyEvent extends BaseEvent {
 	data: {
@@ -56,7 +56,7 @@ import {
   createEventSchema,
   validateEventName,
   extractEventContext
-} from '@app/eventtypes/shared';
+} from '@venta/eventtypes/shared';
 
 // Use shared event utilities
 const schema = createEventSchema({...});

@@ -87,7 +87,7 @@ import {
 	MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
 	UserCreatedResponse,
 	UserManagementServiceClient,
-} from '@app/proto/marketplace/user-management';
+} from '@venta/proto/marketplace/user-management';
 
 // Use in gRPC client configuration
 const client = new UserManagementServiceClient();
@@ -99,12 +99,12 @@ const request: CreateUserData = {
 ### Service Registration
 
 ```typescript
-import { GrpcInstanceModule } from '@app/nest/modules';
+import { GrpcInstanceModule } from '@venta/nest/modules';
 import {
 	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
 	MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
 	UserManagementServiceClient,
-} from '@app/proto/marketplace/user-management';
+} from '@venta/proto/marketplace/user-management';
 
 @Module({
 	imports: [

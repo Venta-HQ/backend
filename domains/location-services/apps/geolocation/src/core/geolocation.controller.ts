@@ -1,9 +1,9 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcAuthGuard } from '@app/nest/guards';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { GrpcAuthGuard } from '@venta/nest/guards';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { GeolocationService } from './geolocation.service';
 
 @Controller()

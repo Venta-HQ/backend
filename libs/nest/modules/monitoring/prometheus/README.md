@@ -40,7 +40,7 @@ The module automatically uses the app name from ConfigService.
 Inject PrometheusService into your services for custom metrics:
 
 ```typescript
-import { PrometheusService } from '@app/nest/modules';
+import { PrometheusService } from '@venta/nest/modules';
 
 @Injectable()
 export class UserService {

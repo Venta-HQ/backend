@@ -35,7 +35,7 @@ BootstrapModule.forRoot({
 Inject RedisService for caching and session operations:
 
 ```typescript
-import { RedisService } from '@app/nest/modules/redis';
+import { RedisService } from '@venta/nest/modules/redis';
 
 @Injectable()
 export class YourService {

@@ -1,5 +1,5 @@
-import { APP_NAMES, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { APP_NAMES, BootstrapModule, NatsQueueModule } from '@venta/nest/modules';
 import { MarketplaceContractsModule } from '../contracts/marketplace-contracts.module';
 import { AuthModule } from './authentication/auth.module';
 import { CoreModule } from './core/core.module';

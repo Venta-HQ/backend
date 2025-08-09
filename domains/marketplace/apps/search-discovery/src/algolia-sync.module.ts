@@ -1,5 +1,5 @@
-import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@venta/nest/modules';
 import { AlgoliaSyncController } from './algolia-sync.controller';
 import { AlgoliaSyncService } from './algolia-sync.service';
 import { AlgoliaACL } from './anti-corruption-layers/algolia-acl';

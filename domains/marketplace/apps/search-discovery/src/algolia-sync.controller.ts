@@ -1,7 +1,7 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { NatsQueueService } from '@app/nest/modules';
 import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';
 import { NatsACL } from './anti-corruption-layers/nats-acl.js';
 import { SearchDiscovery } from './types/context-mapping.types';

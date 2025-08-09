@@ -23,8 +23,8 @@ This pipe provides:
 Apply schema validation to controller endpoints:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { userCreateSchema } from '@domains/marketplace/contracts/types';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Controller('users')
 export class UserController {
@@ -42,8 +42,8 @@ export class UserController {
 Use different schemas for different operations:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { userCreateSchema, userLoginSchema, userUpdateSchema } from '@domains/marketplace/contracts/types';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Controller('users')
 export class UserController {
@@ -73,7 +73,7 @@ Validate route parameters:
 
 ```typescript
 import { z } from 'zod';
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 const idParamSchema = z.object({
 	id: z.string().uuid('Invalid user ID format'),
@@ -101,7 +101,7 @@ Validate query parameters:
 
 ```typescript
 import { z } from 'zod';
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 const searchQuerySchema = z.object({
 	page: z.coerce.number().min(1).default(1),
@@ -126,8 +126,8 @@ export class UserController {
 Handle validation errors with custom logic:
 
 ```typescript
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Controller('users')
 export class UserController {
@@ -153,9 +153,9 @@ export class UserController {
 Apply schema validation globally to all endpoints:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/pipes/schema-validator';
 import { Module } from '@nestjs/common';
 import { APP_PIPE } from '@nestjs/core';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 
 @Module({
 	providers: [

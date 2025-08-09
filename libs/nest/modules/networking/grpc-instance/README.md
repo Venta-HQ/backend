@@ -7,6 +7,7 @@ The gRPC Instance module provides reusable gRPC client management for the Venta 
 ## Overview
 
 This module provides:
+
 - gRPC client connection management and pooling
 - Automatic retry mechanisms for failed requests
 - Request context and metadata propagation
@@ -21,19 +22,19 @@ This module provides:
 Register the gRPC instance module in your service:
 
 ```typescript
-import { GrpcInstanceModule } from '@app/nest/modules/grpc-instance';
-import { USER_PACKAGE_NAME } from '@app/proto/user';
+import { GrpcInstanceModule } from '@venta/nest/modules/grpc-instance';
+import { USER_PACKAGE_NAME } from '@venta/proto/user';
 
 @Module({
-  imports: [
-    GrpcInstanceModule.register<UserServiceClient>({
-      proto: 'user.proto',
-      protoPackage: USER_PACKAGE_NAME,
-      provide: USER_PACKAGE_NAME,
-      serviceName: USER_PACKAGE_NAME,
-      urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
-    }),
-  ],
+	imports: [
+		GrpcInstanceModule.register<UserServiceClient>({
+			proto: 'user.proto',
+			protoPackage: USER_PACKAGE_NAME,
+			provide: USER_PACKAGE_NAME,
+			serviceName: USER_PACKAGE_NAME,
+			urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
+		}),
+	],
 })
 export class YourServiceModule {}
 ```
@@ -43,22 +44,22 @@ export class YourServiceModule {}
 Inject gRPC clients for inter-service communication:
 
 ```typescript
-import { GrpcInstanceService } from '@app/nest/modules/grpc-instance';
-import { UserServiceClient } from '@app/proto/user';
+import { GrpcInstanceService } from '@venta/nest/modules/grpc-instance';
+import { UserServiceClient } from '@venta/proto/user';
 
 @Injectable()
 export class YourService {
-  constructor(private readonly grpcInstance: GrpcInstanceService) {}
+	constructor(private readonly grpcInstance: GrpcInstanceService) {}
 
-  async getUserData(userId: string) {
-    const client = this.grpcInstance.getClient<UserServiceClient>('user');
-    return client.getUser({ id: userId });
-  }
+	async getUserData(userId: string) {
+		const client = this.grpcInstance.getClient<UserServiceClient>('user');
+		return client.getUser({ id: userId });
+	}
 
-  async createUser(userData: any) {
-    const client = this.grpcInstance.getClient<UserServiceClient>('user');
-    return client.createUser(userData);
-  }
+	async createUser(userData: any) {
+		const client = this.grpcInstance.getClient<UserServiceClient>('user');
+		return client.createUser(userData);
+	}
 }
 ```
 
@@ -68,24 +69,24 @@ Configure multiple gRPC service connections:
 
 ```typescript
 @Module({
-  imports: [
-    // User service connection
-    GrpcInstanceModule.register<UserServiceClient>({
-      proto: 'user.proto',
-      protoPackage: USER_PACKAGE_NAME,
-      provide: USER_PACKAGE_NAME,
-      serviceName: USER_PACKAGE_NAME,
-      urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
-    }),
-    // Vendor service connection
-    GrpcInstanceModule.register<VendorServiceClient>({
-      proto: 'vendor.proto',
-      protoPackage: VENDOR_PACKAGE_NAME,
-      provide: VENDOR_PACKAGE_NAME,
-      serviceName: VENDOR_PACKAGE_NAME,
-      urlFactory: (configService) => configService.get('VENDOR_SERVICE_ADDRESS'),
-    }),
-  ],
+	imports: [
+		// User service connection
+		GrpcInstanceModule.register<UserServiceClient>({
+			proto: 'user.proto',
+			protoPackage: USER_PACKAGE_NAME,
+			provide: USER_PACKAGE_NAME,
+			serviceName: USER_PACKAGE_NAME,
+			urlFactory: (configService) => configService.get('USER_SERVICE_ADDRESS'),
+		}),
+		// Vendor service connection
+		GrpcInstanceModule.register<VendorServiceClient>({
+			proto: 'vendor.proto',
+			protoPackage: VENDOR_PACKAGE_NAME,
+			provide: VENDOR_PACKAGE_NAME,
+			serviceName: VENDOR_PACKAGE_NAME,
+			urlFactory: (configService) => configService.get('VENDOR_SERVICE_ADDRESS'),
+		}),
+	],
 })
 export class GatewayModule {}
 ```
@@ -151,4 +152,4 @@ GRPC_RETRY_DELAY=1000
 
 - **gRPC** for high-performance inter-service communication
 - **NestJS** for module framework and dependency injection
-- **TypeScript** for type definitions 
+- **TypeScript** for type definitions

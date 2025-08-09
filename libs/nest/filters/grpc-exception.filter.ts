@@ -1,7 +1,7 @@
 import { Observable, throwError } from 'rxjs';
-import { AppError, ErrorType } from '@app/nest/errors';
 import { status } from '@grpc/grpc-js';
 import { Catch, RpcExceptionFilter } from '@nestjs/common';
+import { AppError, ErrorType } from '@venta/nest/errors';
 
 /**
  * Maps domain errors to gRPC status codes

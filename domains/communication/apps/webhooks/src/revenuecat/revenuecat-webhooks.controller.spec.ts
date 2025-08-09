@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
-import { GrpcInstance } from '@app/nest/modules';
-import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { Test, TestingModule } from '@nestjs/testing';
+import { GrpcInstance } from '@venta/nest/modules';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 import { RevenueCatWebhooksController } from './revenuecat-webhooks.controller';
 
 describe('RevenueCatWebhooksController', () => {

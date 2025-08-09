@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createEventSchema, EnforceValidDomainEvents } from '@app/eventtypes';
+import { createEventSchema, EnforceValidDomainEvents } from '@venta/eventtypes';
 import { LocationServices } from '../contracts/types/context-mapping.types';
 
 // Location domain events with type enforcement

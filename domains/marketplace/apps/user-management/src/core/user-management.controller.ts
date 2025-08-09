@@ -1,5 +1,10 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { GrpcAuthGuard } from '@app/nest/guards';
+import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
+import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
 	CreateSubscriptionData,
 	CreateSubscriptionResponse,
@@ -9,12 +14,7 @@ import {
 	UserManagementServiceController,
 	UserVendorData,
 	UserVendorsResponse,
-} from '@app/proto/marketplace/user-management';
-import { ClerkAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
-import { RevenueCatAntiCorruptionLayer } from '@domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
-import { Marketplace } from '@domains/marketplace/contracts/types/context-mapping.types';
-import { Controller, Logger, UseGuards } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/user-management';
 import { UserManagementService } from './user-management.service';
 
 /**

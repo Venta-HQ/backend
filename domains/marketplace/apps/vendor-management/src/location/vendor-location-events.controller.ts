@@ -1,6 +1,6 @@
-import { NatsQueueService } from '@app/nest/modules';
 import { BaseEvent } from '@domains/marketplace/events';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { NatsQueueService } from '@venta/nest/modules';
 import { VendorService } from '../core/vendor.service';
 
 /**

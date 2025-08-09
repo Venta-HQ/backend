@@ -7,6 +7,7 @@ The Bootstrap Module provides a standardized foundation for all services in the 
 ## Overview
 
 This module provides:
+
 - Automatic configuration of essential modules (Config, Logger, Prisma, Health, Prometheus)
 - Standardized service initialization with consistent patterns
 - Protocol-specific module configuration (HTTP, gRPC, WebSocket, NATS)
@@ -23,16 +24,16 @@ This module provides:
 Configure a service with the BootstrapModule:
 
 ```typescript
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.USER,
-      protocol: 'grpc',
-    }),
-  ],
-  // Your service-specific configuration
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.USER,
+			protocol: 'grpc',
+		}),
+	],
+	// Your service-specific configuration
 })
 export class UserModule {}
 ```
@@ -42,18 +43,20 @@ export class UserModule {}
 Add service-specific modules to the bootstrap configuration:
 
 ```typescript
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.VENDOR,
-      protocol: 'grpc',
-      additionalModules: [
-        ClientsModule.registerAsync([/* gRPC clients */]),
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.VENDOR,
+			protocol: 'grpc',
+			additionalModules: [
+				ClientsModule.registerAsync([
+					/* gRPC clients */
+				]),
+			],
+		}),
+	],
 })
 export class VendorModule {}
 ```
@@ -63,19 +66,21 @@ export class VendorModule {}
 Add EventsModule for services that need event publishing:
 
 ```typescript
-import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule, EventsModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.VENDOR,
-      protocol: 'grpc',
-      additionalModules: [
-        ClientsModule.registerAsync([/* gRPC clients */]),
-      ],
-    }),
-    EventsModule.register(), // Automatically uses APP_NAME from ConfigService
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.VENDOR,
+			protocol: 'grpc',
+			additionalModules: [
+				ClientsModule.registerAsync([
+					/* gRPC clients */
+				]),
+			],
+		}),
+		EventsModule.register(), // Automatically uses APP_NAME from ConfigService
+	],
 })
 export class VendorModule {}
 ```
@@ -85,20 +90,22 @@ export class VendorModule {}
 Configure an HTTP service with health checks:
 
 ```typescript
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.GATEWAY,
-      protocol: 'http',
-      additionalModules: [
-        ClerkModule.register(),
-        RedisModule,
-        ThrottlerModule.forRoot([/* rate limiting config */]),
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.GATEWAY,
+			protocol: 'http',
+			additionalModules: [
+				ClerkModule.register(),
+				RedisModule,
+				ThrottlerModule.forRoot([
+					/* rate limiting config */
+				]),
+			],
+		}),
+	],
 })
 export class GatewayModule {}
 ```
@@ -108,19 +115,19 @@ export class GatewayModule {}
 Add custom health checks for your service:
 
 ```typescript
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.LOCATION,
-      protocol: 'grpc',
-      healthChecks: async () => ({
-        locationService: { status: 'up' },
-        geospatialEngine: { status: 'up' },
-      }),
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.LOCATION,
+			protocol: 'grpc',
+			healthChecks: async () => ({
+				locationService: { status: 'up' },
+				geospatialEngine: { status: 'up' },
+			}),
+		}),
+	],
 })
 export class LocationModule {}
 ```
@@ -130,20 +137,20 @@ export class LocationModule {}
 Configure a WebSocket service with authentication:
 
 ```typescript
-import { APP_NAMES, BootstrapModule } from '@app/nest/modules';
+import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
 
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.WEBSOCKET_GATEWAY,
-      protocol: 'http', // WebSocket uses HTTP protocol
-      additionalModules: [
-        ClerkModule.register(),
-        RedisModule,
-        GrpcInstanceModule.register(/* location service config */),
-      ],
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.WEBSOCKET_GATEWAY,
+			protocol: 'http', // WebSocket uses HTTP protocol
+			additionalModules: [
+				ClerkModule.register(),
+				RedisModule,
+				GrpcInstanceModule.register(/* location service config */),
+			],
+		}),
+	],
 })
 export class WebsocketGatewayModule {}
 ```
@@ -154,11 +161,11 @@ export class WebsocketGatewayModule {}
 
 ```typescript
 interface BootstrapOptions {
-  appName: string;                    // Service name for logging and monitoring
-  protocol?: 'http' | 'grpc' | 'websocket' | 'nats'; // Service protocol
-  additionalModules?: any[];          // Service-specific modules to include
-  additionalProviders?: any[];        // Service-specific providers to include
-  healthChecks?: () => Promise<Record<string, any>>; // Custom health checks
+	appName: string; // Service name for logging and monitoring
+	protocol?: 'http' | 'grpc' | 'websocket' | 'nats'; // Service protocol
+	additionalModules?: any[]; // Service-specific modules to include
+	additionalProviders?: any[]; // Service-specific providers to include
+	healthChecks?: () => Promise<Record<string, any>>; // Custom health checks
 }
 ```
 
@@ -167,15 +174,15 @@ interface BootstrapOptions {
 Use the centralized app names to ensure consistency across all services:
 
 ```typescript
-import { APP_NAMES } from '@app/nest/modules';
+import { APP_NAMES } from '@venta/nest/modules';
 
 // Available app names:
-APP_NAMES.ALGOLIA_SYNC      // 'Algolia Sync Service'
-APP_NAMES.GATEWAY           // 'Gateway Service'
-APP_NAMES.LOCATION          // 'Location Microservice'
-APP_NAMES.USER              // 'User Microservice'
-APP_NAMES.VENDOR            // 'Vendor Microservice'
-APP_NAMES.WEBSOCKET_GATEWAY // 'Websocket Gateway Microservice'
+APP_NAMES.ALGOLIA_SYNC; // 'Algolia Sync Service'
+APP_NAMES.GATEWAY; // 'Gateway Service'
+APP_NAMES.LOCATION; // 'Location Microservice'
+APP_NAMES.USER; // 'User Microservice'
+APP_NAMES.VENDOR; // 'Vendor Microservice'
+APP_NAMES.WEBSOCKET_GATEWAY; // 'Websocket Gateway Microservice'
 ```
 
 ### Automatically Included Modules
@@ -214,4 +221,4 @@ These modules can be added as needed:
 - **LoggerModule** for structured logging
 - **PrismaModule** for database access
 - **HealthModule** for health monitoring
-- **PrometheusModule** for metrics collection 
+- **PrometheusModule** for metrics collection

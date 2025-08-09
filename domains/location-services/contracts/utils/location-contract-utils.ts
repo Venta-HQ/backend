@@ -1,5 +1,5 @@
-import { ValidationUtils } from '@app/utils';
 import { Logger } from '@nestjs/common';
+import { ValidationUtils } from '@venta/utils';
 
 /**
  * Location Services Contract Utilities

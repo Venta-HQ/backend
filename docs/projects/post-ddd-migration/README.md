@@ -16,34 +16,34 @@ This document outlines the plan for improving our codebase after the initial DDD
 #### 1. Replace Custom Webhook Handling
 
 - Remove `WebhookSignatureACL`
-- Update Clerk and RevenueCat controllers to use `@app/nest/webhooks`
+- Update Clerk and RevenueCat controllers to use `@venta/nest/webhooks`
 - Use built-in webhook decorators, validation, and error handling
 - Use built-in signature verification
 
 #### 2. Replace Custom Event Handling
 
 - Remove custom NATS code from all services
-- Use `@app/nest/events` for all event handling
+- Use `@venta/nest/events` for all event handling
 - Standardize event types and validation
 - Use built-in event decorators and logging
 
 #### 3. Standardize Error Handling
 
 - Remove custom error handling from ACLs
-- Use `@app/nest/errors` consistently
+- Use `@venta/nest/errors` consistently
 - Use standard error types and codes
 - Use built-in error logging
 
 #### 4. Standardize Validation
 
-- Move common schemas to `@app/nest/validation`
+- Move common schemas to `@venta/nest/validation`
 - Use built-in validation decorators and pipes
 - Share validation schemas across domains
 - Remove duplicate validation logic
 
 #### 5. Standardize Auth
 
-- Extend existing `@app/nest/guards` library:
+- Extend existing `@venta/nest/guards` library:
   - HTTP auth with `AuthGuard` (Clerk integration)
   - WebSocket auth with `WsAuthGuard`
   - Webhook auth with `SignedWebhookGuard`
@@ -56,7 +56,7 @@ This document outlines the plan for improving our codebase after the initial DDD
 
 #### 6. Standardize Logging
 
-- Replace raw Logger usage with `@app/nest/logging`
+- Replace raw Logger usage with `@venta/nest/logging`
 - Add request correlation
 - Add structured logging
 - Add context metadata
@@ -179,13 +179,13 @@ async handleClerkEvent(
 1. **Webhook Handling**
 
    - ✅ Removed custom webhook handling code
-   - ✅ Integrated `SignedWebhookGuard` from `@app/nest/guards`
+   - ✅ Integrated `SignedWebhookGuard` from `@venta/nest/guards`
    - ✅ Updated Clerk and RevenueCat controllers
 
 2. **Event Handling**
 
    - ✅ Removed custom NATS code
-   - ✅ Integrated `EventService` from `@app/nest/modules`
+   - ✅ Integrated `EventService` from `@venta/nest/modules`
    - ✅ Standardized event types and validation
 
 3. **Error Handling**
@@ -197,7 +197,7 @@ async handleClerkEvent(
 
 4. **Validation**
 
-   - ✅ Created `@app/nest/validation` module
+   - ✅ Created `@venta/nest/validation` module
    - ✅ Updated `SchemaValidatorPipe` for consistent error handling
    - ✅ Standardized Zod schema usage in ACLs
    - ✅ Added validation documentation
@@ -224,7 +224,7 @@ async handleClerkEvent(
 
 2. **Logging**
 
-   - Replace raw Logger with `@app/nest/logging`
+   - Replace raw Logger with `@venta/nest/logging`
    - Add request correlation
    - Add structured logging
    - Add context metadata

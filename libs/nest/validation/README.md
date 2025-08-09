@@ -1,17 +1,17 @@
-# @app/nest/validation
+# @venta/nest/validation
 
 This module provides standardized validation tools for the application.
 
 ## Features
 
 - Schema-based validation using Zod
-- Consistent error handling with `@app/nest/errors`
+- Consistent error handling with `@venta/nest/errors`
 - Type-safe validation pipes
 
 ## Installation
 
 ```typescript
-import { ValidationModule } from '@app/nest/validation';
+import { ValidationModule } from '@venta/nest/validation';
 
 @Module({
 	imports: [ValidationModule],
@@ -26,7 +26,7 @@ export class YourModule {}
 The `SchemaValidatorPipe` is a NestJS pipe that validates incoming data against a Zod schema:
 
 ```typescript
-import { SchemaValidatorPipe } from '@app/nest/validation';
+import { SchemaValidatorPipe } from '@venta/nest/validation';
 import { z } from 'zod';
 
 const userSchema = z.object({
@@ -45,7 +45,7 @@ async createUser(
 
 ### Error Handling
 
-The validation pipe integrates with `@app/nest/errors` for consistent error handling:
+The validation pipe integrates with `@venta/nest/errors` for consistent error handling:
 
 - Uses `AppError.validation()` with proper error codes
 - Provides detailed error messages and field paths

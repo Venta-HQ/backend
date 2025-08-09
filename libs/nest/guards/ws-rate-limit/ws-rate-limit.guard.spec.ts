@@ -1,8 +1,8 @@
 import { Socket } from 'socket.io';
 import { vi } from 'vitest';
-import { AppError, ErrorType } from '@app/nest/errors';
 import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { AppError, ErrorType } from '@venta/nest/errors';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
 
 interface RateLimitedSocket extends Socket {

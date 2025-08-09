@@ -1,5 +1,5 @@
-import { PrismaService } from '@app/nest/modules';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaService } from '@venta/nest/modules';
 import { MarketplaceToLocationContextMapper } from '../../../../contracts/context-mappers/marketplace-to-location-context-mapper';
 import { UserManagementService } from './user-management.service';
 

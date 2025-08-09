@@ -1,8 +1,8 @@
-import { ProtoPathUtil } from '@app/utils';
 import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { ClientGrpc, ClientsModule, Transport } from '@nestjs/microservices';
+import { ProtoPathUtil } from '@venta/utils';
 import GrpcInstance from './grpc-instance.service';
 
 @Module({})

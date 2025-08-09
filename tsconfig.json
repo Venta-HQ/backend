@@ -18,11 +18,11 @@
 		"forceConsistentCasingInFileNames": false,
 		"noFallthroughCasesInSwitch": false,
 		"paths": {
-			"@app/nest/*": ["libs/nest/*"],
-			"@app/proto/*": ["libs/proto/src/lib/domains/*.ts"],
-			"@app/eventtypes": ["libs/eventtypes/src"],
-			"@app/eventtypes/*": ["libs/eventtypes/src/*"],
-			"@app/utils": ["libs/utils/src"],
+			"@venta/nest/*": ["libs/nest/*"],
+			"@venta/proto/*": ["libs/proto/src/lib/domains/*.ts"],
+			"@venta/eventtypes": ["libs/eventtypes/src"],
+			"@venta/eventtypes/*": ["libs/eventtypes/src/*"],
+			"@venta/utils": ["libs/utils/src"],
 			"@domains/*": ["domains/*"],
 			"@test/helpers": ["test/helpers"],
 			"@test/helpers/*": ["test/helpers/*"]

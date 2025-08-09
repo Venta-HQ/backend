@@ -1,12 +1,12 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SignedWebhookGuard } from '@app/nest/guards';
-import { GrpcInstance } from '@app/nest/modules';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
-import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@app/proto/marketplace/user-management';
 import { CommunicationToMarketplaceContextMapper } from '@domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
 import { Communication } from '@domains/communication/contracts/types/context-mapping.types';
 import { RevenueCatWebhookPayload } from '@domains/communication/contracts/types/external/revenuecat.types';
 import { Body, Controller, Headers, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { SignedWebhookGuard } from '@venta/nest/guards';
+import { GrpcInstance } from '@venta/nest/modules';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller()
 export class RevenueCatWebhooksController {

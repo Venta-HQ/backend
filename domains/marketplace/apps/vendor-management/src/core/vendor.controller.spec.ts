@@ -7,7 +7,7 @@ const clearMocks = () => {
 };
 
 // Mock the proto modules
-vi.mock('@app/proto/vendor', () => ({
+vi.mock('@venta/proto/vendor', () => ({
 	VENDOR_SERVICE_NAME: 'VendorService',
 	VendorServiceClient: vi.fn(),
 }));

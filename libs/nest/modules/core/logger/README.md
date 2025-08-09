@@ -7,6 +7,7 @@ The Logger Module provides structured logging capabilities across all services i
 ## Overview
 
 This module provides:
+
 - Structured logging with automatic service name identification
 - Loki integration for centralized log aggregation
 - Request correlation and tracing
@@ -22,12 +23,12 @@ Register the LoggerModule in your service:
 
 ```typescript
 @Module({
-  imports: [
-    BootstrapModule.forRoot({
-      appName: APP_NAMES.USER,
-      protocol: 'grpc',
-    }),
-  ],
+	imports: [
+		BootstrapModule.forRoot({
+			appName: APP_NAMES.USER,
+			protocol: 'grpc',
+		}),
+	],
 })
 export class UserModule {}
 ```
@@ -39,24 +40,24 @@ The LoggerModule is automatically included by BootstrapModule and will use the a
 Inject Logger into your services:
 
 ```typescript
-import { Logger } from '@app/nest/modules';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class UserService {
-  private readonly logger = new Logger(UserService.name);
+	private readonly logger = new Logger(UserService.name);
 
-  async createUser(userData: CreateUserData) {
-    this.logger.log('Creating new user', { email: userData.email });
-    
-    try {
-      const user = await this.userRepository.create(userData);
-      this.logger.log('User created successfully', { userId: user.id });
-      return user;
-    } catch (error) {
-      this.logger.error('Failed to create user', error);
-      throw error;
-    }
-  }
+	async createUser(userData: CreateUserData) {
+		this.logger.log('Creating new user', { email: userData.email });
+
+		try {
+			const user = await this.userRepository.create(userData);
+			this.logger.log('User created successfully', { userId: user.id });
+			return user;
+		} catch (error) {
+			this.logger.error('Failed to create user', error);
+			throw error;
+		}
+	}
 }
 ```
 
@@ -78,16 +79,17 @@ Include structured data with your log messages:
 
 ```typescript
 this.logger.log('User action completed', {
-  userId: user.id,
-  action: 'profile_update',
-  duration: 150,
-  success: true,
+	userId: user.id,
+	action: 'profile_update',
+	duration: 150,
+	success: true,
 });
 ```
 
 ## Configuration
 
 The LoggerModule automatically configures itself using:
+
 - **Service Name**: Retrieved from ConfigService (APP_NAME environment variable)
 - **Loki Integration**: Configured via environment variables
 - **Request Correlation**: Automatic request ID injection

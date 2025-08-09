@@ -1,5 +1,5 @@
 import { Counter, Gauge, Histogram } from 'prom-client';
-import { MetricsFactory, PrometheusService } from '@app/nest/modules';
+import { MetricsFactory, PrometheusService } from '@venta/nest/modules';
 
 export const WEBSOCKET_METRICS = 'WEBSOCKET_METRICS';
 

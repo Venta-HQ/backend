@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Controller, Post, UploadedFile } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { UploadService } from '../../services/upload/upload.service';
 
 @Controller()

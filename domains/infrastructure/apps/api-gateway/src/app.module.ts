@@ -1,8 +1,8 @@
-import { AuthGuard } from '@app/nest/guards';
-import { APP_NAMES, BootstrapModule, ClerkModule, RedisModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { AuthGuard } from '@venta/nest/guards';
+import { APP_NAMES, BootstrapModule, ClerkModule, RedisModule } from '@venta/nest/modules';
 import { CoreModule } from './core/core.module';
 
 @Module({

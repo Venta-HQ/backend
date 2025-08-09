@@ -7,6 +7,7 @@ The Algolia module provides search functionality and index management for the Ve
 ## Overview
 
 This module provides:
+
 - Algolia client integration and configuration
 - Search operations with advanced querying and filtering
 - Index management and optimization
@@ -21,11 +22,11 @@ This module provides:
 Register the Algolia module in your service:
 
 ```typescript
-import { AlgoliaModule } from '@app/nest/modules/algolia';
+import { AlgoliaModule } from '@venta/nest/modules/algolia';
 
 @Module({
-  imports: [AlgoliaModule.register()],
-  // ... other module configuration
+	imports: [AlgoliaModule.register()],
+	// ... other module configuration
 })
 export class YourServiceModule {}
 ```
@@ -35,27 +36,27 @@ export class YourServiceModule {}
 Inject AlgoliaService for search operations:
 
 ```typescript
-import { AlgoliaService } from '@app/nest/modules/algolia';
+import { AlgoliaService } from '@venta/nest/modules/algolia';
 
 @Injectable()
 export class YourService {
-  constructor(private readonly algoliaService: AlgoliaService) {}
+	constructor(private readonly algoliaService: AlgoliaService) {}
 
-  async searchVendors(query: string) {
-    return this.algoliaService.search('vendor', {
-      query,
-      filters: 'status:active',
-      hitsPerPage: 20
-    });
-  }
+	async searchVendors(query: string) {
+		return this.algoliaService.search('vendor', {
+			query,
+			filters: 'status:active',
+			hitsPerPage: 20,
+		});
+	}
 
-  async searchUsers(query: string) {
-    return this.algoliaService.search('user', {
-      query,
-      filters: 'isActive:true',
-      hitsPerPage: 10
-    });
-  }
+	async searchUsers(query: string) {
+		return this.algoliaService.search('user', {
+			query,
+			filters: 'isActive:true',
+			hitsPerPage: 10,
+		});
+	}
 }
 ```
 
@@ -164,4 +165,4 @@ ALGOLIA_USER_INDEX_NAME=users
 
 - **Algolia** for search service and index management
 - **NestJS** for module framework and dependency injection
-- **TypeScript** for type definitions 
+- **TypeScript** for type definitions

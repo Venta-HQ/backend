@@ -2,7 +2,7 @@ import { clearMocks } from '../../../../../test/helpers/test-utils';
 import { VendorConnectionManagerService } from './vendor-connection-manager.service';
 
 // Mock the retry utility
-vi.mock('@app/utils', () => ({
+vi.mock('@venta/utils', () => ({
 	retryOperation: vi.fn().mockImplementation(async (operation: () => Promise<any>) => {
 		return await operation();
 	}),

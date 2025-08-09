@@ -1,5 +1,8 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
+import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@domains/marketplace/contracts/types';
+import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
 	Vendor,
 	VENDOR_MANAGEMENT_SERVICE_NAME,
@@ -9,10 +12,7 @@ import {
 	VendorLookupByIdResponse,
 	VendorUpdateData,
 	VendorUpdateResponse,
-} from '@app/proto/marketplace/vendor-management';
-import { GrpcVendorCreateDataSchema, GrpcVendorUpdateDataSchema } from '@domains/marketplace/contracts/types';
-import { Controller, Logger, UsePipes } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/vendor-management';
 import { VendorService } from './vendor.service';
 
 @Controller()

@@ -4,7 +4,7 @@ import { Metadata } from '@grpc/grpc-js';
 import GrpcInstance from './grpc-instance.service';
 
 // Mock the retryObservable utility
-vi.mock('@app/utils', () => ({
+vi.mock('@venta/utils', () => ({
 	retryObservable: vi.fn().mockImplementation((observable) => observable),
 }));
 

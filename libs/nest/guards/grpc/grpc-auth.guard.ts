@@ -1,6 +1,6 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthService } from '../core/auth.service';
 import { AuthProtocol } from '../types';
 

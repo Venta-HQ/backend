@@ -4,7 +4,7 @@ import { createGrpcErrorMock, createGrpcSuccessMock, mockGrpcClient, mockRequest
 import { VendorController } from './vendor.controller';
 
 // Mock the proto imports to avoid module resolution issues
-vi.mock('@app/proto/vendor', () => ({
+vi.mock('@venta/proto/vendor', () => ({
 	VENDOR_SERVICE_NAME: 'VendorService',
 	Vendor: vi.fn(),
 	VendorCreateResponse: vi.fn(),

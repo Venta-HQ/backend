@@ -1,18 +1,18 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { AuthGuard } from '@app/nest/guards';
-import { GrpcInstance } from '@app/nest/modules';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
-import {
-	VENDOR_MANAGEMENT_SERVICE_NAME,
-	VendorManagementServiceClient,
-} from '@app/proto/marketplace/vendor-management';
 import { VendorHttpACL } from '@domains/infrastructure/contracts/anti-corruption-layers/vendor-http.acl';
 import * as InfrastructureToMarketplaceContextMapper from '@domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
 import { CreateVendorSchema } from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
 import { AuthedRequest } from '@domains/infrastructure/contracts/types';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { AuthGuard } from '@venta/nest/guards';
+import { GrpcInstance } from '@venta/nest/modules';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import {
+	VENDOR_MANAGEMENT_SERVICE_NAME,
+	VendorManagementServiceClient,
+} from '@venta/proto/marketplace/vendor-management';
 
 @Controller('vendors')
 export class VendorController {

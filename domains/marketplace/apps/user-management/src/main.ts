@@ -1,6 +1,6 @@
-import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
 import { UserManagementModule } from './user-management.module';
 
 async function bootstrap() {

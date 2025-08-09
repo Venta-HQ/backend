@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 @Injectable()
 export class UserConnectionManagerService {

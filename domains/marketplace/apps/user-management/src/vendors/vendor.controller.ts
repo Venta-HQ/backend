@@ -1,11 +1,11 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
+import { Controller } from '@nestjs/common';
+import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import {
 	USER_MANAGEMENT_SERVICE_NAME,
 	UserVendorData,
 	UserVendorsResponse,
-} from '@app/proto/marketplace/user-management';
-import { Controller } from '@nestjs/common';
-import { GrpcMethod } from '@nestjs/microservices';
+} from '@venta/proto/marketplace/user-management';
 import { VendorService } from './vendor.service';
 
 @Controller()

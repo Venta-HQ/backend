@@ -1,8 +1,8 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { SchemaValidatorPipe } from '@app/nest/pipes';
 import { Infrastructure } from '@domains/infrastructure/contracts/types/context-mapping.types';
 import { Controller, Logger, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { FileManagementService } from '../../../core/services/file-management/file-management.service';
 
 /**

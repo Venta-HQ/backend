@@ -1,5 +1,5 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { LocationServices } from '../../types/context-mapping.types';
 
 /**

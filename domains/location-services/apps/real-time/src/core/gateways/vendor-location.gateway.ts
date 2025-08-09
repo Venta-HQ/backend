@@ -1,6 +1,4 @@
 import { Server, Socket } from 'socket.io';
-import { AppError, ErrorCodes } from '@app/nest/errors';
-import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@app/nest/guards';
 import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
 import { Logger, UseGuards } from '@nestjs/common';
 import {
@@ -10,6 +8,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
 import { VendorConnectionManagerService } from '../vendor-connection-manager.service';
 
 @WebSocketGateway({

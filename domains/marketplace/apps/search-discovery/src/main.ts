@@ -1,5 +1,5 @@
-import { BootstrapService, HealthCheckModule } from '@app/nest/modules';
 import { ConfigService } from '@nestjs/config';
+import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
 import { AlgoliaSyncModule } from './algolia-sync.module';
 
 async function bootstrap() {

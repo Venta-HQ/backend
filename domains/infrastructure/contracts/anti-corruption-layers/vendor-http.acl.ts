@@ -1,10 +1,10 @@
-import { AppError, ErrorCodes } from '@app/nest/errors';
 import {
 	CreateVendorSchema,
 	UpdateVendorSchema,
 } from '@domains/infrastructure/contracts/schemas/vendor/vendor.schemas';
 import { CreateVendorData, UpdateVendorData } from '@domains/infrastructure/contracts/types/vendor/vendor.types';
 import { Injectable, Logger } from '@nestjs/common';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**
  * Anti-Corruption Layer for vendor HTTP data validation

@@ -1,7 +1,7 @@
-import { APP_NAMES, BootstrapModule, EventsModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { APP_NAMES, BootstrapModule, EventsModule } from '@venta/nest/modules';
 import { MarketplaceContractsModule } from '../contracts/marketplace-contracts.module';
 import { CoreModule } from './core/core.module';
 import { LocationModule } from './location/location.module';

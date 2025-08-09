@@ -1,4 +1,6 @@
-import { ErrorHandlingModule } from '@app/nest/errors';
+import { DynamicModule, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { ErrorHandlingModule } from '@venta/nest/errors';
 import {
 	HealthCheckModule,
 	HealthModule,
@@ -6,9 +8,7 @@ import {
 	PrismaModule,
 	PrometheusModule,
 	RequestTracingModule,
-} from '@app/nest/modules';
-import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+} from '@venta/nest/modules';
 
 export interface BootstrapOptions {
 	additionalModules?: any[];

@@ -1,7 +1,7 @@
-import { AppError, ErrorCodes, ErrorType } from '@app/nest/errors';
-import { PrismaService } from '@app/nest/modules';
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
+import { AppError, ErrorCodes, ErrorType } from '@venta/nest/errors';
+import { PrismaService } from '@venta/nest/modules';
 import { ClerkAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/clerk.acl';
 
 interface UserIdentityData {

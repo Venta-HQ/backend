@@ -1,5 +1,5 @@
-import { PrometheusModule } from '@app/nest/modules';
 import { Module } from '@nestjs/common';
+import { PrometheusModule } from '@venta/nest/modules';
 import { CloudinaryACL } from './anti-corruption-layers/cloudinary.acl';
 import { UserHttpACL } from './anti-corruption-layers/user-http.acl';
 import { VendorHttpACL } from './anti-corruption-layers/vendor-http.acl';

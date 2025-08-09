@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { GEOLOCATION_SERVICE_NAME } from '@app/proto/location-services/geolocation';
 import { TestingModule } from '@nestjs/testing';
+import { GEOLOCATION_SERVICE_NAME } from '@venta/proto/location-services/geolocation';
 import {
 	clearMocks,
 	createMockDependencies,
@@ -14,13 +14,13 @@ import { VendorConnectionManagerService } from '../services/vendor-connection-ma
 import { VendorLocationGateway } from './vendor-location.gateway';
 
 // Mock the proto modules
-vi.mock('@app/proto/location-services/geolocation', () => ({
+vi.mock('@venta/proto/location-services/geolocation', () => ({
 	GEOLOCATION_SERVICE_NAME: 'GeolocationService',
 	GeolocationServiceClient: {},
 }));
 
 // Mock the guards - define classes inside the factory
-vi.mock('@app/nest/guards', () => {
+vi.mock('@venta/nest/guards', () => {
 	class MockWsAuthGuard {
 		canActivate() {
 			return true;
@@ -42,17 +42,17 @@ vi.mock('@app/nest/guards', () => {
 });
 
 // Mock the pipes
-vi.mock('@app/nest/pipes', () => ({
+vi.mock('@venta/nest/pipes', () => ({
 	SchemaValidatorPipe: vi.fn(),
 }));
 
 // Mock the apitypes
-vi.mock('@app/apitypes', () => ({
+vi.mock('@venta/apitypes', () => ({
 	VendorLocationUpdateDataSchema: {},
 }));
 
 // Mock the utils
-vi.mock('@app/utils', () => ({
+vi.mock('@venta/utils', () => ({
 	retryOperation: vi.fn().mockImplementation(async (operation) => {
 		return await operation();
 	}),

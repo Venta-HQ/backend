@@ -1,7 +1,7 @@
-import { retryObservable } from '@app/utils';
 import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { retryObservable } from '@venta/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 class GrpcInstance<T> {
