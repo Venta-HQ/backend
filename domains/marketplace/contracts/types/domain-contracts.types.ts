@@ -1,16 +1,16 @@
 /**
  * Marketplace Domain Contract Interfaces
- * 
+ *
  * These interfaces define the contracts for marketplace domain communication
  * with other bounded contexts.
  */
 
 import { Observable } from 'rxjs';
-import { 
-	MarketplaceLocationBounds, 
-	MarketplaceLocationUpdate, 
-	MarketplaceVendorLocation, 
-	MarketplaceUserLocation 
+import {
+	MarketplaceLocationBounds,
+	MarketplaceLocationUpdate,
+	MarketplaceUserLocation,
+	MarketplaceVendorLocation,
 } from './context-mapping.types';
 
 // ============================================================================
@@ -59,10 +59,7 @@ export interface MarketplaceLocationContract {
 	/**
 	 * Get nearby vendors within a radius
 	 */
-	getNearbyVendors(
-		center: { lat: number; lng: number },
-		radiusInMeters: number
-	): Promise<MarketplaceVendorLocation[]>;
+	getNearbyVendors(center: { lat: number; lng: number }, radiusInMeters: number): Promise<MarketplaceVendorLocation[]>;
 }
 
 // ============================================================================
@@ -188,11 +185,7 @@ export interface MarketplaceInfrastructureContract {
 	/**
 	 * Publish marketplace event to messaging infrastructure
 	 */
-	publishEvent(event: {
-		type: string;
-		data: Record<string, any>;
-		metadata?: Record<string, any>;
-	}): Promise<void>;
+	publishEvent(event: { type: string; data: Record<string, any>; metadata?: Record<string, any> }): Promise<void>;
 
 	/**
 	 * Subscribe to marketplace events from messaging infrastructure
@@ -203,4 +196,4 @@ export interface MarketplaceInfrastructureContract {
 		metadata?: Record<string, any>;
 		timestamp: string;
 	}>;
-} 
+}

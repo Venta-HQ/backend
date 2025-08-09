@@ -5,65 +5,64 @@
 // source: domains/infrastructure/file-management.proto
 
 /* eslint-disable */
-import type { Metadata } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
+import type { Metadata } from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
 
-export const protobufPackage = "infrastructure.file_management";
+export const protobufPackage = 'infrastructure.file_management';
 
 /** Helper Types */
 export enum FileType {
-  AVATAR = 0,
-  LOGO = 1,
-  DOCUMENT = 2,
-  UNRECOGNIZED = -1,
+	AVATAR = 0,
+	LOGO = 1,
+	DOCUMENT = 2,
+	UNRECOGNIZED = -1,
 }
 
 /** Service Function Types */
 export interface UploadImageRequest {
-  content: Uint8Array;
-  filename: string;
-  mimetype: string;
-  size: number;
-  uploadedBy: string;
-  type: FileType;
+	content: Uint8Array;
+	filename: string;
+	mimetype: string;
+	size: number;
+	uploadedBy: string;
+	type: FileType;
 }
 
 export interface FileUploadResponse {
-  fileId: string;
-  url: string;
-  uploadedAt: string;
+	fileId: string;
+	url: string;
+	uploadedAt: string;
 }
 
-export interface Empty {
-}
+export interface Empty {}
 
-export const INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME = "infrastructure.file_management";
+export const INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME = 'infrastructure.file_management';
 
 export interface FileManagementServiceClient {
-  uploadImage(request: UploadImageRequest, metadata?: Metadata): Observable<FileUploadResponse>;
+	uploadImage(request: UploadImageRequest, metadata?: Metadata): Observable<FileUploadResponse>;
 }
 
 export interface FileManagementServiceController {
-  uploadImage(
-    request: UploadImageRequest,
-    metadata?: Metadata,
-  ): Promise<FileUploadResponse> | Observable<FileUploadResponse> | FileUploadResponse;
+	uploadImage(
+		request: UploadImageRequest,
+		metadata?: Metadata,
+	): Promise<FileUploadResponse> | Observable<FileUploadResponse> | FileUploadResponse;
 }
 
 export function FileManagementServiceControllerMethods() {
-  return function (constructor: Function) {
-    const grpcMethods: string[] = ["uploadImage"];
-    for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("FileManagementService", method)(constructor.prototype[method], method, descriptor);
-    }
-    const grpcStreamMethods: string[] = [];
-    for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("FileManagementService", method)(constructor.prototype[method], method, descriptor);
-    }
-  };
+	return function (constructor: Function) {
+		const grpcMethods: string[] = ['uploadImage'];
+		for (const method of grpcMethods) {
+			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+			GrpcMethod('FileManagementService', method)(constructor.prototype[method], method, descriptor);
+		}
+		const grpcStreamMethods: string[] = [];
+		for (const method of grpcStreamMethods) {
+			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+			GrpcStreamMethod('FileManagementService', method)(constructor.prototype[method], method, descriptor);
+		}
+	};
 }
 
-export const FILE_MANAGEMENT_SERVICE_NAME = "FileManagementService";
+export const FILE_MANAGEMENT_SERVICE_NAME = 'FileManagementService';

@@ -8,4 +8,4 @@ export class ProtoPathUtil {
 	static resolveFromDirname(dirname: string, protoPath: string): string {
 		return join(dirname, protoPath);
 	}
-} 
+}

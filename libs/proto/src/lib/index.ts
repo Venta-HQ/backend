@@ -6,6 +6,6 @@
 
 /* eslint-disable */
 
-export const protobufPackage = "";
+export const protobufPackage = '';
 
-export const _PACKAGE_NAME = "";
+export const _PACKAGE_NAME = '';

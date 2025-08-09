@@ -5,7 +5,7 @@ export const UserVendorRequestSchema = z.object({
 });
 
 export const UserDataSchema = z.object({
-    email: z.string().email(),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
+	email: z.string().email(),
+	firstName: z.string().optional(),
+	lastName: z.string().optional(),
 });

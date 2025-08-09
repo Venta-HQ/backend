@@ -6,4 +6,4 @@ import { VendorLocationEventsController } from './vendor-location-events.control
 	imports: [CoreModule],
 	controllers: [VendorLocationEventsController],
 })
-export class LocationModule {} 
+export class LocationModule {}

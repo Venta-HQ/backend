@@ -5,145 +5,142 @@
 // source: domains/marketplace/vendor-management.proto
 
 /* eslint-disable */
-import type { Metadata } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
+import { Observable } from 'rxjs';
+import type { Metadata } from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
 
-export const protobufPackage = "marketplace.vendor_management";
+export const protobufPackage = 'marketplace.vendor_management';
 
 export interface VendorCreateData {
-  name: string;
-  description: string;
-  email: string;
-  phone: string;
-  website: string;
-  imageUrl: string;
-  userId: string;
+	name: string;
+	description: string;
+	email: string;
+	phone: string;
+	website: string;
+	imageUrl: string;
+	userId: string;
 }
 
 export interface VendorCreateResponse {
-  id: string;
+	id: string;
 }
 
 export interface VendorLookupByIdData {
-  id: string;
+	id: string;
 }
 
 export interface VendorLookupByIdResponse {
-  vendor: Vendor | undefined;
+	vendor: Vendor | undefined;
 }
 
 export interface VendorUpdateData {
-  id: string;
-  name: string;
-  description: string;
-  email: string;
-  website: string;
-  phone: string;
-  userId: string;
-  imageUrl: string;
+	id: string;
+	name: string;
+	description: string;
+	email: string;
+	website: string;
+	phone: string;
+	userId: string;
+	imageUrl: string;
 }
 
 export interface VendorUpdateResponse {
-  message: string;
-  success: boolean;
+	message: string;
+	success: boolean;
 }
 
 export interface VendorLocationUpdate {
-  vendorId: string;
-  coordinates: Location | undefined;
+	vendorId: string;
+	coordinates: Location | undefined;
 }
 
 export interface VendorLocationRequest {
-  ne: Location | undefined;
-  sw: Location | undefined;
+	ne: Location | undefined;
+	sw: Location | undefined;
 }
 
 export interface VendorLocationResponse {
-  vendors: Vendor[];
+	vendors: Vendor[];
 }
 
 export interface Vendor {
-  id: string;
-  /** These lat/long values are used to show locations on the map without subscription to live location */
-  coordinates:
-    | Location
-    | undefined;
-  /** General details */
-  name: string;
-  description: string;
-  phone: string;
-  email: string;
-  website: string;
-  isOpen: boolean;
-  primaryImage: string;
-  /** Metadata - using strings instead of google.protobuf.Timestamp */
-  createdAt: string;
-  updatedAt: string;
+	id: string;
+	/** These lat/long values are used to show locations on the map without subscription to live location */
+	coordinates: Location | undefined;
+	/** General details */
+	name: string;
+	description: string;
+	phone: string;
+	email: string;
+	website: string;
+	isOpen: boolean;
+	primaryImage: string;
+	/** Metadata - using strings instead of google.protobuf.Timestamp */
+	createdAt: string;
+	updatedAt: string;
 }
 
 export interface Location {
-  lat: number;
-  long: number;
+	lat: number;
+	long: number;
 }
 
-export interface Empty {
-}
+export interface Empty {}
 
-export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = "marketplace.vendor_management";
+export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = 'marketplace.vendor_management';
 
 export interface VendorManagementServiceClient {
-  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Observable<Vendor>;
+	getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Observable<Vendor>;
 
-  createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
+	createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
 
-  updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
+	updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
 
-  updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Observable<Empty>;
+	updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Observable<Empty>;
 
-  getVendorsInArea(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
+	getVendorsInArea(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
 }
 
 export interface VendorManagementServiceController {
-  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Promise<Vendor> | Observable<Vendor> | Vendor;
+	getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Promise<Vendor> | Observable<Vendor> | Vendor;
 
-  createVendor(
-    request: VendorCreateData,
-    metadata?: Metadata,
-  ): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
+	createVendor(
+		request: VendorCreateData,
+		metadata?: Metadata,
+	): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
 
-  updateVendor(
-    request: VendorUpdateData,
-    metadata?: Metadata,
-  ): Promise<VendorUpdateResponse> | Observable<VendorUpdateResponse> | VendorUpdateResponse;
+	updateVendor(
+		request: VendorUpdateData,
+		metadata?: Metadata,
+	): Promise<VendorUpdateResponse> | Observable<VendorUpdateResponse> | VendorUpdateResponse;
 
-  updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
+	updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
-  getVendorsInArea(
-    request: VendorLocationRequest,
-    metadata?: Metadata,
-  ): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
+	getVendorsInArea(
+		request: VendorLocationRequest,
+		metadata?: Metadata,
+	): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
 }
 
 export function VendorManagementServiceControllerMethods() {
-  return function (constructor: Function) {
-    const grpcMethods: string[] = [
-      "getVendorById",
-      "createVendor",
-      "updateVendor",
-      "updateVendorLocation",
-      "getVendorsInArea",
-    ];
-    for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("VendorManagementService", method)(constructor.prototype[method], method, descriptor);
-    }
-    const grpcStreamMethods: string[] = [];
-    for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("VendorManagementService", method)(constructor.prototype[method], method, descriptor);
-    }
-  };
+	return function (constructor: Function) {
+		const grpcMethods: string[] = [
+			'getVendorById',
+			'createVendor',
+			'updateVendor',
+			'updateVendorLocation',
+			'getVendorsInArea',
+		];
+		for (const method of grpcMethods) {
+			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+			GrpcMethod('VendorManagementService', method)(constructor.prototype[method], method, descriptor);
+		}
+		const grpcStreamMethods: string[] = [];
+		for (const method of grpcStreamMethods) {
+			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+			GrpcStreamMethod('VendorManagementService', method)(constructor.prototype[method], method, descriptor);
+		}
+	};
 }
 
-export const VENDOR_MANAGEMENT_SERVICE_NAME = "VendorManagementService";
+export const VENDOR_MANAGEMENT_SERVICE_NAME = 'VendorManagementService';

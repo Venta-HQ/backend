@@ -54,13 +54,10 @@ describe('VendorLocationEventsController', () => {
 
 			await controller['handleVendorLocationUpdate'](mockEvent);
 
-			expect(vendorService.updateVendorLocation).toHaveBeenCalledWith(
-				'vendor-123',
-				{
-					lat: 40.7128,
-					lng: -74.006,
-				},
-			);
+			expect(vendorService.updateVendorLocation).toHaveBeenCalledWith('vendor-123', {
+				lat: 40.7128,
+				lng: -74.006,
+			});
 		});
 
 		it('should handle errors gracefully', async () => {
@@ -89,4 +86,4 @@ describe('VendorLocationEventsController', () => {
 			await expect(controller['handleVendorLocationUpdate'](mockEvent)).rejects.toThrow('Service error');
 		});
 	});
-}); 
+});
