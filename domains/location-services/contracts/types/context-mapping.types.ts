@@ -3,17 +3,15 @@ import { RealTime as RealTimeTypes } from './realtime/realtime.types';
 
 export namespace LocationServices {
 	export namespace RealTime {
-		export import Core = RealTimeTypes.Core;
-		export import Contracts = RealTimeTypes.Contracts;
-		export import Internal = RealTimeTypes.Internal;
-		export import Events = RealTimeTypes.Events;
-		export import Validation = RealTimeTypes.Validation;
+		export type Core = RealTimeTypes.Core;
+		export type Contracts = RealTimeTypes.Contracts;
+		export type Internal = RealTimeTypes.Internal;
+		export type Events = RealTimeTypes.Events;
 	}
 
 	export namespace Location {
-		export import Core = LocationTypes.Core;
-		export import Contracts = LocationTypes.Contracts;
-		export import Internal = LocationTypes.Internal;
-		export import Validation = LocationTypes.Validation;
+		export type Core = LocationTypes.Core;
+		export type Contracts = LocationTypes.Contracts;
+		export type Internal = LocationTypes.Internal;
 	}
 }
