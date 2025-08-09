@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { createEventSchema, EnforceValidDomainEvents } from '@venta/eventtypes';
-import { LocationServices } from '../contracts/types/context-mapping.types';
+import { GrpcLocationSchema } from '../contracts/schemas/location.schemas';
 
 // Location domain events with type enforcement
 export const locationEventSchemas = {
 	'location.vendor.location_updated': createEventSchema({
 		vendorId: z.string(),
-		location: LocationServices.Location.Validation.LocationSchema,
+		location: GrpcLocationSchema,
 		timestamp: z
 			.string()
 			.datetime()
@@ -15,7 +15,7 @@ export const locationEventSchemas = {
 
 	'location.user.location_updated': createEventSchema({
 		userId: z.string(),
-		location: LocationServices.Location.Validation.LocationSchema,
+		location: GrpcLocationSchema,
 		timestamp: z
 			.string()
 			.datetime()

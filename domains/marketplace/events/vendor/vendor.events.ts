@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { GrpcLocationSchema } from '@venta/domains/location-services/contracts/schemas/location.schemas';
 import { createEventSchema, EnforceValidDomainEvents } from '@venta/eventtypes';
 
 // Vendor domain events with type enforcement
@@ -7,7 +7,8 @@ export const vendorEventSchemas = {
 	'marketplace.vendor.onboarded': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
-		location: LocationServices.Location.Validation.LocationSchema,
+		// location schema
+		location: GrpcLocationSchema,
 		timestamp: z
 			.string()
 			.datetime()

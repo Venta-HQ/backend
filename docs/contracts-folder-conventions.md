@@ -233,3 +233,45 @@ Notes:
 
 - Validation artifacts (zod schemas) belong in `schemas/`, not under a `Validation` namespace in types. If you wish to expose validators via a namespaced API, re-export them from `types/index.ts` but keep the code in `schemas/`.
 - Context-mapping DTOs should live in `context-mapping.types.ts` and be imported by mappers. They can reference `Core` or `Contracts` shapes as needed.
+
+### Context mapping types (context-mapping.types.ts)
+
+Use a consistent structure in every domain’s `context-mapping.types.ts`:
+
+- Top-level domain namespace only (e.g., `Marketplace`, `Infrastructure`, `Communication`, `LocationServices`).
+- Inside it, define sub-namespaces:
+  - Core: domain-centric entities/value objects
+  - Contracts: DTOs that cross the domain boundary
+  - Internal: private shapes for internal use
+  - Events (optional): event payload types
+- No Validation namespace here; schemas live in `contracts/schemas/**`.
+- No zod imports in this file.
+- Cross-domain references use namespace aliasing instead of treating sub-namespaces as values.
+
+Example (Location Services):
+
+```ts
+import { Location as LocationTypes } from './location/location.types';
+import { RealTime as RealTimeTypes } from './realtime/realtime.types';
+
+export namespace LocationServices {
+	export import RealTime = RealTimeTypes;
+	export import Location = LocationTypes;
+}
+```
+
+Example (Marketplace referencing Location Services):
+
+```ts
+import { LocationServices } from '@domains/location-services/contracts/types/context-mapping.types';
+
+export namespace Marketplace {
+	export namespace Core {
+		export interface VendorLocationUpdate {
+			vendorId: string;
+			location: LocationServices.Location.Core.Coordinates;
+			timestamp: string;
+		}
+	}
+}
+```

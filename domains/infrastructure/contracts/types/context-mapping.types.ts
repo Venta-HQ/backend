@@ -1,17 +1,13 @@
-import { z } from 'zod';
-import {
-	UserDataSchema as BaseUserDataSchema,
-	UserVendorRequestSchema as BaseUserVendorRequestSchema,
-} from '../schemas/user/user.schemas';
+// No runtime zod usage here; schemas imported from ../schemas
 import {
 	CreateVendorSchema as BaseCreateVendorSchema,
-	UpdateVendorSchema as BaseUpdateVendorSchema,
-} from '../schemas/vendor/vendor.schemas';
-import {
 	FileMetadataSchema as BaseFileMetadataSchema,
-	FileUploadDataSchema as BaseFileUploadDataSchema,
-	type FileUploadData as BaseFileUploadData,
-} from './file/file.types';
+	FileUploadSchema as BaseFileUploadDataSchema,
+	UpdateVendorSchema as BaseUpdateVendorSchema,
+	UserSchema as BaseUserDataSchema,
+	UserVendorRequestSchema as BaseUserVendorRequestSchema,
+} from '../schemas/contracts.schemas';
+import type { FileUploadData as BaseFileUploadData } from './file/file.types';
 import { UserData as BaseUserData, UserVendorRequest as BaseUserVendorRequest } from './user/user.types';
 import {
 	type CreateVendorData as BaseCreateVendorData,
@@ -62,46 +58,5 @@ export namespace Infrastructure {
 			createdAt: string;
 			updatedAt: string;
 		}
-	}
-
-	export namespace Validation {
-		export const FileMetadataSchema = BaseFileMetadataSchema;
-		export const FileUploadSchema = BaseFileUploadDataSchema;
-		export const UserSchema = BaseUserDataSchema;
-		export const CreateVendorSchema = BaseCreateVendorSchema;
-		export const UpdateVendorSchema = BaseUpdateVendorSchema;
-		export const UserVendorRequestSchema = BaseUserVendorRequestSchema;
-
-		export const VendorCreateRequestSchema = BaseCreateVendorSchema.extend({
-			userId: z.string().uuid(),
-		});
-
-		export const VendorUpdateRequestSchema = BaseUpdateVendorSchema.extend({
-			id: z.string().uuid(),
-			userId: z.string().uuid(),
-		});
-
-		export const FileUploadRequestSchema = BaseFileUploadDataSchema.extend({
-			userId: z.string().uuid(),
-		});
-
-		export const UserRequestSchema = z.object({
-			userId: z.string().uuid(),
-		});
-
-		export const FileUploadResultSchema = z.object({
-			fileId: z.string().uuid(),
-			url: z.string().url(),
-			uploadedAt: z.string().datetime(),
-		});
-
-		export const UserProfileSchema = z.object({
-			id: z.string().uuid(),
-			email: z.string().email(),
-			firstName: z.string().optional(),
-			lastName: z.string().optional(),
-			createdAt: z.string().datetime(),
-			updatedAt: z.string().datetime(),
-		});
 	}
 }
