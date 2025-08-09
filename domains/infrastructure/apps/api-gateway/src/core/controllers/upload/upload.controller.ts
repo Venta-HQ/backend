@@ -1,4 +1,3 @@
-import { Express } from 'express';
 import { lastValueFrom } from 'rxjs';
 import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
