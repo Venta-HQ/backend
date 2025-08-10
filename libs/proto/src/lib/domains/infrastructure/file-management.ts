@@ -35,9 +35,6 @@ export interface FileUploadResponse {
   uploadedAt: string;
 }
 
-export interface Empty {
-}
-
 export const INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME = "infrastructure.file_management";
 
 export interface FileManagementServiceClient {

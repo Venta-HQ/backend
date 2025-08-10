@@ -1,5 +1,10 @@
 syntax = "proto3";
 
+// Shared utilities - import first so all domains can use them
+import "shared/common.proto";
+import "shared/location.proto";
+
+// Domain-specific imports
 import "domains/marketplace/user-management.proto";
 import "domains/marketplace/vendor-management.proto";
 import "domains/location-services/geolocation.proto";

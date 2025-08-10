@@ -8,6 +8,8 @@
 import type { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { Empty } from "../../shared/common";
+import { Location } from "../../shared/location";
 
 export const protobufPackage = "marketplace.vendor_management";
 
@@ -69,14 +71,6 @@ export interface Vendor {
   /** Metadata - using strings instead of google.protobuf.Timestamp */
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Location {
-  lat: number;
-  lng: number;
-}
-
-export interface Empty {
 }
 
 export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = "marketplace.vendor_management";

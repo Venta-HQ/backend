@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package shared.location;
+
+// Standardized location coordinates
+message Location {
+  double lat = 1;  // Latitude
+  double lng = 2;  // Longitude (standardized to 'lng' instead of 'long')
+}
+
+// Bounding box for area-based queries
+message BoundingBox {
+  Location northeast = 1;
+  Location southwest = 2;
+}
+
+// Address information
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string postalCode = 4;
+  string country = 5;
+  optional string formattedAddress = 6;
+}
+
+// Complete location with coordinates and address
+message FullLocation {
+  Location coordinates = 1;
+  optional Address address = 2;
+}

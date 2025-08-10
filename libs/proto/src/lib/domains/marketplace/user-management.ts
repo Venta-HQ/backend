@@ -46,9 +46,6 @@ export interface UserVendor {
   name: string;
 }
 
-export interface Empty {
-}
-
 export const MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME = "marketplace.user_management";
 
 export interface UserManagementServiceClient {

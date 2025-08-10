@@ -8,6 +8,8 @@
 import type { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { Empty } from "../../shared/common";
+import { Location } from "../../shared/location";
 
 export const protobufPackage = "location_services.geolocation";
 
@@ -28,14 +30,6 @@ export interface VendorLocationResponse {
 export interface VendorLocation {
   vendorId: string;
   coordinates: Location | undefined;
-}
-
-export interface Location {
-  lat: number;
-  long: number;
-}
-
-export interface Empty {
 }
 
 export const LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME = "location_services.geolocation";

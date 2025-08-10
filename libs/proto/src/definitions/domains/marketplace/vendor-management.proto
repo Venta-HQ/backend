@@ -2,11 +2,14 @@ syntax = "proto3";
 
 package marketplace.vendor_management;
 
+import "shared/common.proto";
+import "shared/location.proto";
+
 service VendorManagementService {
   rpc GetVendorById (VendorIdentityData) returns (VendorLookupResponse) {}
   rpc CreateVendor (VendorCreateData) returns (VendorIdentityData) {}
-  rpc UpdateVendor (VendorUpdateData) returns (Empty) {}
-  rpc UpdateVendorLocation (VendorLocationUpdate) returns (Empty) {}
+  rpc UpdateVendor (VendorUpdateData) returns (shared.common.Empty) {}
+  rpc UpdateVendorLocation (VendorLocationUpdate) returns (shared.common.Empty) {}
   rpc GetVendorsInArea (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
@@ -43,12 +46,12 @@ message VendorUpdateData {
 
 message VendorLocationUpdate {
     string vendorId = 1;
-    Location coordinates = 2;
+    shared.location.Location coordinates = 2;
 }
 
 message VendorLocationRequest {
-    Location ne = 1;
-    Location sw = 2;
+    shared.location.Location ne = 1;
+    shared.location.Location sw = 2;
 }
 
 message VendorLocationResponse {
@@ -61,7 +64,7 @@ message Vendor {
     string id = 1;
 
     // These lat/long values are used to show locations on the map without subscription to live location
-    Location coordinates = 2;
+    shared.location.Location coordinates = 2;
 
     // General details
     string name = 3;       
@@ -77,11 +80,4 @@ message Vendor {
     string updatedAt = 11;
 }
 
-message Location {
-    double lat = 1;
-    double lng = 2;
-}
-
-message Empty {
-
-} 
+// Note: Location and Empty messages now come from shared proto files 

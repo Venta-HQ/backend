@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package shared.common;
+
+// Standard empty response for operations that don't return data
+message Empty {}
+
+// Standard success/error response pattern
+message StandardResponse {
+  bool success = 1;
+  string message = 2;
+  optional string errorCode = 3;
+}
+
+// Timestamp wrapper for consistent date handling
+message Timestamp {
+  string value = 1; // ISO 8601 formatted timestamp
+}
+
+// Standard pagination request
+message PaginationRequest {
+  int32 page = 1;
+  int32 limit = 2;
+  optional string cursor = 3;
+}
+
+// Standard pagination response metadata
+message PaginationMeta {
+  int32 currentPage = 1;
+  int32 totalPages = 2;
+  int32 totalItems = 3;
+  optional string nextCursor = 4;
+  optional string prevCursor = 5;
+}
+
+// Standard error details
+message ErrorDetail {
+  string field = 1;
+  string message = 2;
+  string code = 3;
+}
+
+// Validation error response
+message ValidationError {
+  string message = 1;
+  repeated ErrorDetail details = 2;
+}

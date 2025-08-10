@@ -2,8 +2,11 @@ syntax = "proto3";
 
 package location_services.geolocation;
 
+import "shared/common.proto";
+import "shared/location.proto";
+
 service GeolocationService {
-  rpc UpdateVendorLocation (LocationUpdate) returns (Empty) {}
+  rpc UpdateVendorLocation (LocationUpdate) returns (shared.common.Empty) {}
   rpc VendorLocations (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
@@ -11,12 +14,12 @@ service GeolocationService {
 
 message LocationUpdate {
     string entityId = 1;
-    Location coordinates = 2;
+    shared.location.Location coordinates = 2;
 }
 
 message VendorLocationRequest {
-    Location ne = 1;
-    Location sw = 2;
+    shared.location.Location ne = 1;
+    shared.location.Location sw = 2;
 }
 
 message VendorLocationResponse {
@@ -25,16 +28,7 @@ message VendorLocationResponse {
 
 message VendorLocation {
     string vendorId = 1;
-    Location coordinates = 2;
+    shared.location.Location coordinates = 2;
 }
 
-// Helper Types
-
-message Location {
-    double lat = 1;
-    double long = 2;
-}
-
-message Empty {
-
-} 
+// Note: Location and Empty messages now come from shared proto files 

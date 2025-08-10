@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package marketplace.user_management;
 
+import "shared/common.proto";
+
 service UserManagementService {
   rpc HandleUserCreated (UserIdentityData) returns (CreateUserResponse) {}
   rpc HandleUserDeleted (UserIdentityData) returns (CreateUserResponse) {}
@@ -44,6 +46,4 @@ message UserVendor {
     string name = 2;
 }
 
-message Empty {
-
-} 
+// Note: Empty message now comes from shared/common.proto 

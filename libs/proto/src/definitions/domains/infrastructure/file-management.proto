@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package infrastructure.file_management;
 
+import "shared/common.proto";
+
 service FileManagementService {
   rpc UploadImage (UploadImageRequest) returns (FileUploadResponse) {}
 }
@@ -29,4 +31,4 @@ enum FileType {
   DOCUMENT = 2;
 }
 
-message Empty {}
+// Note: Empty message now comes from shared/common.proto
