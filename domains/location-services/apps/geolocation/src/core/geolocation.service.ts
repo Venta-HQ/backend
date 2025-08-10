@@ -17,7 +17,8 @@ export class GeolocationService {
 		try {
 			// Validate coordinates
 			if (!this.isValidCoordinates(request.coordinates)) {
-				throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
+					field: 'coordinates',
 					entityId: request.entityId,
 					coordinates: request.coordinates,
 				});
@@ -36,7 +37,7 @@ export class GeolocationService {
 				vendorId: request.entityId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_vendor_location',
 				entityId: request.entityId,
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -53,7 +54,8 @@ export class GeolocationService {
 		try {
 			// Validate coordinates
 			if (!this.isValidCoordinates(request.bounds.ne) || !this.isValidCoordinates(request.bounds.sw)) {
-				throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
+					field: 'bounds',
 					bounds: request.bounds,
 				});
 			}
@@ -87,7 +89,7 @@ export class GeolocationService {
 				bounds: request.bounds,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
 				operation: 'get_nearby_vendors',
 				bounds: request.bounds,
 				error: error instanceof Error ? error.message : 'Unknown error',

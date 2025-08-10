@@ -49,8 +49,9 @@ export class CoreController implements VendorManagementServiceController {
 
 			const vendor = await this.coreService.getVendorById(domainRequest.id);
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
-					vendorId: request.id,
+				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
+					entityType: 'vendor',
+					entityId: request.id,
 				});
 			}
 
@@ -138,7 +139,8 @@ export class CoreController implements VendorManagementServiceController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
+				operation: 'update_vendor_location',
 				vendorId: request.vendorId,
 			});
 		}
@@ -165,7 +167,8 @@ export class CoreController implements VendorManagementServiceController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
+				operation: 'get_vendors_in_area',
 				message: 'Failed to query vendors in area',
 			});
 		}

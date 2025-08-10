@@ -3,7 +3,8 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError, ErrorCodes } from './error-schemas';
+import { AppError } from './app-error';
+import { ErrorCodes } from './error-definitions';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -70,85 +71,53 @@ export class AppExceptionFilter implements ExceptionFilter {
 			switch (status) {
 				case 400:
 					return AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-						message: response.message || exception.message || 'Validation error',
-						originalError: response,
-						statusCode: status,
+						field: 'request', // Generic field for HTTP validation errors
 					});
 				case 401:
-					return AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
-						message: response.message || exception.message || 'Unauthorized',
-						originalError: response,
-						statusCode: status,
-					});
+					return AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 				case 403:
 					return AppError.unauthorized(ErrorCodes.ERR_INSUFFICIENT_PERMISSIONS, {
-						message: response.message || exception.message || 'Forbidden',
-						originalError: response,
-						statusCode: status,
+						resource: 'request', // Generic resource for HTTP forbidden errors
 					});
 				case 404:
 					return AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
-						message: response.message || exception.message || 'Not found',
-						originalError: response,
-						statusCode: status,
+						resourceType: 'endpoint',
+						resourceId: 'request',
 					});
 				case 409:
 					return AppError.validation(ErrorCodes.ERR_RESOURCE_EXISTS, {
-						message: response.message || exception.message || 'Resource already exists',
-						originalError: response,
-						statusCode: status,
+						resourceType: 'resource',
+						resourceId: 'request',
 					});
 				case 429:
-					return AppError.validation(ErrorCodes.ERR_RATE_LIMIT, {
-						message: response.message || exception.message || 'Rate limit exceeded',
-						originalError: response,
-						statusCode: status,
+					return AppError.validation(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
+						retryAfterSeconds: 60, // Default retry time
 					});
 				case 502:
-					return AppError.externalService(ErrorCodes.ERR_SERVICE_UNAVAILABLE, {
+					return AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 						service: 'external',
-						message: response.message || exception.message || 'External service error',
-						originalError: response,
-						statusCode: status,
 					});
 				default:
-					return AppError.internal(ErrorCodes.ERR_INTERNAL, {
-						message: response.message || exception.message || 'Internal server error',
-						originalError: response,
-						statusCode: status,
-					});
+					return AppError.internal(ErrorCodes.ERR_INTERNAL);
 			}
 		}
 
 		if (exception instanceof RpcException) {
-			const error = exception.getError() as any;
-			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
-				message: error.message || 'gRPC error',
-				code: error.code,
-				originalError: error,
-			});
+			return AppError.internal(ErrorCodes.ERR_INTERNAL);
 		}
 
 		if (exception instanceof WsException) {
-			const error = exception.getError() as any;
-			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
-				message: error.message || 'WebSocket error',
-				originalError: error,
+			return AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
+				operation: 'websocket_operation',
 			});
 		}
 
 		// For unknown errors, create a generic internal error
 		if (exception instanceof Error) {
-			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
-				message: exception.message,
-				stack: exception.stack,
-			});
+			return AppError.internal(ErrorCodes.ERR_INTERNAL);
 		}
 
-		return AppError.internal(ErrorCodes.ERR_UNKNOWN, {
-			message: 'An unknown error occurred',
-			originalError: exception,
-		});
+		return AppError.internal(ErrorCodes.ERR_UNKNOWN);
 	}
 
 	private handleHttpException(error: AppError, host: ArgumentsHost) {

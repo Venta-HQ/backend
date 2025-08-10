@@ -41,7 +41,7 @@ export class RevenueCatController {
 				}
 
 				default:
-					throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+					throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 						field: 'event_type',
 						message: `Unsupported event type: ${event.event.type}`,
 						userId: event.event.app_user_id,
@@ -57,7 +57,7 @@ export class RevenueCatController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_INVALID, {
+			throw AppError.internal(ErrorCodes.ERR_WEBHOOK_ERROR, {
 				source: 'revenuecat',
 				eventType: event.event.type,
 				userId: event.event.app_user_id,

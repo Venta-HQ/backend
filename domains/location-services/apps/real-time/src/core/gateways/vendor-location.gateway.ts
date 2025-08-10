@@ -41,10 +41,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				this.logger.warn('Vendor connection attempt without vendorId', {
 					socketId: client.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
-					operation: 'handle_vendor_connection',
-					socketId: client.id,
-				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
 			// Register the vendor connection
@@ -71,7 +68,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				socketId: client.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
 				operation: 'handle_vendor_connection',
 				socketId: client.id,
 			});
@@ -116,7 +113,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				socketId: client.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
 				operation: 'handle_vendor_disconnection',
 				socketId: client.id,
 			});
@@ -135,10 +132,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				this.logger.warn('Location update from unregistered vendor', {
 					socketId: socket.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
-					operation: 'update_vendor_location',
-					socketId: socket.id,
-				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
 			// Update vendor location in geolocation service
@@ -184,7 +178,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				socketId: socket.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_vendor_location',
 				socketId: socket.id,
 			});

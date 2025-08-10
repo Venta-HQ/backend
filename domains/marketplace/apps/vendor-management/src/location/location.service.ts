@@ -60,7 +60,8 @@ export class LocationService {
 				location: data.coordinates,
 				vendorId: data.vendorId,
 			});
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
+				operation: 'update_vendor_location',
 				vendorId: data.vendorId,
 				coordinates: data.coordinates,
 			});
@@ -97,7 +98,8 @@ export class LocationService {
 				vendorId,
 				location,
 			});
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
+				operation: 'update_vendor_database',
 				vendorId,
 				location,
 			});

@@ -32,7 +32,7 @@ export class GeolocationController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_vendor_location',
 				entityId: request.entityId,
 			});
@@ -56,7 +56,7 @@ export class GeolocationController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
 				operation: 'get_nearby_vendors',
 				bounds: request.bounds,
 			});

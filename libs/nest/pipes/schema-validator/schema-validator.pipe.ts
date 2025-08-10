@@ -28,13 +28,13 @@ export class SchemaValidatorPipe implements PipeTransform {
 				const firstError = error.errors[0];
 				const field = firstError.path.join('.');
 
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 					field,
 					errors: formattedErrors,
 				});
 			}
 
-			throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: metadata.data,
 				message: error instanceof Error ? error.message : 'Unknown error',
 			});

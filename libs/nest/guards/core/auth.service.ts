@@ -41,7 +41,9 @@ export class AuthService {
 
 				if (!internalUser) {
 					this.logger.warn(`User not found in database for clerk ID: ${tokenContents.sub}`);
-					throw AppError.unauthorized(ErrorCodes.ERR_USER_NOT_FOUND, {
+					throw AppError.unauthorized(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
+						entityType: 'user',
+						entityId: tokenContents.sub,
 						userId: tokenContents.sub,
 					});
 				}
@@ -63,7 +65,7 @@ export class AuthService {
 			} else {
 				this.logger.error('Authentication failed with unknown error', error.stack, { error });
 			}
-			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN, {});
+			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
 		}
 	}
 

@@ -31,7 +31,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'register_vendor',
 			});
 		}
@@ -45,6 +45,8 @@ export class VendorConnectionManagerService {
 			const vendorId = await this.redis.get(`socket:${socketId}:vendor`);
 			if (!vendorId) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+					resourceType: 'vendor_connection',
+					resourceId: socketId,
 					type: 'vendor',
 					id: socketId,
 				});
@@ -57,7 +59,7 @@ export class VendorConnectionManagerService {
 				socketId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_connection_info',
 			});
 		}
@@ -75,7 +77,7 @@ export class VendorConnectionManagerService {
 				socketId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_socket_vendor_id',
 			});
 		}
@@ -93,7 +95,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_vendor_room_users',
 			});
 		}
@@ -106,7 +108,8 @@ export class VendorConnectionManagerService {
 		try {
 			// Validate input
 			if (!socketId || !vendorId) {
-				throw AppError.validation(ErrorCodes.ERR_WS_INVALID_MESSAGE, {
+				throw AppError.validation(ErrorCodes.ERR_WEBSOCKET_ERROR, {
+					operation: 'vendor_disconnect',
 					message: 'Missing socket ID or vendor ID',
 				});
 			}
@@ -128,7 +131,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'handle_vendor_disconnect',
 			});
 		}
@@ -146,7 +149,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_vendor_sockets',
 			});
 		}
@@ -165,7 +168,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'is_vendor_online',
 			});
 		}

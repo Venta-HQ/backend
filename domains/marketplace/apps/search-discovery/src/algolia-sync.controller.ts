@@ -41,7 +41,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'NATS',
 				operation: 'subscription',
 				error: error.message,
@@ -93,7 +93,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'indexNewVendor',
 				subject,
@@ -134,7 +134,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'updateVendorLocation',
 				subject,

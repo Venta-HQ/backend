@@ -14,6 +14,7 @@ export class UploadController {
 		try {
 			if (!file) {
 				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'file',
 					domain: 'infrastructure',
 					operation: 'upload_image',
 					message: 'No file provided',
@@ -21,7 +22,8 @@ export class UploadController {
 			}
 
 			if (!file.mimetype.startsWith('image/')) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'file.mimetype',
 					domain: 'infrastructure',
 					operation: 'upload_image',
 					providedType: file.mimetype,
@@ -42,7 +44,8 @@ export class UploadController {
 
 			// Convert Cloudinary errors to domain errors
 			if (error.message?.includes('File size too large')) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'file.size',
 					domain: 'infrastructure',
 					operation: 'upload_image',
 					fileSize: file?.size,
@@ -52,11 +55,11 @@ export class UploadController {
 			}
 
 			// Generic upload error with context
-			throw AppError.internal(ErrorCodes.ERR_UPLOAD, {
-				domain: 'infrastructure',
+			throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
 				operation: 'upload_image',
+				filename: file?.originalname || 'unknown',
+				domain: 'infrastructure',
 				error: error.message,
-				fileName: file?.originalname,
 			});
 		}
 	}

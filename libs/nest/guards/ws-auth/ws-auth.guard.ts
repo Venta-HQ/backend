@@ -17,7 +17,8 @@ export class WsAuthGuard implements CanActivate {
 		if (!token) {
 			this.logger.warn('WebSocket connection attempt without token');
 			throw new WsException(
-				AppError.unauthorized(ErrorCodes.ERR_WS_AUTH_FAILED, {
+				AppError.unauthorized(ErrorCodes.ERR_WEBSOCKET_ERROR, {
+					operation: 'auth_check',
 					userId: client.handshake.query?.userId?.toString(),
 				}),
 			);
@@ -37,7 +38,8 @@ export class WsAuthGuard implements CanActivate {
 		} catch (error) {
 			this.logger.warn('WebSocket authentication failed', { error: error.message });
 			throw new WsException(
-				AppError.unauthorized(ErrorCodes.ERR_WS_AUTH_FAILED, {
+				AppError.unauthorized(ErrorCodes.ERR_WEBSOCKET_ERROR, {
+					operation: 'auth_check',
 					userId: client.handshake.query?.userId?.toString(),
 				}),
 			);

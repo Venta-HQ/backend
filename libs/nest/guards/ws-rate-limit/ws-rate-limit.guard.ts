@@ -35,9 +35,9 @@ export class WsRateLimitGuard implements CanActivate {
 		if (count >= this.maxRequests) {
 			this.logger.warn('Rate limit exceeded', { clientId: client.id });
 			throw new WsException(
-				AppError.validation(ErrorCodes.ERR_WS_RATE_LIMIT, {
+				AppError.validation(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
+					retryAfterSeconds: Math.ceil(this.windowMs / 1000),
 					userId: client.user?.id,
-					seconds: Math.ceil(this.windowMs / 1000),
 				}),
 			);
 		}

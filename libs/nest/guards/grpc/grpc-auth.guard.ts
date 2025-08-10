@@ -16,7 +16,7 @@ export class GrpcAuthGuard implements CanActivate {
 
 		if (!token) {
 			this.logger.debug('No token found in gRPC metadata');
-			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN, {}));
+			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
 		}
 
 		try {
@@ -41,7 +41,7 @@ export class GrpcAuthGuard implements CanActivate {
 
 			// Log unexpected errors but don't expose details
 			this.logger.error('Authentication failed with unexpected error', error.stack, { error });
-			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN, {}));
+			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
 		}
 	}
 }

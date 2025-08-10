@@ -17,7 +17,7 @@ export class AlgoliaService {
 
 	constructor(applicationId: string, apiKey: string) {
 		if (!applicationId || !apiKey) {
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',
 				operation: 'initialize_client',
 				message: 'Missing Algolia credentials',
@@ -27,7 +27,7 @@ export class AlgoliaService {
 		try {
 			this.client = algoliasearch(applicationId, apiKey);
 		} catch (error) {
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',
 				operation: 'initialize_client',
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -38,6 +38,7 @@ export class AlgoliaService {
 	async createObject(indexName: string, body: AlgoliaObject): Promise<AlgoliaObject> {
 		if (!indexName || !body?.objectID) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'objectID',
 				operation: 'create_object',
 				indexName,
 				objectID: body?.objectID,
@@ -53,7 +54,7 @@ export class AlgoliaService {
 			});
 			return { ...body, objectID: result.objectID };
 		} catch (error) {
-			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',
 				operation: 'create_object',
 				indexName,
@@ -70,6 +71,7 @@ export class AlgoliaService {
 	): Promise<AlgoliaObject | null> {
 		if (!indexName || !entityId || !attributesToUpdate) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'entityId',
 				operation: 'update_object',
 				indexName,
 				entityId,
@@ -108,7 +110,7 @@ export class AlgoliaService {
 
 			return { ...existingObject, ...attributesToUpdate, objectID: result.objectID };
 		} catch (error) {
-			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',
 				operation: 'update_object',
 				indexName,
@@ -121,6 +123,7 @@ export class AlgoliaService {
 	async deleteObject(indexName: string, entityId: string): Promise<string[]> {
 		if (!indexName || !entityId) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'entityId',
 				operation: 'delete_object',
 				indexName,
 				entityId,
@@ -156,7 +159,7 @@ export class AlgoliaService {
 			});
 			return objectIDs;
 		} catch (error) {
-			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',
 				operation: 'delete_object',
 				indexName,

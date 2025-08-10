@@ -31,7 +31,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'register_user',
 			});
 		}
@@ -45,6 +45,8 @@ export class UserConnectionManagerService {
 			const userId = await this.redis.get(`socket:${socketId}:user`);
 			if (!userId) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+					resourceType: 'user_connection',
+					resourceId: socketId,
 					type: 'user',
 					id: socketId,
 				});
@@ -57,7 +59,7 @@ export class UserConnectionManagerService {
 				socketId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_connection_info',
 			});
 		}
@@ -75,7 +77,7 @@ export class UserConnectionManagerService {
 				socketId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_socket_user_id',
 			});
 		}
@@ -93,7 +95,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_user_vendor_rooms',
 			});
 		}
@@ -117,7 +119,7 @@ export class UserConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'add_user_to_vendor_room',
 			});
 		}
@@ -141,7 +143,7 @@ export class UserConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'remove_user_from_vendor_room',
 			});
 		}
@@ -154,7 +156,8 @@ export class UserConnectionManagerService {
 		try {
 			// Validate input
 			if (!socketId || !userId) {
-				throw AppError.validation(ErrorCodes.ERR_WS_INVALID_MESSAGE, {
+				throw AppError.validation(ErrorCodes.ERR_WEBSOCKET_ERROR, {
+					operation: 'user_disconnect',
 					message: 'Missing socket ID or user ID',
 				});
 			}
@@ -176,7 +179,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'handle_user_disconnect',
 			});
 		}
@@ -194,7 +197,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'get_user_sockets',
 			});
 		}
@@ -213,7 +216,7 @@ export class UserConnectionManagerService {
 				vendorId,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_REDIS_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
 				operation: 'is_user_in_vendor_room',
 			});
 		}

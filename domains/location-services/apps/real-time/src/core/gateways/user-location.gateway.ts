@@ -41,10 +41,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				this.logger.warn('User connection attempt without userId', {
 					socketId: client.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
-					operation: 'handle_user_connection',
-					socketId: client.id,
-				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
 			// Register the user connection
@@ -68,7 +65,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				socketId: client.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
 				operation: 'handle_user_connection',
 				socketId: client.id,
 			});
@@ -84,6 +81,8 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 			if (!connectionInfo) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
+					resourceType: 'user_connection',
+					resourceId: client.id,
 					operation: 'handle_user_disconnection',
 					socketId: client.id,
 					type: 'user',
@@ -111,7 +110,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				socketId: client.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_WS_CONNECTION_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
 				operation: 'handle_user_disconnection',
 				socketId: client.id,
 			});
@@ -133,10 +132,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				this.logger.warn('Location update from unregistered user', {
 					socketId: socket.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
-					operation: 'update_user_location',
-					socketId: socket.id,
-				});
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
 			// Calculate center point for user location
@@ -195,7 +191,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				socketId: socket.id,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_user_location',
 				socketId: socket.id,
 			});

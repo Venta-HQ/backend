@@ -26,7 +26,7 @@ export class FileManagementController {
 		try {
 			// Validate file type
 			if (!request.mimetype.startsWith('image/')) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 					field: 'mimetype',
 					filename: request.filename,
 					mimetype: request.mimetype,
@@ -55,7 +55,8 @@ export class FileManagementController {
 
 			if (error instanceof AppError) throw error;
 
-			throw AppError.internal(ErrorCodes.ERR_INFRA_UPLOAD_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
+				operation: 'delete',
 				filename: request.filename,
 				message: error instanceof Error ? error.message : 'Unknown error',
 			});

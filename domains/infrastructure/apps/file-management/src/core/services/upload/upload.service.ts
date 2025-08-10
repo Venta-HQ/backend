@@ -50,7 +50,8 @@ export class UploadService {
 				size: file.size,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_INFRA_UPLOAD_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
+				operation: 'upload',
 				filename: file.originalname,
 				message: error.message,
 			});

@@ -42,7 +42,7 @@ export class ClerkController {
 				}
 
 				default:
-					throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+					throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 						field: 'event_type',
 						message: `Unsupported event type: ${event.type}`,
 					});
@@ -57,7 +57,7 @@ export class ClerkController {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_INVALID, {
+			throw AppError.internal(ErrorCodes.ERR_WEBHOOK_ERROR, {
 				source: 'clerk',
 				eventType: event.type,
 				eventId: event.data?.id,

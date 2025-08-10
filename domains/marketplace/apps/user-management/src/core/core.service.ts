@@ -27,7 +27,10 @@ export class CoreService {
 			});
 
 			if (!user) {
-				throw AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, { userId });
+				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
+					entityType: 'user',
+					entityId: userId,
+				});
 			}
 
 			this.logger.debug('Vendors retrieved successfully for user', {

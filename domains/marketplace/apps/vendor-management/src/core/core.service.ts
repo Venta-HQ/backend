@@ -92,13 +92,16 @@ export class CoreService {
 			});
 
 			if (!user) {
-				throw AppError.notFound(ErrorCodes.ERR_USER_NOT_FOUND, {
+				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
+					entityType: 'user',
+					entityId: data.userId,
 					userId: data.userId,
 				});
 			}
 
 			if (user.vendors.length > 0) {
-				throw AppError.validation(ErrorCodes.ERR_VENDOR_LIMIT, {
+				throw AppError.validation(ErrorCodes.ERR_ENTITY_LIMIT_EXCEEDED, {
+					entityType: 'vendor',
 					userId: data.userId,
 				});
 			}
@@ -157,13 +160,17 @@ export class CoreService {
 			});
 
 			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
+				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
+					entityType: 'vendor',
+					entityId: data.id,
 					vendorId: data.id,
 				});
 			}
 
 			if (vendor.ownerId !== data.userId) {
-				throw AppError.unauthorized(ErrorCodes.ERR_VENDOR_UNAUTHORIZED, {
+				throw AppError.unauthorized(ErrorCodes.ERR_ENTITY_UNAUTHORIZED, {
+					entityType: 'vendor',
+					entityId: data.id,
 					userId: data.userId,
 					vendorId: data.id,
 				});
@@ -256,7 +263,8 @@ export class CoreService {
 				bounds,
 				error,
 			});
-			throw AppError.internal(ErrorCodes.ERR_LOC_QUERY_FAILED, {
+			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
+				operation: 'get_vendors_in_area',
 				message: 'Failed to query vendors in area',
 			});
 		}

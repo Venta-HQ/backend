@@ -31,7 +31,8 @@ export class FileManagementService {
 		try {
 			// Validate request
 			if (!this.cloudinaryACL.validateFileUpload(request as unknown)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'file',
 					operation: 'validate_file_upload',
 					filename: request.filename,
 					mimetype: request.mimetype,
@@ -45,7 +46,7 @@ export class FileManagementService {
 			try {
 				options = this.cloudinaryACL.toCloudinaryOptions(request);
 			} catch (error) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 					operation: 'convert_cloudinary_options',
 					filename: request.filename,
 					field: 'options',
@@ -58,7 +59,7 @@ export class FileManagementService {
 			try {
 				result = await this.cloudinaryService.uploadBuffer(request.content, options);
 			} catch (error) {
-				throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 					operation: 'upload_to_cloudinary',
 					filename: request.filename,
 					service: 'cloudinary',
@@ -71,7 +72,7 @@ export class FileManagementService {
 			try {
 				uploadResult = this.cloudinaryACL.toDomainResult(result);
 			} catch (error) {
-				throw AppError.internal(ErrorCodes.ERR_UPLOAD, {
+				throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
 					operation: 'convert_upload_result',
 					filename: request.filename,
 					error: error instanceof Error ? error.message : 'Unknown error',
@@ -93,7 +94,7 @@ export class FileManagementService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_UPLOAD, {
+			throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
 				operation: 'upload_file',
 				filename: request.filename,
 				error: error instanceof Error ? error.message : 'Unknown error',

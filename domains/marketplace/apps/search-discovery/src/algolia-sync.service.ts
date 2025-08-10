@@ -49,7 +49,7 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'indexNewVendor',
 				vendorId: event.vendorId,
@@ -90,7 +90,7 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'updateVendorIndex',
 				vendorId: event.vendorId,
@@ -121,7 +121,7 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'removeVendorFromIndex',
 				vendorId: event.vendorId,
@@ -168,7 +168,7 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'Algolia',
 				operation: 'updateVendorLocation',
 				vendorId: event.vendorId,
