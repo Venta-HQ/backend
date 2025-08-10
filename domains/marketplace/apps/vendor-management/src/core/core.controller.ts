@@ -12,12 +12,13 @@ import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
 	Empty,
 	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
-	Vendor,
 	VendorCreateData,
 	VendorCreateResponse,
+	VendorIdentityData,
 	VendorLocationRequest,
 	VendorLocationResponse,
 	VendorLocationUpdate,
+	VendorLookupResponse,
 	VendorManagementServiceController,
 	VendorUpdateData,
 	VendorUpdateResponse,
@@ -40,14 +41,15 @@ export class CoreController implements VendorManagementServiceController {
 	) {}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorById')
-	async getVendorById(request: { id: string }): Promise<Vendor> {
+	async getVendorById(request: VendorIdentityData): Promise<VendorLookupResponse> {
 		this.logger.debug('Getting vendor by ID', { vendorId: request.id });
 
 		try {
 			// Validate and transform request
 			const domainRequest = VendorLookupACL.toDomain(request);
 
-			const vendor = await this.coreService.getVendorById(domainRequest.id);
+			const vendor = await this.coreService.getVendorById(domainRequest.vendorId);
+
 			if (!vendor) {
 				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
 					entityType: 'vendor',
@@ -55,7 +57,7 @@ export class CoreController implements VendorManagementServiceController {
 				});
 			}
 
-			return vendor;
+			return { vendor };
 		} catch (error) {
 			this.logger.error('Failed to get vendor', {
 				error: error.message,

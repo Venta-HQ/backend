@@ -34,10 +34,10 @@ export class CoreService {
 					email: true,
 					phone: true,
 					website: true,
-					isOpen: true,
-					primaryImage: true,
+					isActive: true,
+					profileImage: true,
 					lat: true,
-					long: true,
+					lng: true,
 					createdAt: true,
 					updatedAt: true,
 				},
@@ -54,13 +54,13 @@ export class CoreService {
 				email: vendor.email,
 				phone: vendor.phone || '',
 				website: vendor.website || '',
-				isOpen: vendor.isOpen,
-				primaryImage: vendor.primaryImage || '',
+				isOpen: vendor.isActive,
+				primaryImage: vendor.profileImage || '',
 				coordinates:
-					vendor.lat && vendor.long
+					vendor.lat && vendor.lng
 						? {
 								lat: vendor.lat,
-								long: vendor.long,
+								lng: vendor.lng,
 							}
 						: undefined,
 				createdAt: vendor.createdAt.toISOString(),

@@ -25,11 +25,11 @@ export interface VendorCreateResponse {
   id: string;
 }
 
-export interface VendorLookupByIdData {
+export interface VendorIdentityData {
   id: string;
 }
 
-export interface VendorLookupByIdResponse {
+export interface VendorLookupResponse {
   vendor: Vendor | undefined;
 }
 
@@ -84,7 +84,7 @@ export interface Vendor {
 
 export interface Location {
   lat: number;
-  long: number;
+  lng: number;
 }
 
 export interface Empty {
@@ -93,7 +93,7 @@ export interface Empty {
 export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = "marketplace.vendor_management";
 
 export interface VendorManagementServiceClient {
-  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Observable<Vendor>;
+  getVendorById(request: VendorIdentityData, metadata?: Metadata): Observable<VendorLookupResponse>;
 
   createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
 
@@ -105,7 +105,10 @@ export interface VendorManagementServiceClient {
 }
 
 export interface VendorManagementServiceController {
-  getVendorById(request: VendorLookupByIdData, metadata?: Metadata): Promise<Vendor> | Observable<Vendor> | Vendor;
+  getVendorById(
+    request: VendorIdentityData,
+    metadata?: Metadata,
+  ): Promise<VendorLookupResponse> | Observable<VendorLookupResponse> | VendorLookupResponse;
 
   createVendor(
     request: VendorCreateData,

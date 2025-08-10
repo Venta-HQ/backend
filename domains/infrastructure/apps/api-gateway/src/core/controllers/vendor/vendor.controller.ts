@@ -13,7 +13,7 @@ interface AuthedRequest {
 	userId: string;
 }
 
-@Controller('vendors')
+@Controller('vendor')
 export class VendorController {
 	constructor(@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>) {}
 

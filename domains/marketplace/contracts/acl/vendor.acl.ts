@@ -2,9 +2,9 @@ import { AppError, ErrorCodes } from '@venta/nest/errors';
 // gRPC types (wire format) - directly from proto
 import type {
 	VendorCreateData,
+	VendorIdentityData,
 	VendorLocationRequest,
 	VendorLocationUpdate,
-	VendorLookupByIdData,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
 // Domain types (what gRPC maps to)
@@ -39,13 +39,13 @@ export class VendorLookupACL {
 		this.validate(grpc);
 
 		return {
-			id: grpc.id,
+			vendorId: grpc.id,
 		};
 	}
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorLookup): void {
-		if (!domain.id?.trim()) {
+		if (!domain.vendorId?.trim()) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: 'id',
 				message: 'Vendor ID is required',
@@ -53,11 +53,11 @@ export class VendorLookupACL {
 		}
 	}
 
-	static toGrpc(domain: VendorLookup): VendorLookupByIdData {
+	static toGrpc(domain: VendorLookup): VendorIdentityData {
 		this.validateDomain(domain);
 
 		return {
-			id: domain.id,
+			id: domain.vendorId,
 		};
 	}
 }
@@ -233,7 +233,7 @@ export class VendorLocationUpdateACL {
 				message: 'Vendor ID is required',
 			});
 		}
-		if (!grpc.coordinates?.lat || !grpc.coordinates?.long) {
+		if (!grpc.coordinates?.lat || !grpc.coordinates?.lng) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: 'coordinates',
 				message: 'Valid coordinates (lat, long) are required',
@@ -270,7 +270,7 @@ export class VendorLocationUpdateACL {
 			vendorId: domain.vendorId,
 			coordinates: {
 				lat: domain.coordinates.lat,
-				long: domain.coordinates.lng, // Convert 'lng' back to 'long'
+				lng: domain.coordinates.lng, // Convert 'lng' back to 'long'
 			},
 		};
 	}
@@ -283,13 +283,13 @@ export class VendorLocationUpdateACL {
 export class VendorGeospatialBoundsACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: VendorLocationRequest): void {
-		if (!grpc.ne?.lat || !grpc.ne?.long) {
+		if (!grpc.ne?.lat || !grpc.ne?.lng) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: 'ne',
 				message: 'Northeast coordinates (lat, long) are required',
 			});
 		}
-		if (!grpc.sw?.lat || !grpc.sw?.long) {
+		if (!grpc.sw?.lat || !grpc.sw?.lng) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: 'sw',
 				message: 'Southwest coordinates (lat, long) are required',
@@ -325,11 +325,11 @@ export class VendorGeospatialBoundsACL {
 		return {
 			ne: {
 				lat: domain.ne.lat,
-				long: domain.ne.lng, // Convert 'lng' back to 'long'
+				lng: domain.ne.lng, // Convert 'lng' back to 'long'
 			},
 			sw: {
 				lat: domain.sw.lat,
-				long: domain.sw.lng, // Convert 'lng' back to 'long'
+				lng: domain.sw.lng, // Convert 'lng' back to 'long'
 			},
 		};
 	}

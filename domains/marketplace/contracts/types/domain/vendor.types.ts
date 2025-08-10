@@ -37,7 +37,7 @@ export interface VendorUpdate {
 }
 
 export interface VendorLookup {
-	id: string;
+	vendorId: string;
 }
 
 // ============================================================================
