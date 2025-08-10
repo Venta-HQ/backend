@@ -1,5 +1,6 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
 import type { CreateSubscriptionData } from '@venta/proto/marketplace/user-management';
+// Validation utilities
+import { validateRequiredString, validateSubscriptionData } from '../schemas/validation.utils';
 import type { SubscriptionCreate } from '../types/domain';
 
 /**
@@ -13,40 +14,9 @@ export class SubscriptionCreateACL {
 	 * Validate subscription data from gRPC
 	 */
 	static validate(grpc: CreateSubscriptionData): void {
-		if (!grpc.clerkUserId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'clerkUserId',
-				message: 'Clerk User ID is required',
-			});
-		}
-
-		if (!grpc.providerId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'providerId',
-				message: 'Provider ID is required',
-			});
-		}
-
-		if (!grpc.data) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data',
-				message: 'Subscription data is required',
-			});
-		}
-
-		if (!grpc.data.transactionId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data.transactionId',
-				message: 'Transaction ID is required',
-			});
-		}
-
-		if (!grpc.data.productId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data.productId',
-				message: 'Product ID is required',
-			});
-		}
+		validateRequiredString(grpc.clerkUserId, 'clerkUserId');
+		validateRequiredString(grpc.providerId, 'providerId');
+		validateSubscriptionData(grpc.data);
 	}
 
 	/**
@@ -58,11 +28,7 @@ export class SubscriptionCreateACL {
 		return {
 			userId: grpc.clerkUserId,
 			providerId: grpc.providerId,
-			data: {
-				eventId: grpc.data!.eventId,
-				productId: grpc.data!.productId,
-				transactionId: grpc.data!.transactionId,
-			},
+			data: validateSubscriptionData(grpc.data),
 		};
 	}
 
@@ -70,33 +36,9 @@ export class SubscriptionCreateACL {
 	 * Validate domain subscription create data
 	 */
 	static validateDomain(domain: SubscriptionCreate): void {
-		if (!domain.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
-
-		if (!domain.providerId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'providerId',
-				message: 'Provider ID is required',
-			});
-		}
-
-		if (!domain.data.transactionId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data.transactionId',
-				message: 'Transaction ID is required',
-			});
-		}
-
-		if (!domain.data.productId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data.productId',
-				message: 'Product ID is required',
-			});
-		}
+		validateRequiredString(domain.userId, 'userId');
+		validateRequiredString(domain.providerId, 'providerId');
+		validateSubscriptionData(domain.data);
 	}
 
 	/**
@@ -108,11 +50,7 @@ export class SubscriptionCreateACL {
 		return {
 			clerkUserId: domain.userId,
 			providerId: domain.providerId,
-			data: {
-				eventId: domain.data.eventId,
-				productId: domain.data.productId,
-				transactionId: domain.data.transactionId,
-			},
+			data: domain.data,
 		};
 	}
 }

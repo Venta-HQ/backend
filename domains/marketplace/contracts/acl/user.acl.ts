@@ -1,6 +1,7 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
 // gRPC types (wire format) - directly from proto
 import type { CreateSubscriptionData, UserIdentityData } from '@venta/proto/marketplace/user-management';
+// Validation utilities
+import { validateRequiredString, validateSubscriptionData } from '../schemas/validation.utils';
 // Domain types (what gRPC maps to)
 import type { SubscriptionCreate, UserIdentity, UserVendorQuery } from '../types/domain';
 
@@ -15,12 +16,7 @@ import type { SubscriptionCreate, UserIdentity, UserVendorQuery } from '../types
 export class UserIdentityACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: UserIdentityData): void {
-		if (!grpc.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'User ID is required',
-			});
-		}
+		validateRequiredString(grpc.id, 'id');
 	}
 
 	static toDomain(grpc: UserIdentityData): UserIdentity {
@@ -33,12 +29,7 @@ export class UserIdentityACL {
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: UserIdentity): void {
-		if (!domain.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'User ID is required',
-			});
-		}
+		validateRequiredString(domain.id, 'id');
 	}
 
 	static toGrpc(domain: UserIdentity): UserIdentityData {
@@ -57,18 +48,9 @@ export class UserIdentityACL {
 export class SubscriptionCreateACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: CreateSubscriptionData): void {
-		if (!grpc.clerkUserId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'clerkUserId',
-				message: 'Clerk User ID is required',
-			});
-		}
-		if (!grpc.providerId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'providerId',
-				message: 'Provider ID is required',
-			});
-		}
+		validateRequiredString(grpc.clerkUserId, 'clerkUserId');
+		validateRequiredString(grpc.providerId, 'providerId');
+		validateSubscriptionData(grpc.data);
 	}
 
 	static toDomain(grpc: CreateSubscriptionData): SubscriptionCreate {
@@ -77,24 +59,15 @@ export class SubscriptionCreateACL {
 		return {
 			userId: grpc.clerkUserId, // Map clerkUserId to userId
 			providerId: grpc.providerId,
-			data: grpc.data,
+			data: validateSubscriptionData(grpc.data),
 		};
 	}
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: SubscriptionCreate): void {
-		if (!domain.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
-		if (!domain.providerId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'providerId',
-				message: 'Provider ID is required',
-			});
-		}
+		validateRequiredString(domain.userId, 'userId');
+		validateRequiredString(domain.providerId, 'providerId');
+		validateSubscriptionData(domain.data);
 	}
 
 	static toGrpc(domain: SubscriptionCreate): CreateSubscriptionData {
@@ -115,12 +88,7 @@ export class SubscriptionCreateACL {
 export class UserVendorQueryACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: UserIdentityData): void {
-		if (!grpc.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'User ID is required',
-			});
-		}
+		validateRequiredString(grpc.id, 'id');
 	}
 
 	static toDomain(grpc: UserIdentityData): UserVendorQuery {
@@ -133,12 +101,7 @@ export class UserVendorQueryACL {
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: UserVendorQuery): void {
-		if (!domain.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'User ID is required',
-			});
-		}
+		validateRequiredString(domain.userId, 'userId');
 	}
 
 	static toGrpc(domain: UserVendorQuery): UserIdentityData {

@@ -1,4 +1,3 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
 // gRPC types (wire format) - directly from proto
 import type {
 	VendorCreateData,
@@ -7,6 +6,13 @@ import type {
 	VendorLocationUpdate,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
+// Validation utilities
+import {
+	validateCoordinates,
+	validateEmail,
+	validateOptionalEmail,
+	validateRequiredString,
+} from '../schemas/validation.utils';
 // Domain types (what gRPC maps to)
 import type {
 	VendorCreate,
@@ -27,12 +33,7 @@ import type {
 export class VendorLookupACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: { id: string }): void {
-		if (!grpc.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'Vendor ID is required',
-			});
-		}
+		validateRequiredString(grpc.id, 'id');
 	}
 
 	static toDomain(grpc: { id: string }): VendorLookup {
@@ -45,12 +46,7 @@ export class VendorLookupACL {
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorLookup): void {
-		if (!domain.vendorId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'Vendor ID is required',
-			});
-		}
+		validateRequiredString(domain.vendorId, 'vendorId');
 	}
 
 	static toGrpc(domain: VendorLookup): VendorIdentityData {
@@ -69,18 +65,8 @@ export class VendorLookupACL {
 export class VendorCreateACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: VendorCreateData): void {
-		if (!grpc.name?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'name',
-				message: 'Vendor name is required',
-			});
-		}
-		if (!grpc.email?.includes('@')) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'email',
-				message: 'Valid email address is required',
-			});
-		}
+		validateRequiredString(grpc.name, 'name');
+		validateEmail(grpc.email, 'email');
 	}
 
 	static toDomain(grpc: VendorCreateData): VendorCreate {
@@ -98,18 +84,8 @@ export class VendorCreateACL {
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorCreate): void {
-		if (!domain.name?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'name',
-				message: 'Vendor name is required',
-			});
-		}
-		if (!domain.email?.includes('@')) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'email',
-				message: 'Valid email address is required',
-			});
-		}
+		validateRequiredString(domain.name, 'name');
+		validateEmail(domain.email, 'email');
 	}
 
 	static toGrpc(domain: VendorCreate): VendorCreateData {
@@ -133,24 +109,9 @@ export class VendorCreateACL {
 export class VendorUpdateACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: VendorUpdateData): void {
-		if (!grpc.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'Vendor ID is required',
-			});
-		}
-		if (!grpc.name?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'name',
-				message: 'Vendor name is required',
-			});
-		}
-		if (grpc.email && !grpc.email.includes('@')) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'email',
-				message: 'Valid email address is required',
-			});
-		}
+		validateRequiredString(grpc.id, 'id');
+		validateRequiredString(grpc.name, 'name');
+		validateOptionalEmail(grpc.email, 'email');
 	}
 
 	static toDomain(grpc: VendorUpdateData): VendorUpdate {
@@ -169,24 +130,9 @@ export class VendorUpdateACL {
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorUpdate): void {
-		if (!domain.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'Vendor ID is required',
-			});
-		}
-		if (!domain.name?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'name',
-				message: 'Vendor name is required',
-			});
-		}
-		if (domain.email && !domain.email.includes('@')) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'email',
-				message: 'Valid email address is required',
-			});
-		}
+		validateRequiredString(domain.id, 'id');
+		validateRequiredString(domain.name, 'name');
+		validateOptionalEmail(domain.email, 'email');
 	}
 
 	static toGrpc(domain: VendorUpdate): VendorUpdateData {
@@ -211,40 +157,23 @@ export class VendorUpdateACL {
 export class VendorLocationUpdateACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: VendorLocationUpdate): void {
-		if (!grpc.vendorId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'vendorId',
-				message: 'Vendor ID is required',
-			});
-		}
-		if (!grpc.coordinates?.lat || !grpc.coordinates?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'coordinates',
-				message: 'Valid coordinates (lat, long) are required',
-			});
-		}
+		validateRequiredString(grpc.vendorId, 'vendorId');
+		validateCoordinates(grpc.coordinates, 'coordinates');
 	}
 
 	static toDomain(grpc: VendorLocationUpdate): VendorLocationUpdate {
 		this.validate(grpc);
 
-		return grpc; // Return validated gRPC type directly
+		return {
+			vendorId: grpc.vendorId,
+			coordinates: validateCoordinates(grpc.coordinates, 'coordinates'),
+		};
 	}
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorLocationChange): void {
-		if (!domain.vendorId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'vendorId',
-				message: 'Vendor ID is required',
-			});
-		}
-		if (!domain.coordinates?.lat || !domain.coordinates?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'coordinates',
-				message: 'Valid coordinates (lat, lng) are required',
-			});
-		}
+		validateRequiredString(domain.vendorId, 'vendorId');
+		validateCoordinates(domain.coordinates, 'coordinates');
 	}
 
 	static toGrpc(domain: VendorLocationChange): VendorLocationUpdate {
@@ -254,7 +183,7 @@ export class VendorLocationUpdateACL {
 			vendorId: domain.vendorId,
 			coordinates: {
 				lat: domain.coordinates.lat,
-				lng: domain.coordinates.lng, // Convert 'lng' back to 'long'
+				lng: domain.coordinates.lng,
 			},
 		};
 	}
@@ -267,40 +196,23 @@ export class VendorLocationUpdateACL {
 export class VendorGeospatialBoundsACL {
 	// gRPC → Domain (inbound)
 	static validate(grpc: VendorLocationRequest): void {
-		if (!grpc.ne?.lat || !grpc.ne?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'ne',
-				message: 'Northeast coordinates (lat, long) are required',
-			});
-		}
-		if (!grpc.sw?.lat || !grpc.sw?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'sw',
-				message: 'Southwest coordinates (lat, long) are required',
-			});
-		}
+		validateCoordinates(grpc.ne, 'ne');
+		validateCoordinates(grpc.sw, 'sw');
 	}
 
 	static toDomain(grpc: VendorLocationRequest): VendorLocationRequest {
 		this.validate(grpc);
 
-		return grpc; // Return validated gRPC type directly
+		return {
+			ne: validateCoordinates(grpc.ne, 'ne'),
+			sw: validateCoordinates(grpc.sw, 'sw'),
+		};
 	}
 
 	// Domain → gRPC (outbound)
 	static validateDomain(domain: VendorLocationQuery): void {
-		if (!domain.ne?.lat || !domain.ne?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'ne',
-				message: 'Northeast coordinates (lat, lng) are required',
-			});
-		}
-		if (!domain.sw?.lat || !domain.sw?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'sw',
-				message: 'Southwest coordinates (lat, lng) are required',
-			});
-		}
+		validateCoordinates(domain.ne, 'ne');
+		validateCoordinates(domain.sw, 'sw');
 	}
 
 	static toGrpc(domain: VendorLocationQuery): VendorLocationRequest {
@@ -309,11 +221,11 @@ export class VendorGeospatialBoundsACL {
 		return {
 			ne: {
 				lat: domain.ne.lat,
-				lng: domain.ne.lng, // Convert 'lng' back to 'long'
+				lng: domain.ne.lng,
 			},
 			sw: {
 				lat: domain.sw.lat,
-				lng: domain.sw.lng, // Convert 'lng' back to 'long'
+				lng: domain.sw.lng,
 			},
 		};
 	}
