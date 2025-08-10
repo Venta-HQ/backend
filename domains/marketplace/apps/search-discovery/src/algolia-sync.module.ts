@@ -3,7 +3,6 @@ import { MarketplaceContractsModule } from '@venta/domains/marketplace/contracts
 import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@venta/nest/modules';
 import { AlgoliaSyncController } from './algolia-sync.controller';
 import { AlgoliaSyncService } from './algolia-sync.service';
-import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-marketplace-context-mapper';
 
 @Module({
 	imports: [
@@ -16,6 +15,6 @@ import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-ma
 		NatsQueueModule,
 		MarketplaceContractsModule,
 	],
-	providers: [AlgoliaSyncController, AlgoliaSyncService, SearchToMarketplaceContextMapper],
+	providers: [AlgoliaSyncController, AlgoliaSyncService],
 })
 export class AlgoliaSyncModule {}

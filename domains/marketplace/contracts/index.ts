@@ -12,75 +12,43 @@
 // ============================================================================
 
 // ============================================================================
-// INBOUND ACL PIPES - gRPC → Domain
+// ACL CLASSES - Bidirectional gRPC ↔ Domain transformation
 // ============================================================================
 
-// User-related inbound ACL pipes
-export { UserIdentityACLPipe, SubscriptionCreateACLPipe, UserVendorQueryACLPipe } from './acl/inbound/user.acl';
+// User-related ACL classes (bidirectional gRPC ↔ Domain)
+export { UserIdentityACL, SubscriptionCreateACL, UserVendorQueryACL } from './acl/user.acl';
 
-// Vendor-related inbound ACL pipes
+// Vendor-related ACL classes (bidirectional gRPC ↔ Domain)
 export {
-	VendorLookupACLPipe,
-	VendorCreateACLPipe,
-	VendorUpdateACLPipe,
-	VendorLocationUpdateACLPipe,
-	VendorGeospatialBoundsACLPipe,
-} from './acl/inbound/vendor.acl';
+	VendorLookupACL,
+	VendorCreateACL,
+	VendorUpdateACL,
+	VendorLocationUpdateACL,
+	VendorGeospatialBoundsACL,
+} from './acl/vendor.acl';
 
-// ============================================================================
-// OUTBOUND ACL PIPES - Domain → gRPC (to other domains)
-// ============================================================================
-
-// Communication domain outbound ACL pipes
-export {
-	UserEventCommunicationACLPipe,
-	VendorEventCommunicationACLPipe,
-	SubscriptionEventCommunicationACLPipe,
-} from './acl/outbound/communication.acl';
-
-// Infrastructure domain outbound ACL pipes
-export {
-	VendorCreateInfrastructureACLPipe,
-	FileUploadInfrastructureACLPipe,
-	AuthRequestInfrastructureACLPipe,
-	EventPublishInfrastructureACLPipe,
-} from './acl/outbound/infrastructure.acl';
-
-// Location services domain outbound ACL pipes
-export {
-	VendorLocationUpdateLocationACLPipe,
-	UserLocationUpdateLocationACLPipe,
-	GeospatialBoundsLocationACLPipe,
-} from './acl/outbound/location.acl';
+// Note: For inter-domain communication (to other domains), those ACLs are
+// defined in the respective domain contracts that need to communicate with this domain
 
 // ============================================================================
 // EXTERNAL SERVICE ACL PIPES - External APIs → Domain
 // ============================================================================
 
 // Clerk (Authentication) ACL pipes
-export {
-	ClerkUserIdentityACLPipe,
-	ClerkUserTransformACLPipe,
-	ClerkAntiCorruptionLayer,
-} from './acl/external/clerk.acl';
+export { ClerkUserIdentityACLPipe, ClerkUserTransformACLPipe } from './acl/external/clerk.acl';
 
 // RevenueCat (Subscriptions) ACL pipes
-export {
-	RevenueCatSubscriptionACLPipe,
-	RevenueCatSubscriptionTransformACLPipe,
-	RevenueCatAntiCorruptionLayer,
-} from './acl/external/revenuecat.acl';
+export { RevenueCatSubscriptionACLPipe, RevenueCatSubscriptionTransformACLPipe } from './acl/external/revenuecat.acl';
 
 // Algolia (Search) ACL pipes
 export {
 	AlgoliaSearchRecordACLPipe,
 	AlgoliaSearchUpdateACLPipe,
 	AlgoliaLocationUpdateACLPipe,
-	AlgoliaACL,
 } from './acl/external/algolia.acl';
 
 // NATS (Messaging) ACL pipes
-export { NatsSubscriptionOptionsACLPipe, NatsDomainEventACLPipe, NatsACL } from './acl/external/nats.acl';
+export { NatsSubscriptionOptionsACLPipe, NatsDomainEventACLPipe } from './acl/external/nats.acl';
 
 // ============================================================================
 // Type Re-exports

@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
-import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
 
@@ -14,10 +13,7 @@ interface IntegrationData {
 export class AuthService {
 	private readonly logger = new Logger(AuthService.name);
 
-	constructor(
-		private prisma: PrismaService,
-		private readonly clerkACL: ClerkAntiCorruptionLayer,
-	) {}
+	constructor(private prisma: PrismaService) {}
 
 	/**
 	 * Handle user identity creation from external auth provider
@@ -27,26 +23,25 @@ export class AuthService {
 		this.logger.log('Handling user identity creation from external auth provider', { clerkId: id });
 
 		try {
-			// Use anti-corruption layer to validate Clerk user identity
-			this.clerkACL.validateUserIdentity({ id });
-			const validatedClerkData = { clerkId: id };
+			// Use ACL pipe to validate Clerk user identity
+			const validatedClerkData = this.clerkACL.transform({ id }, { type: 'body' });
 
 			const userExists = await this.prisma.db.user.count({
 				where: {
-					clerkId: validatedClerkData.clerkId,
+					clerkId: clerkId,
 				},
 			});
 
 			if (!userExists) {
 				const user = await this.prisma.db.user.create({
 					data: {
-						clerkId: validatedClerkData.clerkId,
+						clerkId: clerkId,
 					},
 					select: { clerkId: true, id: true },
 				});
 
 				this.logger.log('User identity created successfully from external auth provider', {
-					clerkId: validatedClerkData.clerkId,
+					clerkId: clerkId,
 					userId: user.id,
 				});
 
@@ -75,29 +70,28 @@ export class AuthService {
 		this.logger.log('Handling user identity deletion from external auth provider', { clerkId: id });
 
 		try {
-			// Use anti-corruption layer to validate Clerk user identity
-			this.clerkACL.validateUserIdentity({ id });
-			const validatedClerkData = { clerkId: id };
+			// Expect validated clerk ID from controller
+			const clerkId = id;
 
 			// Get user before deletion for potential event emission
 			const user = await this.prisma.db.user.findFirst({
 				select: { clerkId: true, id: true },
-				where: { clerkId: validatedClerkData.clerkId },
+				where: { clerkId: clerkId },
 			});
 
 			if (user) {
 				await this.prisma.db.user.deleteMany({
 					where: {
-						clerkId: validatedClerkData.clerkId,
+						clerkId: clerkId,
 					},
 				});
 
 				this.logger.log('User identity deleted successfully from external auth provider', {
-					clerkId: validatedClerkData.clerkId,
+					clerkId: clerkId,
 					userId: user.id,
 				});
 			} else {
-				this.logger.log('User identity not found for deletion', { clerkId: validatedClerkData.clerkId });
+				this.logger.log('User identity not found for deletion', { clerkId: clerkId });
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity deletion', error.stack, { clerkId: id, error });

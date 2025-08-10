@@ -1,10 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User as PrismaUser, UserSubscription as PrismaUserSubscription } from '@prisma/client';
-import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts';
-import * as MarketplaceToLocationContextMapper from '@venta/domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
-import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
+// Import specific domain types instead of namespace
+import type {
+	SubscriptionCreate,
+	UserLocationUpdate,
+	UserRegistrationRequest,
+} from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
+
+// Removed SubscriptionService dependency - handling subscriptions directly
 
 /**
  * Service for managing user profiles and operations
@@ -13,16 +18,12 @@ import { PrismaService } from '@venta/nest/modules';
 export class UserManagementService {
 	private readonly logger = new Logger(UserManagementService.name);
 
-	constructor(
-		private readonly prisma: PrismaService,
-		private readonly clerkACL: ClerkAntiCorruptionLayer,
-		// Mappers are pure functions; no DI field
-	) {}
+	constructor(private readonly prisma: PrismaService) {}
 
 	/**
 	 * Register a new user in the marketplace
 	 */
-	async registerUser(request: Marketplace.Contracts.UserRegistrationRequest): Promise<Marketplace.Core.User> {
+	async registerUser(request: UserRegistrationRequest): Promise<{ id: string; clerkId: string }> {
 		this.logger.debug('Processing user registration', {
 			clerkId: request.clerkId,
 			source: request.source,
@@ -93,20 +94,18 @@ export class UserManagementService {
 	/**
 	 * Update user location
 	 */
-	async updateUserLocation(request: Marketplace.Contracts.UserLocationUpdate): Promise<Marketplace.Core.User> {
+	async updateUserLocation(request: UserLocationUpdate): Promise<{ id: string; lat: number; lng: number }> {
 		this.logger.debug('Processing user location update', {
 			userId: request.userId,
 			location: request.location,
 		});
 
 		try {
-			// Convert to location services format
-			const locationData = MarketplaceToLocationContextMapper.toLocationUserLocation({
-				userId: request.userId,
+			// Expect validated location data from controller
+			const locationData = {
 				lat: request.location.lat,
-				long: request.location.long,
-				updatedAt: new Date().toISOString(),
-			});
+				lng: request.location.lng, // Note: using 'lng' which is the correct DB field
+			};
 
 			// Update user location
 			const user = await this.prisma.db.user.update({
@@ -167,12 +166,126 @@ export class UserManagementService {
 	}
 
 	/**
+	 * Delete user by ID
+	 */
+	async deleteUser(userId: string): Promise<void> {
+		this.logger.debug('Processing user deletion', { userId });
+
+		try {
+			// Delete user and all associated data (cascade)
+			await this.prisma.db.user.deleteMany({
+				where: { id: userId },
+			});
+
+			this.logger.debug('User deleted successfully', { userId });
+		} catch (error) {
+			this.logger.error('Failed to delete user', {
+				userId,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'delete_user',
+				userId,
+			});
+		}
+	}
+
+	/**
+	 * Create subscription
+	 */
+	async createSubscription(subscriptionData: SubscriptionCreate): Promise<void> {
+		this.logger.debug('Creating subscription', {
+			userId: subscriptionData.userId,
+			providerId: subscriptionData.providerId,
+		});
+
+		try {
+			// Create subscription directly in this service
+			await this.prisma.db.userSubscription.create({
+				data: {
+					status: 'active',
+					provider: 'revenuecat',
+					externalId: subscriptionData.data.transactionId,
+					productId: subscriptionData.data.productId,
+					startDate: new Date().toISOString(),
+					user: {
+						connect: {
+							id: subscriptionData.userId,
+						},
+					},
+				},
+			});
+
+			this.logger.debug('Subscription created successfully', {
+				userId: subscriptionData.userId,
+				providerId: subscriptionData.providerId,
+			});
+		} catch (error) {
+			this.logger.error('Failed to create subscription', {
+				userId: subscriptionData.userId,
+				error: error.message,
+			});
+
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_subscription',
+				userId: subscriptionData.userId,
+			});
+		}
+	}
+
+	/**
+	 * Get vendors associated with a user by user ID
+	 */
+	async getUserVendors(userId: string): Promise<PrismaUser[]> {
+		this.logger.debug('Getting vendors for user', { userId });
+		try {
+			const vendors = await this.prisma.db.user.findMany({
+				where: {
+					id: userId,
+				},
+				include: {
+					vendors: true,
+				},
+			});
+			this.logger.debug('Vendors retrieved successfully for user', { userId });
+			return vendors;
+		} catch (error) {
+			this.logger.error('Failed to get vendors for user', { error: error.message, userId });
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'get_user_vendors',
+				userId,
+			});
+		}
+	}
+
+	/**
 	 * Convert Prisma user to domain user
 	 */
 	private toDomainUser(
 		user: PrismaUser & { subscription?: PrismaUserSubscription | null },
-		location?: Marketplace.Core.UserLocation,
-	): Marketplace.Core.User {
+		location?: { lat: number; lng: number; userId: string; updatedAt: string },
+	): {
+		id: string;
+		email: string | null;
+		firstName?: string;
+		lastName?: string;
+		createdAt: string;
+		updatedAt: string;
+		isActive: boolean;
+		subscription?: {
+			id: string;
+			userId: string;
+			status: 'active' | 'cancelled' | 'expired';
+			provider: 'revenuecat';
+			externalId: string;
+			productId: string;
+			startDate: string;
+			endDate?: string;
+		};
+		location?: { lat: number; lng: number; userId: string; updatedAt: string };
+	} {
 		return {
 			id: user.id,
 			email: user.email,

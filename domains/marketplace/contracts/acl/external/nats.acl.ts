@@ -1,5 +1,4 @@
-import { ArgumentMetadata, Injectable, Logger, PipeTransform } from '@nestjs/common';
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { DomainEventSchema, SubscriptionOptionsSchema } from '../../schemas/search/search.schemas';
 import type { DomainEvent, SubscriptionOptions } from '../../types/internal';

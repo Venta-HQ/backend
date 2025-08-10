@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma } from '@prisma/client';
-import { RevenueCatAntiCorruptionLayer } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
 
@@ -24,10 +23,7 @@ interface SubscriptionActivationData {
 export class SubscriptionService {
 	private readonly logger = new Logger(SubscriptionService.name);
 
-	constructor(
-		private prisma: PrismaService,
-		private readonly revenueCatACL: RevenueCatAntiCorruptionLayer,
-	) {}
+	constructor(private prisma: PrismaService) {}
 
 	/**
 	 * Activate user subscription with integration
@@ -40,23 +36,18 @@ export class SubscriptionService {
 		});
 
 		try {
-			// Use anti-corruption layer to validate RevenueCat data
-			this.revenueCatACL.validateSubscriptionData(activationData.subscriptionData);
-			const validatedSubscriptionData = {
-				clerkUserId: activationData.clerkUserId,
-				providerId: activationData.providerId,
-				subscriptionData: activationData.subscriptionData,
-			};
+			// Expect validated subscription data from controller
+			const subscriptionData = activationData.subscriptionData;
 
 			// Create integration record
 			await this.prisma.db.integration.create({
 				data: {
-					data: validatedSubscriptionData.subscriptionData as any,
-					providerId: validatedSubscriptionData.providerId,
+					data: subscriptionData as any,
+					providerId: activationData.providerId,
 					type: IntegrationType.RevenueCat,
 					user: {
 						connect: {
-							clerkId: validatedSubscriptionData.clerkUserId,
+							clerkId: activationData.clerkUserId,
 						},
 					},
 				},

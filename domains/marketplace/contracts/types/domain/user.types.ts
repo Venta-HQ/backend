@@ -60,3 +60,24 @@ export interface UserVendorResult {
 	id: string;
 	name: string;
 }
+
+// ============================================================================
+// User Registration (for internal user creation)
+// ============================================================================
+
+export interface UserRegistrationRequest {
+	clerkId: string;
+	source: 'clerk_webhook' | 'manual';
+}
+
+// ============================================================================
+// User Location (for location updates)
+// ============================================================================
+
+export interface UserLocationUpdate {
+	userId: string;
+	location: {
+		lat: number;
+		long: number;
+	};
+}

@@ -108,14 +108,6 @@ export interface IndexConfig {
 	};
 }
 
-export interface AlgoliaIndexConfig {
-	indexName: string;
-	searchableAttributes: string[];
-	attributesForFaceting: string[];
-	ranking: string[];
-	customRanking: string[];
-}
-
 // ============================================================================
 // Error Handling Types
 // ============================================================================

@@ -1,15 +1,16 @@
-import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { SubscriptionCreateACLPipe, UserIdentityACLPipe } from '@venta/domains/marketplace/contracts';
-// Domain types (what gRPC maps to)
-import type { SubscriptionCreate, UserIdentity } from '@venta/domains/marketplace/contracts/types/domain';
+import { SubscriptionCreateACL, UserIdentityACL, UserVendorQueryACL } from '@venta/domains/marketplace/contracts';
+// Domain types are now transformed by ACL, no longer needed as imports
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 // gRPC types (wire format)
 import {
+	CreateSubscriptionData,
 	CreateSubscriptionResponse,
 	CreateUserResponse,
 	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
+	UserIdentityData,
 	UserManagementServiceController,
 	UserVendorData,
 	UserVendorsResponse,
@@ -27,104 +28,113 @@ export class UserManagementController implements UserManagementServiceController
 	constructor(private readonly userManagementService: UserManagementService) {}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleUserCreated')
-	@UsePipes(UserIdentityACLPipe)
-	async handleUserCreated(request: UserIdentity): Promise<CreateUserResponse> {
+	async handleUserCreated(request: UserIdentityData): Promise<CreateUserResponse> {
+		// Validate and transform request
+		const domainRequest = UserIdentityACL.toDomain(request);
 		this.logger.debug('Processing user creation request', {
-			userId: request.id,
+			userId: domainRequest.id,
 		});
 
 		try {
-			// Register user (validation handled by pipe)
+			// Register user (validation handled by ACL)
 			await this.userManagementService.registerUser({
-				clerkId: request.id,
+				clerkId: domainRequest.id,
 				source: 'clerk_webhook',
 			});
 
 			this.logger.debug('User created successfully', {
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 
 			return { message: 'User created successfully' };
 		} catch (error) {
 			this.logger.error('Failed to create user', {
 				error: error.message,
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_user',
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 		}
 	}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleUserDeleted')
-	@UsePipes(UserIdentityACLPipe)
-	async handleUserDeleted(request: UserIdentity): Promise<CreateUserResponse> {
+	async handleUserDeleted(request: UserIdentityData): Promise<CreateUserResponse> {
+		// Validate and transform request
+		const domainRequest = UserIdentityACL.toDomain(request);
+
 		this.logger.debug('Processing user deletion request', {
-			userId: request.id,
+			userId: domainRequest.id,
 		});
 
 		try {
-			await this.userManagementService.deleteUser(request.id);
+			await this.userManagementService.deleteUser(domainRequest.id);
 
 			this.logger.debug('User deleted successfully', {
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 
 			return { message: 'User deleted successfully' };
 		} catch (error) {
 			this.logger.error('Failed to delete user', {
 				error: error.message,
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'delete_user',
-				userId: request.id,
+				userId: domainRequest.id,
 			});
 		}
 	}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'handleSubscriptionCreated')
-	@UsePipes(SubscriptionCreateACLPipe)
-	async handleSubscriptionCreated(request: SubscriptionCreate): Promise<CreateSubscriptionResponse> {
+	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
+		// Validate and transform request
+		const domainRequest = SubscriptionCreateACL.toDomain(request);
+
 		this.logger.debug('Processing subscription creation request', {
-			userId: request.userId,
-			providerId: request.providerId,
+			userId: domainRequest.userId,
+			providerId: domainRequest.providerId,
 		});
 
 		try {
-			// Create subscription (validation handled by pipe)
-			await this.userManagementService.createSubscription(request);
+			// Create subscription (validation handled by ACL)
+			await this.userManagementService.createSubscription(domainRequest);
 
 			this.logger.debug('Subscription created successfully', {
-				userId: request.userId,
+				userId: domainRequest.userId,
+				providerId: domainRequest.providerId,
 			});
 
 			return { message: 'Subscription created successfully' };
 		} catch (error) {
 			this.logger.error('Failed to create subscription', {
 				error: error.message,
-				userId: request.userId,
+				userId: domainRequest.userId,
 			});
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_subscription',
-				userId: request.userId,
+				userId: domainRequest.userId,
 			});
 		}
 	}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'getUserVendors')
 	async getUserVendors(request: UserVendorData): Promise<UserVendorsResponse> {
+		// Validate and transform request
+		const domainRequest = UserVendorQueryACL.toDomain(request);
+
 		this.logger.debug('Retrieving user vendors', {
-			userId: request.userId,
+			userId: domainRequest.userId,
 		});
 
 		try {
-			const vendors = await this.userManagementService.getUserVendors(request.userId);
+			const vendors = await this.userManagementService.getUserVendors(domainRequest.userId);
 
 			this.logger.debug('Retrieved user vendors successfully', {
 				userId: request.userId,

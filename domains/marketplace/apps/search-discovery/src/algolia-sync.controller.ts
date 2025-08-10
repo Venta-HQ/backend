@@ -1,11 +1,12 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { NatsACL } from '@venta/domains/marketplace/contracts';
-import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
+import type { DomainEvent, SubscriptionOptions } from '@venta/domains/marketplace/contracts/types/internal';
+// Import specific event types instead of namespace
 import type {
-	DomainEvent,
-	SearchRecord,
-	SubscriptionOptions,
-} from '@venta/domains/marketplace/contracts/types/internal';
+	VendorCreated,
+	VendorDeleted,
+	VendorLocationChanged,
+	VendorUpdated,
+} from '@venta/domains/marketplace/events';
 import { AppError } from '@venta/nest/errors';
 import { NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';
@@ -20,7 +21,6 @@ export class AlgoliaSyncController implements OnModuleInit {
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
 		private readonly algoliaSyncService: AlgoliaSyncService,
-		private readonly natsACL: NatsACL,
 	) {}
 
 	async onModuleInit() {
@@ -42,16 +42,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 				timeout: 30000,
 			};
 
-			// Validate subscription options
-			if (!this.natsACL.validateSubscriptionOptions(marketplaceSubscription)) {
-				throw AppError.validation('INVALID_SUBSCRIPTION_OPTIONS', 'Invalid marketplace subscription options');
-			}
-
-			if (!this.natsACL.validateSubscriptionOptions(locationSubscription)) {
-				throw AppError.validation('INVALID_SUBSCRIPTION_OPTIONS', 'Invalid location subscription options');
-			}
-
-			// Subscribe to events
+			// Subscribe to events (subscription options are predefined and trusted)
 			this.natsQueueService.subscribeToQueue(
 				marketplaceSubscription.topic,
 				marketplaceSubscription.queue,
@@ -71,14 +62,16 @@ export class AlgoliaSyncController implements OnModuleInit {
 			});
 
 			if (error instanceof AppError) throw error;
-			throw AppError.internal('NATS_SUBSCRIPTION_FAILED', 'Failed to initialize NATS subscriptions');
+			throw AppError.external(ErrorCodes.ERR_EXTERNAL_SERVICE_UNAVAILABLE, {
+				service: 'NATS',
+				operation: 'subscription',
+				error: error.message,
+			});
 		}
 	}
 
 	private async handleMarketplaceVendorEvent(data: {
-		data: DomainEvent<
-			Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
-		>;
+		data: DomainEvent<VendorCreated | VendorUpdated | VendorDeleted>;
 		subject: string;
 	}): Promise<void> {
 		const { data: event, subject } = data;
@@ -90,28 +83,16 @@ export class AlgoliaSyncController implements OnModuleInit {
 		});
 
 		try {
-			// Validate event
-			if (
-				!this.natsACL.validateDomainEvent<
-					Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
-				>(event.data)
-			) {
-				throw AppError.validation('INVALID_DOMAIN_EVENT', 'Invalid marketplace vendor event', {
-					subject,
-					eventId: event.meta.eventId,
-				});
-			}
-
-			// Handle event based on type
+			// Handle event based on type (events from internal NATS are trusted)
 			switch (subject) {
 				case 'marketplace.vendor.onboarded':
-					await this.algoliaSyncService.indexNewVendor(event.data as Marketplace.Events.VendorCreated);
+					await this.algoliaSyncService.indexNewVendor(event.data);
 					break;
 				case 'marketplace.vendor.profile_updated':
-					await this.algoliaSyncService.updateVendorIndex(event.data as Marketplace.Events.VendorUpdated);
+					await this.algoliaSyncService.updateVendorIndex(event.data);
 					break;
 				case 'marketplace.vendor.deactivated':
-					await this.algoliaSyncService.removeVendorFromIndex(event.data as Marketplace.Events.VendorDeleted);
+					await this.algoliaSyncService.removeVendorFromIndex(event.data);
 					break;
 				default:
 					this.logger.warn('Unhandled marketplace vendor event', { subject });
@@ -138,7 +119,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 	}
 
 	private async handleLocationVendorEvent(data: {
-		data: DomainEvent<Marketplace.Events.VendorLocationChanged>;
+		data: DomainEvent<VendorLocationChanged>;
 		subject: string;
 	}): Promise<void> {
 		const { data: event, subject } = data;
@@ -150,19 +131,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 		});
 
 		try {
-			// Validate event
-			if (
-				!this.natsACL.validateDomainEvent<
-					Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
-				>(event.data)
-			) {
-				throw AppError.validation('INVALID_DOMAIN_EVENT', 'Invalid location vendor event', {
-					subject,
-					eventId: event.meta.eventId,
-				});
-			}
-
-			// Handle location update
+			// Handle location update (events from internal NATS are trusted)
 			if (subject === 'location.vendor.location_updated') {
 				await this.algoliaSyncService.updateVendorLocation(event.data);
 

@@ -1,5 +1,4 @@
-import { ArgumentMetadata, Injectable, Logger, PipeTransform } from '@nestjs/common';
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { UserIdentityData } from '@venta/proto/marketplace/user-management';
 import { ClerkUserSchema, GrpcUserIdentitySchema } from '../../schemas/user/user.schemas';

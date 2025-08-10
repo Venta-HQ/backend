@@ -17,15 +17,28 @@ All services use the same contracts to ensure consistency and reduce duplication
 ```
 📁 contracts/
 ├── 📁 acl/                       # Anti-Corruption Layer (ACL) functionality
-│   ├── vendor.acl.ts             # Vendor domain ACL pipes
-│   ├── clerk.acl.ts              # Clerk service ACL
-│   ├── revenuecat.acl.ts         # RevenueCat service ACL
-│   ├── algolia.acl.ts            # Algolia search ACL
-│   ├── nats.acl.ts               # NATS messaging ACL
-│   ├── to-location.acl.ts        # Outbound location transformations
-│   ├── to-communication.acl.ts   # Outbound communication transformations
-│   ├── to-infrastructure.acl.ts  # Outbound infrastructure transformations
-│   └── acl.module.ts             # ACL module
+│   ├── 📁 inbound/              # gRPC → Domain transformations
+│   │   ├── user.acl.ts          # User-related inbound ACLs
+│   │   └── vendor.acl.ts        # Vendor-related inbound ACLs
+│   ├── 📁 outbound/             # Domain → gRPC transformations (to other domains)
+│   │   ├── communication.acl.ts # To communication domain
+│   │   ├── infrastructure.acl.ts # To infrastructure domain
+│   │   └── location.acl.ts      # To location services domain
+│   ├── 📁 external/             # External API → Domain transformations
+│   │   ├── clerk.acl.ts         # Clerk authentication service
+│   │   ├── revenuecat.acl.ts    # RevenueCat subscription service
+│   │   ├── algolia.acl.ts       # Algolia search service
+│   │   └── nats.acl.ts          # NATS messaging service
+│   └── acl.module.ts            # Consolidated ACL module
+├── 📁 schemas/                   # Zod validation schemas
+│   ├── user/
+│   ├── vendor/
+│   └── search/
+├── 📁 types/                     # Type definitions
+│   ├── 📁 domain/               # Clean types for gRPC communication
+│   ├── 📁 internal/             # Internal business logic types
+│   └── legacy types (removed).ts # Legacy namespace types
+├── 📁 utils/                     # Utility functions
 ├── marketplace-contracts.module.ts
 └── index.ts
 ```
@@ -47,116 +60,158 @@ import { MarketplaceContractsModule } from '../contracts/marketplace-contracts.m
 export class UserManagementModule {}
 ```
 
-### **Use Context Mappers**
+### **Use Inbound ACL Pipes**
 
 ```typescript
-// In any marketplace service
-import { MarketplaceLocationContextMapper } from '../contracts';
+// In gRPC controllers
+import { VendorCreateACLPipe } from '../contracts';
+import type { VendorCreate } from '../contracts/types/domain';
+
+@Controller()
+export class VendorController {
+	@GrpcMethod('VendorService', 'createVendor')
+	@UsePipes(VendorCreateACLPipe)
+	async createVendor(request: VendorCreate): Promise<VendorResponse> {
+		// request is now clean domain type, validated and transformed
+		return this.vendorService.createVendor(request);
+	}
+}
+```
+
+### **Use Outbound ACL Pipes**
+
+```typescript
+// For sending data to other domains
+import { VendorLocationUpdateLocationACLPipe } from '../contracts';
+import type { VendorLocationChange } from '../contracts/types/domain';
+
+@Injectable()
+export class LocationSyncService {
+	constructor(private readonly locationClient: LocationServiceClient) {}
+
+	async syncVendorLocation(vendorLocationChange: VendorLocationChange) {
+		// Transform to location service format
+		const pipe = new VendorLocationUpdateLocationACLPipe();
+		const locationRequest = pipe.transform(vendorLocationChange, {} as ArgumentMetadata);
+
+		// Send to location service
+		await this.locationClient.updateVendorLocation(locationRequest);
+	}
+}
+```
+
+### **Use External Service ACL Pipes**
+
+```typescript
+// For handling external service data
+import { ClerkUserTransformACLPipe } from '../contracts';
+import type { ClerkUser } from '../contracts/types/internal';
 
 @Injectable()
 export class UserService {
-	constructor(private readonly locationMapper: MarketplaceLocationContextMapper) {}
+	async handleClerkWebhook(clerkUser: ClerkUser) {
+		// Transform Clerk data to domain format
+		const pipe = new ClerkUserTransformACLPipe();
+		const domainUser = pipe.transform(clerkUser, {} as ArgumentMetadata);
 
-	async updateUserLocation(userId: string, location: { lat: number; lng: number }) {
-		// Translate to location services format
-		const locationServicesData = this.locationMapper.toLocationServicesUserUpdate(userId, location);
-
-		// Call location services
-		await this.locationGrpcClient.updateLocation(locationServicesData);
+		// Use domain user data
+		await this.userRepository.create(domainUser);
 	}
 }
 ```
 
-### **Use Anti-Corruption Layers**
+## 🔧 **Adding New ACL Pipes**
+
+### **1. Inbound ACL Pipe (gRPC → Domain)**
 
 ```typescript
-// In any marketplace service
-import { ClerkAntiCorruptionLayer } from '../contracts';
+// contracts/acl/inbound/new-entity.acl.ts
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import type { NewEntityCreateData } from '@venta/proto/marketplace/new-service';
+import type { NewEntityCreate } from '../../types/domain';
 
 @Injectable()
-export class UserService {
-	constructor(private readonly clerkACL: ClerkAntiCorruptionLayer) {}
+export class NewEntityCreateACLPipe implements PipeTransform<NewEntityCreateData, NewEntityCreate> {
+	private validator = new SchemaValidatorPipe(GrpcNewEntityCreateDataSchema);
 
-	async handleClerkWebhook(clerkUser: any) {
-		// Translate Clerk data to marketplace format
-		const marketplaceUser = this.clerkACL.toMarketplaceUser(clerkUser);
+	transform(value: NewEntityCreateData, metadata: ArgumentMetadata): NewEntityCreate {
+		const validated = this.validator.transform(value, metadata);
 
-		// Use marketplace user data
-		await this.userRepository.create(marketplaceUser);
+		return {
+			name: validated.name,
+			// Map other fields...
+		};
 	}
 }
 ```
 
-## 🔧 **Adding New Contracts**
-
-### **1. Context Mapper**
+### **2. Outbound ACL Pipe (Domain → gRPC)**
 
 ```typescript
-// contracts/context-mappers/new-domain-context-mapper.ts
-import { BaseContextMapper } from '@venta/nest/modules/contracts';
+// contracts/acl/outbound/new-domain.acl.ts
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+import type { NewEntityUpdate } from '../../types/domain';
 
 @Injectable()
-export class NewDomainContextMapper extends BaseContextMapper {
-	constructor() {
-		super('NewDomainContextMapper');
+export class NewEntityUpdateNewDomainACLPipe implements PipeTransform<NewEntityUpdate, NewDomainRequest> {
+	transform(value: NewEntityUpdate, _metadata: ArgumentMetadata): NewDomainRequest {
+		return {
+			entityId: value.id,
+			data: value.data,
+			timestamp: new Date().toISOString(),
+		};
 	}
-
-	getDomain(): string {
-		return 'marketplace';
-	}
-
-	getTargetDomain(): string {
-		return 'new-domain';
-	}
-
-	// Implement translation methods...
 }
 ```
 
-### **2. Anti-Corruption Layer**
+### **3. External Service ACL Pipe (External API → Domain)**
 
 ```typescript
-// contracts/acl/new-service.acl.ts
-import { BaseAntiCorruptionLayer } from '@venta/nest/modules/contracts';
+// contracts/acl/external/new-service.acl.ts
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import type { DomainEntity } from '../../types/domain';
+import type { ExternalServiceData } from '../../types/internal';
 
 @Injectable()
-export class NewServiceAntiCorruptionLayer extends BaseAntiCorruptionLayer {
-	constructor() {
-		super('NewServiceAntiCorruptionLayer');
-	}
+export class NewServiceACLPipe implements PipeTransform<ExternalServiceData, DomainEntity> {
+	private validator = new SchemaValidatorPipe(ExternalServiceSchema);
 
-	getExternalService(): string {
-		return 'new-service';
-	}
+	transform(value: ExternalServiceData, metadata: ArgumentMetadata): DomainEntity {
+		const validated = this.validator.transform(value, metadata);
 
-	getDomain(): string {
-		return 'marketplace';
+		return {
+			id: validated.external_id,
+			name: validated.display_name,
+			// Map other fields...
+		};
 	}
-
-	// Implement translation methods...
 }
 ```
 
-### **3. Update Module**
+### **4. Update ACL Module**
 
 ```typescript
-// marketplace-contracts.module.ts
-import { NewServiceACL } from './acl/new-service.acl';
-import { NewDomainContextMapper } from './context-mappers/new-domain-context-mapper';
+// contracts/acl/acl.module.ts
+import { NewEntityCreateACLPipe } from './inbound/new-entity.acl';
+import { NewEntityUpdateNewDomainACLPipe } from './outbound/new-domain.acl';
+import { NewServiceACLPipe } from './external/new-service.acl';
 
 @Module({
 	providers: [
 		// ... existing providers
-		NewDomainContextMapper,
-		NewServiceACL,
+		NewEntityCreateACLPipe,
+		NewEntityUpdateNewDomainACLPipe,
+		NewServiceACLPipe,
 	],
 	exports: [
 		// ... existing exports
-		NewDomainContextMapper,
-		NewServiceACL,
+		NewEntityCreateACLPipe,
+		NewEntityUpdateNewDomainACLPipe,
+		NewServiceACLPipe,
 	],
 })
-export class MarketplaceContractsModule {}
 ```
 
 ## 🧪 **Testing**

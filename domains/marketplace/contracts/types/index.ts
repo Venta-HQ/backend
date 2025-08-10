@@ -41,6 +41,3 @@ export type { UserIdentity, VendorCreate, VendorUpdate, VendorEntity, Coordinate
 
 // Most frequently used internal types
 export type { UserProfile, UserSubscription, VendorProfile, ClerkUser, RevenueCatSubscription } from './internal';
-
-// Legacy exports for gradual migration
-export { Marketplace } from './context-mapping.types';

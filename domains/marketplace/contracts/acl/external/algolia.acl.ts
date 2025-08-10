@@ -1,15 +1,7 @@
-import { ArgumentMetadata, Injectable, Logger, PipeTransform } from '@nestjs/common';
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { LocationUpdateSchema, SearchRecordSchema, SearchUpdateSchema } from '../../schemas/search/search.schemas';
-import type {
-	AlgoliaIndexConfig,
-	IndexConfig,
-	LocationUpdate,
-	SearchError,
-	SearchRecord,
-	SearchUpdate,
-} from '../../types/internal';
+import type { LocationUpdate, SearchRecord, SearchUpdate } from '../../types/internal';
 
 // ============================================================================
 // EXTERNAL ALGOLIA ACL PIPES - Transform Algolia API types to domain types

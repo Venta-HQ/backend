@@ -3,18 +3,13 @@ import { Module } from '@nestjs/common';
 // EXTERNAL SERVICE ACL PIPES - External APIs → Domain
 // ============================================================================
 import {
-	AlgoliaACL,
 	AlgoliaLocationUpdateACLPipe,
 	AlgoliaSearchRecordACLPipe,
 	AlgoliaSearchUpdateACLPipe,
 } from './external/algolia.acl';
-import { ClerkAntiCorruptionLayer, ClerkUserIdentityACLPipe, ClerkUserTransformACLPipe } from './external/clerk.acl';
-import { NatsACL, NatsDomainEventACLPipe, NatsSubscriptionOptionsACLPipe } from './external/nats.acl';
-import {
-	RevenueCatAntiCorruptionLayer,
-	RevenueCatSubscriptionACLPipe,
-	RevenueCatSubscriptionTransformACLPipe,
-} from './external/revenuecat.acl';
+import { ClerkUserIdentityACLPipe, ClerkUserTransformACLPipe } from './external/clerk.acl';
+import { NatsDomainEventACLPipe, NatsSubscriptionOptionsACLPipe } from './external/nats.acl';
+import { RevenueCatSubscriptionACLPipe, RevenueCatSubscriptionTransformACLPipe } from './external/revenuecat.acl';
 // ============================================================================
 // INBOUND ACL PIPES - gRPC → Domain
 // ============================================================================
@@ -101,23 +96,19 @@ import {
 		// Clerk (Authentication)
 		ClerkUserIdentityACLPipe,
 		ClerkUserTransformACLPipe,
-		ClerkAntiCorruptionLayer, // Legacy service
 
 		// RevenueCat (Subscriptions)
 		RevenueCatSubscriptionACLPipe,
 		RevenueCatSubscriptionTransformACLPipe,
-		RevenueCatAntiCorruptionLayer, // Legacy service
 
 		// Algolia (Search)
 		AlgoliaSearchRecordACLPipe,
 		AlgoliaSearchUpdateACLPipe,
 		AlgoliaLocationUpdateACLPipe,
-		AlgoliaACL, // Legacy service
 
 		// NATS (Messaging)
 		NatsSubscriptionOptionsACLPipe,
 		NatsDomainEventACLPipe,
-		NatsACL, // Legacy service
 	],
 	exports: [
 		// ============================================================================
@@ -163,23 +154,19 @@ import {
 		// Clerk (Authentication)
 		ClerkUserIdentityACLPipe,
 		ClerkUserTransformACLPipe,
-		ClerkAntiCorruptionLayer, // Legacy service
 
 		// RevenueCat (Subscriptions)
 		RevenueCatSubscriptionACLPipe,
 		RevenueCatSubscriptionTransformACLPipe,
-		RevenueCatAntiCorruptionLayer, // Legacy service
 
 		// Algolia (Search)
 		AlgoliaSearchRecordACLPipe,
 		AlgoliaSearchUpdateACLPipe,
 		AlgoliaLocationUpdateACLPipe,
-		AlgoliaACL, // Legacy service
 
 		// NATS (Messaging)
 		NatsSubscriptionOptionsACLPipe,
 		NatsDomainEventACLPipe,
-		NatsACL, // Legacy service
 	],
 })
 export class ACLModule {}

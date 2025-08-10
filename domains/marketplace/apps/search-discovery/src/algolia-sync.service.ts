@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AlgoliaACL } from '@venta/domains/marketplace/contracts';
-import { SearchToMarketplaceContextMapper } from '@venta/domains/marketplace/contracts/context-mappers/search/search-to-marketplace.context-mapper';
-import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
+// Import specific event types instead of namespace
+import type {
+	VendorCreated,
+	VendorDeleted,
+	VendorLocationChanged,
+	VendorUpdated,
+} from '@venta/domains/marketplace/events';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AlgoliaService } from '@venta/nest/modules';
 
@@ -12,24 +16,21 @@ import { AlgoliaService } from '@venta/nest/modules';
 export class AlgoliaSyncService {
 	private readonly logger = new Logger(AlgoliaSyncService.name);
 
-	constructor(
-		private readonly algoliaService: AlgoliaService,
-		private readonly algoliaACL: AlgoliaACL,
-		private readonly contextMapper: SearchToMarketplaceContextMapper,
-	) {}
+	constructor(private readonly algoliaService: AlgoliaService) {}
 
 	/**
 	 * Handle vendor creation event
 	 */
-	async indexNewVendor(event: Marketplace.Events.VendorCreated): Promise<void> {
+	async indexNewVendor(event: VendorCreated): Promise<void> {
 		this.logger.debug('Processing vendor creation event', {
 			vendorId: event.vendorId,
 			ownerId: event.ownerId,
 		});
 
 		try {
-			// Create initial search record
-			const searchRecord = this.contextMapper.toSearchRecord({
+			// Create initial search record for Algolia
+			const searchRecord = {
+				objectID: event.vendorId, // Algolia requires objectID
 				id: event.vendorId,
 				name: '', // Will be updated later
 				description: '', // Will be updated later
@@ -38,18 +39,10 @@ export class AlgoliaSyncService {
 				ownerId: event.ownerId,
 				createdAt: event.timestamp,
 				updatedAt: event.timestamp,
-			});
+			};
 
-			// Validate record
-			if (!this.algoliaACL.validateSearchRecord(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_SEARCH_INDEX_INVALID, {
-					vendorId: event.vendorId,
-				});
-			}
-
-			// Index record
-			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
-			await this.algoliaService.createObject(indexConfig.name, searchRecord);
+			// Index record - use default vendor index
+			await this.algoliaService.createObject('vendors', searchRecord);
 
 			this.logger.debug('Vendor indexed successfully', {
 				vendorId: event.vendorId,
@@ -61,9 +54,11 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			this.algoliaACL.handleAlgoliaError(error, {
+			throw AppError.external(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'Algolia',
 				operation: 'indexNewVendor',
 				vendorId: event.vendorId,
+				error: error.message,
 			});
 		}
 	}
@@ -71,32 +66,23 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor update event
 	 */
-	async updateVendorIndex(event: Marketplace.Events.VendorUpdated): Promise<void> {
+	async updateVendorIndex(event: VendorUpdated): Promise<void> {
 		this.logger.debug('Processing vendor update event', {
 			vendorId: event.vendorId,
 			updatedFields: event.updatedFields,
 		});
 
 		try {
-			// Create update record
-			const searchRecord = this.contextMapper.toSearchUpdate({
+			// Create update record for Algolia
+			const searchRecord = {
+				objectID: event.vendorId, // Algolia requires objectID
 				id: event.vendorId,
-				updatedFields: event.updatedFields,
-				timestamp: event.timestamp,
-			});
+				...event.updatedFields, // Spread the updated fields
+				updatedAt: event.timestamp,
+			};
 
-			// Validate record
-			if (!this.algoliaACL.validateSearchUpdate(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_SEARCH_SYNC_FAILED, {
-					vendorId: event.vendorId,
-					type: 'vendor',
-					id: event.vendorId,
-				});
-			}
-
-			// Update record
-			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
-			await this.algoliaService.updateObject(indexConfig.name, event.vendorId, searchRecord);
+			// Update record - use default vendor index
+			await this.algoliaService.updateObject('vendors', event.vendorId, searchRecord);
 
 			this.logger.debug('Vendor index updated successfully', {
 				vendorId: event.vendorId,
@@ -109,9 +95,11 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			this.algoliaACL.handleAlgoliaError(error, {
+			throw AppError.external(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'Algolia',
 				operation: 'updateVendorIndex',
 				vendorId: event.vendorId,
+				error: error.message,
 			});
 		}
 	}
@@ -119,15 +107,14 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor deletion event
 	 */
-	async removeVendorFromIndex(event: Marketplace.Events.VendorDeleted): Promise<void> {
+	async removeVendorFromIndex(event: VendorDeleted): Promise<void> {
 		this.logger.debug('Processing vendor deletion event', {
 			vendorId: event.vendorId,
 		});
 
 		try {
-			// Delete record
-			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
-			await this.algoliaService.deleteObject(indexConfig.name, event.vendorId);
+			// Delete record - use default vendor index
+			await this.algoliaService.deleteObject('vendors', event.vendorId);
 
 			this.logger.debug('Vendor removed from index successfully', {
 				vendorId: event.vendorId,
@@ -139,9 +126,11 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			this.algoliaACL.handleAlgoliaError(error, {
+			throw AppError.external(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'Algolia',
 				operation: 'removeVendorFromIndex',
 				vendorId: event.vendorId,
+				error: error.message,
 			});
 		}
 	}
@@ -149,35 +138,26 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor location update event
 	 */
-	async updateVendorLocation(event: Marketplace.Events.VendorLocationChanged): Promise<void> {
+	async updateVendorLocation(event: VendorLocationChanged): Promise<void> {
 		this.logger.debug('Processing vendor location update event', {
 			vendorId: event.vendorId,
 			location: event.location,
 		});
 
 		try {
-			// Create location update record
-			const searchRecord = this.contextMapper.toLocationUpdate({
+			// Create location update record for Algolia
+			const searchRecord = {
+				objectID: event.vendorId, // Algolia requires objectID
 				id: event.vendorId,
-				location: {
+				_geoloc: {
 					lat: event.location.lat,
-					long: event.location.long,
+					lng: event.location.lng, // Algolia uses 'lng' not 'long'
 				},
-				timestamp: event.timestamp,
-			});
+				updatedAt: event.timestamp,
+			};
 
-			// Validate record
-			if (!this.algoliaACL.validateLocationUpdate(searchRecord)) {
-				throw AppError.validation(ErrorCodes.ERR_SEARCH_SYNC_FAILED, {
-					vendorId: event.vendorId,
-					type: 'vendor',
-					id: event.vendorId,
-				});
-			}
-
-			// Update record
-			const indexConfig = this.algoliaACL.toAlgoliaIndexConfig('vendor');
-			await this.algoliaService.updateObject(indexConfig.name, event.vendorId, searchRecord);
+			// Update record - use default vendor index
+			await this.algoliaService.updateObject('vendors', event.vendorId, searchRecord);
 
 			this.logger.debug('Vendor location updated successfully', {
 				vendorId: event.vendorId,
@@ -193,9 +173,11 @@ export class AlgoliaSyncService {
 			});
 
 			if (error instanceof AppError) throw error;
-			this.algoliaACL.handleAlgoliaError(error, {
+			throw AppError.external(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'Algolia',
 				operation: 'updateVendorLocation',
 				vendorId: event.vendorId,
+				error: error.message,
 			});
 		}
 	}
