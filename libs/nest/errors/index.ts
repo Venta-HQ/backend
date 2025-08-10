@@ -1,6 +1,5 @@
 // Core error handling system
 export * from './error-schemas';
-export * from './error-examples';
 
 // Supporting components (filter and modules only)
 export * from './app-exception.filter';

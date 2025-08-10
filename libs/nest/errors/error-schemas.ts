@@ -3,7 +3,15 @@
  * TypeScript-first approach: define once, derive everything else
  */
 
-import { ErrorType } from './app-error';
+export enum ErrorType {
+	INTERNAL = 'INTERNAL',
+	NOT_FOUND = 'NOT_FOUND',
+	UNAUTHORIZED = 'UNAUTHORIZED',
+	VALIDATION = 'VALIDATION',
+	EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+	FORBIDDEN = 'FORBIDDEN',
+	RATE_LIMIT = 'RATE_LIMIT',
+}
 
 /**
  * Single source of truth: error definitions with code, message, and data type
