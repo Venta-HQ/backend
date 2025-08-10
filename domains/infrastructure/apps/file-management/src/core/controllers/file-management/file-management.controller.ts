@@ -1,9 +1,8 @@
-import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
 import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { FileManagementService } from '../../../core/services/file-management/file-management.service';
 
 /**

@@ -2,12 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { VendorCreate, VendorUpdate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
-import {
-	Vendor,
-	VendorCreateData,
-	VendorLocationRequest,
-	VendorUpdateData,
-} from '@venta/proto/marketplace/vendor-management';
+import { Vendor, VendorLocationRequest } from '@venta/proto/marketplace/vendor-management';
 
 @Injectable()
 export class CoreService {
