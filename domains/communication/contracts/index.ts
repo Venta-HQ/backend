@@ -1,5 +1,5 @@
 // Main Module
 export { CommunicationContractsModule } from './communication-contracts.module';
 
-// Context Mappers (Outbound Only)
-export * as CommunicationToMarketplaceContextMapper from './context-mappers/communication-to-marketplace.context-mapper';
+// Anti-Corruption Layer
+export * as CommunicationToMarketplaceACL from './anti-corruption-layer/marketplace.acl';

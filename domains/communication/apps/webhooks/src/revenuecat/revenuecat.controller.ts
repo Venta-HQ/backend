@@ -1,5 +1,5 @@
 import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';
-import * as CommunicationToMarketplaceContextMapper from '@venta/domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
+import { CommunicationToMarketplaceACL } from '@venta/domains/communication/contracts';
 import { WebhookEventSchema } from '@venta/domains/communication/contracts/schemas/communication.schemas';
 import { RevenueCatWebhookPayload } from '@venta/domains/communication/contracts/types/external/revenuecat.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
@@ -11,7 +11,7 @@ import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@vent
 @Controller()
 export class RevenueCatController {
 	private readonly logger = new Logger(RevenueCatController.name);
-	private readonly contextMapper = CommunicationToMarketplaceContextMapper;
+	private readonly marketplaceACL = CommunicationToMarketplaceACL;
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
 		private readonly client: GrpcInstance<UserManagementServiceClient>,
@@ -32,7 +32,7 @@ export class RevenueCatController {
 			switch (event.event.type) {
 				case 'INITIAL_PURCHASE': {
 					try {
-						const marketplaceEvent = this.contextMapper.toMarketplaceSubscriptionEvent({
+						const marketplaceEvent = this.marketplaceACL.toMarketplaceSubscriptionEvent({
 							type: event.event.type,
 							source: 'revenuecat',
 							payload: event,

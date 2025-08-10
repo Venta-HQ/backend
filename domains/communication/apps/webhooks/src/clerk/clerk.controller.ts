@@ -1,5 +1,5 @@
 import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';
-import * as CommunicationToMarketplaceContextMapper from '@venta/domains/communication/contracts/context-mappers/communication-to-marketplace.context-mapper';
+import { CommunicationToMarketplaceACL } from '@venta/domains/communication/contracts';
 import { WebhookEventSchema } from '@venta/domains/communication/contracts/schemas/communication.schemas';
 import { ClerkWebhookPayload } from '@venta/domains/communication/contracts/types/external/clerk.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
@@ -11,7 +11,7 @@ import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@vent
 @Controller()
 export class ClerkController {
 	private readonly logger = new Logger(ClerkController.name);
-	private readonly contextMapper = CommunicationToMarketplaceContextMapper;
+	private readonly marketplaceACL = CommunicationToMarketplaceACL;
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
 		private readonly client: GrpcInstance<UserManagementServiceClient>,
@@ -32,7 +32,7 @@ export class ClerkController {
 			switch (event.type) {
 				case 'user.created': {
 					try {
-						const marketplaceEvent = this.contextMapper.toMarketplaceUserEvent({
+						const marketplaceEvent = this.marketplaceACL.toMarketplaceUserEvent({
 							type: event.type,
 							source: 'clerk',
 							payload: event,
@@ -55,7 +55,7 @@ export class ClerkController {
 
 				case 'user.deleted': {
 					try {
-						const marketplaceEvent = this.contextMapper.toMarketplaceUserEvent({
+						const marketplaceEvent = this.marketplaceACL.toMarketplaceUserEvent({
 							type: event.type,
 							source: 'clerk',
 							payload: event,
