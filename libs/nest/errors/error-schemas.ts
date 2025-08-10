@@ -78,11 +78,11 @@ const ERROR_DEFINITIONS = {
 	// Authentication/Authorization
 	ERR_UNAUTHORIZED: {
 		message: 'Authentication required',
-		data: {} as Record<string, never>,
+		data: {} as { message?: string; originalError?: any; statusCode?: number },
 	},
 	ERR_INSUFFICIENT_PERMISSIONS: {
 		message: 'Insufficient permissions',
-		data: {} as Record<string, never>,
+		data: {} as { message?: string; originalError?: any; statusCode?: number },
 	},
 	ERR_INVALID_TOKEN: {
 		message: 'Invalid authentication token',
@@ -103,11 +103,17 @@ const ERROR_DEFINITIONS = {
 			indexName?: string;
 			entityId?: string;
 			objectID?: string;
+			originalError?: any;
+			statusCode?: number;
 		},
 	},
 	ERR_TOO_MANY_REQUESTS: {
 		message: 'Too many requests',
 		data: {} as { seconds: number },
+	},
+	ERR_RATE_LIMIT: {
+		message: 'Rate limit exceeded',
+		data: {} as { message?: string; originalError?: any; statusCode?: number },
 	},
 	ERR_WS_RATE_LIMIT: {
 		message: 'WebSocket rate limit exceeded',
@@ -149,11 +155,11 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_RESOURCE_NOT_FOUND: {
 		message: 'Resource not found',
-		data: {} as { type: string; id: string },
+		data: {} as { type?: string; id?: string; message?: string; originalError?: any; statusCode?: number },
 	},
 	ERR_RESOURCE_EXISTS: {
 		message: 'Resource already exists',
-		data: {} as { type: string; id: string },
+		data: {} as { type?: string; id?: string; message?: string; originalError?: any; statusCode?: number },
 	},
 
 	// External services
@@ -171,7 +177,7 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_SERVICE_UNAVAILABLE: {
 		message: 'Service unavailable',
-		data: {} as { service: string },
+		data: {} as { service: string; message?: string; originalError?: any; statusCode?: number },
 	},
 	ERR_SERVICE_TIMEOUT: {
 		message: 'Service request timed out',
@@ -205,11 +211,11 @@ const ERROR_DEFINITIONS = {
 	// General
 	ERR_INTERNAL: {
 		message: 'Internal server error',
-		data: {} as Record<string, never>,
+		data: {} as { message?: string; code?: any; originalError?: any; stack?: string; statusCode?: number },
 	},
 	ERR_UNKNOWN: {
 		message: 'Unknown error occurred',
-		data: {} as Record<string, never>,
+		data: {} as { message?: string; originalError?: any },
 	},
 } as const;
 

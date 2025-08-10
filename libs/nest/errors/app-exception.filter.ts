@@ -3,8 +3,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError } from './app-error';
-import { ErrorCodes } from './errorcodes';
+import { AppError, ErrorCodes } from './error-schemas';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -107,6 +106,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 					});
 				case 502:
 					return AppError.externalService(ErrorCodes.ERR_SERVICE_UNAVAILABLE, {
+						service: 'external',
 						message: response.message || exception.message || 'External service error',
 						originalError: response,
 						statusCode: status,
