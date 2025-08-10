@@ -22,7 +22,8 @@ import {
 	VendorUpdateData,
 	VendorUpdateResponse,
 } from '@venta/proto/marketplace/vendor-management';
-import { VendorManagementService } from './vendor-management.service';
+import { LocationService } from '../location/location.service';
+import { CoreService } from './core.service';
 
 /**
  * gRPC controller for vendor management service
@@ -30,10 +31,13 @@ import { VendorManagementService } from './vendor-management.service';
  */
 @Controller()
 @UseGuards(GrpcAuthGuard)
-export class VendorManagementController implements VendorManagementServiceController {
-	private readonly logger = new Logger(VendorManagementController.name);
+export class CoreController implements VendorManagementServiceController {
+	private readonly logger = new Logger(CoreController.name);
 
-	constructor(private readonly vendorManagementService: VendorManagementService) {}
+	constructor(
+		private readonly coreService: CoreService,
+		private readonly locationService: LocationService,
+	) {}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorById')
 	async getVendorById(request: { id: string }): Promise<Vendor> {
@@ -43,7 +47,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			// Validate and transform request
 			const domainRequest = VendorLookupACL.toDomain(request);
 
-			const vendor = await this.vendorManagementService.getVendorById(domainRequest.id);
+			const vendor = await this.coreService.getVendorById(domainRequest.id);
 			if (!vendor) {
 				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
 					vendorId: request.id,
@@ -73,7 +77,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			// Validate and transform request
 			const domainRequest = VendorCreateACL.toDomain(request);
 
-			const vendorId = await this.vendorManagementService.createVendor(domainRequest);
+			const vendorId = await this.coreService.createVendor(domainRequest);
 			return { id: vendorId };
 		} catch (error) {
 			this.logger.error('Failed to create vendor', {
@@ -97,7 +101,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			// Validate and transform request
 			const domainRequest = VendorUpdateACL.toDomain(request);
 
-			await this.vendorManagementService.updateVendor(domainRequest);
+			await this.coreService.updateVendor(domainRequest);
 			return { message: 'Vendor updated successfully', success: true };
 		} catch (error) {
 			this.logger.error('Failed to update vendor', {
@@ -124,7 +128,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			// Validate and transform request
 			const domainRequest = VendorLocationUpdateACL.toDomain(request);
 
-			await this.vendorManagementService.updateVendorLocation(domainRequest);
+			await this.locationService.updateVendorLocation(domainRequest);
 			return {};
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
@@ -151,7 +155,7 @@ export class VendorManagementController implements VendorManagementServiceContro
 			// Validate and transform request
 			const domainRequest = VendorGeospatialBoundsACL.toDomain(request);
 
-			const vendors = await this.vendorManagementService.getVendorsInArea(domainRequest);
+			const vendors = await this.coreService.getVendorsInArea(domainRequest);
 			return { vendors };
 		} catch (error) {
 			this.logger.error('Failed to get vendors in area', {

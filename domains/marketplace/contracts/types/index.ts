@@ -30,7 +30,6 @@
 // ============================================================================
 
 export * as Domain from './domain';
-export * as Internal from './internal';
 
 // ============================================================================
 // Convenience Re-exports for Common Types
@@ -38,6 +37,3 @@ export * as Internal from './internal';
 
 // Most frequently used domain types
 export type { UserIdentity, VendorCreate, VendorUpdate, VendorEntity, Coordinates } from './domain';
-
-// Most frequently used internal types
-export type { UserProfile, UserSubscription, VendorProfile, ClerkUser, RevenueCatSubscription } from './internal';

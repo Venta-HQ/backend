@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { CoreModule } from '../core/core.module';
-import { VendorLocationEventsController } from './vendor-location-events.controller';
+import { NatsQueueModule, PrismaModule } from '@venta/nest/modules';
+import { LocationController } from './location.controller';
+import { LocationService } from './location.service';
 
 @Module({
-	imports: [CoreModule],
-	controllers: [VendorLocationEventsController],
+	imports: [PrismaModule, NatsQueueModule],
+	controllers: [LocationController],
+	providers: [LocationService],
+	exports: [LocationService],
 })
 export class LocationModule {}

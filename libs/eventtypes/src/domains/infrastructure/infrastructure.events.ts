@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { EnforceValidDomainEvents } from '@venta/eventtypes';
+import { EnforceValidDomainEvents } from '../../shared';
 
 // Infrastructure domain events with type enforcement
 export const infrastructureEventSchemas = {} as const satisfies EnforceValidDomainEvents<'infrastructure'>;

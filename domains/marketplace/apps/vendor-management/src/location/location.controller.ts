@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { BaseEvent } from '@venta/domains/marketplace/events';
+import { EventDataMap } from '@venta/eventtypes';
 import { NatsQueueService } from '@venta/nest/modules';
-import { VendorService } from '../core/vendor.service';
+import { LocationService } from './location.service';
 
 /**
  * NATS consumer for vendor location update events.
@@ -13,12 +13,12 @@ import { VendorService } from '../core/vendor.service';
  * The same pattern is automatically applied to all NATS consumers in the system.
  */
 @Injectable()
-export class VendorLocationEventsController implements OnModuleInit {
-	private readonly logger = new Logger(VendorLocationEventsController.name);
+export class LocationController implements OnModuleInit {
+	private readonly logger = new Logger(LocationController.name);
 
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
-		private readonly vendorService: VendorService,
+		private readonly locationService: LocationService,
 	) {}
 
 	async onModuleInit() {
@@ -33,25 +33,27 @@ export class VendorLocationEventsController implements OnModuleInit {
 		this.logger.log('Vendor location events controller initialized with DDD event patterns');
 	}
 
-	private async handleVendorLocationUpdate(data: { data: BaseEvent; subject: string }): Promise<void> {
+	private async handleVendorLocationUpdate(data: {
+		data: EventDataMap['location.vendor.location_updated'];
+		subject: string;
+	}): Promise<void> {
 		const { data: event, subject } = data;
 		// Enhanced logging with domain context
 		this.logger.log(`Handling vendor location event: ${subject}`, {
-			context: event.context,
-			domain: event.meta.domain,
-			eventId: event.meta.eventId,
-			subdomain: event.meta.subdomain,
-			vendorId: event.data.vendorId,
+			vendorId: event.vendorId,
+			location: event.location,
+			timestamp: event.timestamp,
 		});
 
 		try {
-			await this.vendorService.updateVendorLocation(event.data.vendorId, event.data.location);
+			await this.locationService.updateVendorLocationFromEvent(event.vendorId, {
+				lat: event.location.lat,
+				lng: event.location.lng,
+			});
 		} catch (error) {
 			this.logger.error(`Failed to handle vendor location event: ${subject}`, {
-				context: event.context,
 				error,
-				eventId: event.meta.eventId,
-				vendorId: event.data.vendorId,
+				vendorId: event.vendorId,
 			});
 			throw error;
 		}

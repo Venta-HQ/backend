@@ -241,16 +241,10 @@ export class VendorLocationUpdateACL {
 		}
 	}
 
-	static toDomain(grpc: VendorLocationUpdate): VendorLocationChange {
+	static toDomain(grpc: VendorLocationUpdate): VendorLocationUpdate {
 		this.validate(grpc);
 
-		return {
-			vendorId: grpc.vendorId,
-			coordinates: {
-				lat: grpc.coordinates!.lat,
-				lng: grpc.coordinates!.long, // Convert 'long' to 'lng'
-			},
-		};
+		return grpc; // Return validated gRPC type directly
 	}
 
 	// Domain → gRPC (outbound)
@@ -303,19 +297,10 @@ export class VendorGeospatialBoundsACL {
 		}
 	}
 
-	static toDomain(grpc: VendorLocationRequest): VendorLocationQuery {
+	static toDomain(grpc: VendorLocationRequest): VendorLocationRequest {
 		this.validate(grpc);
 
-		return {
-			ne: {
-				lat: grpc.ne!.lat,
-				lng: grpc.ne!.long, // Convert 'long' to 'lng'
-			},
-			sw: {
-				lat: grpc.sw!.lat,
-				lng: grpc.sw!.long, // Convert 'long' to 'lng'
-			},
-		};
+		return grpc; // Return validated gRPC type directly
 	}
 
 	// Domain → gRPC (outbound)

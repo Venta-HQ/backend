@@ -1,5 +1,4 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-// TODO: Rething this since we'd have to import cross-domain. Maybe event types need to be shared across all domains
 import { NatsQueueService } from '@venta/nest/modules';
 import { LocationService } from './location.service';
 

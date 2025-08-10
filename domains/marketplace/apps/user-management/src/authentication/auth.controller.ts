@@ -18,7 +18,7 @@ export class AuthController {
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
 	async handleUserCreated(request: UserIdentityData): Promise<CreateUserResponse> {
 		// Transform and validate gRPC data to domain format
-		const domainRequest = UserCreatedACL.toDomain(request);
+		const domainRequest = UserIdentityACL.toDomain(request);
 
 		this.logger.log(`Handling User Created Event`, {
 			userId: domainRequest.id,

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 // Import specific event types instead of namespace
-import type { VendorEventDataMap } from '@venta/domains/marketplace/events';
+import type { EventDataMap } from '@venta/eventtypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AlgoliaService } from '@venta/nest/modules';
 
@@ -16,7 +16,7 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor creation event
 	 */
-	async indexNewVendor(event: VendorEventDataMap['marketplace.vendor.onboarded']): Promise<void> {
+	async indexNewVendor(event: EventDataMap['marketplace.vendor.onboarded']): Promise<void> {
 		this.logger.debug('Processing vendor creation event', {
 			vendorId: event.vendorId,
 			ownerId: event.ownerId,
@@ -61,7 +61,7 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor update event
 	 */
-	async updateVendorIndex(event: VendorEventDataMap['marketplace.vendor.profile_updated']): Promise<void> {
+	async updateVendorIndex(event: EventDataMap['marketplace.vendor.profile_updated']): Promise<void> {
 		this.logger.debug('Processing vendor update event', {
 			vendorId: event.vendorId,
 			updatedFields: event.updatedFields,
@@ -102,7 +102,7 @@ export class AlgoliaSyncService {
 	/**
 	 * Handle vendor deletion event
 	 */
-	async removeVendorFromIndex(event: VendorEventDataMap['marketplace.vendor.deactivated']): Promise<void> {
+	async removeVendorFromIndex(event: EventDataMap['marketplace.vendor.deactivated']): Promise<void> {
 		this.logger.debug('Processing vendor deletion event', {
 			vendorId: event.vendorId,
 		});
@@ -130,50 +130,50 @@ export class AlgoliaSyncService {
 		}
 	}
 
-	// /**
-	//  * Handle vendor location update event
-	//  */
-	// async updateVendorLocation(event: VendorEventDataMap['marketplace.vendor.location_updated']): Promise<void> {
-	// 	this.logger.debug('Processing vendor location update event', {
-	// 		vendorId: event.vendorId,
-	// 		location: event.location,
-	// 	});
+	/**
+	 * Handle vendor location update event
+	 */
+	async updateVendorLocation(event: EventDataMap['location.vendor.location_updated']): Promise<void> {
+		this.logger.debug('Processing vendor location update event', {
+			vendorId: event.vendorId,
+			location: event.location,
+		});
 
-	// 	try {
-	// 		// Create location update record for Algolia
-	// 		const searchRecord = {
-	// 			objectID: event.vendorId, // Algolia requires objectID
-	// 			id: event.vendorId,
-	// 			_geoloc: {
-	// 				lat: event.location.lat,
-	// 				lng: event.location.lng, // Algolia uses 'lng' not 'long'
-	// 			},
-	// 			updatedAt: event.timestamp,
-	// 		};
+		try {
+			// Create location update record for Algolia
+			const searchRecord = {
+				objectID: event.vendorId, // Algolia requires objectID
+				id: event.vendorId,
+				_geoloc: {
+					lat: event.location.lat,
+					lng: event.location.lng, // Algolia uses 'lng' not 'long'
+				},
+				updatedAt: event.timestamp,
+			};
 
-	// 		// Update record - use default vendor index
-	// 		await this.algoliaService.updateObject('vendors', event.vendorId, searchRecord);
+			// Update record - use default vendor index
+			await this.algoliaService.updateObject('vendors', event.vendorId, searchRecord);
 
-	// 		this.logger.debug('Vendor location updated successfully', {
-	// 			vendorId: event.vendorId,
-	// 			location: {
-	// 				lat: event.location.lat,
-	// 				long: event.location.long,
-	// 			},
-	// 		});
-	// 	} catch (error) {
-	// 		this.logger.error('Failed to update vendor location', {
-	// 			error: error.message,
-	// 			vendorId: event.vendorId,
-	// 		});
+			this.logger.debug('Vendor location updated successfully', {
+				vendorId: event.vendorId,
+				location: {
+					lat: event.location.lat,
+					lng: event.location.lng,
+				},
+			});
+		} catch (error) {
+			this.logger.error('Failed to update vendor location', {
+				error: error.message,
+				vendorId: event.vendorId,
+			});
 
-	// 		if (error instanceof AppError) throw error;
-	// 		throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
-	// 			service: 'Algolia',
-	// 			operation: 'updateVendorLocation',
-	// 			vendorId: event.vendorId,
-	// 			error: error.message,
-	// 		});
-	// 	}
-	// }
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+				service: 'Algolia',
+				operation: 'updateVendorLocation',
+				vendorId: event.vendorId,
+				error: error.message,
+			});
+		}
+	}
 }

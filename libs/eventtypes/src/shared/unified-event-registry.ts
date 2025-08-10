@@ -1,9 +1,13 @@
 import {
 	CommunicationEventDataMap,
 	communicationEventSchemas,
-} from '@venta/domains/communication/events/communication.events';
-import { LocationEventDataMap, locationEventSchemas } from '@venta/domains/location-services/events/location.events';
-import { VendorEventDataMap, vendorEventSchemas } from '@venta/domains/marketplace/events/vendor/vendor.events';
+	InfrastructureEventDataMap,
+	infrastructureEventSchemas,
+	LocationEventDataMap,
+	locationEventSchemas,
+	VendorEventDataMap,
+	vendorEventSchemas,
+} from '../domains';
 import { ValidDomain, ValidSubdomain } from './event-schema-types';
 
 /**
@@ -11,9 +15,10 @@ import { ValidDomain, ValidSubdomain } from './event-schema-types';
  * This provides intellisense for all available events
  */
 export const ALL_EVENT_SCHEMAS = {
-	...vendorEventSchemas,
-	...locationEventSchemas,
 	...communicationEventSchemas,
+	...infrastructureEventSchemas,
+	...locationEventSchemas,
+	...vendorEventSchemas,
 } as const;
 
 /**
@@ -27,7 +32,10 @@ export type AvailableEventSubjects = keyof typeof ALL_EVENT_SCHEMAS;
  * This provides type safety for the second parameter of emit
  * Combines all domain event data mappings
  */
-export type EventDataMap = VendorEventDataMap & LocationEventDataMap & CommunicationEventDataMap;
+export type EventDataMap = CommunicationEventDataMap &
+	InfrastructureEventDataMap &
+	LocationEventDataMap &
+	VendorEventDataMap;
 
 /**
  * Get all event names for a specific domain

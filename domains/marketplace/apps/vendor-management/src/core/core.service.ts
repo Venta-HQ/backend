@@ -2,21 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
 import {
-	Location,
 	Vendor,
 	VendorCreateData,
-	VendorLocationUpdate,
+	VendorLocationRequest,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
 
-interface GeospatialBounds {
-	neBounds: Location;
-	swBounds: Location;
-}
-
 @Injectable()
-export class VendorManagementService {
-	private readonly logger = new Logger(VendorManagementService.name);
+export class CoreService {
+	private readonly logger = new Logger(CoreService.name);
 
 	constructor(
 		private readonly prisma: PrismaService,
@@ -214,72 +208,13 @@ export class VendorManagementService {
 	}
 
 	/**
-	 * Update vendor location
-	 * Domain method for vendor location management
-	 */
-	async updateVendorLocation(data: VendorLocationUpdate): Promise<void> {
-		this.logger.log('Updating vendor location', {
-			location: `${data.coordinates?.lat}, ${data.coordinates?.long}`,
-			vendorId: data.vendorId,
-		});
-
-		try {
-			// Verify vendor exists
-			const vendor = await this.prisma.db.vendor.findUnique({
-				where: { id: data.vendorId },
-			});
-
-			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
-					vendorId: data.vendorId,
-				});
-			}
-
-			// Update vendor location
-			const updatedVendor = await this.prisma.db.vendor.update({
-				where: { id: data.vendorId },
-				data: {
-					lat: data.coordinates!.lat,
-					long: data.coordinates!.long,
-				},
-			});
-
-			this.logger.log('Vendor location updated successfully', {
-				location: `${data.coordinates?.lat}, ${data.coordinates?.long}`,
-				vendorId: data.vendorId,
-			});
-
-			// Emit location updated event
-			await this.eventService.emit('location.vendor.location_updated', {
-				vendorId: updatedVendor.id,
-				location: {
-					lat: updatedVendor.lat || 0,
-					long: updatedVendor.long || 0,
-				},
-				timestamp: updatedVendor.updatedAt.toISOString(),
-			});
-		} catch (error) {
-			if (error instanceof AppError) throw error;
-
-			this.logger.error('Failed to update vendor location', error.stack, {
-				error,
-				location: data.coordinates,
-				vendorId: data.vendorId,
-			});
-			throw AppError.internal(ErrorCodes.ERR_LOC_UPDATE_FAILED, {
-				vendorId: data.vendorId,
-			});
-		}
-	}
-
-	/**
 	 * Get vendors within a geographic bounding box
 	 * Domain method for vendor discovery
 	 */
-	async getVendorsInArea(bounds: GeospatialBounds): Promise<Vendor[]> {
+	async getVendorsInArea(bounds: VendorLocationRequest): Promise<Vendor[]> {
 		this.logger.log('Getting vendors in geographic area', {
-			neBounds: `${bounds.neBounds.lat}, ${bounds.neBounds.long}`,
-			swBounds: `${bounds.swBounds.lat}, ${bounds.swBounds.long}`,
+			neBounds: `${bounds.ne.lat}, ${bounds.ne.long}`,
+			swBounds: `${bounds.sw.lat}, ${bounds.sw.long}`,
 		});
 
 		try {
@@ -287,12 +222,12 @@ export class VendorManagementService {
 			const vendors = await this.prisma.db.vendor.findMany({
 				where: {
 					lat: {
-						gte: bounds.swBounds.lat,
-						lte: bounds.neBounds.lat,
+						gte: bounds.sw.lat,
+						lte: bounds.ne.lat,
 					},
 					long: {
-						gte: bounds.swBounds.long,
-						lte: bounds.neBounds.long,
+						gte: bounds.sw.long,
+						lte: bounds.ne.long,
 					},
 				},
 			});
