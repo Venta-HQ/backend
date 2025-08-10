@@ -1,4 +1,10 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+// Validation utilities
+import {
+	validateCoordinates,
+	validateEntityType,
+	validateRadius,
+	validateRequiredString,
+} from '../schemas/validation.utils';
 
 /**
  * Location Services ACL
@@ -43,36 +49,20 @@ export interface LocationResult {
 export class LocationUpdateACL {
 	// External → Domain (inbound)
 	static validate(data: any): void {
-		if (!data.entityId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'entityId',
-				message: 'Entity ID is required',
-			});
-		}
-		if (!['user', 'vendor'].includes(data.entityType)) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'entityType',
-				message: 'Entity type must be user or vendor',
-			});
-		}
-		if (!data.coordinates?.lat || !data.coordinates?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
-				field: 'coordinates',
-				message: 'Valid coordinates (lat, lng) are required',
-			});
-		}
+		validateRequiredString(data.entityId, 'entityId');
+		validateEntityType(data.entityType, 'entityType');
+		validateCoordinates(data.coordinates, 'coordinates');
 	}
 
 	static toDomain(data: any): LocationUpdate {
 		this.validate(data);
 
+		const coordinates = validateCoordinates(data.coordinates, 'coordinates');
+
 		return {
 			entityId: data.entityId,
-			entityType: data.entityType,
-			coordinates: {
-				lat: data.coordinates.lat,
-				lng: data.coordinates.lng,
-			},
+			entityType: validateEntityType(data.entityType, 'entityType'),
+			coordinates,
 			timestamp: data.timestamp || new Date().toISOString(),
 		};
 	}
@@ -103,36 +93,20 @@ export class LocationUpdateACL {
 export class GeospatialQueryACL {
 	// External → Domain (inbound)
 	static validate(data: any): void {
-		if (!['user', 'vendor'].includes(data.entityType)) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'entityType',
-				message: 'Entity type must be user or vendor',
-			});
-		}
-		if (!data.center?.lat || !data.center?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
-				field: 'center',
-				message: 'Valid center coordinates (lat, lng) are required',
-			});
-		}
-		if (!data.radius || data.radius <= 0) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'radius',
-				message: 'Valid radius (in meters) is required',
-			});
-		}
+		validateEntityType(data.entityType, 'entityType');
+		validateCoordinates(data.center, 'center');
+		validateRadius(data.radius, 'radius');
 	}
 
 	static toDomain(data: any): GeospatialQuery {
 		this.validate(data);
 
+		const center = validateCoordinates(data.center, 'center');
+
 		return {
-			entityType: data.entityType,
-			center: {
-				lat: data.center.lat,
-				lng: data.center.lng,
-			},
-			radius: data.radius,
+			entityType: validateEntityType(data.entityType, 'entityType'),
+			center,
+			radius: validateRadius(data.radius, 'radius'),
 		};
 	}
 }

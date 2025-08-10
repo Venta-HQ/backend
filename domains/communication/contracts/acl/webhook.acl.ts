@@ -1,4 +1,5 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+// Validation utilities
+import { mapEventTypeToStatus, validateClerkWebhook, validateRevenueCatWebhook } from '../schemas/validation.utils';
 import { ClerkWebhookPayload, RevenueCatWebhookPayload } from '../types/domain';
 
 /**
@@ -13,18 +14,7 @@ import { ClerkWebhookPayload, RevenueCatWebhookPayload } from '../types/domain';
 export class ClerkWebhookACL {
 	// External → gRPC (inbound)
 	static validate(webhook: ClerkWebhookPayload): void {
-		if (!webhook.type) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'type',
-				message: 'Webhook event type is required',
-			});
-		}
-		if (!webhook.data) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'data',
-				message: 'Webhook data is required',
-			});
-		}
+		validateClerkWebhook(webhook);
 	}
 
 	static toUserEvent(webhook: ClerkWebhookPayload): {
@@ -33,20 +23,13 @@ export class ClerkWebhookACL {
 		timestamp: string;
 		metadata: any;
 	} {
-		this.validate(webhook);
-
-		if (!webhook.data.id) {
-			throw AppError.validation(ErrorCodes.ERR_MISSING_FIELD, {
-				field: 'userId',
-				message: 'User ID is required in webhook data',
-			});
-		}
+		const validated = validateClerkWebhook(webhook);
 
 		return {
-			userId: webhook.data.id,
-			eventType: webhook.type,
+			userId: validated.data.id,
+			eventType: validated.type,
 			timestamp: new Date().toISOString(),
-			metadata: webhook.data,
+			metadata: validated.data,
 		};
 	}
 }
@@ -58,18 +41,7 @@ export class ClerkWebhookACL {
 export class RevenueCatWebhookACL {
 	// External → gRPC (inbound)
 	static validate(webhook: RevenueCatWebhookPayload): void {
-		if (!webhook.event?.type) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'event.type',
-				message: 'Webhook event type is required',
-			});
-		}
-		if (!webhook.event?.app_user_id) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'event.app_user_id',
-				message: 'User ID is required in webhook event',
-			});
-		}
+		validateRevenueCatWebhook(webhook);
 	}
 
 	static toSubscriptionEvent(webhook: RevenueCatWebhookPayload): {
@@ -79,25 +51,14 @@ export class RevenueCatWebhookACL {
 		timestamp: string;
 		metadata: any;
 	} {
-		this.validate(webhook);
+		const validated = validateRevenueCatWebhook(webhook);
 
 		return {
-			userId: webhook.event.app_user_id,
-			subscriptionId: webhook.event.product_id,
-			status: this.mapEventTypeToStatus(webhook.event.type),
+			userId: validated.event.app_user_id,
+			subscriptionId: validated.event.product_id,
+			status: mapEventTypeToStatus(validated.event.type),
 			timestamp: new Date().toISOString(),
 			metadata: webhook.event,
 		};
-	}
-
-	private static mapEventTypeToStatus(eventType: string): string {
-		const statusMap: Record<string, string> = {
-			INITIAL_PURCHASE: 'active',
-			RENEWAL: 'active',
-			CANCELLATION: 'cancelled',
-			EXPIRATION: 'expired',
-			BILLING_ISSUE: 'past_due',
-		};
-		return statusMap[eventType] || 'unknown';
 	}
 }

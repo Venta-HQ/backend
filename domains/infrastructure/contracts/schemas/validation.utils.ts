@@ -1,7 +1,7 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**
- * Simple validation utilities that work with gRPC types
+ * Validation utilities for infrastructure domain ACL validation
  */
 
 /**
@@ -29,21 +29,6 @@ export function validateEmail(value: string | undefined, fieldName: string = 'em
 		});
 	}
 	return validated;
-}
-
-/**
- * Validates optional email format
- */
-export function validateOptionalEmail(value: string | undefined, fieldName: string = 'email'): string | undefined {
-	if (!value) return value;
-
-	if (!value.includes('@')) {
-		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-			field: fieldName,
-			message: 'Valid email address is required',
-		});
-	}
-	return value;
 }
 
 /**
@@ -85,21 +70,54 @@ export function validateCoordinates(
 }
 
 /**
- * Validates subscription data
+ * Validates file upload object
  */
-export function validateSubscriptionData(
-	data: { eventId?: string; productId?: string; transactionId?: string } | undefined,
-): { eventId: string; productId: string; transactionId: string } {
-	if (!data) {
+export function validateFileUpload(file: any): { filename: string; mimetype: string; buffer: Buffer; size: number } {
+	if (!file) {
 		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-			field: 'data',
-			message: 'Subscription data is required',
+			field: 'file',
+			message: 'File is required',
 		});
 	}
 
-	const eventId = validateRequiredString(data.eventId, 'data.eventId');
-	const productId = validateRequiredString(data.productId, 'data.productId');
-	const transactionId = validateRequiredString(data.transactionId, 'data.transactionId');
+	if (!file.filename) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'filename',
+			message: 'Filename is required',
+		});
+	}
 
-	return { eventId, productId, transactionId };
+	if (!file.buffer || !(file.buffer instanceof Buffer)) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'buffer',
+			message: 'Valid file buffer is required',
+		});
+	}
+
+	if (!file.mimetype) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'mimetype',
+			message: 'File MIME type is required',
+		});
+	}
+
+	return {
+		filename: file.filename,
+		mimetype: file.mimetype,
+		buffer: file.buffer,
+		size: file.size || file.buffer.length,
+	};
+}
+
+/**
+ * Validates optional upload options object
+ */
+export function validateUploadOptions(options: any): any {
+	if (options && typeof options !== 'object') {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'options',
+			message: 'Upload options must be an object',
+		});
+	}
+	return options || {};
 }

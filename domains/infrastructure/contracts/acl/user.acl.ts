@@ -1,4 +1,5 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+// Validation utilities
+import { validateCoordinates, validateRequiredString } from '../schemas/validation.utils';
 
 /**
  * User HTTP ACL
@@ -12,24 +13,9 @@ import { AppError, ErrorCodes } from '@venta/nest/errors';
 export class UserVendorRequestACL {
 	// HTTP → gRPC (inbound)
 	static validate(request: any): void {
-		if (!request.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
-		if (!request.ne?.lat || !request.ne?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'ne',
-				message: 'Northeast coordinates (lat, lng) are required',
-			});
-		}
-		if (!request.sw?.lat || !request.sw?.lng) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'sw',
-				message: 'Southwest coordinates (lat, lng) are required',
-			});
-		}
+		validateRequiredString(request.userId, 'userId');
+		validateCoordinates(request.ne, 'ne');
+		validateCoordinates(request.sw, 'sw');
 	}
 
 	static toGrpc(request: any): {
@@ -39,15 +25,18 @@ export class UserVendorRequestACL {
 	} {
 		this.validate(request);
 
+		const ne = validateCoordinates(request.ne, 'ne');
+		const sw = validateCoordinates(request.sw, 'sw');
+
 		return {
 			userId: request.userId,
 			ne: {
-				lat: request.ne.lat,
-				long: request.ne.lng, // Convert lng to long for gRPC
+				lat: ne.lat,
+				long: ne.lng, // Convert lng to long for gRPC
 			},
 			sw: {
-				lat: request.sw.lat,
-				long: request.sw.lng, // Convert lng to long for gRPC
+				lat: sw.lat,
+				long: sw.lng, // Convert lng to long for gRPC
 			},
 		};
 	}

@@ -1,4 +1,5 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+// Validation utilities
+import { validateFileUpload, validateUploadOptions } from '../schemas/validation.utils';
 import { CloudinaryUploadOptions, FileUpload, FileUploadResult } from '../types/domain/file.types';
 
 /**
@@ -13,41 +14,11 @@ import { CloudinaryUploadOptions, FileUpload, FileUploadResult } from '../types/
 export class FileUploadACL {
 	// HTTP → Domain (inbound)
 	static validate(file: any): void {
-		if (!file) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'file',
-				message: 'File is required',
-			});
-		}
-		if (!file.filename) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'filename',
-				message: 'Filename is required',
-			});
-		}
-		if (!file.buffer || !(file.buffer instanceof Buffer)) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'buffer',
-				message: 'Valid file buffer is required',
-			});
-		}
-		if (!file.mimetype) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'mimetype',
-				message: 'File MIME type is required',
-			});
-		}
+		validateFileUpload(file);
 	}
 
 	static toDomain(file: any): FileUpload {
-		this.validate(file);
-
-		return {
-			filename: file.filename,
-			mimetype: file.mimetype,
-			buffer: file.buffer,
-			size: file.size || file.buffer.length,
-		};
+		return validateFileUpload(file);
 	}
 
 	// Domain → gRPC (outbound for API Gateway)
@@ -81,22 +52,18 @@ export class FileUploadACL {
 export class CloudinaryOptionsACL {
 	// HTTP → Domain (inbound)
 	static validate(options: any): void {
-		if (options && typeof options !== 'object') {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'options',
-				message: 'Upload options must be an object',
-			});
-		}
+		validateUploadOptions(options);
 	}
 
 	static toDomain(options: any = {}): CloudinaryUploadOptions {
-		this.validate(options);
+		const validatedOptions = validateUploadOptions(options);
 
 		return {
-			folder: options.folder,
-			transformation: options.transformation,
-			tags: Array.isArray(options.tags) ? options.tags : undefined,
-			context: options.context && typeof options.context === 'object' ? options.context : undefined,
+			folder: validatedOptions.folder,
+			transformation: validatedOptions.transformation,
+			tags: Array.isArray(validatedOptions.tags) ? validatedOptions.tags : undefined,
+			context:
+				validatedOptions.context && typeof validatedOptions.context === 'object' ? validatedOptions.context : undefined,
 		};
 	}
 }

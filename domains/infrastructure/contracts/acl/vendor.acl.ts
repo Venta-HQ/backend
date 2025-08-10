@@ -1,5 +1,6 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { VendorCreateData, VendorUpdateData } from '@venta/proto/marketplace/vendor-management';
+// Validation utilities
+import { validateEmail, validateRequiredString } from '../schemas/validation.utils';
 import { VendorCreateRequest, VendorUpdateRequest } from '../types/domain';
 
 /**
@@ -14,30 +15,10 @@ import { VendorCreateRequest, VendorUpdateRequest } from '../types/domain';
 export class VendorCreateRequestACL {
 	// HTTP → gRPC (inbound)
 	static validate(request: VendorCreateRequest): void {
-		if (!request.name?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'name',
-				message: 'Vendor name is required',
-			});
-		}
-		if (!request.email?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'email',
-				message: 'Email is required',
-			});
-		}
-		if (!request.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
-		if (!request.imageUrl?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'imageUrl',
-				message: 'Image URL is required',
-			});
-		}
+		validateRequiredString(request.name, 'name');
+		validateEmail(request.email, 'email');
+		validateRequiredString(request.userId, 'userId');
+		validateRequiredString(request.imageUrl, 'imageUrl');
 	}
 
 	static toGrpc(request: VendorCreateRequest): VendorCreateData {
@@ -56,12 +37,7 @@ export class VendorCreateRequestACL {
 
 export class VendorUpdateRequestACL {
 	static validate(request: VendorUpdateRequest): void {
-		if (!request.id?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'id',
-				message: 'Vendor ID is required',
-			});
-		}
+		validateRequiredString(request.id, 'id');
 	}
 
 	static toGrpc(request: VendorUpdateRequest): VendorUpdateData {

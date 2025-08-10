@@ -1,4 +1,5 @@
-import { AppError, ErrorCodes } from '@venta/nest/errors';
+// Validation utilities
+import { validateMessagePayload, validateRequiredString } from '../schemas/validation.utils';
 
 /**
  * Realtime Services ACL
@@ -35,26 +36,16 @@ export interface NatsSubscriptionOptions {
 export class RealtimeMessageACL {
 	// WebSocket → Domain (inbound)
 	static validate(data: any): void {
-		if (!data.type?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'type',
-				message: 'Message type is required',
-			});
-		}
-		if (!data.payload || typeof data.payload !== 'object') {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'payload',
-				message: 'Message payload is required and must be an object',
-			});
-		}
+		validateRequiredString(data.type, 'type');
+		validateMessagePayload(data.payload, 'payload');
 	}
 
 	static toDomain(data: any): RealtimeMessage {
 		this.validate(data);
 
 		return {
-			type: data.type,
-			payload: data.payload,
+			type: validateRequiredString(data.type, 'type'),
+			payload: validateMessagePayload(data.payload, 'payload'),
 			timestamp: data.timestamp || new Date().toISOString(),
 			userId: data.userId,
 			sessionId: data.sessionId,
@@ -82,19 +73,14 @@ export class RealtimeMessageACL {
 export class NatsSubscriptionACL {
 	// Config → Domain (inbound)
 	static validate(options: any): void {
-		if (!options.subject?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'subject',
-				message: 'NATS subject is required',
-			});
-		}
+		validateRequiredString(options.subject, 'subject');
 	}
 
 	static toDomain(options: any): NatsSubscriptionOptions {
 		this.validate(options);
 
 		return {
-			subject: options.subject,
+			subject: validateRequiredString(options.subject, 'subject'),
 			queue: options.queue,
 			durableName: options.durableName,
 			maxMessages: options.maxMessages,
