@@ -1,17 +1,14 @@
 import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';
-import { CommunicationToMarketplaceACL } from '@venta/domains/communication/contracts';
-import { WebhookEventSchema } from '@venta/domains/communication/contracts/schemas/communication.schemas';
-import { RevenueCatWebhookPayload } from '@venta/domains/communication/contracts/types/external/revenuecat.types';
+import { RevenueCatWebhookACL, RevenueCatWebhookPayload } from '@venta/domains/communication/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SignedWebhookGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller()
 export class RevenueCatController {
 	private readonly logger = new Logger(RevenueCatController.name);
-	private readonly marketplaceACL = CommunicationToMarketplaceACL;
+
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
 		private readonly client: GrpcInstance<UserManagementServiceClient>,
@@ -19,43 +16,27 @@ export class RevenueCatController {
 
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.REVENUECAT_WEBHOOK_SECRET || ''))
-	async handleRevenueCatEvent(
-		@Body(new SchemaValidatorPipe(WebhookEventSchema))
-		event: RevenueCatWebhookPayload,
-	): Promise<{ message: string }> {
+	async handleRevenueCatEvent(@Body() event: RevenueCatWebhookPayload): Promise<{ message: string }> {
 		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
 			eventType: event.event.type,
 			userId: event.event.app_user_id,
 		});
 
 		try {
+			// Validate and transform webhook event
+			const subscriptionEvent = RevenueCatWebhookACL.toSubscriptionEvent(event);
+
 			switch (event.event.type) {
 				case 'INITIAL_PURCHASE': {
-					try {
-						const marketplaceEvent = this.marketplaceACL.toMarketplaceSubscriptionEvent({
-							type: event.event.type,
-							source: 'revenuecat',
-							payload: event,
-							timestamp: new Date(event.event.purchased_at_ms).toISOString(),
-						});
-
-						await this.client.invoke('handleSubscriptionCreated', {
-							clerkUserId: marketplaceEvent.userId,
-							data: {
-								eventId: event.event.transaction_id,
-								productId: event.event.product_id,
-								transactionId: marketplaceEvent.subscriptionId,
-							},
-							providerId: marketplaceEvent.subscriptionId,
-						});
-					} catch (error) {
-						throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
-							service: 'revenuecat',
-							message: error instanceof Error ? error.message : 'Unknown error',
+					await this.client.invoke('handleSubscriptionCreated', {
+						clerkUserId: subscriptionEvent.userId,
+						data: {
 							eventId: event.event.transaction_id,
-							userId: event.event.app_user_id,
-						});
-					}
+							productId: event.event.product_id,
+							transactionId: subscriptionEvent.subscriptionId,
+						},
+						providerId: subscriptionEvent.subscriptionId,
+					});
 					break;
 				}
 

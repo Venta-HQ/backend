@@ -1,5 +1,5 @@
-// Main Module
-export { CommunicationContractsModule } from './communication-contracts.module';
+// ACL exports
+export { ClerkWebhookACL, RevenueCatWebhookACL } from './acl/webhook.acl';
 
-// Anti-Corruption Layer
-export * as CommunicationToMarketplaceACL from './anti-corruption-layer/marketplace.acl';
+// Type exports
+export * from './types';
