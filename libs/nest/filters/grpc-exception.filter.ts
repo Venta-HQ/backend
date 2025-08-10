@@ -10,13 +10,13 @@ import { AppError, ErrorType } from '@venta/nest/errors';
 export class GrpcExceptionFilter implements RpcExceptionFilter<AppError> {
 	catch(error: AppError): Observable<any> {
 		const metadata = {
-			details: error.context || {},
+			details: error.data || {},
 			timestamp: new Date().toISOString(),
 		};
 
 		// Map domain error types to gRPC status codes
 		let code: status;
-		switch (error.type) {
+		switch (error.errorType) {
 			case ErrorType.NOT_FOUND:
 				code = status.NOT_FOUND;
 				break;

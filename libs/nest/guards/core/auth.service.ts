@@ -63,7 +63,7 @@ export class AuthService {
 			} else {
 				this.logger.error('Authentication failed with unknown error', error.stack, { error });
 			}
-			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
+			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN, {});
 		}
 	}
 

@@ -68,17 +68,37 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_LOC_UPDATE_FAILED: {
 		message: 'Failed to update location',
-		data: {} as { vendorId: string },
+		data: {} as {
+			vendorId?: string;
+			operation?: string;
+			coordinates?: any;
+			location?: any;
+			entityId?: string;
+			error?: string;
+			socketId?: string;
+		},
 	},
 	ERR_LOC_QUERY_FAILED: {
 		message: 'Location query failed',
-		data: {} as { message: string },
+		data: {} as { message?: string; operation?: string; bounds?: any; error?: string },
+	},
+	ERR_LOC_REDIS_FAILED: {
+		message: 'Redis operation failed',
+		data: {} as { operation: string; userId?: string; error?: string },
+	},
+	ERR_EVENT_OPERATION_FAILED: {
+		message: 'Event operation failed',
+		data: {} as { operation: string; eventId?: string; error?: string; entityId?: string },
+	},
+	ERR_REDIS_OPERATION_FAILED: {
+		message: 'Redis operation failed',
+		data: {} as { operation: string; key?: string; error?: string; entityId?: string },
 	},
 
 	// Authentication/Authorization
 	ERR_UNAUTHORIZED: {
 		message: 'Authentication required',
-		data: {} as { message?: string; originalError?: any; statusCode?: number },
+		data: {} as { message?: string; originalError?: any; statusCode?: number; operation?: string; socketId?: string },
 	},
 	ERR_INSUFFICIENT_PERMISSIONS: {
 		message: 'Insufficient permissions',
@@ -105,6 +125,11 @@ const ERROR_DEFINITIONS = {
 			objectID?: string;
 			originalError?: any;
 			statusCode?: number;
+			filename?: string;
+			domain?: string;
+			size?: number;
+			mimetype?: string;
+			maxSize?: number;
 		},
 	},
 	ERR_TOO_MANY_REQUESTS: {
@@ -123,9 +148,17 @@ const ERROR_DEFINITIONS = {
 		message: 'WebSocket authentication failed',
 		data: {} as { userId?: string },
 	},
+	ERR_WS_CONNECTION_FAILED: {
+		message: 'WebSocket connection failed',
+		data: {} as { operation?: string; message?: string; originalError?: any; statusCode?: number; socketId?: string },
+	},
+	ERR_WS_INVALID_MESSAGE: {
+		message: 'Invalid WebSocket message',
+		data: {} as { type?: string; message?: string },
+	},
 	ERR_MISSING_FIELD: {
 		message: 'Required field is missing',
-		data: {} as { field: string },
+		data: {} as { field: string; message?: string },
 	},
 	ERR_INVALID_EMAIL: {
 		message: 'Invalid email format',
@@ -133,11 +166,28 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_INVALID_FORMAT: {
 		message: 'Invalid format',
-		data: {} as { field: string; value?: any; message?: string },
+		data: {} as {
+			field: string;
+			value?: any;
+			message?: string;
+			errors?: any;
+			userId?: string;
+			filename?: string;
+			domain?: string;
+			operation?: string;
+			mimetype?: string;
+			providedType?: string;
+			fileSize?: number;
+			fileName?: string;
+			error?: string;
+			allowedTypes?: string[];
+			maxSize?: number;
+			size?: number;
+		},
 	},
 	ERR_INVALID_COORDINATES: {
 		message: 'Invalid coordinates provided',
-		data: {} as { lat: number; long: number },
+		data: {} as { lat?: number; long?: number; field?: string; entityId?: string; bounds?: any; message?: string },
 	},
 	ERR_VALIDATION_FAILED: {
 		message: 'Validation failed',
@@ -151,7 +201,14 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_DB_OPERATION: {
 		message: 'Database operation failed',
-		data: {} as { operation: string },
+		data: {} as {
+			operation: string;
+			userId?: string;
+			vendorId?: string;
+			clerkId?: string;
+			clerkUserId?: string;
+			providerId?: string;
+		},
 	},
 	ERR_RESOURCE_NOT_FOUND: {
 		message: 'Resource not found',
@@ -159,7 +216,15 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_RESOURCE_EXISTS: {
 		message: 'Resource already exists',
-		data: {} as { type?: string; id?: string; message?: string; originalError?: any; statusCode?: number },
+		data: {} as {
+			type?: string;
+			id?: string;
+			message?: string;
+			originalError?: any;
+			statusCode?: number;
+			operation?: string;
+			socketId?: string;
+		},
 	},
 
 	// External services
@@ -167,12 +232,16 @@ const ERROR_DEFINITIONS = {
 		message: 'External service error',
 		data: {} as {
 			service: string;
-			message: string;
+			message?: string;
 			operation?: string;
 			error?: string;
 			indexName?: string;
 			entityId?: string;
 			objectID?: string;
+			subject?: string;
+			vendorId?: string;
+			filename?: string;
+			eventId?: string;
 		},
 	},
 	ERR_SERVICE_UNAVAILABLE: {
@@ -193,11 +262,22 @@ const ERROR_DEFINITIONS = {
 		message: 'File not found',
 		data: {} as { filename: string },
 	},
+	ERR_UPLOAD: {
+		message: 'Upload failed',
+		data: {} as {
+			filename?: string;
+			fileName?: string;
+			domain?: string;
+			operation?: string;
+			message?: string;
+			error?: string;
+		},
+	},
 
 	// Communication
 	ERR_COMM_WEBHOOK_INVALID: {
 		message: 'Invalid webhook payload',
-		data: {} as { source: string; eventType?: string; eventId?: string },
+		data: {} as { source: string; eventType?: string; eventId?: string; userId?: string },
 	},
 	ERR_COMM_WEBHOOK_SIGNATURE: {
 		message: 'Invalid webhook signature',
