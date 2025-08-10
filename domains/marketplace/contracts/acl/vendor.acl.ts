@@ -98,7 +98,7 @@ export class VendorCreateACL {
 			email: grpc.email,
 			phone: grpc.phone,
 			website: grpc.website,
-			imageUrl: grpc.imageUrl,
+			imageUrl: grpc.profileImage,
 			userId: grpc.userId,
 		};
 	}

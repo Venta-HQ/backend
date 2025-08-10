@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { VendorCreate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
 import {
@@ -79,33 +80,10 @@ export class CoreService {
 	 * Create new vendor
 	 * Domain method for vendor creation with business logic
 	 */
-	async createVendor(data: VendorCreateData): Promise<string> {
+	async createVendor(data: VendorCreate): Promise<string> {
 		this.logger.log('Creating new vendor', { userId: data.userId });
 
 		try {
-			// Verify user exists and can create vendor
-			const user = await this.prisma.db.user.findUnique({
-				where: { id: data.userId },
-				include: {
-					vendors: true,
-				},
-			});
-
-			if (!user) {
-				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
-					entityType: 'user',
-					entityId: data.userId,
-					userId: data.userId,
-				});
-			}
-
-			if (user.vendors.length > 0) {
-				throw AppError.validation(ErrorCodes.ERR_ENTITY_LIMIT_EXCEEDED, {
-					entityType: 'vendor',
-					userId: data.userId,
-				});
-			}
-
 			// Create vendor
 			const vendor = await this.prisma.db.vendor.create({
 				data: {
@@ -114,10 +92,17 @@ export class CoreService {
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					primaryImage: data.imageUrl,
+					profileImage: data.imageUrl,
 					ownerId: data.userId,
 				},
 			});
+
+			if (!vendor) {
+				throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+					operation: 'create_vendor',
+					userId: data.userId,
+				});
+			}
 
 			this.logger.log('Vendor created successfully', {
 				userId: data.userId,

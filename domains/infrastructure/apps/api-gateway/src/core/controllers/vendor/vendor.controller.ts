@@ -1,17 +1,12 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
 import { VendorCreateRequest, VendorCreateRequestACL } from '@venta/domains/infrastructure/contracts';
-import { AuthGuard } from '@venta/nest/guards';
+import { AuthenticatedRequest, AuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorManagementServiceClient,
 } from '@venta/proto/marketplace/vendor-management';
-
-// Temporary interface until types are fully migrated
-interface AuthedRequest {
-	userId: string;
-}
 
 @Controller('vendor')
 export class VendorController {
@@ -32,11 +27,11 @@ export class VendorController {
 
 	@Post()
 	@UseGuards(AuthGuard)
-	async createVendor(@Req() req: AuthedRequest, @Body() data: VendorCreateRequest) {
+	async createVendor(@Req() req: AuthenticatedRequest, @Body() data: VendorCreateRequest) {
 		// Validate and transform to gRPC
 		const grpcData = VendorCreateRequestACL.toGrpc({
 			...data,
-			userId: req.userId,
+			userId: req.user.id,
 		});
 
 		return await firstValueFrom(
@@ -53,7 +48,7 @@ export class VendorController {
 	@UseGuards(AuthGuard)
 	async updateVendor(
 		@Param('id') id: string,
-		@Req() req: AuthedRequest,
+		@Req() req: AuthenticatedRequest,
 		@Body() data: any, // TODO: Create VendorUpdateRequest type
 	) {
 		// For now, pass data directly as this needs a proper update ACL

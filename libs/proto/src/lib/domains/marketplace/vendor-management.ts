@@ -17,12 +17,8 @@ export interface VendorCreateData {
   email: string;
   phone: string;
   website: string;
-  imageUrl: string;
+  profileImage: string;
   userId: string;
-}
-
-export interface VendorCreateResponse {
-  id: string;
 }
 
 export interface VendorIdentityData {
@@ -95,7 +91,7 @@ export const MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME = "marketplace.vendor_ma
 export interface VendorManagementServiceClient {
   getVendorById(request: VendorIdentityData, metadata?: Metadata): Observable<VendorLookupResponse>;
 
-  createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorCreateResponse>;
+  createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorIdentityData>;
 
   updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
 
@@ -113,7 +109,7 @@ export interface VendorManagementServiceController {
   createVendor(
     request: VendorCreateData,
     metadata?: Metadata,
-  ): Promise<VendorCreateResponse> | Observable<VendorCreateResponse> | VendorCreateResponse;
+  ): Promise<VendorIdentityData> | Observable<VendorIdentityData> | VendorIdentityData;
 
   updateVendor(
     request: VendorUpdateData,

@@ -4,7 +4,7 @@ package marketplace.vendor_management;
 
 service VendorManagementService {
   rpc GetVendorById (VendorIdentityData) returns (VendorLookupResponse) {}
-  rpc CreateVendor (VendorCreateData) returns (VendorCreateResponse) {}
+  rpc CreateVendor (VendorCreateData) returns (VendorIdentityData) {}
   rpc UpdateVendor (VendorUpdateData) returns (VendorUpdateResponse) {}
   rpc UpdateVendorLocation (VendorLocationUpdate) returns (Empty) {}
   rpc GetVendorsInArea (VendorLocationRequest) returns (VendorLocationResponse) {}
@@ -18,12 +18,8 @@ message VendorCreateData {
   string email = 3;
   string phone = 4;
   string website = 5;
-  string imageUrl = 6;
+  string profileImage = 6;
   string userId = 7;
-}
-
-message VendorCreateResponse {
-  string id = 1;
 }
 
 message VendorIdentityData {

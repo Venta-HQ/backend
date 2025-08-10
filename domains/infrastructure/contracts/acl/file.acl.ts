@@ -1,32 +1,10 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { CloudinaryUploadOptions, FileUpload, FileUploadResult } from '../types/domain/file.types';
 
 /**
  * File Management ACL
  * Handles validation and transformation for file upload/management operations
  */
-
-// Domain types (normalized)
-export interface FileUpload {
-	filename: string;
-	mimetype: string;
-	buffer: Buffer;
-	size: number;
-}
-
-export interface FileUploadResult {
-	url: string;
-	publicId: string;
-	format: string;
-	bytes: number;
-	createdAt: string;
-}
-
-export interface CloudinaryUploadOptions {
-	folder?: string;
-	transformation?: string;
-	tags?: string[];
-	context?: Record<string, string>;
-}
 
 /**
  * File Upload ACL

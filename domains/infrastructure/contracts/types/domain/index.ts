@@ -1,6 +1,6 @@
 // Re-export domain types from ACL files
-export type { FileUpload, FileUploadResult, CloudinaryUploadOptions } from '../../acl/file.acl';
+export type { FileUpload, FileUploadResult, CloudinaryUploadOptions } from './file.types';
 
-export type { UserVendorRequest } from '../../acl/user.acl';
+export type { UserVendorRequest } from './user.types';
 
-export type { VendorCreateRequest } from '../../acl/vendor.acl';
+export type { VendorCreateRequest } from './vendor.types';

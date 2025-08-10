@@ -5,19 +5,6 @@ import { AppError, ErrorCodes } from '@venta/nest/errors';
  * Handles validation and transformation for user-related HTTP requests
  */
 
-// Domain types
-export interface UserVendorRequest {
-	userId: string;
-	ne: {
-		lat: number;
-		lng: number;
-	};
-	sw: {
-		lat: number;
-		lng: number;
-	};
-}
-
 /**
  * User Vendor Request ACL
  * Validates and transforms requests for user vendor queries

@@ -1,23 +1,11 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { VendorCreateData } from '@venta/proto/marketplace/vendor-management';
+import { VendorCreateRequest } from '../types/domain';
 
 /**
  * Vendor HTTP ACL
  * Handles validation and transformation for vendor-related HTTP requests
  */
-
-// Domain types
-export interface VendorCreateRequest {
-	name: string;
-	email: string;
-	description?: string;
-	phone?: string;
-	website?: string;
-	userId: string;
-	coordinates: {
-		lat: number;
-		lng: number;
-	};
-}
 
 /**
  * Vendor Create Request ACL
@@ -25,7 +13,7 @@ export interface VendorCreateRequest {
  */
 export class VendorCreateRequestACL {
 	// HTTP → gRPC (inbound)
-	static validate(request: any): void {
+	static validate(request: VendorCreateRequest): void {
 		if (!request.name?.trim()) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 				field: 'name',
@@ -44,23 +32,15 @@ export class VendorCreateRequestACL {
 				message: 'User ID is required',
 			});
 		}
-		if (!request.coordinates?.lat || !request.coordinates?.lng) {
+		if (!request.imageUrl?.trim()) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'coordinates',
-				message: 'Valid coordinates (lat, lng) are required',
+				field: 'imageUrl',
+				message: 'Image URL is required',
 			});
 		}
 	}
 
-	static toGrpc(request: any): {
-		name: string;
-		email: string;
-		description?: string;
-		phone?: string;
-		website?: string;
-		userId: string;
-		coordinates: { lat: number; long: number };
-	} {
+	static toGrpc(request: VendorCreateRequest): VendorCreateData {
 		this.validate(request);
 
 		return {
@@ -70,10 +50,7 @@ export class VendorCreateRequestACL {
 			phone: request.phone,
 			website: request.website,
 			userId: request.userId,
-			coordinates: {
-				lat: request.coordinates.lat,
-				long: request.coordinates.lng, // Convert lng to long for gRPC
-			},
+			profileImage: request.imageUrl,
 		};
 	}
 }

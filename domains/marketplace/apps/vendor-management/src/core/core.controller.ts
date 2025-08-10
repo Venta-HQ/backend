@@ -13,7 +13,6 @@ import {
 	Empty,
 	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
 	VendorCreateData,
-	VendorCreateResponse,
 	VendorIdentityData,
 	VendorLocationRequest,
 	VendorLocationResponse,
@@ -73,7 +72,7 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'createVendor')
-	async createVendor(request: VendorCreateData): Promise<VendorCreateResponse> {
+	async createVendor(request: VendorCreateData): Promise<VendorIdentityData> {
 		this.logger.debug('Creating new vendor', { userId: request.userId });
 
 		try {
