@@ -12,77 +12,71 @@ The Marketplace domain consists of multiple services that share common contracts
 
 All services use the same contracts to ensure consistency and reduce duplication.
 
+### **ACL Pattern: Pure Functions over Pipes**
+
+We use **static pure functions** instead of NestJS pipes for ACL operations:
+
+✅ **Benefits:**
+
+- **Perfect Type Safety** - Controllers implement gRPC interfaces correctly
+- **No Magic** - Explicit transformation at controller boundary
+- **Testable** - Pure functions are easy to unit test
+- **Performance** - No NestJS pipe overhead
+- **Clear Boundaries** - gRPC types in controller, domain types in service
+- **Bidirectional** - Single file handles both inbound and outbound transformations
+
 ## 📁 **Structure**
 
 ```
 📁 contracts/
 ├── 📁 acl/                       # Anti-Corruption Layer (ACL) functionality
-│   ├── 📁 inbound/              # gRPC → Domain transformations
-│   │   ├── user.acl.ts          # User-related inbound ACLs
-│   │   └── vendor.acl.ts        # Vendor-related inbound ACLs
-│   ├── 📁 outbound/             # Domain → gRPC transformations (to other domains)
-│   │   ├── communication.acl.ts # To communication domain
-│   │   ├── infrastructure.acl.ts # To infrastructure domain
-│   │   └── location.acl.ts      # To location services domain
-│   ├── 📁 external/             # External API → Domain transformations
-│   │   ├── clerk.acl.ts         # Clerk authentication service
-│   │   ├── revenuecat.acl.ts    # RevenueCat subscription service
-│   │   ├── algolia.acl.ts       # Algolia search service
-│   │   └── nats.acl.ts          # NATS messaging service
-│   └── acl.module.ts            # Consolidated ACL module
-├── 📁 schemas/                   # Zod validation schemas
-│   ├── user/
-│   ├── vendor/
-│   └── search/
+│   ├── auth.acl.ts              # Authentication ACL - bidirectional gRPC ↔ Domain
+│   ├── user.acl.ts              # User ACL - bidirectional gRPC ↔ Domain
+│   ├── vendor.acl.ts            # Vendor ACL - bidirectional gRPC ↔ Domain
+│   └── subscription.acl.ts      # Subscription ACL - bidirectional gRPC ↔ Domain
 ├── 📁 types/                     # Type definitions
 │   ├── 📁 domain/               # Clean types for gRPC communication
 │   ├── 📁 internal/             # Internal business logic types
-│   └── legacy types (removed).ts # Legacy namespace types
-├── 📁 utils/                     # Utility functions
-├── marketplace-contracts.module.ts
-└── index.ts
+│   └── index.ts                 # Type re-exports
+└── index.ts                     # Main export file
 ```
 
 ## 🚀 **Usage**
 
-### **Import in Marketplace Services**
+### **Import ACL Classes in Services**
+
+Since all ACLs are now pure static functions, no module imports are needed. Simply import the specific ACL classes:
 
 ```typescript
-// In user-management.module.ts or vendor-management.module.ts
-import { MarketplaceContractsModule } from '../contracts/marketplace-contracts.module';
-
-@Module({
-	imports: [
-		MarketplaceContractsModule,
-		// ... other modules
-	],
-})
-export class UserManagementModule {}
+// In controllers and services
+import { UserIdentityACL, VendorCreateACL } from '@venta/domains/marketplace/contracts';
 ```
 
-### **Use Inbound ACL Pipes**
+### **Use ACL Classes in Controllers (gRPC → Domain)**
 
 ```typescript
 // In gRPC controllers
-import { VendorCreateACLPipe } from '../contracts';
-import type { VendorCreate } from '../contracts/types/domain';
+import type { VendorCreateData } from '@venta/proto/marketplace/vendor-management';
+import { VendorCreateACL } from '../contracts';
 
 @Controller()
 export class VendorController {
 	@GrpcMethod('VendorService', 'createVendor')
-	@UsePipes(VendorCreateACLPipe)
-	async createVendor(request: VendorCreate): Promise<VendorResponse> {
-		// request is now clean domain type, validated and transformed
-		return this.vendorService.createVendor(request);
+	async createVendor(request: VendorCreateData): Promise<VendorResponse> {
+		// Explicit validation and transformation
+		const domainRequest = VendorCreateACL.toDomain(request);
+
+		// domainRequest is now clean domain type, validated and transformed
+		return this.vendorService.createVendor(domainRequest);
 	}
 }
 ```
 
-### **Use Outbound ACL Pipes**
+### **Use ACL Classes for Outbound Communication (Domain → gRPC)**
 
 ```typescript
 // For sending data to other domains
-import { VendorLocationUpdateLocationACLPipe } from '../contracts';
+import { VendorLocationUpdateACL } from '../contracts';
 import type { VendorLocationChange } from '../contracts/types/domain';
 
 @Injectable()
@@ -90,128 +84,145 @@ export class LocationSyncService {
 	constructor(private readonly locationClient: LocationServiceClient) {}
 
 	async syncVendorLocation(vendorLocationChange: VendorLocationChange) {
-		// Transform to location service format
-		const pipe = new VendorLocationUpdateLocationACLPipe();
-		const locationRequest = pipe.transform(vendorLocationChange, {} as ArgumentMetadata);
+		// Transform to gRPC format
+		const grpcRequest = VendorLocationUpdateACL.toGrpc(vendorLocationChange);
 
 		// Send to location service
-		await this.locationClient.updateVendorLocation(locationRequest);
+		await this.locationClient.updateVendorLocation(grpcRequest);
 	}
 }
 ```
 
-### **Use External Service ACL Pipes**
+### **Use Subscription ACL Classes**
 
 ```typescript
-// For handling external service data
-import { ClerkUserTransformACLPipe } from '../contracts';
-import type { ClerkUser } from '../contracts/types/internal';
+// For handling subscription data (from webhook handlers via gRPC)
+import { SubscriptionCreateACL } from '@venta/domains/marketplace/contracts';
+import type { CreateSubscriptionData } from '@venta/proto/marketplace/user-management';
 
-@Injectable()
-export class UserService {
-	async handleClerkWebhook(clerkUser: ClerkUser) {
-		// Transform Clerk data to domain format
-		const pipe = new ClerkUserTransformACLPipe();
-		const domainUser = pipe.transform(clerkUser, {} as ArgumentMetadata);
+@Controller()
+export class SubscriptionController {
+	@GrpcMethod('UserManagementService')
+	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
+		// Transform and validate gRPC subscription data to domain format
+		const domainRequest = SubscriptionCreateACL.toDomain(request);
 
-		// Use domain user data
-		await this.userRepository.create(domainUser);
+		// Use domain subscription data
+		await this.subscriptionService.createSubscription(domainRequest);
+
+		return { message: 'Success' };
 	}
 }
 ```
 
-## 🔧 **Adding New ACL Pipes**
+## 🔧 **Adding New ACL Classes**
 
-### **1. Inbound ACL Pipe (gRPC → Domain)**
+### **1. Bidirectional ACL Class (gRPC ↔ Domain)**
 
 ```typescript
-// contracts/acl/inbound/new-entity.acl.ts
-import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+// contracts/acl/new-entity.acl.ts
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import type { NewEntityCreateData } from '@venta/proto/marketplace/new-service';
-import type { NewEntityCreate } from '../../types/domain';
+import type { NewEntityCreate } from '../types/domain';
 
-@Injectable()
-export class NewEntityCreateACLPipe implements PipeTransform<NewEntityCreateData, NewEntityCreate> {
-	private validator = new SchemaValidatorPipe(GrpcNewEntityCreateDataSchema);
+export class NewEntityCreateACL {
+	// gRPC → Domain (inbound)
+	static validate(grpc: NewEntityCreateData): void {
+		if (!grpc.name?.trim()) {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'name',
+				message: 'Name is required',
+			});
+		}
+	}
 
-	transform(value: NewEntityCreateData, metadata: ArgumentMetadata): NewEntityCreate {
-		const validated = this.validator.transform(value, metadata);
+	static toDomain(grpc: NewEntityCreateData): NewEntityCreate {
+		this.validate(grpc);
 
 		return {
-			name: validated.name,
+			name: grpc.name,
+			// Map other fields...
+		};
+	}
+
+	// Domain → gRPC (outbound)
+	static validateDomain(domain: NewEntityCreate): void {
+		if (!domain.name?.trim()) {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'name',
+				message: 'Name is required',
+			});
+		}
+	}
+
+	static toGrpc(domain: NewEntityCreate): NewEntityCreateData {
+		this.validateDomain(domain);
+
+		return {
+			name: domain.name,
 			// Map other fields...
 		};
 	}
 }
 ```
 
-### **2. Outbound ACL Pipe (Domain → gRPC)**
-
-```typescript
-// contracts/acl/outbound/new-domain.acl.ts
-import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
-import type { NewEntityUpdate } from '../../types/domain';
-
-@Injectable()
-export class NewEntityUpdateNewDomainACLPipe implements PipeTransform<NewEntityUpdate, NewDomainRequest> {
-	transform(value: NewEntityUpdate, _metadata: ArgumentMetadata): NewDomainRequest {
-		return {
-			entityId: value.id,
-			data: value.data,
-			timestamp: new Date().toISOString(),
-		};
-	}
-}
-```
-
-### **3. External Service ACL Pipe (External API → Domain)**
+### **2. External Service ACL Class (External API ↔ Domain)**
 
 ```typescript
 // contracts/acl/external/new-service.acl.ts
-import { ArgumentMetadata, Injectable, PipeTransform } from '@nestjs/common';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import type { DomainEntity } from '../../types/domain';
 import type { ExternalServiceData } from '../../types/internal';
 
-@Injectable()
-export class NewServiceACLPipe implements PipeTransform<ExternalServiceData, DomainEntity> {
-	private validator = new SchemaValidatorPipe(ExternalServiceSchema);
+export class NewServiceACL {
+	// External API → Domain (inbound)
+	static validate(external: ExternalServiceData): void {
+		if (!external.external_id?.trim()) {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'external_id',
+				message: 'External ID is required',
+			});
+		}
+	}
 
-	transform(value: ExternalServiceData, metadata: ArgumentMetadata): DomainEntity {
-		const validated = this.validator.transform(value, metadata);
+	static toDomain(external: ExternalServiceData): DomainEntity {
+		this.validate(external);
 
 		return {
-			id: validated.external_id,
-			name: validated.display_name,
+			id: external.external_id,
+			name: external.display_name,
+			// Map other fields...
+		};
+	}
+
+	// Domain → External API (outbound)
+	static validateDomain(domain: DomainEntity): void {
+		if (!domain.id?.trim()) {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'id',
+				message: 'ID is required',
+			});
+		}
+	}
+
+	static toExternal(domain: DomainEntity): ExternalServiceData {
+		this.validateDomain(domain);
+
+		return {
+			external_id: domain.id,
+			display_name: domain.name,
 			// Map other fields...
 		};
 	}
 }
 ```
 
-### **4. Update ACL Module**
+### **3. Update Exports**
 
 ```typescript
-// contracts/acl/acl.module.ts
-import { NewEntityCreateACLPipe } from './inbound/new-entity.acl';
-import { NewEntityUpdateNewDomainACLPipe } from './outbound/new-domain.acl';
-import { NewServiceACLPipe } from './external/new-service.acl';
-
-@Module({
-	providers: [
-		// ... existing providers
-		NewEntityCreateACLPipe,
-		NewEntityUpdateNewDomainACLPipe,
-		NewServiceACLPipe,
-	],
-	exports: [
-		// ... existing exports
-		NewEntityCreateACLPipe,
-		NewEntityUpdateNewDomainACLPipe,
-		NewServiceACLPipe,
-	],
-})
+// contracts/index.ts
+export { NewEntityCreateACL } from './acl/new-entity.acl';
+export { NewServiceACL } from './acl/external/new-service.acl';
 ```
 
 ## 🧪 **Testing**
@@ -238,12 +249,13 @@ describe('MarketplaceLocationContextMapper', () => {
 
 ## 📋 **Best Practices**
 
-1. **Extend Base Classes**: Always extend `BaseContextMapper` or `BaseAntiCorruptionLayer`
-2. **Use Validation**: Implement proper validation in `validateSourceData` and `validateTargetData`
-3. **Error Handling**: Use the base class error creation methods
-4. **Logging**: Use the base class logging methods for consistency
-5. **Testing**: Write comprehensive tests for all translation methods
-6. **Documentation**: Document complex translation logic
+1. **Pure Functions**: Use static methods for predictable, testable transformations
+2. **Explicit Validation**: Always validate input data before transformation
+3. **Error Handling**: Use `AppError` with appropriate error codes for consistent error reporting
+4. **Bidirectional Support**: Provide both `toDomain`/`toGrpc` methods in the same class for related operations
+5. **Type Safety**: Leverage TypeScript and proto-generated types for compile-time safety
+6. **Testing**: Write comprehensive tests for all transformation methods
+7. **Documentation**: Document complex transformation logic and field mappings
 
 ## 🔄 **Migration from Service-Specific Contracts**
 

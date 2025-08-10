@@ -1,7 +1,7 @@
-import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { GrpcClerkUserDataSchema } from '@venta/apitypes';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { UserIdentityACL } from '@venta/domains/marketplace/contracts';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import {
 	CreateUserResponse,
 	USER_MANAGEMENT_SERVICE_NAME,
@@ -16,27 +16,71 @@ export class AuthController {
 	constructor(private readonly authService: AuthService) {}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
-	async handleUserCreated(data: UserIdentityData): Promise<CreateUserResponse> {
-		this.logger.log(`Handling User Created Event`);
-		const userData = await this.authService.handleUserCreated(data.id);
-		if (userData && userData.id) {
-			await this.authService.createIntegration({
-				clerkUserId: userData.id,
-				providerId: userData.clerkId,
+	async handleUserCreated(request: UserIdentityData): Promise<CreateUserResponse> {
+		// Transform and validate gRPC data to domain format
+		const domainRequest = UserCreatedACL.toDomain(request);
+
+		this.logger.log(`Handling User Created Event`, {
+			userId: domainRequest.id,
+		});
+
+		try {
+			const userData = await this.authService.handleUserCreated(domainRequest.id);
+			if (userData && userData.id) {
+				await this.authService.createIntegration({
+					clerkUserId: userData.id,
+					providerId: userData.clerkId,
+				});
+			}
+
+			this.logger.log('User created successfully', {
+				userId: domainRequest.id,
+			});
+
+			return { message: 'Success' };
+		} catch (error) {
+			this.logger.error('Failed to create user', {
+				error: error.message,
+				userId: domainRequest.id,
+			});
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_user',
+				userId: domainRequest.id,
 			});
 		}
-		return { message: 'Success' };
 	}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcClerkUserDataSchema))
-	async handleUserDeleted(data: UserIdentityData): Promise<CreateUserResponse> {
-		this.logger.log(`Handling User Deleted Event`);
-		await this.authService.handleUserDeleted(data.id);
-		await this.authService.deleteIntegration({
-			providerId: data.id,
+	async handleUserDeleted(request: UserIdentityData): Promise<CreateUserResponse> {
+		// Transform and validate gRPC data to domain format
+		const domainRequest = UserIdentityACL.toDomain(request);
+
+		this.logger.log(`Handling User Deleted Event`, {
+			userId: domainRequest.id,
 		});
-		return { message: 'Success' };
+
+		try {
+			await this.authService.handleUserDeleted(domainRequest.id);
+			await this.authService.deleteIntegration({
+				providerId: domainRequest.id,
+			});
+
+			this.logger.log('User deleted successfully', {
+				userId: domainRequest.id,
+			});
+
+			return { message: 'Success' };
+		} catch (error) {
+			this.logger.error('Failed to delete user', {
+				error: error.message,
+				userId: domainRequest.id,
+			});
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'delete_user',
+				userId: domainRequest.id,
+			});
+		}
 	}
 }

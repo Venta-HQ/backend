@@ -1,7 +1,7 @@
-import { Controller, Logger, UsePipes } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { GrpcRevenueCatSubscriptionDataSchema } from '@venta/apitypes';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { SubscriptionCreateACL } from '@venta/domains/marketplace/contracts';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import {
 	CreateSubscriptionData,
 	CreateSubscriptionResponse,
@@ -16,22 +16,45 @@ export class SubscriptionController {
 	constructor(private readonly subscriptionService: SubscriptionService) {}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	@UsePipes(new SchemaValidatorPipe(GrpcRevenueCatSubscriptionDataSchema))
-	async handleSubscriptionCreated(data: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
-		this.logger.log(`Handling RevenueCat subscription created event`);
+	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
+		// Transform and validate gRPC data to domain format
+		const domainRequest = SubscriptionCreateACL.toDomain(request);
 
-		// Create an Integration record
-		await this.subscriptionService.createIntegration({
-			clerkUserId: data.clerkUserId,
-			data: data.data ? JSON.parse(JSON.stringify(data.data)) : undefined,
-			providerId: data.providerId,
+		this.logger.log(`Handling subscription created event`, {
+			userId: domainRequest.userId,
+			providerId: domainRequest.providerId,
 		});
 
-		// Create a user subscription record
-		await this.subscriptionService.createUserSubscription({
-			clerkUserId: data.clerkUserId,
-		});
+		try {
+			// Create an Integration record
+			await this.subscriptionService.createIntegration({
+				clerkUserId: domainRequest.userId,
+				data: domainRequest.data as any, // Convert to Prisma JSON format
+				providerId: domainRequest.providerId,
+			});
 
-		return { message: 'Success' };
+			// Create a user subscription record
+			await this.subscriptionService.createUserSubscription({
+				clerkUserId: domainRequest.userId,
+			});
+
+			this.logger.log('Subscription created successfully', {
+				userId: domainRequest.userId,
+				providerId: domainRequest.providerId,
+			});
+
+			return { message: 'Success' };
+		} catch (error) {
+			this.logger.error('Failed to create subscription', {
+				error: error.message,
+				userId: domainRequest.userId,
+				providerId: domainRequest.providerId,
+			});
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_subscription',
+				userId: domainRequest.userId,
+			});
+		}
 	}
 }

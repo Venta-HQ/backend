@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType } from '@prisma/client';
+import { UserIdentityACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
 
@@ -24,33 +25,33 @@ export class AuthService {
 
 		try {
 			// Use ACL pipe to validate Clerk user identity
-			const validatedClerkData = this.clerkACL.transform({ id }, { type: 'body' });
+			const validatedClerkData = UserIdentityACL.toDomain({ id });
 
 			const userExists = await this.prisma.db.user.count({
 				where: {
-					clerkId: clerkId,
+					clerkId: validatedClerkData.id,
 				},
 			});
 
 			if (!userExists) {
 				const user = await this.prisma.db.user.create({
 					data: {
-						clerkId: clerkId,
+						clerkId: validatedClerkData.id,
 					},
 					select: { clerkId: true, id: true },
 				});
 
 				this.logger.log('User identity created successfully from external auth provider', {
-					clerkId: clerkId,
+					clerkId: validatedClerkData.id,
 					userId: user.id,
 				});
 
 				return user;
 			} else {
-				this.logger.log('User identity already exists', { clerkId: validatedClerkData.clerkId });
+				this.logger.log('User identity already exists', { clerkId: validatedClerkData.id });
 				return await this.prisma.db.user.findFirst({
 					select: { clerkId: true, id: true },
-					where: { clerkId: validatedClerkData.clerkId },
+					where: { clerkId: validatedClerkData.id },
 				});
 			}
 		} catch (error) {

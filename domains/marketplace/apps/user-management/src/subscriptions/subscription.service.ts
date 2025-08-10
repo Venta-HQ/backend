@@ -63,15 +63,15 @@ export class SubscriptionService {
 					startDate: new Date().toISOString() as any,
 					user: {
 						connect: {
-							clerkId: validatedSubscriptionData.clerkUserId,
+							clerkId: activationData.clerkUserId,
 						},
 					},
 				},
 			});
 
 			this.logger.log('Subscription activation completed successfully', {
-				clerkUserId: validatedSubscriptionData.clerkUserId,
-				providerId: validatedSubscriptionData.providerId,
+				clerkUserId: activationData.clerkUserId,
+				providerId: activationData.providerId,
 			});
 		} catch (error) {
 			this.logger.error('Failed to activate subscription', {

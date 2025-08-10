@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { MarketplaceContractsModule } from '@venta/domains/marketplace/contracts';
 import { BootstrapModule, PrismaModule } from '@venta/nest/modules';
-import { UserManagementController } from './user-management.controller';
-import { UserManagementService } from './user-management.service';
+import { CoreController } from './core.controller';
+import { CoreService } from './core.service';
 
 @Module({
 	imports: [
@@ -12,9 +11,9 @@ import { UserManagementService } from './user-management.service';
 			protocol: 'grpc',
 		}),
 		PrismaModule,
-		MarketplaceContractsModule,
 	],
-	controllers: [UserManagementController],
-	providers: [UserManagementService],
+	controllers: [CoreController],
+	providers: [CoreService],
+	exports: [CoreService],
 })
 export class CoreModule {}

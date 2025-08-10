@@ -202,16 +202,25 @@ async handleClerkEvent(
    - ✅ Standardized Zod schema usage in ACLs
    - ✅ Added validation documentation
 
-5. **Authentication (In Progress)**
+5. **Authentication**
+
    - ✅ Created standardized auth types (`AuthUser`, `AuthContext`, `AuthMetadata`)
    - ✅ Created `AuthService` for shared logic
    - ✅ Created `GrpcAuthGuard` and `GrpcAuthInterceptor`
    - ✅ Updated `AuthGuard` and `WsAuthGuard` to use new types
    - ✅ Added auth to marketplace domain gRPC services
-   - 🔄 Fixing type errors in user and vendor management
+   - ✅ Fixed type errors in user and vendor management
    - ⏳ Pending: Location services domain auth
    - ⏳ Pending: Communication domain auth
    - ⏳ Pending: Infrastructure domain auth
+
+6. **ACL Architecture Refactoring (Completed)**
+   - ✅ **Converted from NestJS Pipes to Pure Functions**: Replaced `@Injectable()` pipes with static class methods for better type safety and performance
+   - ✅ **Consolidated Folder Structure**: Merged `inbound/` and `outbound/` folders into unified bidirectional ACL classes
+   - ✅ **Bidirectional Support**: Each ACL class now provides both `toDomain()` and `toGrpc()` methods
+   - ✅ **Explicit Controller Transformations**: Replaced `@UsePipes()` decorators with explicit `ACL.toDomain()` calls
+   - ✅ **Perfect Type Safety**: Controllers now implement gRPC interfaces correctly without type conflicts
+   - ✅ **Updated Documentation**: Comprehensive documentation updates reflecting new patterns and best practices
 
 ### Next Steps
 
@@ -242,12 +251,15 @@ async handleClerkEvent(
 
 ### Current Focus
 
-Currently working on fixing type errors in the marketplace domain's user and vendor management services, specifically:
+**✅ Completed**: Marketplace domain ACL refactoring:
 
-1. Aligning Prisma types with domain models
-2. Fixing location type mismatches (`lng` vs `long`)
-3. Ensuring consistent error code usage
-4. Correcting type predicates in ACLs
+1. ✅ Converted ACL pipes to pure static functions for better type safety
+2. ✅ Consolidated inbound/outbound folders into unified bidirectional ACL classes
+3. ✅ Updated controllers to use explicit `ACL.toDomain()` calls instead of `@UsePipes`
+4. ✅ Fixed type mismatches and aligned Prisma types with domain models
+5. ✅ Updated documentation to reflect new ACL patterns
+
+**Next**: Apply the same ACL refactoring pattern to other domains (location-services, communication, infrastructure)
 
 ## Benefits
 

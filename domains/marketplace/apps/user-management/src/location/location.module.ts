@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CoreModule } from '../core/core.module';
-import { UserLocationEventsController } from './user-location-events.controller';
+import { PrismaModule } from '@venta/nest/modules';
+import { LocationController } from './location.controller';
+import { LocationService } from './location.service';
 
 @Module({
-	imports: [CoreModule],
-	controllers: [UserLocationEventsController],
+	imports: [PrismaModule],
+	controllers: [LocationController],
+	providers: [LocationService],
 })
 export class LocationModule {}

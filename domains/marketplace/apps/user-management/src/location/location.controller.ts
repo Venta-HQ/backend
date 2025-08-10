@@ -1,24 +1,23 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { BaseEvent } from '@venta/eventtypes';
+// TODO: Rething this since we'd have to import cross-domain. Maybe event types need to be shared across all domains
 import { NatsQueueService } from '@venta/nest/modules';
-import { UserService } from '../core/user.service';
+import { LocationService } from './location.service';
 
 /**
+ * Location controller for user-management operations
  * NATS consumer for user location update events.
  *
  * This controller automatically extracts correlation IDs from NATS messages
  * using the NatsRequestIdInterceptor (applied at module level), making them
  * available to all log messages.
- *
- * The same pattern is automatically applied to all NATS consumers in the system.
  */
 @Injectable()
-export class UserLocationEventsController implements OnModuleInit {
-	private readonly logger = new Logger(UserLocationEventsController.name);
+export class LocationController implements OnModuleInit {
+	private readonly logger = new Logger(LocationController.name);
 
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
-		private readonly userService: UserService,
+		private readonly locationService: LocationService,
 	) {}
 
 	async onModuleInit() {
@@ -29,11 +28,11 @@ export class UserLocationEventsController implements OnModuleInit {
 			this.handleUserLocationUpdate.bind(this),
 		);
 
-		this.logger.log('User location events controller initialized with DDD event patterns');
+		this.logger.log('Location controller initialized with DDD event patterns');
 	}
 
-	private async handleUserLocationUpdate(data: { data: BaseEvent; subject: string }): Promise<void> {
-		const { data: event, subject } = data;
+	private async handleUserLocationUpdate(event: any): Promise<void> {
+		const { data: eventData, subject } = event;
 
 		// Enhanced logging with domain context
 		this.logger.log(`Handling user location event: ${subject}`, {
@@ -41,17 +40,20 @@ export class UserLocationEventsController implements OnModuleInit {
 			domain: event.meta.domain,
 			eventId: event.meta.eventId,
 			subdomain: event.meta.subdomain,
-			userId: event.data.userId,
+			userId: eventData.userId,
 		});
 
 		try {
-			await this.userService.updateUserLocation(event.data.userId, event.data.location);
+			await this.locationService.updateUserLocation({
+				userId: eventData.userId,
+				location: eventData.location,
+			});
 		} catch (error) {
 			this.logger.error(`Failed to handle user location event: ${subject}`, {
 				context: event.context,
 				error,
 				eventId: event.meta.eventId,
-				userId: event.data.userId,
+				userId: eventData.userId,
 			});
 			throw error;
 		}
