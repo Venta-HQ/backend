@@ -1,8 +1,11 @@
-export * from './app-error';
+// Core error handling system
+export * from './error-schemas';
+export * from './error-examples';
+
+// Supporting components (filter and modules only)
 export * from './app-exception.filter';
 export * from './error-handling.module';
-export * from './errorcodes';
 
-// Enhanced error handling system
-export * from './enhanced-error-schemas';
-export * from './enhanced-app-error';
+// Legacy components (export specific non-conflicting items)
+export { ErrorType } from './app-error';
+export { interpolateMessage, ErrorsMap } from './errorcodes';
