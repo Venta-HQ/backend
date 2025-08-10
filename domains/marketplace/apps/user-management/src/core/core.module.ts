@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
-import { RevenueCatAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/revenuecat.acl';
+import { MarketplaceContractsModule } from '@venta/domains/marketplace/contracts';
 import { BootstrapModule, PrismaModule } from '@venta/nest/modules';
 import { UserManagementController } from './user-management.controller';
 import { UserManagementService } from './user-management.service';
@@ -13,8 +12,9 @@ import { UserManagementService } from './user-management.service';
 			protocol: 'grpc',
 		}),
 		PrismaModule,
+		MarketplaceContractsModule,
 	],
 	controllers: [UserManagementController],
-	providers: [UserManagementService, ClerkAntiCorruptionLayer, RevenueCatAntiCorruptionLayer],
+	providers: [UserManagementService],
 })
 export class CoreModule {}

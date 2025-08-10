@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { AlgoliaACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/search/algolia.acl';
+import { AlgoliaACL } from '@venta/domains/marketplace/contracts';
 import { SearchToMarketplaceContextMapper } from '@venta/domains/marketplace/contracts/context-mappers/search/search-to-marketplace.context-mapper';
 import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';

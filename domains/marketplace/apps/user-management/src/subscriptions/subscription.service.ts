@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { IntegrationType, Prisma } from '@prisma/client';
+import { RevenueCatAntiCorruptionLayer } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
-import { RevenueCatAntiCorruptionLayer } from '../../../../contracts/anti-corruption-layers/revenuecat.acl';
 
 interface IntegrationData {
 	clerkUserId: string;

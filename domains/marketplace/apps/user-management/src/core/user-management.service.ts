@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User as PrismaUser, UserSubscription as PrismaUserSubscription } from '@prisma/client';
-import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts/anti-corruption-layers/clerk.acl';
+import { ClerkAntiCorruptionLayer } from '@venta/domains/marketplace/contracts';
 import * as MarketplaceToLocationContextMapper from '@venta/domains/marketplace/contracts/context-mappers/marketplace-to-location.context-mapper';
 import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';

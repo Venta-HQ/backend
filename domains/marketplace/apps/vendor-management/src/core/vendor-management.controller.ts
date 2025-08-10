@@ -1,6 +1,13 @@
-import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { VendorACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/vendor-acl';
+import {
+	VendorCreateACLPipe,
+	VendorGeospatialBoundsACLPipe,
+	VendorLocationUpdateACLPipe,
+	VendorLookupACLPipe,
+	VendorUpdateACLPipe,
+} from '@venta/domains/marketplace/contracts';
+import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
@@ -28,23 +35,14 @@ import { VendorManagementService } from './vendor-management.service';
 export class VendorManagementController implements VendorManagementServiceController {
 	private readonly logger = new Logger(VendorManagementController.name);
 
-	constructor(
-		private readonly vendorManagementService: VendorManagementService,
-		private readonly vendorACL: VendorACL,
-	) {}
+	constructor(private readonly vendorManagementService: VendorManagementService) {}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorById')
-	async getVendorById(request: VendorLookupByIdData): Promise<Vendor> {
+	@UsePipes(VendorLookupACLPipe)
+	async getVendorById(request: { id: string }): Promise<Vendor> {
 		this.logger.debug('Getting vendor by ID', { vendorId: request.id });
 
 		try {
-			// Validate input
-			if (!this.vendorACL.validateVendorLookupById(request)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_UUID, {
-					uuid: (request as any)?.id || 'undefined',
-				});
-			}
-
 			const vendor = await this.vendorManagementService.getVendorById(request.id);
 			if (!vendor) {
 				throw AppError.notFound(ErrorCodes.ERR_VENDOR_NOT_FOUND, {
@@ -68,22 +66,12 @@ export class VendorManagementController implements VendorManagementServiceContro
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'createVendor')
-	async createVendor(request: VendorCreateData): Promise<VendorCreateResponse> {
+	@UsePipes(VendorCreateACLPipe)
+	async createVendor(request: Marketplace.Core.VendorCreateData): Promise<VendorCreateResponse> {
 		this.logger.debug('Creating new vendor', { userId: request.userId });
 
 		try {
-			// Validate input
-			if (!this.vendorACL.validateVendorCreateData(request)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					message: 'Invalid vendor data',
-					userId: (request as any)?.userId || 'undefined',
-				});
-			}
-
-			// Convert to domain model
-			const createData = this.vendorACL.toDomainVendorCreateData(request);
-			const vendorId = await this.vendorManagementService.createVendor(createData);
-
+			const vendorId = await this.vendorManagementService.createVendor(request);
 			return { id: vendorId };
 		} catch (error) {
 			this.logger.error('Failed to create vendor', {
@@ -100,22 +88,12 @@ export class VendorManagementController implements VendorManagementServiceContro
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'updateVendor')
-	async updateVendor(request: VendorUpdateData): Promise<VendorUpdateResponse> {
+	@UsePipes(VendorUpdateACLPipe)
+	async updateVendor(request: Marketplace.Core.VendorUpdateData): Promise<VendorUpdateResponse> {
 		this.logger.debug('Updating vendor', { vendorId: request.id });
 
 		try {
-			// Validate input
-			if (!this.vendorACL.validateVendorUpdateData(request)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					message: 'Invalid vendor update data',
-					vendorId: (request as any)?.id || 'undefined',
-				});
-			}
-
-			// Convert to domain model
-			const updateData = this.vendorACL.toDomainVendorUpdateData(request);
-			await this.vendorManagementService.updateVendor(updateData);
-
+			await this.vendorManagementService.updateVendor(request);
 			return { message: 'Vendor updated successfully', success: true };
 		} catch (error) {
 			this.logger.error('Failed to update vendor', {
@@ -132,25 +110,15 @@ export class VendorManagementController implements VendorManagementServiceContro
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'updateVendorLocation')
-	async updateVendorLocation(request: VendorLocationUpdate): Promise<Empty> {
+	@UsePipes(VendorLocationUpdateACLPipe)
+	async updateVendorLocation(request: Marketplace.Core.VendorLocationUpdate): Promise<Empty> {
 		this.logger.debug('Updating vendor location', {
-			location: `${request.location?.lat}, ${request.location?.long}`,
+			location: `${request.location.lat}, ${request.location.long}`,
 			vendorId: request.vendorId,
 		});
 
 		try {
-			// Validate input
-			if (!this.vendorACL.validateVendorLocationUpdate(request)) {
-				throw AppError.validation(ErrorCodes.ERR_LOC_INVALID_COORDS, {
-					lat: (request as any)?.location?.lat || 'undefined',
-					long: (request as any)?.location?.long || 'undefined',
-				});
-			}
-
-			// Convert to domain model
-			const locationUpdate = this.vendorACL.toDomainVendorLocationUpdate(request);
-			await this.vendorManagementService.updateVendorLocation(locationUpdate);
-
+			await this.vendorManagementService.updateVendorLocation(request);
 			return {};
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
@@ -167,23 +135,21 @@ export class VendorManagementController implements VendorManagementServiceContro
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorsInArea')
-	async getVendorsInArea(request: VendorLocationRequest): Promise<VendorLocationResponse> {
+	@UsePipes(VendorGeospatialBoundsACLPipe)
+	async getVendorsInArea(request: Marketplace.Core.GeospatialBounds): Promise<VendorLocationResponse> {
 		this.logger.debug('Getting vendors in area', {
-			neBounds: `${request.neLocation?.lat}, ${request.neLocation?.long}`,
-			swBounds: `${request.swLocation?.lat}, ${request.swLocation?.long}`,
+			neBounds: `${request.ne.lat}, ${request.ne.long}`,
+			swBounds: `${request.sw.lat}, ${request.sw.long}`,
 		});
 
 		try {
-			// Convert to domain model
-			const bounds = this.vendorACL.toDomainGeospatialBounds(request);
-			const vendors = await this.vendorManagementService.getVendorsInArea(bounds);
-
+			const vendors = await this.vendorManagementService.getVendorsInArea(request);
 			return { vendors };
 		} catch (error) {
 			this.logger.error('Failed to get vendors in area', {
 				error: error.message,
-				neBounds: request.neLocation,
-				swBounds: request.swLocation,
+				neBounds: request.ne,
+				swBounds: request.sw,
 			});
 
 			if (error instanceof AppError) throw error;

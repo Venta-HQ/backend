@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
+import { MarketplaceContractsModule } from '@venta/domains/marketplace/contracts';
 import { AlgoliaModule, BootstrapModule, NatsQueueModule } from '@venta/nest/modules';
 import { AlgoliaSyncController } from './algolia-sync.controller';
 import { AlgoliaSyncService } from './algolia-sync.service';
-import { AlgoliaACL } from './anti-corruption-layers/algolia-acl';
-import { NatsACL } from './anti-corruption-layers/nats-acl.js';
 import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-marketplace-context-mapper';
 
 @Module({
@@ -15,7 +14,8 @@ import { SearchToMarketplaceContextMapper } from './context-mappers/search-to-ma
 		}),
 		AlgoliaModule,
 		NatsQueueModule,
+		MarketplaceContractsModule,
 	],
-	providers: [AlgoliaSyncController, AlgoliaSyncService, AlgoliaACL, NatsACL, SearchToMarketplaceContextMapper],
+	providers: [AlgoliaSyncController, AlgoliaSyncService, SearchToMarketplaceContextMapper],
 })
 export class AlgoliaSyncModule {}

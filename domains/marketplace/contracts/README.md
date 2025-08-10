@@ -16,16 +16,16 @@ All services use the same contracts to ensure consistency and reduce duplication
 
 ```
 📁 contracts/
-├── 📁 context-mappers/           # Data translation between domains
-│   ├── marketplace-location-context-mapper.ts
-│   ├── marketplace-communication-context-mapper.ts
-│   └── marketplace-infrastructure-context-mapper.ts
-├── 📁 anti-corruption-layers/    # External service protection
-│   ├── clerk-anti-corruption-layer.ts
-│   └── revenuecat-anti-corruption-layer.ts
-├── 📁 implementations/           # Contract implementations (future)
-├── 📁 validation/                # Boundary validation
-│   └── context-boundary-validation.middleware.ts
+├── 📁 acl/                       # Anti-Corruption Layer (ACL) functionality
+│   ├── vendor.acl.ts             # Vendor domain ACL pipes
+│   ├── clerk.acl.ts              # Clerk service ACL
+│   ├── revenuecat.acl.ts         # RevenueCat service ACL
+│   ├── algolia.acl.ts            # Algolia search ACL
+│   ├── nats.acl.ts               # NATS messaging ACL
+│   ├── to-location.acl.ts        # Outbound location transformations
+│   ├── to-communication.acl.ts   # Outbound communication transformations
+│   ├── to-infrastructure.acl.ts  # Outbound infrastructure transformations
+│   └── acl.module.ts             # ACL module
 ├── marketplace-contracts.module.ts
 └── index.ts
 ```
@@ -116,7 +116,7 @@ export class NewDomainContextMapper extends BaseContextMapper {
 ### **2. Anti-Corruption Layer**
 
 ```typescript
-// contracts/anti-corruption-layers/new-service-acl.ts
+// contracts/acl/new-service.acl.ts
 import { BaseAntiCorruptionLayer } from '@venta/nest/modules/contracts';
 
 @Injectable()
@@ -141,19 +141,19 @@ export class NewServiceAntiCorruptionLayer extends BaseAntiCorruptionLayer {
 
 ```typescript
 // marketplace-contracts.module.ts
-import { NewServiceAntiCorruptionLayer } from './anti-corruption-layers/new-service-acl';
+import { NewServiceACL } from './acl/new-service.acl';
 import { NewDomainContextMapper } from './context-mappers/new-domain-context-mapper';
 
 @Module({
 	providers: [
 		// ... existing providers
 		NewDomainContextMapper,
-		NewServiceAntiCorruptionLayer,
+		NewServiceACL,
 	],
 	exports: [
 		// ... existing exports
 		NewDomainContextMapper,
-		NewServiceAntiCorruptionLayer,
+		NewServiceACL,
 	],
 })
 export class MarketplaceContractsModule {}

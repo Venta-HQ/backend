@@ -1,7 +1,11 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { NatsACL } from '@venta/domains/marketplace/contracts/anti-corruption-layers/nats.acl';
+import { NatsACL } from '@venta/domains/marketplace/contracts';
 import { Marketplace } from '@venta/domains/marketplace/contracts/types/context-mapping.types';
-import { SearchDiscovery } from '@venta/domains/marketplace/contracts/types/search/context-mapping.types';
+import type {
+	DomainEvent,
+	SearchRecord,
+	SubscriptionOptions,
+} from '@venta/domains/marketplace/contracts/types/internal';
 import { AppError } from '@venta/nest/errors';
 import { NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';
@@ -24,14 +28,14 @@ export class AlgoliaSyncController implements OnModuleInit {
 
 		try {
 			// Configure subscriptions
-			const marketplaceSubscription: SearchDiscovery.Core.SubscriptionOptions = {
+			const marketplaceSubscription: SubscriptionOptions = {
 				topic: 'marketplace.vendor.>',
 				queue: 'algolia-sync-workers',
 				maxInFlight: 100,
 				timeout: 30000,
 			};
 
-			const locationSubscription: SearchDiscovery.Core.SubscriptionOptions = {
+			const locationSubscription: SubscriptionOptions = {
 				topic: 'location.vendor.>',
 				queue: 'algolia-sync-workers',
 				maxInFlight: 100,
@@ -72,7 +76,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 	}
 
 	private async handleMarketplaceVendorEvent(data: {
-		data: SearchDiscovery.Core.DomainEvent<
+		data: DomainEvent<
 			Marketplace.Events.VendorCreated | Marketplace.Events.VendorUpdated | Marketplace.Events.VendorDeleted
 		>;
 		subject: string;
@@ -134,7 +138,7 @@ export class AlgoliaSyncController implements OnModuleInit {
 	}
 
 	private async handleLocationVendorEvent(data: {
-		data: SearchDiscovery.Core.DomainEvent<Marketplace.Events.VendorLocationChanged>;
+		data: DomainEvent<Marketplace.Events.VendorLocationChanged>;
 		subject: string;
 	}): Promise<void> {
 		const { data: event, subject } = data;
