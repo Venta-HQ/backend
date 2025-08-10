@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { UserVendorResult } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules';
 
@@ -14,7 +15,7 @@ export class CoreService {
 	/**
 	 * Get vendors associated with a user by user ID
 	 */
-	async getUserVendors(userId: string): Promise<any[]> {
+	async getUserVendors(userId: string): Promise<UserVendorResult[]> {
 		this.logger.debug('Getting vendors for user', { userId });
 		try {
 			const user = await this.prisma.db.user.findUnique({
@@ -22,7 +23,12 @@ export class CoreService {
 					id: userId,
 				},
 				include: {
-					vendors: true,
+					vendors: {
+						select: {
+							id: true,
+							name: true,
+						},
+					},
 				},
 			});
 

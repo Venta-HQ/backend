@@ -36,11 +36,7 @@ export interface SubscriptionProviderData {
   transactionId: string;
 }
 
-export interface UserVendorData {
-  userId: string;
-}
-
-export interface UserVendorsResponse {
+export interface VendorList {
   vendors: UserVendor[];
 }
 
@@ -65,7 +61,7 @@ export interface UserManagementServiceClient {
     metadata?: Metadata,
   ): Observable<CreateSubscriptionResponse>;
 
-  getUserVendors(request: UserVendorData, metadata?: Metadata): Observable<UserVendorsResponse>;
+  getUserVendors(request: UserIdentityData, metadata?: Metadata): Observable<VendorList>;
 }
 
 export interface UserManagementServiceController {
@@ -85,9 +81,9 @@ export interface UserManagementServiceController {
   ): Promise<CreateSubscriptionResponse> | Observable<CreateSubscriptionResponse> | CreateSubscriptionResponse;
 
   getUserVendors(
-    request: UserVendorData,
+    request: UserIdentityData,
     metadata?: Metadata,
-  ): Promise<UserVendorsResponse> | Observable<UserVendorsResponse> | UserVendorsResponse;
+  ): Promise<VendorList> | Observable<VendorList> | VendorList;
 }
 
 export function UserManagementServiceControllerMethods() {

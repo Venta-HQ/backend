@@ -1,27 +1,18 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
-import { UserVendorRequestACL } from '@venta/domains/infrastructure/contracts';
-import { AuthGuard } from '@venta/nest/guards';
+import { AuthenticatedRequest, AuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
-// Temporary interface until types are fully migrated
-interface AuthedRequest {
-	userId: string;
-}
-
-@Controller('users')
+@Controller('user')
 export class UserController {
 	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
 
-	@Get('/vendors')
+	@Get('/vendor')
 	@UseGuards(AuthGuard)
-	async getUserVendors(@Req() req: AuthedRequest) {
-		// Simple user ID to gRPC request - no complex ACL needed for this case
-		const grpcData = { userId: req.userId };
-
+	async getUserVendors(@Req() req: AuthenticatedRequest) {
 		return await firstValueFrom(
-			this.client.invoke('getUserVendors', grpcData).pipe(
+			this.client.invoke('getUserVendors', { id: req.user.id }).pipe(
 				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;

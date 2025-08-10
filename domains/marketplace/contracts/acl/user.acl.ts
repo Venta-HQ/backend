@@ -1,10 +1,6 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 // gRPC types (wire format) - directly from proto
-import type {
-	CreateSubscriptionData,
-	UserIdentityData,
-	UserVendorData,
-} from '@venta/proto/marketplace/user-management';
+import type { CreateSubscriptionData, UserIdentityData } from '@venta/proto/marketplace/user-management';
 // Domain types (what gRPC maps to)
 import type { SubscriptionCreate, UserIdentity, UserVendorQuery } from '../types/domain';
 
@@ -118,20 +114,20 @@ export class SubscriptionCreateACL {
  */
 export class UserVendorQueryACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: UserVendorData): void {
-		if (!grpc.userId?.trim()) {
+	static validate(grpc: UserIdentityData): void {
+		if (!grpc.id?.trim()) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
+				field: 'id',
 				message: 'User ID is required',
 			});
 		}
 	}
 
-	static toDomain(grpc: UserVendorData): UserVendorQuery {
+	static toDomain(grpc: UserIdentityData): UserVendorQuery {
 		this.validate(grpc);
 
 		return {
-			userId: grpc.userId,
+			userId: grpc.id,
 		};
 	}
 
@@ -139,17 +135,17 @@ export class UserVendorQueryACL {
 	static validateDomain(domain: UserVendorQuery): void {
 		if (!domain.userId?.trim()) {
 			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
+				field: 'id',
 				message: 'User ID is required',
 			});
 		}
 	}
 
-	static toGrpc(domain: UserVendorQuery): UserVendorData {
+	static toGrpc(domain: UserVendorQuery): UserIdentityData {
 		this.validateDomain(domain);
 
 		return {
-			userId: domain.userId,
+			id: domain.userId,
 		};
 	}
 }

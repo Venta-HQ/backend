@@ -6,7 +6,7 @@ service UserManagementService {
   rpc HandleUserCreated (UserIdentityData) returns (CreateUserResponse) {}
   rpc HandleUserDeleted (UserIdentityData) returns (CreateUserResponse) {}
   rpc HandleSubscriptionCreated (CreateSubscriptionData) returns (CreateSubscriptionResponse) {}
-  rpc GetUserVendors (UserVendorData) returns (UserVendorsResponse) {}
+  rpc GetUserVendors (UserIdentityData) returns (VendorList) {}
 }
 
 // Service Function Types
@@ -34,11 +34,7 @@ message SubscriptionProviderData {
     string transactionId = 3;
 }
 
-message UserVendorData {
-    string userId = 1;
-}
-
-message UserVendorsResponse {
+message VendorList {
     repeated UserVendor vendors = 1;
 }
 

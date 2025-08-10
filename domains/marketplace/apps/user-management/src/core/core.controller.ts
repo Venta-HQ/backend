@@ -6,8 +6,8 @@ import { GrpcAuthGuard } from '@venta/nest/guards';
 // gRPC types (wire format)
 import {
 	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
-	UserVendorData,
-	UserVendorsResponse,
+	UserIdentityData,
+	VendorList,
 } from '@venta/proto/marketplace/user-management';
 import { CoreService } from './core.service';
 
@@ -23,7 +23,7 @@ export class CoreController {
 	constructor(private readonly coreService: CoreService) {}
 
 	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'getUserVendors')
-	async getUserVendors(request: UserVendorData): Promise<UserVendorsResponse> {
+	async getUserVendors(request: UserIdentityData): Promise<VendorList> {
 		// Validate and transform request
 		const domainRequest = UserVendorQueryACL.toDomain(request);
 
@@ -40,10 +40,7 @@ export class CoreController {
 			});
 
 			return {
-				vendors: vendors.map((vendor) => ({
-					id: vendor.id,
-					name: vendor.businessName || vendor.displayName || 'Unknown Vendor',
-				})),
+				vendors,
 			};
 		} catch (error) {
 			this.logger.error('Failed to retrieve user vendors', {
