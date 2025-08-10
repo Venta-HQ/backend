@@ -37,6 +37,7 @@ export class WsRateLimitGuard implements CanActivate {
 			throw new WsException(
 				AppError.validation(ErrorCodes.ERR_WS_RATE_LIMIT, {
 					userId: client.user?.id,
+					seconds: Math.ceil(this.windowMs / 1000),
 				}),
 			);
 		}

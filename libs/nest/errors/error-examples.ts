@@ -2,7 +2,7 @@
  * Examples demonstrating the type-safe error handling system
  */
 
-import { EnhancedAppError, ErrorCodes } from './error-schemas';
+import { AppError, ErrorCodes } from './error-schemas';
 
 /**
  * ✅ WORKING ERROR SYSTEM EXAMPLES

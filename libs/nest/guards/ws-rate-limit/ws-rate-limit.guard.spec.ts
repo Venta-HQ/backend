@@ -2,7 +2,7 @@ import { Socket } from 'socket.io';
 import { vi } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
-import { AppError, ErrorType } from '@venta/nest/errors';
+import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsRateLimitGuard } from './ws-rate-limit.guard';
 
 interface RateLimitedSocket extends Socket {
@@ -90,7 +90,7 @@ describe('WsRateLimitGuard', () => {
 
 		it('should re-throw WsException on Redis error', async () => {
 			mockRedis.incr.mockRejectedValue(
-				new WsException(new AppError(ErrorType.RATE_LIMIT, 'RATE_LIMIT_EXCEEDED', 'Rate limit exceeded')),
+				new WsException(AppError.validation(ErrorCodes.ERR_WS_RATE_LIMIT, { userId: 'test-user', seconds: 60 })),
 			);
 
 			await expect(guard.canActivate(mockContext)).rejects.toThrow(WsException);

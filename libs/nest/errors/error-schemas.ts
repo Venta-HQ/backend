@@ -62,6 +62,10 @@ const ERROR_DEFINITIONS = {
 		message: 'Failed to update location',
 		data: {} as { vendorId: string },
 	},
+	ERR_LOC_QUERY_FAILED: {
+		message: 'Location query failed',
+		data: {} as { message: string },
+	},
 
 	// Authentication/Authorization
 	ERR_UNAUTHORIZED: {
@@ -84,7 +88,26 @@ const ERROR_DEFINITIONS = {
 	// Input validation
 	ERR_INVALID_INPUT: {
 		message: 'Invalid input',
-		data: {} as { message: string },
+		data: {} as {
+			message: string;
+			field?: string;
+			operation?: string;
+			indexName?: string;
+			entityId?: string;
+			objectID?: string;
+		},
+	},
+	ERR_TOO_MANY_REQUESTS: {
+		message: 'Too many requests',
+		data: {} as { seconds: number },
+	},
+	ERR_WS_RATE_LIMIT: {
+		message: 'WebSocket rate limit exceeded',
+		data: {} as { userId?: string; seconds: number },
+	},
+	ERR_WS_AUTH_FAILED: {
+		message: 'WebSocket authentication failed',
+		data: {} as { userId?: string },
 	},
 	ERR_MISSING_FIELD: {
 		message: 'Required field is missing',
@@ -93,6 +116,14 @@ const ERROR_DEFINITIONS = {
 	ERR_INVALID_EMAIL: {
 		message: 'Invalid email format',
 		data: {} as { email: string },
+	},
+	ERR_INVALID_FORMAT: {
+		message: 'Invalid format',
+		data: {} as { field: string; value?: any; message?: string },
+	},
+	ERR_INVALID_COORDINATES: {
+		message: 'Invalid coordinates provided',
+		data: {} as { lat: number; long: number },
 	},
 	ERR_VALIDATION_FAILED: {
 		message: 'Validation failed',
@@ -120,7 +151,15 @@ const ERROR_DEFINITIONS = {
 	// External services
 	ERR_EXTERNAL_SERVICE: {
 		message: 'External service error',
-		data: {} as { service: string; message: string },
+		data: {} as {
+			service: string;
+			message: string;
+			operation?: string;
+			error?: string;
+			indexName?: string;
+			entityId?: string;
+			objectID?: string;
+		},
 	},
 	ERR_SERVICE_UNAVAILABLE: {
 		message: 'Service unavailable',
@@ -131,14 +170,28 @@ const ERROR_DEFINITIONS = {
 		data: {} as { service: string },
 	},
 
+	// Infrastructure
+	ERR_INFRA_UPLOAD_FAILED: {
+		message: 'File upload failed',
+		data: {} as { filename: string; message: string },
+	},
+	ERR_INFRA_FILE_NOT_FOUND: {
+		message: 'File not found',
+		data: {} as { filename: string },
+	},
+
 	// Communication
 	ERR_COMM_WEBHOOK_INVALID: {
 		message: 'Invalid webhook payload',
-		data: {} as { source: string },
+		data: {} as { source: string; eventType?: string; eventId?: string },
 	},
 	ERR_COMM_WEBHOOK_SIGNATURE: {
 		message: 'Invalid webhook signature',
 		data: {} as { source: string },
+	},
+	ERR_COMM_NOTIFICATION_FAILED: {
+		message: 'Failed to send notification',
+		data: {} as { recipient: string },
 	},
 
 	// General

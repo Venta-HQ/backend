@@ -45,7 +45,6 @@ export class ClerkController {
 					throw AppError.validation(ErrorCodes.ERR_INVALID_FORMAT, {
 						field: 'event_type',
 						message: `Unsupported event type: ${event.type}`,
-						eventId: event.id,
 					});
 			}
 
@@ -54,14 +53,14 @@ export class ClerkController {
 			this.logger.error('Failed to handle Clerk webhook event', {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				eventType: event.type,
-				eventId: event.id,
+				eventId: event.data?.id,
 			});
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_COMM_WEBHOOK_INVALID, {
 				source: 'clerk',
 				eventType: event.type,
-				eventId: event.id,
+				eventId: event.data?.id,
 			});
 		}
 	}

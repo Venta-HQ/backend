@@ -5,108 +5,109 @@
 // source: domains/marketplace/user-management.proto
 
 /* eslint-disable */
-import { Observable } from 'rxjs';
-import type { Metadata } from '@grpc/grpc-js';
-import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import type { Metadata } from "@grpc/grpc-js";
+import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
+import { Observable } from "rxjs";
 
-export const protobufPackage = 'marketplace.user_management';
+export const protobufPackage = "marketplace.user_management";
 
 /** Service Function Types */
 export interface UserIdentityData {
-	id: string;
+  id: string;
 }
 
 export interface CreateUserResponse {
-	message: string;
+  message: string;
 }
 
 export interface CreateSubscriptionData {
-	clerkUserId: string;
-	providerId: string;
-	data: SubscriptionProviderData | undefined;
+  clerkUserId: string;
+  providerId: string;
+  data: SubscriptionProviderData | undefined;
 }
 
 export interface CreateSubscriptionResponse {
-	message: string;
+  message: string;
 }
 
 export interface SubscriptionProviderData {
-	eventId: string;
-	productId: string;
-	transactionId: string;
+  eventId: string;
+  productId: string;
+  transactionId: string;
 }
 
 export interface UserVendorData {
-	userId: string;
+  userId: string;
 }
 
 export interface UserVendorsResponse {
-	vendors: UserVendor[];
+  vendors: UserVendor[];
 }
 
 /** Helper Types */
 export interface UserVendor {
-	id: string;
-	name: string;
+  id: string;
+  name: string;
 }
 
-export interface Empty {}
+export interface Empty {
+}
 
-export const MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME = 'marketplace.user_management';
+export const MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME = "marketplace.user_management";
 
 export interface UserManagementServiceClient {
-	handleUserCreated(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
+  handleUserCreated(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
 
-	handleUserDeleted(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
+  handleUserDeleted(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
 
-	handleSubscriptionCreated(
-		request: CreateSubscriptionData,
-		metadata?: Metadata,
-	): Observable<CreateSubscriptionResponse>;
+  handleSubscriptionCreated(
+    request: CreateSubscriptionData,
+    metadata?: Metadata,
+  ): Observable<CreateSubscriptionResponse>;
 
-	getUserVendors(request: UserVendorData, metadata?: Metadata): Observable<UserVendorsResponse>;
+  getUserVendors(request: UserVendorData, metadata?: Metadata): Observable<UserVendorsResponse>;
 }
 
 export interface UserManagementServiceController {
-	handleUserCreated(
-		request: UserIdentityData,
-		metadata?: Metadata,
-	): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
+  handleUserCreated(
+    request: UserIdentityData,
+    metadata?: Metadata,
+  ): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
 
-	handleUserDeleted(
-		request: UserIdentityData,
-		metadata?: Metadata,
-	): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
+  handleUserDeleted(
+    request: UserIdentityData,
+    metadata?: Metadata,
+  ): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
 
-	handleSubscriptionCreated(
-		request: CreateSubscriptionData,
-		metadata?: Metadata,
-	): Promise<CreateSubscriptionResponse> | Observable<CreateSubscriptionResponse> | CreateSubscriptionResponse;
+  handleSubscriptionCreated(
+    request: CreateSubscriptionData,
+    metadata?: Metadata,
+  ): Promise<CreateSubscriptionResponse> | Observable<CreateSubscriptionResponse> | CreateSubscriptionResponse;
 
-	getUserVendors(
-		request: UserVendorData,
-		metadata?: Metadata,
-	): Promise<UserVendorsResponse> | Observable<UserVendorsResponse> | UserVendorsResponse;
+  getUserVendors(
+    request: UserVendorData,
+    metadata?: Metadata,
+  ): Promise<UserVendorsResponse> | Observable<UserVendorsResponse> | UserVendorsResponse;
 }
 
 export function UserManagementServiceControllerMethods() {
-	return function (constructor: Function) {
-		const grpcMethods: string[] = [
-			'handleUserCreated',
-			'handleUserDeleted',
-			'handleSubscriptionCreated',
-			'getUserVendors',
-		];
-		for (const method of grpcMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcMethod('UserManagementService', method)(constructor.prototype[method], method, descriptor);
-		}
-		const grpcStreamMethods: string[] = [];
-		for (const method of grpcStreamMethods) {
-			const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-			GrpcStreamMethod('UserManagementService', method)(constructor.prototype[method], method, descriptor);
-		}
-	};
+  return function (constructor: Function) {
+    const grpcMethods: string[] = [
+      "handleUserCreated",
+      "handleUserDeleted",
+      "handleSubscriptionCreated",
+      "getUserVendors",
+    ];
+    for (const method of grpcMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcMethod("UserManagementService", method)(constructor.prototype[method], method, descriptor);
+    }
+    const grpcStreamMethods: string[] = [];
+    for (const method of grpcStreamMethods) {
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
+      GrpcStreamMethod("UserManagementService", method)(constructor.prototype[method], method, descriptor);
+    }
+  };
 }
 
-export const USER_MANAGEMENT_SERVICE_NAME = 'UserManagementService';
+export const USER_MANAGEMENT_SERVICE_NAME = "UserManagementService";

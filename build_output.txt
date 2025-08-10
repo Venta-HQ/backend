@@ -1,0 +1,176 @@
+
+> backend@0.0.1 prebuild
+> npm run build:proto
+
+
+> backend@0.0.1 build:proto
+> protoc -I /usr/local/include --plugin=protoc-gen-ts_proto=node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=libs/proto/src/lib -I libs/proto/src/definitions --ts_proto_opt=nestJs=true --ts_proto_opt=useDate=true --ts_proto_opt=addGrpcMetadata=true index.proto
+
+/usr/local/include: warning: directory does not exist.
+index.proto:5:1: warning: Import domains/location-services/geolocation.proto is unused.
+index.proto:6:1: warning: Import domains/infrastructure/file-management.proto is unused.
+index.proto:4:1: warning: Import domains/marketplace/vendor-management.proto is unused.
+index.proto:3:1: warning: Import domains/marketplace/user-management.proto is unused.
+
+> backend@0.0.1 build
+> nest build
+
+[1m[31mERROR[39m[22m in [1m./domains/infrastructure/apps/api-gateway/src/core/controllers/vendor/vendor.controller.ts:43:39[39m[22m
+[1mTS2345: Argument of type '{ name: string; email: string; description?: string; phone?: string; website?: string; userId: string; coordinates: { lat: number; long: number; }; }' is not assignable to parameter of type 'VendorCreateData'.
+  Property 'imageUrl' is missing in type '{ name: string; email: string; description?: string; phone?: string; website?: string; userId: string; coordinates: { lat: number; long: number; }; }' but [1m[33mrequired[39m[22m[1m in type 'VendorCreateData'.
+    41 |
+    42 | 		return await firstValueFrom(
+  > 43 | 			this.client.invoke('createVendor', grpcData).pipe(
+       | 			                                   ^^^^^^^^
+    44 | 				catchError(([1m[31merror[39m[22m[1m: [1m[31mError[39m[22m[1m) => {
+    45 | 					// The AppExceptionFilter will handle the [1m[31merror[39m[22m[1m conversion
+    46 | 					throw [1m[31merror[39m[22m[1m;[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./domains/infrastructure/apps/api-gateway/src/core/core.module.ts:2:10[39m[22m
+[1mTS2305: Module '"@venta/nest/modules"' has no exported member 'GrpcClientModule'.
+    1 | import { Module } from '@nestjs/common';
+  > 2 | import { GrpcClientModule } from '@venta/nest/modules';
+      |          ^^^^^^^^^^^^^^^^
+    3 | import { USER_MANAGEMENT_SERVICE_NAME } from '@venta/proto/marketplace/user-management';
+    4 | import { VENDOR_MANAGEMENT_SERVICE_NAME } from '@venta/proto/marketplace/vendor-management';
+    5 | import { UploadController } from './controllers/upload/upload.controller';[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/guards/auth/auth.guard.ts:19:19[39m[22m
+[1mTS2554: Expected 2 arguments, but got 1.
+    17 | 		if (!token) {
+    18 | 			this.logger.debug('No token found in authorization header');
+  > 19 | 			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
+       | 			               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    20 | 		}
+    21 |
+    22 | 		try {[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/guards/auth/auth.guard.ts:41:19[39m[22m
+[1mTS2554: Expected 2 arguments, but got 1.
+    39 | 				this.logger.[1m[31merror[39m[22m[1m('Authentication [1m[31mfailed[39m[22m[1m with unknown [1m[31merror[39m[22m[1m', [1m[31merror[39m[22m[1m.stack, { [1m[31merror[39m[22m[1m });
+    40 | 			}
+  > 41 | 			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
+       | 			               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    42 | 		}
+    43 | 	}
+    44 | }[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/guards/core/auth.service.ts:66:19[39m[22m
+[1mTS2554: Expected 2 arguments, but got 1.
+    64 | 				this.logger.[1m[31merror[39m[22m[1m('Authentication [1m[31mfailed[39m[22m[1m with unknown [1m[31merror[39m[22m[1m', [1m[31merror[39m[22m[1m.stack, { [1m[31merror[39m[22m[1m });
+    65 | 			}
+  > 66 | 			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
+       | 			               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    67 | 		}
+    68 | 	}
+    69 |[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/guards/grpc/grpc-auth.guard.ts:19:36[39m[22m
+[1mTS2554: Expected 2 arguments, but got 1.
+    17 | 		if (!token) {
+    18 | 			this.logger.debug('No token found in gRPC metadata');
+  > 19 | 			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
+       | 			                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    20 | 		}
+    21 |
+    22 | 		try {[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/guards/grpc/grpc-auth.guard.ts:44:36[39m[22m
+[1mTS2554: Expected 2 arguments, but got 1.
+    42 | 			// Log [1m[31munexpected[39m[22m[1m errors but don't expose details
+    43 | 			this.logger.[1m[31merror[39m[22m[1m('Authentication [1m[31mfailed[39m[22m[1m with [1m[31munexpected[39m[22m[1m [1m[31merror[39m[22m[1m', [1m[31merror[39m[22m[1m.stack, { [1m[31merror[39m[22m[1m });
+  > 44 | 			throw new RpcException(AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN));
+       | 			                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    45 | 		}
+    46 | 	}
+    47 | }[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/modules/external/algolia/algolia.service.ts:30:61[39m[22m
+[1mTS2345: Argument of type '{ service: string; operation: string; [1m[31merror[39m[22m[1m: string; }' is not assignable to parameter of type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+  Property 'message' is missing in type '{ service: string; operation: string; [1m[31merror[39m[22m[1m: string; }' but [1m[33mrequired[39m[22m[1m in type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+    28 | 			this.client = algoliasearch(applicationId, apiKey);
+    29 | 		} catch ([1m[31merror[39m[22m[1m) {
+  > 30 | 			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+       | 			                                                         ^
+  > 31 | 				service: 'algolia',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 32 | 				operation: 'initialize_client',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 33 | 				[1m[31merror[39m[22m[1m: [1m[31merror[39m[22m[1m instanceof [1m[31mError[39m[22m[1m ? [1m[31merror[39m[22m[1m.message : 'Unknown [1m[31merror[39m[22m[1m',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 34 | 			});
+       | ^^^^^
+    35 | 		}
+    36 | 	}
+    37 |[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/modules/external/algolia/algolia.service.ts:56:68[39m[22m
+[1mTS2345: Argument of type '{ service: string; operation: string; indexName: string; objectID: string; [1m[31merror[39m[22m[1m: string; }' is not assignable to parameter of type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+  Property 'message' is missing in type '{ service: string; operation: string; indexName: string; objectID: string; [1m[31merror[39m[22m[1m: string; }' but [1m[33mrequired[39m[22m[1m in type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+    54 | 			return { ...body, objectID: result.objectID };
+    55 | 		} catch ([1m[31merror[39m[22m[1m) {
+  > 56 | 			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+       | 			                                                                ^
+  > 57 | 				service: 'algolia',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 58 | 				operation: 'create_object',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 59 | 				indexName,
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 60 | 				objectID: body.objectID,
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 61 | 				[1m[31merror[39m[22m[1m: [1m[31merror[39m[22m[1m instanceof [1m[31mError[39m[22m[1m ? [1m[31merror[39m[22m[1m.message : 'Unknown [1m[31merror[39m[22m[1m',
+       | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 62 | 			});
+       | ^^^^^
+    63 | 		}
+    64 | 	}
+    65 |[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/modules/external/algolia/algolia.service.ts:111:68[39m[22m
+[1mTS2345: Argument of type '{ service: string; operation: string; indexName: string; entityId: string; [1m[31merror[39m[22m[1m: string; }' is not assignable to parameter of type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+  Property 'message' is missing in type '{ service: string; operation: string; indexName: string; entityId: string; [1m[31merror[39m[22m[1m: string; }' but [1m[33mrequired[39m[22m[1m in type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+    109 | 			return { ...existingObject, ...attributesToUpdate, objectID: result.objectID };
+    110 | 		} catch ([1m[31merror[39m[22m[1m) {
+  > 111 | 			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+        | 			                                                                ^
+  > 112 | 				service: 'algolia',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 113 | 				operation: 'update_object',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 114 | 				indexName,
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 115 | 				entityId,
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 116 | 				[1m[31merror[39m[22m[1m: [1m[31merror[39m[22m[1m instanceof [1m[31mError[39m[22m[1m ? [1m[31merror[39m[22m[1m.message : 'Unknown [1m[31merror[39m[22m[1m',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 117 | 			});
+        | ^^^^^
+    118 | 		}
+    119 | 	}
+    120 |[39m[22m
+
+[1m[31mERROR[39m[22m in [1m./libs/nest/modules/external/algolia/algolia.service.ts:159:68[39m[22m
+[1mTS2345: Argument of type '{ service: string; operation: string; indexName: string; entityId: string; [1m[31merror[39m[22m[1m: string; }' is not assignable to parameter of type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+  Property 'message' is missing in type '{ service: string; operation: string; indexName: string; entityId: string; [1m[31merror[39m[22m[1m: string; }' but [1m[33mrequired[39m[22m[1m in type '{ service: string; message: string; operation?: string; [1m[31merror[39m[22m[1m?: string; indexName?: string; entityId?: string; objectID?: string; }'.
+    157 | 			return objectIDs;
+    158 | 		} catch ([1m[31merror[39m[22m[1m) {
+  > 159 | 			throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE, {
+        | 			                                                                ^
+  > 160 | 				service: 'algolia',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 161 | 				operation: 'delete_object',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 162 | 				indexName,
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 163 | 				entityId,
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 164 | 				[1m[31merror[39m[22m[1m: [1m[31merror[39m[22m[1m instanceof [1m[31mError[39m[22m[1m ? [1m[31merror[39m[22m[1m.message : 'Unknown [1m[31merror[39m[22m[1m',
+        | ^^^^^^^^^^^^^^^^^^^^^^^
+  > 165 | 			});
+        | ^^^^^
+    166 | 		}
+    167 | 	}
+    168 | }[39m[22m
+
+webpack 5.93.0 compiled with [1m[31m11 errors[39m[22m in 2220 ms
