@@ -71,6 +71,29 @@ export class FileUploadACL {
 			size: file.size || file.buffer.length,
 		};
 	}
+
+	// Domain → gRPC (outbound for API Gateway)
+	static toGrpc(domain: FileUpload, context: { type: any; uploadedBy: string }) {
+		return {
+			content: domain.buffer,
+			filename: domain.filename,
+			mimetype: domain.mimetype,
+			size: domain.size,
+			uploadedBy: context.uploadedBy,
+			type: context.type,
+		};
+	}
+
+	// gRPC → Domain (inbound for API Gateway)
+	static fromGrpc(grpcResult: any): FileUploadResult {
+		return {
+			url: grpcResult.url || '',
+			publicId: grpcResult.fileId || '',
+			format: 'unknown', // Not provided in gRPC response
+			bytes: 0, // Not provided in gRPC response
+			createdAt: grpcResult.uploadedAt || new Date().toISOString(),
+		};
+	}
 }
 
 /**

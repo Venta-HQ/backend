@@ -1,6 +1,8 @@
 import { lastValueFrom } from 'rxjs';
 import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
+import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcInstance } from '@venta/nest/modules';
 import {
@@ -40,7 +42,7 @@ export class UploadController {
 			},
 		}),
 	)
-	async uploadImage(@UploadedFile() file: Express.Multer.File) {
+	async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<FileUploadResult> {
 		this.logger.debug('Handling image upload request', {
 			filename: file?.originalname,
 			size: file?.size,
@@ -53,18 +55,24 @@ export class UploadController {
 				});
 			}
 
-			const result = await lastValueFrom(
-				this.fileManagementClient.invoke('uploadImage', {
-					content: file.buffer,
-					filename: file.originalname,
-					mimetype: file.mimetype,
-					size: file.size,
-					type: FileType.AVATAR,
-					uploadedBy: 'system', // TODO: Get from auth context
-				}),
-			);
+			// Transform HTTP multipart file to domain using ACL
+			const domainFile = FileUploadACL.toDomain({
+				filename: file.originalname,
+				mimetype: file.mimetype,
+				buffer: file.buffer,
+				size: file.size,
+			});
 
-			return result;
+			// Transform domain to gRPC message using ACL
+			const grpcRequest = FileUploadACL.toGrpc(domainFile, {
+				type: FileType.AVATAR,
+				uploadedBy: 'system', // TODO: Get from auth context
+			});
+
+			const grpcResult = await lastValueFrom(this.fileManagementClient.invoke('uploadImage', grpcRequest));
+
+			// Transform gRPC response back to domain using ACL
+			return FileUploadACL.fromGrpc(grpcResult);
 		} catch (error) {
 			this.logger.error('Failed to upload image', {
 				error: error.message,

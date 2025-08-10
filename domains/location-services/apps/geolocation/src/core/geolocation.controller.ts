@@ -1,9 +1,13 @@
-import { Controller, Logger, UseGuards, UsePipes } from '@nestjs/common';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { GeospatialQueryACL, LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import type {
+	GeospatialQuery,
+	LocationResult,
+	LocationUpdate,
+} from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { GeolocationService } from './geolocation.service';
 
 @Controller()
@@ -14,20 +18,24 @@ export class GeolocationController {
 	constructor(private readonly geolocationService: GeolocationService) {}
 
 	@GrpcMethod('GeolocationService', 'UpdateVendorLocation')
-	@UsePipes(new SchemaValidatorPipe(LocationServices.Location.Validation.LocationUpdateSchema))
-	async updateVendorLocation(request: LocationServices.Location.Core.LocationUpdate) {
+	async updateVendorLocation(request: any) {
+		// Transform gRPC request to domain using ACL
+		const domainRequest: LocationUpdate = LocationUpdateACL.toDomain(request);
+
 		this.logger.debug('Handling vendor location update request', {
-			entityId: request.entityId,
-			coordinates: request.coordinates,
+			entityId: domainRequest.entityId,
+			entityType: domainRequest.entityType,
+			coordinates: domainRequest.coordinates,
 		});
 
 		try {
-			await this.geolocationService.updateVendorLocation(request);
+			await this.geolocationService.updateVendorLocation(domainRequest);
 			return { success: true };
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				entityId: request.entityId,
+				entityId: domainRequest.entityId,
+				entityType: domainRequest.entityType,
 			});
 
 			if (error instanceof AppError) throw error;
@@ -40,18 +48,23 @@ export class GeolocationController {
 	}
 
 	@GrpcMethod('GeolocationService', 'GetNearbyVendors')
-	@UsePipes(new SchemaValidatorPipe(LocationServices.Location.Validation.VendorLocationRequestSchema))
-	async getNearbyVendors(request: LocationServices.Location.Contracts.VendorLocationRequest) {
-		this.logger.debug('Handling nearby vendors request', {
-			bounds: request.bounds,
+	async getNearbyVendors(request: any): Promise<LocationResult[]> {
+		// Transform gRPC request to domain using ACL
+		const domainRequest: GeospatialQuery = GeospatialQueryACL.toDomain(request);
+
+		this.logger.debug('Handling nearby entities request', {
+			center: domainRequest.center,
+			radius: domainRequest.radius,
+			entityType: domainRequest.entityType,
 		});
 
 		try {
-			return await this.geolocationService.getNearbyVendors(request);
+			return await this.geolocationService.getNearbyVendors(domainRequest);
 		} catch (error) {
-			this.logger.error('Failed to get nearby vendors', {
+			this.logger.error('Failed to get nearby entities', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				bounds: request.bounds,
+				center: domainRequest.center,
+				radius: domainRequest.radius,
 			});
 
 			if (error instanceof AppError) throw error;

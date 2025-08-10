@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CloudinaryACL } from '@venta/domains/infrastructure/contracts/anti-corruption-layers/cloudinary-acl';
-import { InfrastructureToMarketplaceContextMapper } from '@venta/domains/infrastructure/contracts/context-mappers/infrastructure-to-marketplace.context-mapper';
-import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
+import { CloudinaryOptionsACL, FileUploadACL } from '@venta/domains/infrastructure/contracts';
+import type {
+	CloudinaryUploadOptions,
+	FileUpload,
+	FileUploadResult,
+} from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { CloudinaryService } from '@venta/nest/modules';
 
@@ -12,44 +15,36 @@ import { CloudinaryService } from '@venta/nest/modules';
 export class FileManagementService {
 	private readonly logger = new Logger(FileManagementService.name);
 
-	constructor(
-		private readonly cloudinaryService: CloudinaryService,
-		private readonly cloudinaryACL: CloudinaryACL,
-		private readonly contextMapper: InfrastructureToMarketplaceContextMapper,
-	) {}
+	constructor(private readonly cloudinaryService: CloudinaryService) {}
 
 	/**
 	 * Upload a file to cloud storage
 	 */
-	async uploadFile(request: Infrastructure.Contracts.FileUpload): Promise<Infrastructure.Core.FileUploadResult> {
+	async uploadFile(request: FileUpload): Promise<FileUploadResult> {
 		this.logger.debug('Processing file upload request', {
 			filename: request.filename,
 			size: request.size,
-			context: request.context,
+			mimetype: request.mimetype,
 		});
 
 		try {
-			// Validate request
-			if (!this.cloudinaryACL.validateFileUpload(request as unknown)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					field: 'file',
-					operation: 'validate_file_upload',
-					filename: request.filename,
-					mimetype: request.mimetype,
-					size: request.size,
-					message: 'Invalid file format or type',
-				});
-			}
+			// Validate request using ACL (validation is done automatically in toDomain)
+			// The request should already be validated by the calling controller using FileUploadACL
 
-			// Convert to Cloudinary options
-			let options: any;
+			// Convert to Cloudinary options using ACL
+			let options: CloudinaryUploadOptions;
 			try {
-				options = this.cloudinaryACL.toCloudinaryOptions(request);
+				// Use default options - the FileUpload interface doesn't include context
+				// Options should be passed separately if needed
+				options = CloudinaryOptionsACL.toDomain({
+					folder: 'uploads',
+					transformation: 'auto',
+				});
 			} catch (error) {
 				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'options',
 					operation: 'convert_cloudinary_options',
 					filename: request.filename,
-					field: 'options',
 					error: error instanceof Error ? error.message : 'Unknown error',
 				});
 			}
@@ -57,7 +52,7 @@ export class FileManagementService {
 			// Upload file
 			let result: any;
 			try {
-				result = await this.cloudinaryService.uploadBuffer(request.content, options);
+				result = await this.cloudinaryService.uploadBuffer(request.buffer, options);
 			} catch (error) {
 				throw AppError.externalService(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 					operation: 'upload_to_cloudinary',
@@ -67,22 +62,20 @@ export class FileManagementService {
 				});
 			}
 
-			// Convert response
-			let uploadResult: Infrastructure.Core.FileUploadResult;
-			try {
-				uploadResult = this.cloudinaryACL.toDomainResult(result);
-			} catch (error) {
-				throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
-					operation: 'convert_upload_result',
-					filename: request.filename,
-					error: error instanceof Error ? error.message : 'Unknown error',
-				});
-			}
+			// Convert response to domain format
+			const uploadResult: FileUploadResult = {
+				url: result.secure_url || result.url,
+				publicId: result.public_id,
+				format: result.format,
+				bytes: result.bytes,
+				createdAt: result.created_at || new Date().toISOString(),
+			};
 
 			this.logger.debug('File upload completed', {
-				fileId: uploadResult.fileId,
+				publicId: uploadResult.publicId,
 				url: uploadResult.url,
-				context: uploadResult.context,
+				format: uploadResult.format,
+				bytes: uploadResult.bytes,
 			});
 
 			return uploadResult;

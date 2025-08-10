@@ -1,7 +1,4 @@
 import { Module } from '@nestjs/common';
-import { WebSocketACL } from '@venta/domains/location-services/contracts/anti-corruption-layers/realtime';
-import { RealtimeToMarketplaceContextMapper } from '@venta/domains/location-services/contracts/context-mappers/realtime';
-import { LocationContractsModule } from '@venta/domains/location-services/contracts/location-contracts.module';
 import { PrometheusService } from '@venta/nest/modules';
 import { UserLocationGateway } from './gateways/user-location.gateway';
 import { VendorLocationGateway } from './gateways/vendor-location.gateway';
@@ -10,14 +7,11 @@ import { UserConnectionManagerService } from './user-connection-manager.service'
 import { VendorConnectionManagerService } from './vendor-connection-manager.service';
 
 @Module({
-	imports: [LocationContractsModule],
 	providers: [
 		UserLocationGateway,
 		VendorLocationGateway,
 		UserConnectionManagerService,
 		VendorConnectionManagerService,
-		WebSocketACL,
-		RealtimeToMarketplaceContextMapper,
 		{
 			provide: WEBSOCKET_METRICS,
 			useFactory: (prometheusService: PrometheusService) => createWebSocketMetrics(prometheusService),

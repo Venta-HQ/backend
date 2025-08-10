@@ -1,7 +1,8 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import type { LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 @Injectable()
@@ -10,43 +11,42 @@ export class LocationTrackingService {
 
 	constructor(@InjectRedis() private readonly redis: Redis) {}
 
-	validateCoordinates(coordinates: LocationServices.Core.Coordinates): boolean {
+	validateCoordinates(coordinates: { lat: number; lng: number }): boolean {
 		return coordinates.lat >= -90 && coordinates.lat <= 90 && coordinates.lng >= -180 && coordinates.lng <= 180;
 	}
 
-	async updateVendorStatus(
-		entityId: string,
-		data: {
-			coordinates: LocationServices.Core.Coordinates;
-			timestamp: string;
-		},
-	) {
+	async updateVendorStatus(locationUpdate: LocationUpdate) {
 		try {
 			await this.redis.set(
-				`vendor:${entityId}:status`,
+				`${locationUpdate.entityType}:${locationUpdate.entityId}:status`,
 				JSON.stringify({
-					coordinates: data.coordinates,
-					lastUpdate: data.timestamp,
+					coordinates: locationUpdate.coordinates,
+					lastUpdate: locationUpdate.timestamp,
 					isActive: true,
 				}),
 			);
 		} catch (error) {
-			this.logger.error('Failed to update vendor status', {
+			this.logger.error('Failed to update entity status', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				entityId,
+				entityId: locationUpdate.entityId,
+				entityType: locationUpdate.entityType,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_EVENT_OPERATION_FAILED, {
-				operation: 'update_vendor_status',
-				entityId,
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
+				operation: 'update_entity_status',
+				entityId: locationUpdate.entityId,
+				entityType: locationUpdate.entityType,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}
 
-	async getVendorStatus(entityId: string): Promise<{ isActive: boolean; lastUpdate: string }> {
+	async getEntityStatus(
+		entityId: string,
+		entityType: 'user' | 'vendor',
+	): Promise<{ isActive: boolean; lastUpdate: string }> {
 		try {
-			const status = await this.redis.get(`vendor:${entityId}:status`);
+			const status = await this.redis.get(`${entityType}:${entityId}:status`);
 			if (!status) {
 				return {
 					isActive: false,

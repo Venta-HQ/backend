@@ -7,7 +7,12 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { LocationUpdateACL, RealtimeMessageACL } from '@venta/domains/location-services/contracts';
+import type {
+	GeospatialQuery,
+	LocationUpdate,
+	RealtimeMessage,
+} from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
 import { UserConnectionManagerService } from '../user-connection-manager.service';
@@ -27,7 +32,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
-		private readonly geolocationService: LocationServices.Location.Contracts.GeolocationService,
+		private readonly geolocationService: any, // TODO: Import proper geolocation service type
 	) {}
 
 	/**
@@ -123,7 +128,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	@SubscribeMessage('update_location')
 	async handleLocationUpdate(
 		socket: Socket,
-		data: { neLocation: { lat: number; long: number }; swLocation: { lat: number; long: number } },
+		data: any, // Raw WebSocket data
 	) {
 		try {
 			const userId = await this.userConnectionManager.getSocketUserId(socket.id);
@@ -135,28 +140,33 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
-			// Calculate center point for user location
-			const centerLat = (data.neLocation.lat + data.swLocation.lat) / 2;
-			const centerLong = (data.neLocation.long + data.swLocation.long) / 2;
-
-			// Get nearby vendors based on user's location bounds
-			const nearbyVendors = await this.geolocationService.getNearbyVendors({
-				bounds: {
-					ne: {
-						lat: data.neLocation.lat,
-						long: data.neLocation.long,
-					},
-					sw: {
-						lat: data.swLocation.lat,
-						long: data.swLocation.long,
-					},
+			// Transform WebSocket data to LocationUpdate domain object
+			const locationUpdate: LocationUpdate = {
+				entityId: userId,
+				entityType: 'user',
+				coordinates: {
+					lat: data.lat || data.latitude,
+					lng: data.lng || data.longitude,
 				},
-			});
+				timestamp: new Date().toISOString(),
+			};
+
+			// Validate the location update using ACL
+			LocationUpdateACL.validate(locationUpdate);
+
+			// Create geospatial query for nearby vendors using current location
+			const nearbyQuery: GeospatialQuery = {
+				entityType: 'vendor',
+				center: locationUpdate.coordinates,
+				radius: data.radius || 5000, // Default 5km radius
+			};
+
+			const nearbyVendors = await this.geolocationService.getNearbyVendors(nearbyQuery);
 
 			// Join rooms for nearby vendors
 			nearbyVendors.forEach((vendor) => {
-				socket.join(vendor.vendorId);
-				this.userConnectionManager.addUserToVendorRoom(userId, vendor.vendorId);
+				socket.join(vendor.entityId);
+				this.userConnectionManager.addUserToVendorRoom(userId, vendor.entityId);
 			});
 
 			// Get current vendor rooms
@@ -174,8 +184,8 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 			socket.emit('location_updated', {
 				userId,
 				location: {
-					lat: centerLat,
-					long: centerLong,
+					lat: locationUpdate.coordinates.lat,
+					lng: locationUpdate.coordinates.lng,
 				},
 				nearbyVendors,
 			});

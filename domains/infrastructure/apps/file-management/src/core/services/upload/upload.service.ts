@@ -1,7 +1,7 @@
 import { PassThrough } from 'stream';
 import { v2 as cloudinary } from 'cloudinary';
 import { Injectable, Logger } from '@nestjs/common';
-import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
+import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 /**
@@ -22,37 +22,31 @@ export class UploadService {
 	/**
 	 * Upload a file to cloud storage
 	 */
-	async uploadFile(file: {
-		buffer: Buffer;
-		mimetype: string;
-		originalname: string;
-		size: number;
-		uploadedBy: string;
-	}): Promise<Infrastructure.Core.FileUploadResult> {
+	async uploadFile(
+		file: FileUpload & {
+			uploadedBy: string;
+		},
+	): Promise<FileUploadResult> {
 		try {
 			const result = await this.uploadToCloudinary(file.buffer);
 
 			return {
-				fileId: result.public_id,
 				url: result.secure_url,
-				filename: file.originalname,
-				size: file.size,
-				mimetype: file.mimetype,
-				uploadedBy: file.uploadedBy,
-				timestamp: new Date().toISOString(),
-				provider: 'cloudinary',
-				context: '',
+				publicId: result.public_id,
+				format: 'unknown', // Not available in simplified response
+				bytes: file.size, // Use original file size
+				createdAt: new Date().toISOString(),
 			};
 		} catch (error) {
 			this.logger.error('Failed to upload file', {
 				error: error.message,
-				filename: file.originalname,
+				filename: file.filename,
 				size: file.size,
 			});
 
 			throw AppError.internal(ErrorCodes.ERR_FILE_OPERATION_FAILED, {
 				operation: 'upload',
-				filename: file.originalname,
+				filename: file.filename,
 				message: error.message,
 			});
 		}

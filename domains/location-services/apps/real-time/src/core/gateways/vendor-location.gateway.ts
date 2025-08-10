@@ -7,7 +7,8 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { LocationUpdateACL, RealtimeMessageACL } from '@venta/domains/location-services/contracts';
+import type { LocationUpdate, RealtimeMessage } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
 import { VendorConnectionManagerService } from '../vendor-connection-manager.service';
@@ -27,7 +28,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
-		private readonly geolocationService: LocationServices.Location.Contracts.GeolocationService,
+		private readonly geolocationService: any, // TODO: Import proper geolocation service type
 	) {}
 
 	/**

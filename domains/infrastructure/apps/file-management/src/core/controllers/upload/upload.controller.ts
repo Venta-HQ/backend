@@ -1,5 +1,6 @@
 import { Controller, Post, UploadedFile } from '@nestjs/common';
-import { Infrastructure } from '@venta/domains/infrastructure/contracts/types/context-mapping.types';
+import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
+import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { UploadService } from '../../services/upload/upload.service';
 
@@ -10,17 +11,17 @@ export class UploadController {
 	@Post('image')
 	async uploadImage(
 		@UploadedFile() file: { buffer: Buffer; mimetype: string; originalname: string; size: number },
-	): Promise<Infrastructure.Core.FileUploadResult> {
+	): Promise<FileUploadResult> {
 		try {
-			if (!file) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					field: 'file',
-					domain: 'infrastructure',
-					operation: 'upload_image',
-					message: 'No file provided',
-				});
-			}
+			// Transform HTTP input to domain using ACL
+			const domainFile = FileUploadACL.toDomain({
+				filename: file.originalname,
+				mimetype: file.mimetype,
+				buffer: file.buffer,
+				size: file.size,
+			});
 
+			// Additional validation for image uploads
 			if (!file.mimetype.startsWith('image/')) {
 				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 					field: 'file.mimetype',
@@ -33,7 +34,7 @@ export class UploadController {
 			}
 
 			return await this.uploadService.uploadFile({
-				...file,
+				...domainFile,
 				uploadedBy: 'system', // TODO: Get from auth context
 			});
 		} catch (error) {

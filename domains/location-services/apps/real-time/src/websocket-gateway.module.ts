@@ -16,16 +16,17 @@ import {
 	PrometheusService,
 	RedisModule,
 } from '@venta/nest/modules';
-import {
-	GEOLOCATION_PACKAGE_NAME,
-	GEOLOCATION_SERVICE_NAME,
-	GeolocationServiceClient,
-} from '@venta/proto/location-services/geolocation';
-import { UserLocationGateway } from './gateways/user-location.gateway';
-import { VendorLocationGateway } from './gateways/vendor-location.gateway';
-import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
-import { UserConnectionManagerService } from './services/user-connection-manager.service';
-import { VendorConnectionManagerService } from './services/vendor-connection-manager.service';
+// TODO: Fix proto imports when geolocation proto is available
+// import {
+// 	GEOLOCATION_PACKAGE_NAME,
+// 	GEOLOCATION_SERVICE_NAME,
+// 	GeolocationServiceClient,
+// } from '@venta/proto/location-services/geolocation';
+import { UserLocationGateway } from './core/gateways/user-location.gateway';
+import { VendorLocationGateway } from './core/gateways/vendor-location.gateway';
+import { createWebSocketMetrics, WEBSOCKET_METRICS } from './core/metrics.provider';
+import { UserConnectionManagerService } from './core/user-connection-manager.service';
+import { VendorConnectionManagerService } from './core/vendor-connection-manager.service';
 
 @Module({
 	imports: [
@@ -34,14 +35,14 @@ import { VendorConnectionManagerService } from './services/vendor-connection-man
 				RedisModule,
 				ClerkModule.register(),
 				ConfigModule,
-				GrpcInstanceModule.register<GeolocationServiceClient>({
-					proto: 'location.proto',
-					protoPackage: GEOLOCATION_PACKAGE_NAME,
-					provide: GEOLOCATION_SERVICE_NAME,
-					serviceName: GEOLOCATION_SERVICE_NAME,
-					urlFactory: (configService: ConfigService) =>
-						configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
-				}),
+				// TODO: Add geolocation gRPC client when needed
+				// GrpcInstanceModule.register<any>({
+				// 	proto: 'location.proto',
+				// 	protoPackage: 'geolocation',
+				// 	provide: 'GEOLOCATION_SERVICE',
+				// 	urlFactory: (configService: ConfigService) =>
+				// 		configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
+				// }),
 				ClientsModule.registerAsync({
 					clients: [
 						{

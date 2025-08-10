@@ -1,7 +1,12 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-import { LocationServices } from '@venta/domains/location-services/contracts/types/context-mapping.types';
+import { GeospatialQueryACL, LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import type {
+	GeospatialQuery,
+	LocationResult,
+	LocationUpdate,
+} from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 
 @Injectable()
@@ -13,7 +18,7 @@ export class GeolocationService {
 	/**
 	 * Update vendor location
 	 */
-	async updateVendorLocation(request: LocationServices.Location.Core.LocationUpdate): Promise<void> {
+	async updateVendorLocation(request: LocationUpdate): Promise<void> {
 		try {
 			// Validate coordinates
 			if (!this.isValidCoordinates(request.coordinates)) {
@@ -25,7 +30,7 @@ export class GeolocationService {
 			}
 
 			// Update vendor location in Redis
-			await this.redis.geoadd('vendor_locations', request.coordinates.long, request.coordinates.lat, request.entityId);
+			await this.redis.geoadd('vendor_locations', request.coordinates.lng, request.coordinates.lat, request.entityId);
 
 			this.logger.log('Vendor location updated', {
 				vendorId: request.entityId,
@@ -48,84 +53,61 @@ export class GeolocationService {
 	/**
 	 * Get nearby vendors based on location bounds
 	 */
-	async getNearbyVendors(
-		request: LocationServices.Location.Contracts.VendorLocationRequest,
-	): Promise<LocationServices.Location.Internal.VendorLocation[]> {
+	async getNearbyVendors(request: GeospatialQuery): Promise<LocationResult[]> {
 		try {
-			// Validate coordinates
-			if (!this.isValidCoordinates(request.bounds.ne) || !this.isValidCoordinates(request.bounds.sw)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
-					field: 'bounds',
-					bounds: request.bounds,
-				});
-			}
+			// Validate coordinates using ACL
+			GeospatialQueryACL.validate(request);
 
-			// Calculate center point and radius
-			const centerLat = (request.bounds.sw.lat + request.bounds.ne.lat) / 2;
-			const centerLong = (request.bounds.sw.long + request.bounds.ne.long) / 2;
-			const radius = this.calculateRadius(request.bounds);
-
-			// Get nearby vendors from Redis
+			// Get nearby vendors from Redis using provided center and radius
 			const nearbyVendors = await this.redis.georadius(
-				'vendor_locations',
-				centerLong,
-				centerLat,
-				radius,
-				'km',
+				`${request.entityType}_locations`,
+				request.center.lng,
+				request.center.lat,
+				request.radius,
+				'm', // radius is in meters
 				'WITHCOORD',
+				'WITHDIST',
 			);
 
-			// Format results
-			return nearbyVendors.map(([member, [long, lat]]) => ({
-				vendorId: member as string,
+			// Format results to match LocationResult interface
+			return nearbyVendors.map(([member, distance, [lng, lat]]) => ({
+				entityId: member as string,
+				entityType: request.entityType,
 				coordinates: {
 					lat: Number(lat),
-					long: Number(long),
+					lng: Number(lng),
 				},
+				distance: distance ? Number(distance) : undefined,
+				lastUpdated: new Date().toISOString(),
 			}));
 		} catch (error) {
-			this.logger.error('Failed to get nearby vendors', {
+			this.logger.error('Failed to get nearby entities', {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				bounds: request.bounds,
+				center: request.center,
+				radius: request.radius,
 			});
 
 			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
-				operation: 'get_nearby_vendors',
-				bounds: request.bounds,
+				operation: 'get_nearby_entities',
+				center: request.center,
+				radius: request.radius,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}
 	}
 
 	/**
-	 * Calculate radius in kilometers between two points
-	 */
-	private calculateRadius(bounds: LocationServices.Location.Internal.LocationBounds): number {
-		const lat1 = (bounds.sw.lat * Math.PI) / 180;
-		const lat2 = (bounds.ne.lat * Math.PI) / 180;
-		const lon1 = (bounds.sw.long * Math.PI) / 180;
-		const lon2 = (bounds.ne.long * Math.PI) / 180;
-
-		const R = 6371; // Earth's radius in kilometers
-		const x = (lon2 - lon1) * Math.cos((lat1 + lat2) / 2);
-		const y = lat2 - lat1;
-		const d = Math.sqrt(x * x + y * y) * R;
-
-		return d / 2; // Return half the diagonal distance as radius
-	}
-
-	/**
 	 * Validate coordinates
 	 */
-	private isValidCoordinates(coordinates: LocationServices.Location.Internal.Coordinates): boolean {
+	private isValidCoordinates(coordinates: { lat: number; lng: number }): boolean {
 		return (
 			coordinates &&
 			typeof coordinates.lat === 'number' &&
-			typeof coordinates.long === 'number' &&
+			typeof coordinates.lng === 'number' &&
 			coordinates.lat >= -90 &&
 			coordinates.lat <= 90 &&
-			coordinates.long >= -180 &&
-			coordinates.long <= 180
+			coordinates.lng >= -180 &&
+			coordinates.lng <= 180
 		);
 	}
 }
