@@ -1,10 +1,11 @@
 import { lastValueFrom } from 'rxjs';
-import { Controller, Inject, Logger, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { Controller, Inject, Logger, Post, Query, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
+import { FileUploadACL, ImageUploadQuery, imageUploadQuerySchema } from '@venta/domains/infrastructure/contracts';
 import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcInstance } from '@venta/nest/modules';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
 	FileManagementServiceClient,
@@ -42,7 +43,11 @@ export class UploadController {
 			},
 		}),
 	)
-	async uploadImage(@UploadedFile() file: Express.Multer.File): Promise<FileUploadResult> {
+	@UsePipes(new SchemaValidatorPipe(imageUploadQuerySchema))
+	async uploadImage(
+		@UploadedFile() file: Express.Multer.File,
+		@Query() _query: ImageUploadQuery,
+	): Promise<FileUploadResult> {
 		this.logger.debug('Handling image upload request', {
 			filename: file?.originalname,
 			size: file?.size,

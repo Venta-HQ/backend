@@ -7,3 +7,6 @@ export * from './acl/vendor.acl';
 
 // Type exports
 export * from './types';
+
+// Schema exports
+export * from './schemas';
