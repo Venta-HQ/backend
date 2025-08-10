@@ -18,7 +18,6 @@ export interface VendorCreateData {
   phone: string;
   website: string;
   profileImage: string;
-  userId: string;
 }
 
 export interface VendorIdentityData {
@@ -36,13 +35,7 @@ export interface VendorUpdateData {
   email: string;
   website: string;
   phone: string;
-  userId: string;
   imageUrl: string;
-}
-
-export interface VendorUpdateResponse {
-  message: string;
-  success: boolean;
 }
 
 export interface VendorLocationUpdate {
@@ -93,7 +86,7 @@ export interface VendorManagementServiceClient {
 
   createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorIdentityData>;
 
-  updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<VendorUpdateResponse>;
+  updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<Empty>;
 
   updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Observable<Empty>;
 
@@ -111,10 +104,7 @@ export interface VendorManagementServiceController {
     metadata?: Metadata,
   ): Promise<VendorIdentityData> | Observable<VendorIdentityData> | VendorIdentityData;
 
-  updateVendor(
-    request: VendorUpdateData,
-    metadata?: Metadata,
-  ): Promise<VendorUpdateResponse> | Observable<VendorUpdateResponse> | VendorUpdateResponse;
+  updateVendor(request: VendorUpdateData, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
   updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 

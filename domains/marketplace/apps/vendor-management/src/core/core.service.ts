@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { VendorCreate } from '@venta/domains/marketplace/contracts/types/domain';
+import { VendorCreate, VendorUpdate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
 import {
@@ -80,8 +80,8 @@ export class CoreService {
 	 * Create new vendor
 	 * Domain method for vendor creation with business logic
 	 */
-	async createVendor(data: VendorCreate): Promise<string> {
-		this.logger.log('Creating new vendor', { userId: data.userId });
+	async createVendor(data: VendorCreate, userId: string): Promise<string> {
+		this.logger.log('Creating new vendor');
 
 		try {
 			// Create vendor
@@ -93,19 +93,19 @@ export class CoreService {
 					phone: data.phone,
 					website: data.website,
 					profileImage: data.imageUrl,
-					ownerId: data.userId,
+					ownerId: userId,
 				},
 			});
 
 			if (!vendor) {
 				throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 					operation: 'create_vendor',
-					userId: data.userId,
+					userId: userId,
 				});
 			}
 
 			this.logger.log('Vendor created successfully', {
-				userId: data.userId,
+				userId: userId,
 				vendorId: vendor.id,
 			});
 
@@ -122,11 +122,11 @@ export class CoreService {
 
 			this.logger.error('Failed to create vendor', error.stack, {
 				error,
-				userId: data.userId,
+				userId: userId,
 			});
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_vendor',
-				userId: data.userId,
+				userId: userId,
 			});
 		}
 	}
@@ -135,54 +135,39 @@ export class CoreService {
 	 * Update vendor details
 	 * Domain method for vendor profile updates
 	 */
-	async updateVendor(data: VendorUpdateData): Promise<void> {
+	async updateVendor(data: VendorUpdate, userId: string): Promise<void> {
 		this.logger.log('Updating vendor', { vendorId: data.id });
 
 		try {
-			// Verify vendor exists and user has permission
-			const vendor = await this.prisma.db.vendor.findUnique({
-				where: { id: data.id },
-			});
-
-			if (!vendor) {
-				throw AppError.notFound(ErrorCodes.ERR_ENTITY_NOT_FOUND, {
-					entityType: 'vendor',
-					entityId: data.id,
-					vendorId: data.id,
-				});
-			}
-
-			if (vendor.ownerId !== data.userId) {
-				throw AppError.unauthorized(ErrorCodes.ERR_ENTITY_UNAUTHORIZED, {
-					entityType: 'vendor',
-					entityId: data.id,
-					userId: data.userId,
-					vendorId: data.id,
-				});
-			}
-
 			// Update vendor
 			const updatedVendor = await this.prisma.db.vendor.update({
-				where: { id: data.id },
+				where: { id: data.id, ownerId: userId },
 				data: {
 					name: data.name,
 					description: data.description,
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					primaryImage: data.imageUrl,
+					profileImage: data.imageUrl,
 				},
 			});
 
+			if (!updatedVendor) {
+				throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+					operation: 'update_vendor',
+					vendorId: data.id,
+				});
+			}
+
 			this.logger.log('Vendor updated successfully', {
-				userId: data.userId,
+				userId: userId,
 				vendorId: data.id,
 			});
 
 			// Emit vendor updated event
 			await this.eventService.emit('marketplace.vendor.profile_updated', {
 				vendorId: updatedVendor.id,
-				updatedFields: ['name', 'description', 'email', 'phone', 'website', 'primaryImage'],
+				updatedFields: ['name', 'description', 'email', 'phone', 'website', 'profileImage'],
 				timestamp: updatedVendor.updatedAt.toISOString(),
 			});
 		} catch (error) {

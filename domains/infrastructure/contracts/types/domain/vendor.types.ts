@@ -7,3 +7,13 @@ export interface VendorCreateRequest {
 	imageUrl: string;
 	userId: string;
 }
+
+export interface VendorUpdateRequest {
+	id: string;
+	name: string;
+	description: string;
+	email: string;
+	phone: string;
+	website: string;
+	imageUrl: string;
+}

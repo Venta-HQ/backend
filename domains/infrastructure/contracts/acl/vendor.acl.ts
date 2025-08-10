@@ -1,6 +1,6 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { VendorCreateData } from '@venta/proto/marketplace/vendor-management';
-import { VendorCreateRequest } from '../types/domain';
+import { VendorCreateData, VendorUpdateData } from '@venta/proto/marketplace/vendor-management';
+import { VendorCreateRequest, VendorUpdateRequest } from '../types/domain';
 
 /**
  * Vendor HTTP ACL
@@ -49,8 +49,32 @@ export class VendorCreateRequestACL {
 			description: request.description,
 			phone: request.phone,
 			website: request.website,
-			userId: request.userId,
 			profileImage: request.imageUrl,
+		};
+	}
+}
+
+export class VendorUpdateRequestACL {
+	static validate(request: VendorUpdateRequest): void {
+		if (!request.id?.trim()) {
+			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+				field: 'id',
+				message: 'Vendor ID is required',
+			});
+		}
+	}
+
+	static toGrpc(request: VendorUpdateRequest): VendorUpdateData {
+		this.validate(request);
+
+		return {
+			id: request.id,
+			name: request.name,
+			email: request.email,
+			description: request.description,
+			phone: request.phone,
+			website: request.website,
+			imageUrl: request.imageUrl,
 		};
 	}
 }

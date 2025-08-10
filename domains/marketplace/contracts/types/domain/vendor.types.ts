@@ -22,7 +22,6 @@ export interface VendorCreate {
 	phone: string;
 	website: string;
 	imageUrl: string;
-	userId: string;
 }
 
 export interface VendorUpdate {
@@ -32,7 +31,6 @@ export interface VendorUpdate {
 	email: string;
 	website: string;
 	phone: string;
-	userId: string;
 	imageUrl: string;
 }
 

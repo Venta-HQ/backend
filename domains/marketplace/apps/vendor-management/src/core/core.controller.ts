@@ -1,3 +1,4 @@
+import { Metadata } from '@grpc/grpc-js';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import {
@@ -20,7 +21,6 @@ import {
 	VendorLookupResponse,
 	VendorManagementServiceController,
 	VendorUpdateData,
-	VendorUpdateResponse,
 } from '@venta/proto/marketplace/vendor-management';
 import { LocationService } from '../location/location.service';
 import { CoreService } from './core.service';
@@ -72,39 +72,46 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'createVendor')
-	async createVendor(request: VendorCreateData): Promise<VendorIdentityData> {
-		this.logger.debug('Creating new vendor', { userId: request.userId });
+	async createVendor(request: VendorCreateData, metadata: Metadata): Promise<VendorIdentityData> {
+		this.logger.debug('Creating new vendor');
 
 		try {
+			// Extract authenticated user from metadata
+			const userMetadata = metadata.get('user')[0] as string;
+			const authenticatedUser = JSON.parse(userMetadata);
+
 			// Validate and transform request
 			const domainRequest = VendorCreateACL.toDomain(request);
 
-			const vendorId = await this.coreService.createVendor(domainRequest);
+			const vendorId = await this.coreService.createVendor(domainRequest, authenticatedUser.id);
 			return { id: vendorId };
 		} catch (error) {
 			this.logger.error('Failed to create vendor', {
 				error: error.message,
-				userId: request.userId,
 			});
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_vendor',
-				userId: request.userId,
 			});
 		}
 	}
 
 	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'updateVendor')
-	async updateVendor(request: VendorUpdateData): Promise<VendorUpdateResponse> {
+	async updateVendor(request: VendorUpdateData, metadata: Metadata): Promise<Empty> {
 		this.logger.debug('Updating vendor', { vendorId: request.id });
 
 		try {
+			// Extract authenticated user from metadata
+			const userMetadata = metadata.get('user')[0] as string;
+			const authenticatedUser = JSON.parse(userMetadata);
+
 			// Validate and transform request
 			const domainRequest = VendorUpdateACL.toDomain(request);
 
-			await this.coreService.updateVendor(domainRequest);
-			return { message: 'Vendor updated successfully', success: true };
+			await this.coreService.updateVendor(domainRequest, authenticatedUser.id);
+
+			return;
 		} catch (error) {
 			this.logger.error('Failed to update vendor', {
 				error: error.message,

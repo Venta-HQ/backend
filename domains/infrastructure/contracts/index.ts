@@ -1,9 +1,9 @@
 // ACL exports
-export { FileUploadACL, CloudinaryOptionsACL } from './acl/file.acl';
+export * from './acl/file.acl';
 
-export { UserVendorRequestACL } from './acl/user.acl';
+export * from './acl/user.acl';
 
-export { VendorCreateRequestACL } from './acl/vendor.acl';
+export * from './acl/vendor.acl';
 
 // Type exports
 export * from './types';

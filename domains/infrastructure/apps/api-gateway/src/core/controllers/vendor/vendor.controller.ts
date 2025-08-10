@@ -1,6 +1,11 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards } from '@nestjs/common';
-import { VendorCreateRequest, VendorCreateRequestACL } from '@venta/domains/infrastructure/contracts';
+import {
+	VendorCreateRequest,
+	VendorCreateRequestACL,
+	VendorUpdateRequest,
+	VendorUpdateRequestACL,
+} from '@venta/domains/infrastructure/contracts';
 import { AuthenticatedRequest, AuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import {
@@ -49,14 +54,12 @@ export class VendorController {
 	async updateVendor(
 		@Param('id') id: string,
 		@Req() req: AuthenticatedRequest,
-		@Body() data: any, // TODO: Create VendorUpdateRequest type
+		@Body() data: Omit<VendorUpdateRequest, 'id'>,
 	) {
-		// For now, pass data directly as this needs a proper update ACL
-		const grpcData = {
+		const grpcData = VendorUpdateRequestACL.toGrpc({
 			...data,
 			id,
-			userId: req.userId,
-		};
+		});
 
 		return await firstValueFrom(
 			this.client.invoke('updateVendor', grpcData).pipe(

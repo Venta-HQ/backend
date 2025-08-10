@@ -81,12 +81,6 @@ export class VendorCreateACL {
 				message: 'Valid email address is required',
 			});
 		}
-		if (!grpc.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
 	}
 
 	static toDomain(grpc: VendorCreateData): VendorCreate {
@@ -99,7 +93,6 @@ export class VendorCreateACL {
 			phone: grpc.phone,
 			website: grpc.website,
 			imageUrl: grpc.profileImage,
-			userId: grpc.userId,
 		};
 	}
 
@@ -117,12 +110,6 @@ export class VendorCreateACL {
 				message: 'Valid email address is required',
 			});
 		}
-		if (!domain.userId?.trim()) {
-			throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-				field: 'userId',
-				message: 'User ID is required',
-			});
-		}
 	}
 
 	static toGrpc(domain: VendorCreate): VendorCreateData {
@@ -134,8 +121,7 @@ export class VendorCreateACL {
 			email: domain.email,
 			phone: domain.phone,
 			website: domain.website,
-			imageUrl: domain.imageUrl,
-			userId: domain.userId,
+			profileImage: domain.imageUrl,
 		};
 	}
 }
@@ -178,7 +164,6 @@ export class VendorUpdateACL {
 			phone: grpc.phone,
 			website: grpc.website,
 			imageUrl: grpc.imageUrl,
-			userId: grpc.userId,
 		};
 	}
 
@@ -215,7 +200,6 @@ export class VendorUpdateACL {
 			phone: domain.phone,
 			website: domain.website,
 			imageUrl: domain.imageUrl,
-			userId: domain.userId,
 		};
 	}
 }
