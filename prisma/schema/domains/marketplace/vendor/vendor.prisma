@@ -1,8 +1,8 @@
 model Vendor {
-    id   String @id @default(uuid())
-    // These lat/long values are used to show locations on the map without subscription to live location
-    lat  Float?
-    long Float?
+    id  String @id @default(uuid())
+    // These lat/lng values are used to show locations on the map without subscription to live location
+    lat Float?
+    lng Float?
 
     // General details
     name         String
@@ -10,8 +10,8 @@ model Vendor {
     phone        String?
     email        String?
     website      String?
-    isOpen       Boolean @default(false)
-    primaryImage String?
+    isActive     Boolean @default(false)
+    profileImage String?
 
     // Metadata
     createdAt DateTime @default(now())

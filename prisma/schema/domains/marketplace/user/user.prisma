@@ -4,9 +4,6 @@ model User {
     email     String?
     firstName String?
     lastName  String?
-    isActive  Boolean @default(true)
-    lat       Float?
-    long      Float?
 
     // Metadata
     createdAt DateTime @default(now())
@@ -15,7 +12,6 @@ model User {
     // Relations
     vendors      Vendor[]
     subscription UserSubscription?
-    integrations Integration[]
 
     @@map("user")
 }
@@ -32,18 +28,23 @@ enum SubscriptionProvider {
 
 model UserSubscription {
     id         String               @id @default(uuid())
-    userId     String               @unique
-    user       User                 @relation(fields: [userId], references: [id])
     status     SubscriptionStatus   @default(active)
     provider   SubscriptionProvider
-    externalId String
+    externalId String // External provider subscription ID (e.g., RevenueCat)
     productId  String
     startDate  DateTime
     endDate    DateTime?
 
+    // Store provider-specific data (e.g., RevenueCat metadata)
+    metadata Json?
+
     // Metadata
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    // Relations
+    userId String @unique
+    user   User   @relation(fields: [userId], references: [id])
 
     @@map("user_subscription")
 }
