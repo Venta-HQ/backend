@@ -1,10 +1,9 @@
-// Main Module
-export { InfrastructureContractsModule } from './infrastructure-contracts.module';
+// ACL exports
+export { FileUploadACL, CloudinaryOptionsACL } from './acl/file.acl';
 
-// Context Mappers (Outbound Only)
-export * as InfrastructureToMarketplaceContextMapper from './context-mappers/infrastructure-to-marketplace.context-mapper';
+export { UserVendorRequestACL } from './acl/user.acl';
 
-// Anti-Corruption Layers
-export { CloudinaryACL } from './anti-corruption-layers/cloudinary.acl';
-export { UserHttpACL } from './anti-corruption-layers/user-http.acl';
-export { VendorHttpACL } from './anti-corruption-layers/vendor-http.acl';
+export { VendorCreateRequestACL } from './acl/vendor.acl';
+
+// Type exports
+export * from './types';

@@ -1,8 +1,7 @@
-// Main Module
-export { LocationContractsModule } from './location-contracts.module';
+// ACL exports
+export { LocationUpdateACL, GeospatialQueryACL } from './acl/location.acl';
 
-// Context Mappers
-export * as LocationToMarketplaceContextMapper from './context-mappers/location-to-marketplace.context-mapper';
+export { RealtimeMessageACL, NatsSubscriptionACL } from './acl/realtime.acl';
 
-// Anti-Corruption Layers
-export { LocationExternalServiceACL } from './anti-corruption-layers/location-external-service.acl';
+// Type exports
+export * from './types';
