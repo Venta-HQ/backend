@@ -22,34 +22,57 @@ export abstract class BaseRequestIdInterceptor {
 	) {}
 
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+		// Check if we already have an ALS context (e.g., from AuthGuard)
+		const hasExistingContext = this.requestContextService.getRequestId() !== undefined;
+
+		if (hasExistingContext) {
+			// If context already exists, just handle the request without creating a new context
+			return this.handleRequest(context, next);
+		} else {
+			// Create new ALS context if none exists
+			return new Observable((observer) => {
+				this.requestContextService.run(() => {
+					const result$ = this.handleRequest(context, next);
+					result$.subscribe({
+						next: (value) => observer.next(value),
+						error: (error) => observer.error(error),
+						complete: () => observer.complete(),
+					});
+				});
+			});
+		}
+	}
+
+	private handleRequest(context: ExecutionContext, next: CallHandler): Observable<any> {
 		try {
 			// Extract request/correlation ID using the provided extractor
 			const id = this.extractor.extractId(context);
 
 			if (id) {
-				this.setId(id);
-				this.logger.debug(`Extracted ${this.extractor.getProtocolName()} ID: ${id}`);
+				// Only set if not already set
+				if (!this.requestContextService.getRequestId()) {
+					this.setId(id);
+				}
+				this.logger.debug(`Extracted ${this.extractor.getProtocolName()} request ID: ${id}`);
 			} else {
 				this.logger.debug(`No ${this.extractor.getProtocolName()} ID found`);
 			}
 
-			// Process the request and clear context when done
+			// Process the request
 			return next.handle().pipe(
 				tap({
-					error: (_error) => {
-						this.logger.debug(`Clearing request context after ${this.extractor.getProtocolName()} error`);
-						this.requestContextService.clear();
-					},
 					next: () => {
-						this.logger.debug(`Clearing request context after ${this.extractor.getProtocolName()} success`);
-						this.requestContextService.clear();
+						this.logger.debug(`Request completed successfully for ${this.extractor.getProtocolName()}`);
+					},
+					error: () => {
+						this.logger.debug(`Request failed for ${this.extractor.getProtocolName()}`);
 					},
 				}),
 			);
 		} catch (error) {
-			this.logger.error(`Error in ${this.extractor.getProtocolName()} request ID interceptor`, error.stack, { error });
-			// Ensure context is cleared even if interceptor fails
-			this.requestContextService.clear();
+			this.logger.error(`Error in ${this.extractor.getProtocolName()} request ID interceptor`, error.stack, {
+				error,
+			});
 			return next.handle();
 		}
 	}

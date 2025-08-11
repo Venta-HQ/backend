@@ -1,11 +1,11 @@
 import { randomUUID } from 'crypto';
-import { CanActivate, ExecutionContext, Injectable, Logger, Scope } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { RequestContextService } from '@venta/nest/modules';
 import { AuthService } from '../core';
 import { AuthenticatedRequest, AuthProtocol } from '../types';
 
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class AuthGuard implements CanActivate {
 	private readonly logger = new Logger(AuthGuard.name);
 
@@ -19,11 +19,26 @@ export class AuthGuard implements CanActivate {
 
 		// Extract or generate request ID for logging (same logic as HttpRequestIdInterceptor)
 		const requestId = this.getOrCreateRequestId(request);
-		if (requestId) {
-			// Set the request ID in the request context for this guard's logging
-			this.requestContextService.setRequestId(requestId);
-		}
 
+		// We need to run within ALS context since guards execute before interceptors
+		return new Promise((resolve, reject) => {
+			this.requestContextService.run(async () => {
+				try {
+					if (requestId) {
+						// Set the request ID in the request context for this guard's logging
+						this.requestContextService.setRequestId(requestId);
+					}
+
+					const result = await this.validateRequest(request);
+					resolve(result);
+				} catch (error) {
+					reject(error);
+				}
+			});
+		});
+	}
+
+	private async validateRequest(request: AuthenticatedRequest): Promise<boolean> {
 		const token = this.authService.extractHttpToken(request.headers);
 
 		if (!token) {

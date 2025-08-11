@@ -1,13 +1,38 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { AsyncLocalStorage } from 'async_hooks';
+import { Injectable } from '@nestjs/common';
 
 /**
- * Request-scoped service for storing request-specific data
- * This service is scoped to each request and provides a key-value store
- * for request-specific context like request IDs, user info, etc.
+ * Singleton service for storing request-specific data using AsyncLocalStorage
+ * This service uses Node.js AsyncLocalStorage to maintain request context
+ * without requiring request-scoped dependency injection
  */
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class RequestContextService {
-	private readonly context = new Map<string, unknown>();
+	private readonly asyncLocalStorage = new AsyncLocalStorage<Map<string, unknown>>();
+
+	/**
+	 * Run a function within a new request context
+	 * @param callback The function to run within the context
+	 * @returns The result of the callback
+	 */
+	run<T>(callback: () => T): T {
+		const context = new Map<string, unknown>();
+		return this.asyncLocalStorage.run(context, callback);
+	}
+
+	/**
+	 * Get the current context map or create one if none exists
+	 * @returns The current context map
+	 */
+	private getContext(): Map<string, unknown> {
+		const context = this.asyncLocalStorage.getStore();
+		if (!context) {
+			// If no context exists, return an empty map
+			// This handles cases where methods are called outside of a request context
+			return new Map<string, unknown>();
+		}
+		return context;
+	}
 
 	/**
 	 * Set a value in the request context
@@ -15,7 +40,8 @@ export class RequestContextService {
 	 * @param value The value to store
 	 */
 	set(key: string, value: unknown): void {
-		this.context.set(key, value);
+		const context = this.getContext();
+		context.set(key, value);
 	}
 
 	/**
@@ -24,7 +50,8 @@ export class RequestContextService {
 	 * @returns The stored value or undefined if not found
 	 */
 	get(key: string): unknown {
-		return this.context.get(key);
+		const context = this.getContext();
+		return context.get(key);
 	}
 
 	/**
@@ -33,7 +60,7 @@ export class RequestContextService {
 	 * @returns The stored value cast to the specified type, or undefined if not found
 	 */
 	getTyped<T>(key: string): T | undefined {
-		const value = this.context.get(key);
+		const value = this.get(key);
 		return value as T | undefined;
 	}
 
@@ -43,7 +70,7 @@ export class RequestContextService {
 	 * @returns The stored string value or undefined if not found or not a string
 	 */
 	getString(key: string): string | undefined {
-		const value = this.context.get(key);
+		const value = this.get(key);
 		return typeof value === 'string' ? value : undefined;
 	}
 
@@ -53,7 +80,8 @@ export class RequestContextService {
 	 * @returns True if the key exists, false otherwise
 	 */
 	has(key: string): boolean {
-		return this.context.has(key);
+		const context = this.getContext();
+		return context.has(key);
 	}
 
 	/**
@@ -62,14 +90,16 @@ export class RequestContextService {
 	 * @returns True if the key was deleted, false if it didn't exist
 	 */
 	delete(key: string): boolean {
-		return this.context.delete(key);
+		const context = this.getContext();
+		return context.delete(key);
 	}
 
 	/**
 	 * Clear all data from the request context
 	 */
 	clear(): void {
-		this.context.clear();
+		const context = this.getContext();
+		context.clear();
 	}
 
 	/**
@@ -77,7 +107,8 @@ export class RequestContextService {
 	 * @returns Array of all keys
 	 */
 	keys(): string[] {
-		return Array.from(this.context.keys());
+		const context = this.getContext();
+		return Array.from(context.keys());
 	}
 
 	/**
@@ -85,7 +116,8 @@ export class RequestContextService {
 	 * @returns Array of all values
 	 */
 	values(): unknown[] {
-		return Array.from(this.context.values());
+		const context = this.getContext();
+		return Array.from(context.values());
 	}
 
 	/**
@@ -93,7 +125,8 @@ export class RequestContextService {
 	 * @returns Array of [key, value] pairs
 	 */
 	entries(): [string, unknown][] {
-		return Array.from(this.context.entries());
+		const context = this.getContext();
+		return Array.from(context.entries());
 	}
 
 	/**
@@ -101,7 +134,8 @@ export class RequestContextService {
 	 * @returns Number of entries
 	 */
 	size(): number {
-		return this.context.size;
+		const context = this.getContext();
+		return context.size;
 	}
 
 	/**

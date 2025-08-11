@@ -92,7 +92,14 @@ export class BootstrapService {
 			transport: Transport.GRPC,
 		});
 
-		// Logger is configured by the LoggerModule, no need to set it here
+		// Set our custom Logger as the application logger
+		try {
+			const customLogger = new Logger();
+			app.useLogger(customLogger);
+		} catch (error) {
+			// Fallback to default logger if custom logger is not available
+			console.warn('Custom logger not available, using default logger');
+		}
 
 		return { app };
 	}
@@ -106,7 +113,14 @@ export class BootstrapService {
 			transport: Transport.NATS,
 		});
 
-		// Logger is configured by the LoggerModule, no need to set it here
+		// Set our custom Logger as the application logger
+		try {
+			const customLogger = new Logger();
+			app.useLogger(customLogger);
+		} catch (error) {
+			// Fallback to default logger if custom logger is not available
+			console.warn('Custom logger not available, using default logger');
+		}
 
 		return { app };
 	}

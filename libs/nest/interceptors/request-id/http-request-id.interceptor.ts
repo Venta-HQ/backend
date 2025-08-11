@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ExecutionContext, Injectable, Scope } from '@nestjs/common';
+import { ExecutionContext, Injectable } from '@nestjs/common';
 import { RequestContextService } from '../../modules/networking/request-context';
 import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
@@ -37,7 +37,7 @@ class HttpRequestIdExtractor implements RequestIdExtractor {
 
 /**
  * Interceptor for HTTP request handlers that automatically extracts or generates request IDs
- * from HTTP headers and sets them in the request context for logging and tracing.
+ * from HTTP headers and sets them in the request context for logging and tracing using AsyncLocalStorage.
  *
  * Supports the following headers (in order of preference):
  * - X-Request-ID
@@ -47,7 +47,7 @@ class HttpRequestIdExtractor implements RequestIdExtractor {
  *
  * If no request ID is provided, a new UUID will be generated for the request.
  */
-@Injectable({ scope: Scope.REQUEST })
+@Injectable()
 export class HttpRequestIdInterceptor extends BaseRequestIdInterceptor {
 	constructor(requestContextService: RequestContextService) {
 		super(requestContextService, new HttpRequestIdExtractor());

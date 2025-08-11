@@ -3,8 +3,8 @@ import { RequestContextService } from './request-context.service';
 
 /**
  * Global module that provides the RequestContextService
- * This service is request-scoped and provides a key-value store
- * for request-specific context data like request IDs.
+ * This service uses AsyncLocalStorage to maintain request context
+ * without requiring request-scoped dependency injection.
  * Being global means it's available everywhere without explicit imports.
  */
 @Global()

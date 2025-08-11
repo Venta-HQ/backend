@@ -44,8 +44,6 @@ export class Logger implements LoggerService {
 			return correlationId;
 		}
 
-		// Only generate a new request ID if we don't already have one
-		// This should only happen during actual request processing, not startup
 		// Don't auto-generate request IDs - let the request handling infrastructure set them
 		return undefined;
 	}
