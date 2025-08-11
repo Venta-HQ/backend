@@ -1,3 +1,4 @@
+import { dirname, join } from 'path';
 import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
@@ -30,14 +31,22 @@ export class GrpcInstanceModule {
 							imports: [ConfigModule],
 							inject: [ConfigService],
 							name: `${serviceName}-client`,
-							useFactory: (configService: ConfigService) => ({
-								options: {
-									package: protoPackage,
-									protoPath: ProtoPathUtil.resolveProtoPath(proto),
-									url: urlFactory(configService),
-								},
-								transport: Transport.GRPC,
-							}),
+							useFactory: (configService: ConfigService) => {
+								const protoPath = ProtoPathUtil.resolveProtoPath(proto);
+								const protoRoot = ProtoPathUtil.getProtoRoot();
+
+								return {
+									options: {
+										package: protoPackage,
+										protoPath,
+										url: urlFactory(configService),
+										loader: {
+											includeDirs: [protoRoot],
+										},
+									},
+									transport: Transport.GRPC,
+								};
+							},
 						},
 					],
 				}),

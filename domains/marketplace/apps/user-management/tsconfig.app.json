@@ -2,7 +2,7 @@
 	"extends": "../../../../tsconfig.json",
 	"compilerOptions": {
 		"declaration": false,
-		"outDir": "../../../../dist/apps/marketplace/services/user-management"
+		"outDir": "../../../../dist/domains/marketplace/apps/user-management"
 	},
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "test", "**/*spec.ts"]

@@ -65,10 +65,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": [
-					"libs/proto/src/definitions/domains/marketplace/user-management/user-management.proto",
-					"libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"
-				],
+				"assets": ["libs/proto/src/definitions/**/*.proto"],
 				"tsConfigPath": "domains/infrastructure/apps/api-gateway/tsconfig.app.json"
 			}
 		},

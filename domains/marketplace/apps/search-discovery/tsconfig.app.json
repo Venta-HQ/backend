@@ -1,7 +1,7 @@
 {
 	"extends": "../../../../tsconfig.json",
 	"compilerOptions": {
-		"outDir": "../../../../dist/apps/marketplace/services/search-discovery",
+		"outDir": "../../../../dist/domains/marketplace/apps/search-discovery",
 		"types": ["node"]
 	},
 	"include": ["src/**/*"],
