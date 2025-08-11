@@ -3,6 +3,9 @@
  * Type-safe error handling with static factory methods
  */
 
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { RpcException } from '@nestjs/microservices';
+import { WsException } from '@nestjs/websockets';
 import { AvailableErrorCodes, ERROR_MESSAGES, ErrorDataMap, ErrorType, OptionalDataParam } from './error-definitions';
 
 /**
@@ -51,5 +54,106 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 	static externalService<T extends AvailableErrorCodes>(errorCode: T, ...args: OptionalDataParam<T>): AppError<T> {
 		const data = args[0] ?? ({} as ErrorDataMap[T]);
 		return new AppError(ErrorType.EXTERNAL_SERVICE, errorCode, data);
+	}
+
+	static rateLimit<T extends AvailableErrorCodes>(errorCode: T, ...args: OptionalDataParam<T>): AppError<T> {
+		const data = args[0] ?? ({} as ErrorDataMap[T]);
+		return new AppError(ErrorType.RATE_LIMIT, errorCode, data);
+	}
+
+	/**
+	 * Converts AppError to HttpException for HTTP transport
+	 */
+	toHttpException(): HttpException {
+		const statusCode = this.getHttpStatusCode();
+		const response = {
+			message: this.message,
+			errorCode: this.errorCode,
+			errorType: this.errorType,
+			data: this.data,
+		};
+
+		return new HttpException(response, statusCode);
+	}
+
+	/**
+	 * Converts AppError to RpcException for gRPC transport
+	 */
+	toGrpcException(): RpcException {
+		const grpcCode = this.getGrpcCode();
+		const response = {
+			message: this.message,
+			errorCode: this.errorCode,
+			errorType: this.errorType,
+			data: this.data,
+		};
+
+		return new RpcException({
+			code: grpcCode,
+			message: this.message,
+			details: response,
+		});
+	}
+
+	/**
+	 * Converts AppError to WsException for WebSocket transport
+	 */
+	toWsException(): WsException {
+		const response = {
+			message: this.message,
+			errorCode: this.errorCode,
+			errorType: this.errorType,
+			data: this.data,
+		};
+
+		return new WsException(response);
+	}
+
+	/**
+	 * Maps ErrorType to HTTP status code
+	 */
+	private getHttpStatusCode(): HttpStatus {
+		switch (this.errorType) {
+			case ErrorType.VALIDATION:
+				return HttpStatus.BAD_REQUEST;
+			case ErrorType.NOT_FOUND:
+				return HttpStatus.NOT_FOUND;
+			case ErrorType.UNAUTHORIZED:
+				return HttpStatus.UNAUTHORIZED;
+			case ErrorType.FORBIDDEN:
+				return HttpStatus.FORBIDDEN;
+			case ErrorType.RATE_LIMIT:
+				return HttpStatus.TOO_MANY_REQUESTS;
+			case ErrorType.INTERNAL:
+				return HttpStatus.INTERNAL_SERVER_ERROR;
+			case ErrorType.EXTERNAL_SERVICE:
+				return HttpStatus.BAD_GATEWAY;
+			default:
+				return HttpStatus.INTERNAL_SERVER_ERROR;
+		}
+	}
+
+	/**
+	 * Maps ErrorType to gRPC status code
+	 */
+	private getGrpcCode(): number {
+		switch (this.errorType) {
+			case ErrorType.VALIDATION:
+				return 3; // INVALID_ARGUMENT
+			case ErrorType.NOT_FOUND:
+				return 5; // NOT_FOUND
+			case ErrorType.UNAUTHORIZED:
+				return 16; // UNAUTHENTICATED
+			case ErrorType.FORBIDDEN:
+				return 7; // PERMISSION_DENIED
+			case ErrorType.RATE_LIMIT:
+				return 8; // RESOURCE_EXHAUSTED
+			case ErrorType.INTERNAL:
+				return 13; // INTERNAL
+			case ErrorType.EXTERNAL_SERVICE:
+				return 14; // UNAVAILABLE
+			default:
+				return 13; // INTERNAL
+		}
 	}
 }

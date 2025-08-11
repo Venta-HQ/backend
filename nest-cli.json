@@ -26,7 +26,7 @@
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"assets": ["libs/proto/src/definitions/domains/marketplace/vendor-management/vendor-management.proto"],
+				"assets": ["libs/proto/src/definitions/**/*.proto"],
 				"tsConfigPath": "domains/marketplace/apps/vendor-management/tsconfig.app.json"
 			}
 		},

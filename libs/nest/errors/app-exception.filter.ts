@@ -76,7 +76,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 				case 401:
 					return AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 				case 403:
-					return AppError.unauthorized(ErrorCodes.ERR_INSUFFICIENT_PERMISSIONS, {
+					return AppError.forbidden(ErrorCodes.ERR_INSUFFICIENT_PERMISSIONS, {
 						resource: 'request', // Generic resource for HTTP forbidden errors
 					});
 				case 404:
@@ -90,7 +90,7 @@ export class AppExceptionFilter implements ExceptionFilter {
 						resourceId: 'request',
 					});
 				case 429:
-					return AppError.validation(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
+					return AppError.rateLimit(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
 						retryAfterSeconds: 60, // Default retry time
 					});
 				case 502:
