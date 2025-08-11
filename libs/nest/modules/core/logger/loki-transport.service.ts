@@ -68,13 +68,15 @@ export class LokiTransportService {
 	}
 
 	private isConfigured(): boolean {
-		return !!(this.lokiUrl && this.lokiUsername && this.lokiPassword);
+		return !!this.lokiUrl;
 	}
 
 	private async flushBatch(): Promise<void> {
-		if (this.batch.length === 0) return;
+		if (this.batch.length === 0) {
+			return;
+		}
 
-		const logs = this.batch;
+		const logs = [...this.batch]; // Create a copy instead of reference
 		this.batch.length = 0; // Clear array more efficiently
 
 		if (this.batchTimeout) {
@@ -129,17 +131,31 @@ export class LokiTransportService {
 	}
 
 	private async sendToLoki(payload: LokiPayload): Promise<void> {
-		const response = await fetch(`${this.lokiUrl}/loki/api/v1/push`, {
+		const headers: Record<string, string> = {
+			'Content-Type': 'application/json',
+		};
+
+		// Only add authorization if credentials are provided
+		if (this.lokiUsername && this.lokiPassword) {
+			headers.Authorization = `Basic ${Buffer.from(`${this.lokiUsername}:${this.lokiPassword}`).toString('base64')}`;
+		}
+
+		const url = `${this.lokiUrl}/loki/api/v1/push`;
+
+		const response = await fetch(url, {
 			body: JSON.stringify(payload),
-			headers: {
-				Authorization: `Basic ${Buffer.from(`${this.lokiUsername}:${this.lokiPassword}`).toString('base64')}`,
-				'Content-Type': 'application/json',
-			},
+			headers,
 			method: 'POST',
 		});
 
 		if (!response.ok) {
-			console.error(`Failed to send logs to Loki: ${response.status} ${response.statusText}`);
+			const responseText = await response.text().catch(() => 'Unable to read response');
+			console.error(`Failed to send logs to Loki: ${response.status} ${response.statusText}`, {
+				url,
+				payload: JSON.stringify(payload),
+				response: responseText,
+			});
+			throw new Error(`Loki request failed: ${response.status} ${response.statusText}`);
 		}
 	}
 }

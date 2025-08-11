@@ -28,26 +28,26 @@ export class Logger implements LoggerService {
 
 	// Generate or retrieve request ID or correlation ID
 	private getRequestId(): string | undefined {
-		// First try to get from RequestContextService (for gRPC and NATS)
-		const existingRequestId = this.requestContextService?.getRequestId();
+		// Only try to get request context if the service is available
+		if (!this.requestContextService) {
+			return undefined;
+		}
+
+		// First try to get existing request ID (for gRPC and NATS)
+		const existingRequestId = this.requestContextService.getRequestId();
 		if (existingRequestId) {
 			return existingRequestId;
 		}
 
 		// Check for correlation ID (for NATS messages)
-		const correlationId = this.requestContextService?.getCorrelationId();
+		const correlationId = this.requestContextService.getCorrelationId();
 		if (correlationId) {
 			return correlationId;
 		}
 
-		// For HTTP requests, only generate if we have a RequestContextService
-		// This prevents unnecessary UUID generation when no context is available
-		if (this.requestContextService) {
-			const newRequestId = randomUUID();
-			this.requestContextService.setRequestId(newRequestId);
-			return newRequestId;
-		}
-
+		// Only generate a new request ID if we don't already have one
+		// This should only happen during actual request processing, not startup
+		// Don't auto-generate request IDs - let the request handling infrastructure set them
 		return undefined;
 	}
 

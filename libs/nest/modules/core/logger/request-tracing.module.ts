@@ -1,6 +1,11 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { GrpcRequestIdInterceptor, NatsRequestIdInterceptor } from '../../../interceptors/request-id';
+import {
+	GrpcRequestIdInterceptor,
+	HttpRequestIdInterceptor,
+	NatsRequestIdInterceptor,
+} from '../../../interceptors/request-id';
+import { RequestContextModule } from '../../networking/request-context';
 
 export interface RequestTracingOptions {
 	protocol: 'http' | 'grpc' | 'websocket' | 'nats';
@@ -12,7 +17,12 @@ export class RequestTracingModule {
 		const providers = [];
 
 		// Add protocol-specific interceptors
-		if (options.protocol === 'grpc') {
+		if (options.protocol === 'http') {
+			providers.push({
+				provide: APP_INTERCEPTOR,
+				useClass: HttpRequestIdInterceptor,
+			});
+		} else if (options.protocol === 'grpc') {
 			providers.push({
 				provide: APP_INTERCEPTOR,
 				useClass: GrpcRequestIdInterceptor,
@@ -23,9 +33,9 @@ export class RequestTracingModule {
 				useClass: NatsRequestIdInterceptor,
 			});
 		}
-		// HTTP services use Pino for automatic request ID handling, so no interceptor needed
 
 		return {
+			imports: [RequestContextModule],
 			module: RequestTracingModule,
 			providers,
 		};

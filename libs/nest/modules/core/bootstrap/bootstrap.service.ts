@@ -1,8 +1,9 @@
-import { Logger } from '@nestjs/common';
+import { Logger as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { ProtoPathUtil } from '@venta/utils';
+import { Logger } from '../logger';
 
 export interface HttpBootstrapOptions {
 	corsOptions?: {
@@ -46,7 +47,7 @@ export interface MicroserviceBootstrapOptions {
 }
 
 export class BootstrapService {
-	private static readonly logger = new Logger(BootstrapService.name);
+	private static readonly logger = new NestLogger(BootstrapService.name);
 
 	static async createHttpApp(options: HttpBootstrapOptions) {
 		const app = await NestFactory.create(options.module);
@@ -63,7 +64,14 @@ export class BootstrapService {
 			app.enableCors(corsOptions);
 		}
 
-		// Logger is configured by the LoggerModule, no need to set it here
+		// Set our custom Logger as the application logger
+		try {
+			const customLogger = await app.resolve(Logger);
+			app.useLogger(customLogger);
+		} catch (error) {
+			// Fallback to default logger if custom logger is not available
+			console.warn('Custom logger not available, using default logger');
+		}
 
 		// Get port and host
 		const port = options.port || 3000;

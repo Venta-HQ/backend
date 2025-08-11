@@ -42,11 +42,8 @@ export class BootstrapModule {
 		// Automatically include HealthCheckModule for HTTP services
 		const httpModules = options.protocol === 'http' ? [HealthCheckModule] : [];
 
-		// Automatically include RequestTracingModule for gRPC and NATS services
-		const tracingModules =
-			options.protocol === 'grpc' || options.protocol === 'nats'
-				? [RequestTracingModule.register({ protocol: options.protocol })]
-				: [];
+		// Automatically include RequestTracingModule for all services
+		const tracingModules = [RequestTracingModule.register({ protocol: options.protocol })];
 
 		return {
 			exports: baseModules,
