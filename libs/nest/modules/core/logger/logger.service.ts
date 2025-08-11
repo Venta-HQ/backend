@@ -1,4 +1,3 @@
-import { randomUUID } from 'crypto';
 import { Injectable, LoggerService, Scope } from '@nestjs/common';
 import { RequestContextService } from '../../networking/request-context';
 import { LokiTransportService } from './loki-transport.service';

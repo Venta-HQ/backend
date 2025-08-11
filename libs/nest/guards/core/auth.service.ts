@@ -1,22 +1,21 @@
 import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { Logger, PrismaService } from '@venta/nest/modules';
+import { PrismaService } from '@venta/nest/modules';
 import { ClerkService } from '../../modules/external/clerk';
 import { AuthContext, AuthProtocol, AuthUser } from '../types';
 
 @Injectable()
 export class AuthService {
+	private readonly logger = new Logger(AuthService.name);
+
 	constructor(
 		private readonly clerkService: ClerkService,
 		private readonly prisma: PrismaService,
 		@InjectRedis() private readonly redis: Redis,
-		private readonly logger: Logger,
-	) {
-		this.logger.setContext(AuthService.name);
-	}
+	) {}
 
 	/**
 	 * Validates a token and returns the authenticated user
