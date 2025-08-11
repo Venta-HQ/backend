@@ -1,6 +1,7 @@
 import type { CreateSubscriptionData } from '@venta/proto/marketplace/user-management';
+import { validateSchema } from '@venta/utils';
+import { grpcSubscriptionCreateSchema } from '../schemas/subscription.schemas';
 // Validation utilities
-import { validateRequiredString, validateSubscriptionData } from '../schemas/validation.utils';
 import type { SubscriptionCreate } from '../types/domain';
 
 /**
@@ -13,44 +14,20 @@ export class SubscriptionCreateACL {
 	/**
 	 * Validate subscription data from gRPC
 	 */
-	static validate(grpc: CreateSubscriptionData): void {
-		validateRequiredString(grpc.clerkUserId, 'clerkUserId');
-		validateRequiredString(grpc.providerId, 'providerId');
-		validateSubscriptionData(grpc.data);
+	static validateIncoming(grpc: CreateSubscriptionData): void {
+		validateSchema(grpcSubscriptionCreateSchema, grpc);
 	}
 
 	/**
 	 * Transform subscription gRPC data to internal domain subscription create type
 	 */
 	static toDomain(grpc: CreateSubscriptionData): SubscriptionCreate {
-		this.validate(grpc);
+		this.validateIncoming(grpc);
 
 		return {
 			userId: grpc.clerkUserId,
 			providerId: grpc.providerId,
-			data: validateSubscriptionData(grpc.data),
-		};
-	}
-
-	/**
-	 * Validate domain subscription create data
-	 */
-	static validateDomain(domain: SubscriptionCreate): void {
-		validateRequiredString(domain.userId, 'userId');
-		validateRequiredString(domain.providerId, 'providerId');
-		validateSubscriptionData(domain.data);
-	}
-
-	/**
-	 * Transform internal domain subscription to gRPC format
-	 */
-	static toGrpc(domain: SubscriptionCreate): CreateSubscriptionData {
-		this.validateDomain(domain);
-
-		return {
-			clerkUserId: domain.userId,
-			providerId: domain.providerId,
-			data: domain.data,
+			data: grpc.data,
 		};
 	}
 }

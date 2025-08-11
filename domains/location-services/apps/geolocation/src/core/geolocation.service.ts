@@ -1,19 +1,23 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
-import { GeospatialQueryACL, LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import { GeospatialQueryACL } from '@venta/domains/location-services/contracts';
 import type {
 	GeospatialQuery,
 	LocationResult,
 	LocationUpdate,
 } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { EventService } from '@venta/nest/modules';
 
 @Injectable()
 export class GeolocationService {
 	private readonly logger = new Logger(GeolocationService.name);
 
-	constructor(@InjectRedis() private readonly redis: Redis) {}
+	constructor(
+		@InjectRedis() private readonly redis: Redis,
+		private readonly eventService: EventService,
+	) {}
 
 	/**
 	 * Update vendor location
@@ -31,6 +35,11 @@ export class GeolocationService {
 
 			// Update vendor location in Redis
 			await this.redis.geoadd('vendor_locations', request.coordinates.lng, request.coordinates.lat, request.entityId);
+
+			this.eventService.emit('location.vendor.location_updated', {
+				vendorId: request.entityId,
+				location: request.coordinates,
+			});
 
 			this.logger.log('Vendor location updated', {
 				vendorId: request.entityId,

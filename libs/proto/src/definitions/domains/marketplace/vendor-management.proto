@@ -9,8 +9,6 @@ service VendorManagementService {
   rpc GetVendorById (VendorIdentityData) returns (VendorLookupResponse) {}
   rpc CreateVendor (VendorCreateData) returns (VendorIdentityData) {}
   rpc UpdateVendor (VendorUpdateData) returns (shared.common.Empty) {}
-  rpc UpdateVendorLocation (VendorLocationUpdate) returns (shared.common.Empty) {}
-  rpc GetVendorsInArea (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
 // Service Function Types
@@ -40,22 +38,6 @@ message VendorUpdateData {
   string website = 5;
   string phone = 6;
   string imageUrl = 7;
-}
-
-// Vendor Location Operations
-
-message VendorLocationUpdate {
-    string vendorId = 1;
-    shared.location.Location coordinates = 2;
-}
-
-message VendorLocationRequest {
-    shared.location.Location ne = 1;
-    shared.location.Location sw = 2;
-}
-
-message VendorLocationResponse {
-    repeated Vendor vendors = 1;
 }
 
 // Helper Types

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { VendorCreate, VendorUpdate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, PrismaService } from '@venta/nest/modules';
-import { Vendor, VendorLocationRequest } from '@venta/proto/marketplace/vendor-management';
+import { Vendor } from '@venta/proto/marketplace/vendor-management';
 
 @Injectable()
 export class CoreService {
@@ -175,62 +175,6 @@ export class CoreService {
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'update_vendor',
 				vendorId: data.id,
-			});
-		}
-	}
-
-	/**
-	 * Get vendors within a geographic bounding box
-	 * Domain method for vendor discovery
-	 */
-	async getVendorsInArea(bounds: VendorLocationRequest): Promise<Vendor[]> {
-		this.logger.log('Getting vendors in geographic area', {
-			neBounds: `${bounds.ne.lat}, ${bounds.ne.long}`,
-			swBounds: `${bounds.sw.lat}, ${bounds.sw.long}`,
-		});
-
-		try {
-			// Get vendors within bounds using Prisma's spatial queries
-			const vendors = await this.prisma.db.vendor.findMany({
-				where: {
-					lat: {
-						gte: bounds.sw.lat,
-						lte: bounds.ne.lat,
-					},
-					long: {
-						gte: bounds.sw.long,
-						lte: bounds.ne.long,
-					},
-				},
-			});
-
-			return vendors.map((vendor) => ({
-				id: vendor.id,
-				name: vendor.name,
-				description: vendor.description || '',
-				email: vendor.email,
-				phone: vendor.phone || '',
-				website: vendor.website || '',
-				isOpen: vendor.isOpen,
-				primaryImage: vendor.primaryImage || '',
-				coordinates:
-					vendor.lat && vendor.long
-						? {
-								lat: vendor.lat,
-								long: vendor.long,
-							}
-						: undefined,
-				createdAt: vendor.createdAt.toISOString(),
-				updatedAt: vendor.updatedAt.toISOString(),
-			}));
-		} catch (error) {
-			this.logger.error('Failed to get vendors in area', error.stack, {
-				bounds,
-				error,
-			});
-			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
-				operation: 'get_vendors_in_area',
-				message: 'Failed to query vendors in area',
 			});
 		}
 	}

@@ -5,8 +5,9 @@ package marketplace.user_management;
 import "shared/common.proto";
 
 service UserManagementService {
-  rpc HandleUserCreated (UserIdentityData) returns (CreateUserResponse) {}
-  rpc HandleUserDeleted (UserIdentityData) returns (CreateUserResponse) {}
+  rpc HandleUserCreated (UserIdentityData) returns (shared.common.Empty) {}
+  rpc HandleUserDeleted (UserIdentityData) returns (shared.common.Empty) {}
+  // TODO: Get the real shape of subscription data
   rpc HandleSubscriptionCreated (CreateSubscriptionData) returns (CreateSubscriptionResponse) {}
   rpc GetUserVendors (UserIdentityData) returns (VendorList) {}
 }
@@ -14,10 +15,6 @@ service UserManagementService {
 // Service Function Types
 message UserIdentityData {
     string id = 1;
-}
-
-message CreateUserResponse {
-    string message = 1;
 }
 
 message CreateSubscriptionData {

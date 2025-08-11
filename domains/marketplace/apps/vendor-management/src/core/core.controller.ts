@@ -1,23 +1,14 @@
+import { Empty } from 'libs/proto/src/lib/shared/common';
 import { Metadata } from '@grpc/grpc-js';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import {
-	VendorCreateACL,
-	VendorGeospatialBoundsACL,
-	VendorLocationUpdateACL,
-	VendorLookupACL,
-	VendorUpdateACL,
-} from '@venta/domains/marketplace/contracts';
+import { VendorCreateACL, VendorLookupACL, VendorUpdateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
-	Empty,
-	MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
+	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorCreateData,
 	VendorIdentityData,
-	VendorLocationRequest,
-	VendorLocationResponse,
-	VendorLocationUpdate,
 	VendorLookupResponse,
 	VendorManagementServiceController,
 	VendorUpdateData,
@@ -39,7 +30,7 @@ export class CoreController implements VendorManagementServiceController {
 		private readonly locationService: LocationService,
 	) {}
 
-	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorById')
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	async getVendorById(request: VendorIdentityData): Promise<VendorLookupResponse> {
 		this.logger.debug('Getting vendor by ID', { vendorId: request.id });
 
@@ -71,7 +62,7 @@ export class CoreController implements VendorManagementServiceController {
 		}
 	}
 
-	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'createVendor')
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	async createVendor(request: VendorCreateData, metadata: Metadata): Promise<VendorIdentityData> {
 		this.logger.debug('Creating new vendor');
 
@@ -84,6 +75,7 @@ export class CoreController implements VendorManagementServiceController {
 			const domainRequest = VendorCreateACL.toDomain(request);
 
 			const vendorId = await this.coreService.createVendor(domainRequest, authenticatedUser.id);
+
 			return { id: vendorId };
 		} catch (error) {
 			this.logger.error('Failed to create vendor', {
@@ -97,7 +89,7 @@ export class CoreController implements VendorManagementServiceController {
 		}
 	}
 
-	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'updateVendor')
+	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	async updateVendor(request: VendorUpdateData, metadata: Metadata): Promise<Empty> {
 		this.logger.debug('Updating vendor', { vendorId: request.id });
 
@@ -122,62 +114,6 @@ export class CoreController implements VendorManagementServiceController {
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'update_vendor',
 				vendorId: request.id,
-			});
-		}
-	}
-
-	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'updateVendorLocation')
-	async updateVendorLocation(request: VendorLocationUpdate): Promise<Empty> {
-		this.logger.debug('Updating vendor location', {
-			location: `${request.coordinates?.lat}, ${request.coordinates?.long}`,
-			vendorId: request.vendorId,
-		});
-
-		try {
-			// Validate and transform request
-			const domainRequest = VendorLocationUpdateACL.toDomain(request);
-
-			await this.locationService.updateVendorLocation(domainRequest);
-			return {};
-		} catch (error) {
-			this.logger.error('Failed to update vendor location', {
-				error: error.message,
-				location: request.coordinates,
-				vendorId: request.vendorId,
-			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
-				operation: 'update_vendor_location',
-				vendorId: request.vendorId,
-			});
-		}
-	}
-
-	@GrpcMethod(MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME, 'getVendorsInArea')
-	async getVendorsInArea(request: VendorLocationRequest): Promise<VendorLocationResponse> {
-		this.logger.debug('Getting vendors in area', {
-			neBounds: `${request.ne?.lat}, ${request.ne?.long}`,
-			swBounds: `${request.sw?.lat}, ${request.sw?.long}`,
-		});
-
-		try {
-			// Validate and transform request
-			const domainRequest = VendorGeospatialBoundsACL.toDomain(request);
-
-			const vendors = await this.coreService.getVendorsInArea(domainRequest);
-			return { vendors };
-		} catch (error) {
-			this.logger.error('Failed to get vendors in area', {
-				error: error.message,
-				neBounds: request.ne,
-				swBounds: request.sw,
-			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
-				operation: 'get_vendors_in_area',
-				message: 'Failed to query vendors in area',
 			});
 		}
 	}

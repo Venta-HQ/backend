@@ -6,21 +6,17 @@ import type {
 	VendorLocationUpdate,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
+import { validateSchema } from '@venta/utils';
 // Validation utilities
 import {
-	validateCoordinates,
-	validateEmail,
-	validateOptionalEmail,
-	validateRequiredString,
-} from '../schemas/validation.utils';
+	grpcVendorCreateSchema,
+	grpcVendorLocationRequestSchema,
+	grpcVendorLocationUpdateSchema,
+	grpcVendorLookupSchema,
+	grpcVendorUpdateSchema,
+} from '../schemas/vendor.schemas';
 // Domain types (what gRPC maps to)
-import type {
-	VendorCreate,
-	VendorLocationChange,
-	VendorLocationQuery,
-	VendorLookup,
-	VendorUpdate,
-} from '../types/domain';
+import type { VendorCreate, VendorLookup, VendorUpdate } from '../types/domain';
 
 // ============================================================================
 // VENDOR ACL - Bidirectional gRPC ↔ Domain transformation
@@ -32,28 +28,15 @@ import type {
  */
 export class VendorLookupACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: { id: string }): void {
-		validateRequiredString(grpc.id, 'id');
+	static validateIncoming(grpc: VendorIdentityData): void {
+		validateSchema(grpcVendorLookupSchema, grpc);
 	}
 
-	static toDomain(grpc: { id: string }): VendorLookup {
-		this.validate(grpc);
+	static toDomain(grpc: VendorIdentityData): VendorLookup {
+		this.validateIncoming(grpc);
 
 		return {
 			vendorId: grpc.id,
-		};
-	}
-
-	// Domain → gRPC (outbound)
-	static validateDomain(domain: VendorLookup): void {
-		validateRequiredString(domain.vendorId, 'vendorId');
-	}
-
-	static toGrpc(domain: VendorLookup): VendorIdentityData {
-		this.validateDomain(domain);
-
-		return {
-			id: domain.vendorId,
 		};
 	}
 }
@@ -64,13 +47,12 @@ export class VendorLookupACL {
  */
 export class VendorCreateACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: VendorCreateData): void {
-		validateRequiredString(grpc.name, 'name');
-		validateEmail(grpc.email, 'email');
+	static validateIncoming(grpc: VendorCreateData): void {
+		validateSchema(grpcVendorCreateSchema, grpc);
 	}
 
 	static toDomain(grpc: VendorCreateData): VendorCreate {
-		this.validate(grpc);
+		this.validateIncoming(grpc);
 
 		return {
 			name: grpc.name,
@@ -81,25 +63,6 @@ export class VendorCreateACL {
 			imageUrl: grpc.profileImage,
 		};
 	}
-
-	// Domain → gRPC (outbound)
-	static validateDomain(domain: VendorCreate): void {
-		validateRequiredString(domain.name, 'name');
-		validateEmail(domain.email, 'email');
-	}
-
-	static toGrpc(domain: VendorCreate): VendorCreateData {
-		this.validateDomain(domain);
-
-		return {
-			name: domain.name,
-			description: domain.description,
-			email: domain.email,
-			phone: domain.phone,
-			website: domain.website,
-			profileImage: domain.imageUrl,
-		};
-	}
 }
 
 /**
@@ -108,14 +71,12 @@ export class VendorCreateACL {
  */
 export class VendorUpdateACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: VendorUpdateData): void {
-		validateRequiredString(grpc.id, 'id');
-		validateRequiredString(grpc.name, 'name');
-		validateOptionalEmail(grpc.email, 'email');
+	static validateIncoming(grpc: VendorUpdateData): void {
+		validateSchema(grpcVendorUpdateSchema, grpc);
 	}
 
 	static toDomain(grpc: VendorUpdateData): VendorUpdate {
-		this.validate(grpc);
+		this.validateIncoming(grpc);
 
 		return {
 			id: grpc.id,
@@ -127,27 +88,6 @@ export class VendorUpdateACL {
 			imageUrl: grpc.imageUrl,
 		};
 	}
-
-	// Domain → gRPC (outbound)
-	static validateDomain(domain: VendorUpdate): void {
-		validateRequiredString(domain.id, 'id');
-		validateRequiredString(domain.name, 'name');
-		validateOptionalEmail(domain.email, 'email');
-	}
-
-	static toGrpc(domain: VendorUpdate): VendorUpdateData {
-		this.validateDomain(domain);
-
-		return {
-			id: domain.id,
-			name: domain.name,
-			description: domain.description,
-			email: domain.email,
-			phone: domain.phone,
-			website: domain.website,
-			imageUrl: domain.imageUrl,
-		};
-	}
 }
 
 /**
@@ -156,35 +96,16 @@ export class VendorUpdateACL {
  */
 export class VendorLocationUpdateACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: VendorLocationUpdate): void {
-		validateRequiredString(grpc.vendorId, 'vendorId');
-		validateCoordinates(grpc.coordinates, 'coordinates');
+	static validateIncoming(grpc: VendorLocationUpdate): void {
+		validateSchema(grpcVendorLocationUpdateSchema, grpc);
 	}
 
 	static toDomain(grpc: VendorLocationUpdate): VendorLocationUpdate {
-		this.validate(grpc);
+		this.validateIncoming(grpc);
 
 		return {
 			vendorId: grpc.vendorId,
-			coordinates: validateCoordinates(grpc.coordinates, 'coordinates'),
-		};
-	}
-
-	// Domain → gRPC (outbound)
-	static validateDomain(domain: VendorLocationChange): void {
-		validateRequiredString(domain.vendorId, 'vendorId');
-		validateCoordinates(domain.coordinates, 'coordinates');
-	}
-
-	static toGrpc(domain: VendorLocationChange): VendorLocationUpdate {
-		this.validateDomain(domain);
-
-		return {
-			vendorId: domain.vendorId,
-			coordinates: {
-				lat: domain.coordinates.lat,
-				lng: domain.coordinates.lng,
-			},
+			coordinates: grpc.coordinates,
 		};
 	}
 }
@@ -195,38 +116,16 @@ export class VendorLocationUpdateACL {
  */
 export class VendorGeospatialBoundsACL {
 	// gRPC → Domain (inbound)
-	static validate(grpc: VendorLocationRequest): void {
-		validateCoordinates(grpc.ne, 'ne');
-		validateCoordinates(grpc.sw, 'sw');
+	static validateIncoming(grpc: VendorLocationRequest): void {
+		validateSchema(grpcVendorLocationRequestSchema, grpc);
 	}
 
 	static toDomain(grpc: VendorLocationRequest): VendorLocationRequest {
-		this.validate(grpc);
+		this.validateIncoming(grpc);
 
 		return {
-			ne: validateCoordinates(grpc.ne, 'ne'),
-			sw: validateCoordinates(grpc.sw, 'sw'),
-		};
-	}
-
-	// Domain → gRPC (outbound)
-	static validateDomain(domain: VendorLocationQuery): void {
-		validateCoordinates(domain.ne, 'ne');
-		validateCoordinates(domain.sw, 'sw');
-	}
-
-	static toGrpc(domain: VendorLocationQuery): VendorLocationRequest {
-		this.validateDomain(domain);
-
-		return {
-			ne: {
-				lat: domain.ne.lat,
-				lng: domain.ne.lng,
-			},
-			sw: {
-				lat: domain.sw.lat,
-				lng: domain.sw.lng,
-			},
+			ne: grpc.ne,
+			sw: grpc.sw,
 		};
 	}
 }

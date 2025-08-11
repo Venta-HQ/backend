@@ -8,16 +8,13 @@
 import type { Metadata } from "@grpc/grpc-js";
 import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
 import { Observable } from "rxjs";
+import { Empty } from "../../shared/common";
 
 export const protobufPackage = "marketplace.user_management";
 
 /** Service Function Types */
 export interface UserIdentityData {
   id: string;
-}
-
-export interface CreateUserResponse {
-  message: string;
 }
 
 export interface CreateSubscriptionData {
@@ -49,9 +46,11 @@ export interface UserVendor {
 export const MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME = "marketplace.user_management";
 
 export interface UserManagementServiceClient {
-  handleUserCreated(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
+  handleUserCreated(request: UserIdentityData, metadata?: Metadata): Observable<Empty>;
 
-  handleUserDeleted(request: UserIdentityData, metadata?: Metadata): Observable<CreateUserResponse>;
+  handleUserDeleted(request: UserIdentityData, metadata?: Metadata): Observable<Empty>;
+
+  /** TODO: Get the real shape of subscription data */
 
   handleSubscriptionCreated(
     request: CreateSubscriptionData,
@@ -62,15 +61,11 @@ export interface UserManagementServiceClient {
 }
 
 export interface UserManagementServiceController {
-  handleUserCreated(
-    request: UserIdentityData,
-    metadata?: Metadata,
-  ): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
+  handleUserCreated(request: UserIdentityData, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
 
-  handleUserDeleted(
-    request: UserIdentityData,
-    metadata?: Metadata,
-  ): Promise<CreateUserResponse> | Observable<CreateUserResponse> | CreateUserResponse;
+  handleUserDeleted(request: UserIdentityData, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
+
+  /** TODO: Get the real shape of subscription data */
 
   handleSubscriptionCreated(
     request: CreateSubscriptionData,

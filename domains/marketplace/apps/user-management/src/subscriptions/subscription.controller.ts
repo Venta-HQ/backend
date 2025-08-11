@@ -1,12 +1,9 @@
+import { Empty } from 'libs/proto/src/lib/shared/common';
 import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { SubscriptionCreateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import {
-	CreateSubscriptionData,
-	CreateSubscriptionResponse,
-	USER_MANAGEMENT_SERVICE_NAME,
-} from '@venta/proto/marketplace/user-management';
+import { CreateSubscriptionData, USER_MANAGEMENT_SERVICE_NAME } from '@venta/proto/marketplace/user-management';
 import { SubscriptionService } from './subscription.service';
 
 @Controller()
@@ -16,7 +13,7 @@ export class SubscriptionController {
 	constructor(private readonly subscriptionService: SubscriptionService) {}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<CreateSubscriptionResponse> {
+	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<Empty> {
 		// Transform and validate gRPC data to domain format
 		const domainRequest = SubscriptionCreateACL.toDomain(request);
 
@@ -26,13 +23,6 @@ export class SubscriptionController {
 		});
 
 		try {
-			// Create an Integration record
-			await this.subscriptionService.createIntegration({
-				clerkUserId: domainRequest.userId,
-				data: domainRequest.data as any, // Convert to Prisma JSON format
-				providerId: domainRequest.providerId,
-			});
-
 			// Create a user subscription record
 			await this.subscriptionService.createUserSubscription({
 				clerkUserId: domainRequest.userId,

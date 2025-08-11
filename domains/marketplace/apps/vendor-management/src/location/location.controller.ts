@@ -33,27 +33,24 @@ export class LocationController implements OnModuleInit {
 		this.logger.log('Vendor location events controller initialized with DDD event patterns');
 	}
 
-	private async handleVendorLocationUpdate(data: {
-		data: EventDataMap['location.vendor.location_updated'];
-		subject: string;
-	}): Promise<void> {
-		const { data: event, subject } = data;
+	private async handleVendorLocationUpdate(data: EventDataMap['location.vendor.location_updated']): Promise<void> {
+		const { vendorId, location, timestamp } = data;
 		// Enhanced logging with domain context
-		this.logger.log(`Handling vendor location event: ${subject}`, {
-			vendorId: event.vendorId,
-			location: event.location,
-			timestamp: event.timestamp,
+		this.logger.log(`Handling vendor location event: location.vendor.location_updated`, {
+			vendorId,
+			location,
+			timestamp,
 		});
 
 		try {
-			await this.locationService.updateVendorLocationFromEvent(event.vendorId, {
-				lat: event.location.lat,
-				lng: event.location.lng,
+			await this.locationService.updateVendorLocation(vendorId, {
+				lat: location.lat,
+				lng: location.lng,
 			});
 		} catch (error) {
-			this.logger.error(`Failed to handle vendor location event: ${subject}`, {
+			this.logger.error(`Failed to handle vendor location event: location.vendor.location_updated`, {
 				error,
-				vendorId: event.vendorId,
+				vendorId,
 			});
 			throw error;
 		}

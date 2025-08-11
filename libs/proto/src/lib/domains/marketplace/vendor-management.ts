@@ -40,20 +40,6 @@ export interface VendorUpdateData {
   imageUrl: string;
 }
 
-export interface VendorLocationUpdate {
-  vendorId: string;
-  coordinates: Location | undefined;
-}
-
-export interface VendorLocationRequest {
-  ne: Location | undefined;
-  sw: Location | undefined;
-}
-
-export interface VendorLocationResponse {
-  vendors: Vendor[];
-}
-
 export interface Vendor {
   id: string;
   /** These lat/long values are used to show locations on the map without subscription to live location */
@@ -81,10 +67,6 @@ export interface VendorManagementServiceClient {
   createVendor(request: VendorCreateData, metadata?: Metadata): Observable<VendorIdentityData>;
 
   updateVendor(request: VendorUpdateData, metadata?: Metadata): Observable<Empty>;
-
-  updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Observable<Empty>;
-
-  getVendorsInArea(request: VendorLocationRequest, metadata?: Metadata): Observable<VendorLocationResponse>;
 }
 
 export interface VendorManagementServiceController {
@@ -99,24 +81,11 @@ export interface VendorManagementServiceController {
   ): Promise<VendorIdentityData> | Observable<VendorIdentityData> | VendorIdentityData;
 
   updateVendor(request: VendorUpdateData, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
-
-  updateVendorLocation(request: VendorLocationUpdate, metadata?: Metadata): Promise<Empty> | Observable<Empty> | Empty;
-
-  getVendorsInArea(
-    request: VendorLocationRequest,
-    metadata?: Metadata,
-  ): Promise<VendorLocationResponse> | Observable<VendorLocationResponse> | VendorLocationResponse;
 }
 
 export function VendorManagementServiceControllerMethods() {
   return function (constructor: Function) {
-    const grpcMethods: string[] = [
-      "getVendorById",
-      "createVendor",
-      "updateVendor",
-      "updateVendorLocation",
-      "getVendorsInArea",
-    ];
+    const grpcMethods: string[] = ["getVendorById", "createVendor", "updateVendor"];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
       GrpcMethod("VendorManagementService", method)(constructor.prototype[method], method, descriptor);

@@ -78,6 +78,6 @@ export interface UserLocationUpdate {
 	userId: string;
 	location: {
 		lat: number;
-		long: number;
+		lng: number;
 	};
 }

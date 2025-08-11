@@ -93,7 +93,7 @@ const ERROR_DEFINITIONS = {
 	// Authentication/Authorization (essential fields only)
 	ERR_UNAUTHORIZED: {
 		message: 'Authentication required',
-		data: {} as Record<string, never>, // No context needed - just needs auth
+		data: {} as Record<string, any>, // No context needed - just needs auth
 	},
 	ERR_INSUFFICIENT_PERMISSIONS: {
 		message: 'Insufficient permissions',
@@ -103,11 +103,11 @@ const ERROR_DEFINITIONS = {
 	},
 	ERR_INVALID_TOKEN: {
 		message: 'Invalid authentication token',
-		data: {} as Record<string, never>, // No context needed
+		data: {} as Record<string, any>, // No context needed
 	},
 	ERR_FORBIDDEN: {
 		message: 'Access forbidden',
-		data: {} as Record<string, never>, // No context needed
+		data: {} as Record<string, any>, // No context needed
 	},
 
 	// Input validation (essential fields only)
@@ -155,7 +155,7 @@ const ERROR_DEFINITIONS = {
 	// Database (essential fields only)
 	ERR_DB_CONNECTION: {
 		message: 'Database connection error',
-		data: {} as Record<string, never>, // No context needed
+		data: {} as Record<string, any>, // No context needed
 	},
 	ERR_DB_OPERATION: {
 		message: 'Database operation failed',
@@ -215,11 +215,11 @@ const ERROR_DEFINITIONS = {
 	// General (essential fields only)
 	ERR_INTERNAL: {
 		message: 'Internal server error',
-		data: {} as Record<string, never>, // No context needed - internal errors shouldn't expose details
+		data: {} as Record<string, any>, // No context needed - internal errors shouldn't expose details
 	},
 	ERR_UNKNOWN: {
 		message: 'Unknown error occurred',
-		data: {} as Record<string, never>, // No context needed - unknown means we don't know what to expose
+		data: {} as Record<string, any>, // No context needed - unknown means we don't know what to expose
 	},
 } as const;
 
@@ -251,7 +251,7 @@ export type ErrorDataMap = {
 /**
  * Conditional type: makes data parameter optional if error requires no data
  */
-type IsEmptyObject<T> = T extends Record<string, never> ? true : false;
+type IsEmptyObject<T> = T extends Record<string, any> ? true : false;
 
 export type OptionalDataParam<T extends AvailableErrorCodes> =
 	IsEmptyObject<ErrorDataMap[T]> extends true

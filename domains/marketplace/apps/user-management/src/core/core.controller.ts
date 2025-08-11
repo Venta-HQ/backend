@@ -1,14 +1,11 @@
+import { Empty } from 'libs/proto/src/lib/shared/common';
 import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
-import { UserVendorQueryACL } from '@venta/domains/marketplace/contracts';
+import { UserIdentityACL, UserVendorQueryACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
 // gRPC types (wire format)
-import {
-	MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
-	UserIdentityData,
-	VendorList,
-} from '@venta/proto/marketplace/user-management';
+import { USER_MANAGEMENT_SERVICE_NAME, UserIdentityData, VendorList } from '@venta/proto/marketplace/user-management';
 import { CoreService } from './core.service';
 
 /**
@@ -22,7 +19,67 @@ export class CoreController {
 
 	constructor(private readonly coreService: CoreService) {}
 
-	@GrpcMethod(MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME, 'getUserVendors')
+	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
+	async handleUserCreated(request: UserIdentityData): Promise<Empty> {
+		// Transform and validate gRPC data to domain format
+		const domainRequest = UserIdentityACL.toDomain(request);
+
+		this.logger.log(`Handling User Created Event`, {
+			userId: domainRequest.id,
+		});
+
+		try {
+			await this.coreService.handleUserCreated(domainRequest.id);
+
+			this.logger.log('User created successfully', {
+				userId: domainRequest.id,
+			});
+
+			return;
+		} catch (error) {
+			this.logger.error('Failed to create user', {
+				error: error.message,
+				userId: domainRequest.id,
+			});
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'create_user',
+				userId: domainRequest.id,
+			});
+		}
+	}
+
+	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
+	async handleUserDeleted(request: UserIdentityData): Promise<Empty> {
+		// Transform and validate gRPC data to domain format
+		const domainRequest = UserIdentityACL.toDomain(request);
+
+		this.logger.log(`Handling User Deleted Event`, {
+			userId: domainRequest.id,
+		});
+
+		try {
+			await this.coreService.handleUserDeleted(domainRequest.id);
+
+			this.logger.log('User deleted successfully', {
+				userId: domainRequest.id,
+			});
+
+			return;
+		} catch (error) {
+			this.logger.error('Failed to delete user', {
+				error: error.message,
+				userId: domainRequest.id,
+			});
+			if (error instanceof AppError) throw error;
+			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
+				operation: 'delete_user',
+				userId: domainRequest.id,
+			});
+		}
+	}
+
+	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
 	async getUserVendors(request: UserIdentityData): Promise<VendorList> {
 		// Validate and transform request
 		const domainRequest = UserVendorQueryACL.toDomain(request);
