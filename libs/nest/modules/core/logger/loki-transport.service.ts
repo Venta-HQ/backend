@@ -30,6 +30,7 @@ export class LokiTransportService {
 	private batchTimeout: NodeJS.Timeout | null = null;
 	private readonly BATCH_SIZE = 10;
 	private readonly BATCH_INTERVAL = 5000; // 5 seconds
+	private microsecondCounter = 0; // Counter to ensure unique timestamps
 
 	constructor(
 		private readonly configService: ConfigService,
@@ -118,8 +119,11 @@ export class LokiTransportService {
 				streams.set(labelKey, []);
 			}
 
-			const timestamp = Math.floor(Date.now() * 1000000).toString();
-			streams.get(labelKey).push([timestamp, JSON.stringify(log)]);
+			// Use the original timestamp from when the log was created (preserves order)
+			// Add microsecond counter to ensure unique timestamps for same-millisecond logs
+			const originalTimestamp = new Date(log.timestamp).getTime() * 1000000; // Convert to nanoseconds
+			const uniqueTimestamp = originalTimestamp + (this.microsecondCounter++ % 1000000); // Add microseconds
+			streams.get(labelKey).push([uniqueTimestamp.toString(), JSON.stringify(log)]);
 		});
 
 		return {
