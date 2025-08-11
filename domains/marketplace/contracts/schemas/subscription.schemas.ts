@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const grpcSubscriptionProviderDataSchema = z.object({
+const grpcSubscriptionProviderDataSchema = z.object({
 	eventId: z.string(),
 	productId: z.string(),
 	transactionId: z.string(),

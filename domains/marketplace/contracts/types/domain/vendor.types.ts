@@ -7,7 +7,6 @@
  * Mapping:
  * - VendorCreateData (gRPC) -> VendorCreate (Domain)
  * - VendorUpdateData (gRPC) -> VendorUpdate (Domain)
- * - VendorLocationUpdate (gRPC) -> VendorLocationChange (Domain)
  * - Vendor (gRPC) -> VendorEntity (Domain)
  */
 
@@ -57,18 +56,8 @@ export interface VendorEntity {
 }
 
 // ============================================================================
-// Location Operations (from gRPC types)
+// Shared Types
 // ============================================================================
-
-export interface VendorLocationChange {
-	vendorId: string;
-	coordinates: Coordinates;
-}
-
-export interface VendorLocationQuery {
-	ne: Coordinates;
-	sw: Coordinates;
-}
 
 export interface Coordinates {
 	lat: number;

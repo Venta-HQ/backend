@@ -18,21 +18,6 @@ export interface UserIdentity {
 }
 
 // ============================================================================
-// User Profile (internal representation)
-// ============================================================================
-
-export interface User {
-	id: string;
-	email: string;
-	firstName?: string;
-	lastName?: string;
-	imageUrl?: string;
-	createdAt: string;
-	updatedAt: string;
-	isActive: boolean;
-}
-
-// ============================================================================
 // Subscription Management (from gRPC CreateSubscriptionData)
 // ============================================================================
 
@@ -59,25 +44,4 @@ export interface UserVendorQuery {
 export interface UserVendorResult {
 	id: string;
 	name: string;
-}
-
-// ============================================================================
-// User Registration (for internal user creation)
-// ============================================================================
-
-export interface UserRegistrationRequest {
-	clerkId: string;
-	source: 'clerk_webhook' | 'manual';
-}
-
-// ============================================================================
-// User Location (for location updates)
-// ============================================================================
-
-export interface UserLocationUpdate {
-	userId: string;
-	location: {
-		lat: number;
-		lng: number;
-	};
 }

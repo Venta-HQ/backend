@@ -2,7 +2,7 @@
 import type { UserIdentityData } from '@venta/proto/marketplace/user-management';
 // Validation utilities
 import { validateSchema } from '@venta/utils';
-import { grpcUserIdentitySchema } from '../schemas/user.acl';
+import { grpcUserIdentitySchema } from '../schemas/user.schemas';
 // Domain types (what gRPC maps to)
 import type { UserIdentity, UserVendorQuery } from '../types/domain';
 

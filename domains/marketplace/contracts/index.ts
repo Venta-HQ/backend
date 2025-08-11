@@ -14,16 +14,10 @@
 export { UserVendorQueryACL } from './acl/user.acl';
 
 // Vendor-related ACL classes (bidirectional gRPC ↔ Domain)
-export {
-	VendorLookupACL,
-	VendorCreateACL,
-	VendorUpdateACL,
-	VendorLocationUpdateACL,
-	VendorGeospatialBoundsACL,
-} from './acl/vendor.acl';
+export { VendorLookupACL, VendorCreateACL, VendorUpdateACL } from './acl/vendor.acl';
 
 // Authentication-related ACL classes (bidirectional gRPC ↔ Domain)
-export { UserIdentityACL } from './acl/auth.acl';
+export { UserIdentityACL } from './acl/user.acl';
 
 // Subscription-related ACL classes (bidirectional gRPC ↔ Domain)
 export { SubscriptionCreateACL } from './acl/subscription.acl';

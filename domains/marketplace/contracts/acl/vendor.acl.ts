@@ -2,19 +2,11 @@
 import type {
 	VendorCreateData,
 	VendorIdentityData,
-	VendorLocationRequest,
-	VendorLocationUpdate,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
 import { validateSchema } from '@venta/utils';
 // Validation utilities
-import {
-	grpcVendorCreateSchema,
-	grpcVendorLocationRequestSchema,
-	grpcVendorLocationUpdateSchema,
-	grpcVendorLookupSchema,
-	grpcVendorUpdateSchema,
-} from '../schemas/vendor.schemas';
+import { grpcVendorCreateSchema, grpcVendorLookupSchema, grpcVendorUpdateSchema } from '../schemas/vendor.schemas';
 // Domain types (what gRPC maps to)
 import type { VendorCreate, VendorLookup, VendorUpdate } from '../types/domain';
 
@@ -86,46 +78,6 @@ export class VendorUpdateACL {
 			phone: grpc.phone,
 			website: grpc.website,
 			imageUrl: grpc.imageUrl,
-		};
-	}
-}
-
-/**
- * Vendor Location Update ACL
- * Bidirectional validation and transformation for vendor location operations
- */
-export class VendorLocationUpdateACL {
-	// gRPC → Domain (inbound)
-	static validateIncoming(grpc: VendorLocationUpdate): void {
-		validateSchema(grpcVendorLocationUpdateSchema, grpc);
-	}
-
-	static toDomain(grpc: VendorLocationUpdate): VendorLocationUpdate {
-		this.validateIncoming(grpc);
-
-		return {
-			vendorId: grpc.vendorId,
-			coordinates: grpc.coordinates,
-		};
-	}
-}
-
-/**
- * Vendor Geospatial Bounds ACL
- * Bidirectional validation and transformation for vendor location queries
- */
-export class VendorGeospatialBoundsACL {
-	// gRPC → Domain (inbound)
-	static validateIncoming(grpc: VendorLocationRequest): void {
-		validateSchema(grpcVendorLocationRequestSchema, grpc);
-	}
-
-	static toDomain(grpc: VendorLocationRequest): VendorLocationRequest {
-		this.validateIncoming(grpc);
-
-		return {
-			ne: grpc.ne,
-			sw: grpc.sw,
 		};
 	}
 }

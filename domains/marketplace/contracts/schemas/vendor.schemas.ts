@@ -22,22 +22,3 @@ export const grpcVendorUpdateSchema = z.object({
 	website: z.string().url(),
 	imageUrl: z.string(),
 });
-
-export const grpcVendorLocationUpdateSchema = z.object({
-	vendorId: z.string(),
-	coordinates: z.object({
-		lat: z.number(),
-		lng: z.number(),
-	}),
-});
-
-export const grpcVendorLocationRequestSchema = z.object({
-	ne: z.object({
-		lat: z.number(),
-		lng: z.number(),
-	}),
-	sw: z.object({
-		lat: z.number(),
-		lng: z.number(),
-	}),
-});
