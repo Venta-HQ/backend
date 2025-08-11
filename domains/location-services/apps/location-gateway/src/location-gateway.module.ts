@@ -16,17 +16,16 @@ import {
 	PrometheusService,
 	RedisModule,
 } from '@venta/nest/modules';
-// TODO: Fix proto imports when geolocation proto is available
-// import {
-// 	GEOLOCATION_PACKAGE_NAME,
-// 	GEOLOCATION_SERVICE_NAME,
-// 	GeolocationServiceClient,
-// } from '@venta/proto/location-services/geolocation';
-import { UserLocationGateway } from './core/gateways/user-location.gateway';
-import { VendorLocationGateway } from './core/gateways/vendor-location.gateway';
-import { createWebSocketMetrics, WEBSOCKET_METRICS } from './core/metrics.provider';
-import { UserConnectionManagerService } from './core/user-connection-manager.service';
-import { VendorConnectionManagerService } from './core/vendor-connection-manager.service';
+import {
+	GEOLOCATION_SERVICE_NAME,
+	GeolocationServiceClient,
+	LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
+} from '@venta/proto/location-services/geolocation';
+import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
+import { UserLocationGateway } from './user/user.gateway';
+import { UserConnectionManagerService } from './user/user.manager';
+import { VendorLocationGateway } from './vendor/vendor.gateway';
+import { VendorConnectionManagerService } from './vendor/vendor.manager';
 
 @Module({
 	imports: [
@@ -35,14 +34,14 @@ import { VendorConnectionManagerService } from './core/vendor-connection-manager
 				RedisModule,
 				ClerkModule.register(),
 				ConfigModule,
-				// TODO: Add geolocation gRPC client when needed
-				// GrpcInstanceModule.register<any>({
-				// 	proto: 'location.proto',
-				// 	protoPackage: 'geolocation',
-				// 	provide: 'GEOLOCATION_SERVICE',
-				// 	urlFactory: (configService: ConfigService) =>
-				// 		configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
-				// }),
+				GrpcInstanceModule.register<GeolocationServiceClient>({
+					proto: 'geolocation.proto',
+					protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
+					provide: GEOLOCATION_SERVICE_NAME,
+					serviceName: GEOLOCATION_SERVICE_NAME,
+					urlFactory: (configService: ConfigService) =>
+						configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
+				}),
 				ClientsModule.registerAsync({
 					clients: [
 						{
@@ -59,7 +58,7 @@ import { VendorConnectionManagerService } from './core/vendor-connection-manager
 					],
 				}),
 			],
-			appName: APP_NAMES.WEBSOCKET_GATEWAY,
+			appName: APP_NAMES.LOCATION_GATEWAY,
 			protocol: 'http',
 		}),
 	],
@@ -69,10 +68,12 @@ import { VendorConnectionManagerService } from './core/vendor-connection-manager
 			provide: WEBSOCKET_METRICS,
 			useFactory: createWebSocketMetrics,
 		},
-		UserConnectionManagerService,
-		VendorConnectionManagerService,
+		// Gateways
 		UserLocationGateway,
 		VendorLocationGateway,
+		// Connection Managers
+		UserConnectionManagerService,
+		VendorConnectionManagerService,
 		// Authentication and rate limiting guards
 		WsAuthGuard,
 		WsRateLimitGuardLenient,
@@ -81,4 +82,4 @@ import { VendorConnectionManagerService } from './core/vendor-connection-manager
 		WsRateLimitGuardStrict,
 	],
 })
-export class WebsocketGatewayModule {}
+export class LocationGatewayModule {}

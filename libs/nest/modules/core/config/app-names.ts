@@ -13,7 +13,7 @@ export const APP_NAMES = {
 	SUBSCRIPTION_WEBHOOKS: 'Subscription Webhooks Service',
 	USER: 'User Microservice',
 	VENDOR: 'Vendor Microservice',
-	WEBSOCKET_GATEWAY: 'Websocket Gateway Microservice',
+	LOCATION_GATEWAY: 'Location Gateway Microservice',
 } as const;
 
 export type AppName = (typeof APP_NAMES)[keyof typeof APP_NAMES];

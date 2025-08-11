@@ -1,6 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { BootstrapService } from '@venta/nest/modules';
-import { WebsocketGatewayModule } from './websocket-gateway.module';
+import { LocationGatewayModule } from './location-gateway.module';
 
 async function bootstrap() {
 	try {
@@ -10,8 +10,8 @@ async function bootstrap() {
 		// Bootstrap HTTP service with health checks included
 		await BootstrapService.bootstrapHttpService({
 			domain: 'location-services', // DDD domain for location services
-			module: WebsocketGatewayModule,
-			port: configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT') || 3003,
+			module: LocationGatewayModule,
+			port: configService.get('LOCATION_GATEWAY_SERVICE_PORT') || 3003,
 		});
 	} catch (error) {
 		console.error('Failed to start websocket-gateway service:', error);

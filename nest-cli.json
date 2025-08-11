@@ -49,14 +49,14 @@
 				"tsConfigPath": "domains/location-services/apps/geolocation/tsconfig.app.json"
 			}
 		},
-		"real-time-location": {
+		"location-gateway": {
 			"type": "application",
-			"root": "domains/location-services/apps/real-time",
+			"root": "domains/location-services/apps/location-gateway",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
 				"assets": ["libs/proto/src/definitions/domains/location-services/geolocation/geolocation.proto"],
-				"tsConfigPath": "domains/location-services/apps/real-time/tsconfig.app.json"
+				"tsConfigPath": "domains/location-services/apps/location-gateway/tsconfig.app.json"
 			}
 		},
 		"api-gateway": {

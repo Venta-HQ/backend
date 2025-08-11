@@ -7,15 +7,12 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { LocationUpdateACL, RealtimeMessageACL } from '@venta/domains/location-services/contracts';
-import type {
-	GeospatialQuery,
-	LocationUpdate,
-	RealtimeMessage,
-} from '@venta/domains/location-services/contracts/types/domain';
+import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import type { GeospatialQuery, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
-import { UserConnectionManagerService } from '../user-connection-manager.service';
+import { GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
+import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
 	namespace: 'user',
@@ -32,7 +29,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
-		private readonly geolocationService: any, // TODO: Import proper geolocation service type
+		private readonly geolocationService: GeolocationServiceClient,
 	) {}
 
 	/**
