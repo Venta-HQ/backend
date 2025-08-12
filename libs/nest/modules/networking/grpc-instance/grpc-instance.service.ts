@@ -8,7 +8,7 @@ import { retryObservable } from '@venta/utils';
 class GrpcInstance<T> {
 	private readonly logger = new Logger(GrpcInstance.name);
 	constructor(
-		@Inject(REQUEST) private readonly request: AuthenticatedRequest,
+		@Inject(REQUEST) private readonly request: Request,
 		private readonly service: T,
 	) {}
 
@@ -18,16 +18,16 @@ class GrpcInstance<T> {
 	): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
 		const metadata = new Metadata();
 
-		if (this.request.user?.id) {
-			metadata.set('x-request-id', this.request.user.id);
+		if ((this.request as any).user?.id) {
+			metadata.set('x-request-id', (this.request as any).user.id);
 		}
 
-		if (this.request.user?.clerkId) {
-			metadata.set('x-clerk-id', this.request.user.clerkId);
+		if ((this.request as any).user?.clerkId) {
+			metadata.set('x-clerk-id', (this.request as any).user.clerkId);
 		}
 
 		// Log the gRPC request being made
-		this.logger.log(`Making gRPC request to ${String(method)}`, { requestId: this.request.user?.id });
+		this.logger.log(`Making gRPC request to ${String(method)}`, { requestId: (this.request as any).user?.id });
 
 		// Adds our custom metadata
 		if (this.service[method]) {

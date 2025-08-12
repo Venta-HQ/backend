@@ -1,8 +1,8 @@
-import { dirname, join } from 'path';
 import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { ClientGrpc, ClientsModule, Transport } from '@nestjs/microservices';
+import { AuthenticatedRequest } from '@venta/nest/guards';
 import { ProtoPathUtil } from '@venta/utils';
 import GrpcInstance from './grpc-instance.service';
 
