@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AuthService } from '@venta/nest/guards/core';
 import { GrpcInstanceModule } from '@venta/nest/modules';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
@@ -50,6 +49,5 @@ import { VendorController } from './controllers/vendor/vendor.controller';
 		}),
 	],
 	controllers: [UploadController, UserController, VendorController],
-	providers: [AuthService], // AuthService needed for AuthGuard used in controllers
 })
 export class CoreModule {}
