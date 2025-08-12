@@ -1,14 +1,14 @@
 import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { AuthenticatedRequest } from '@venta/nest/guards';
+import { HttpRequest } from '@venta/apitypes';
 import { retryObservable } from '@venta/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 class GrpcInstance<T> {
 	private readonly logger = new Logger(GrpcInstance.name);
 	constructor(
-		@Inject(REQUEST) private readonly request: Request,
+		@Inject(REQUEST) private readonly request: HttpRequest,
 		private readonly service: T,
 	) {}
 
@@ -18,16 +18,17 @@ class GrpcInstance<T> {
 	): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
 		const metadata = new Metadata();
 
-		if ((this.request as any).user?.id) {
-			metadata.set('x-request-id', (this.request as any).user.id);
-		}
-
-		if ((this.request as any).user?.clerkId) {
-			metadata.set('x-clerk-id', (this.request as any).user.clerkId);
+		// Add authentication metadata if user exists (optional for public endpoints)
+		if (this.request.user?.id) {
+			metadata.set('x-user-id', this.request.user.id);
+			metadata.set('x-clerk-id', this.request.user.clerkId);
 		}
 
 		// Log the gRPC request being made
-		this.logger.log(`Making gRPC request to ${String(method)}`, { requestId: (this.request as any).user?.id });
+		this.logger.log(`Making gRPC request to ${String(method)}`, {
+			userId: this.request.user?.id,
+			method: String(method),
+		});
 
 		// Adds our custom metadata
 		if (this.service[method]) {

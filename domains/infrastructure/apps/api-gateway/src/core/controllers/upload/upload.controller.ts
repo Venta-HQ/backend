@@ -1,6 +1,7 @@
 import { lastValueFrom } from 'rxjs';
-import { Controller, Inject, Logger, Post, Query, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Inject, Logger, Post, Query, Req, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { HttpRequest } from '@venta/apitypes';
 import { FileUploadACL, ImageUploadQuery, imageUploadQuerySchema } from '@venta/domains/infrastructure/contracts';
 import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
@@ -47,6 +48,7 @@ export class UploadController {
 	async uploadImage(
 		@UploadedFile() file: Express.Multer.File,
 		@Query() _query: ImageUploadQuery,
+		@Req() req: HttpRequest,
 	): Promise<FileUploadResult> {
 		this.logger.debug('Handling image upload request', {
 			filename: file?.originalname,
@@ -71,7 +73,7 @@ export class UploadController {
 			// Transform domain to gRPC message using ACL
 			const grpcRequest = FileUploadACL.toGrpc(domainFile, {
 				type: FileType.AVATAR,
-				uploadedBy: 'system', // TODO: Get from auth context
+				uploadedBy: req.user?.id || 'anonymous',
 			});
 
 			const grpcResult = await lastValueFrom(this.fileManagementClient.invoke('uploadImage', grpcRequest));

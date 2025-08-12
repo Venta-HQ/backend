@@ -2,7 +2,7 @@ import { DynamicModule, Module, Scope } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { ClientGrpc, ClientsModule, Transport } from '@nestjs/microservices';
-import { AuthenticatedRequest } from '@venta/nest/guards';
+import { HttpRequest } from '@venta/apitypes';
 import { ProtoPathUtil } from '@venta/utils';
 import GrpcInstance from './grpc-instance.service';
 
@@ -57,7 +57,7 @@ export class GrpcInstanceModule {
 					inject: [REQUEST, `${serviceName}-client`],
 					provide,
 					scope: Scope.REQUEST,
-					useFactory: (req: Request, client: ClientGrpc) => {
+					useFactory: (req: HttpRequest, client: ClientGrpc) => {
 						const service = client.getService<T>(serviceName);
 						return new GrpcInstance(req, service);
 					},

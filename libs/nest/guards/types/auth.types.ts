@@ -1,25 +1,9 @@
-import { Request } from 'express';
 import { Socket } from 'socket.io';
 import { Metadata } from '@grpc/grpc-js';
+import type { AuthContext, AuthUser } from '@venta/apitypes';
 
-/**
- * Represents a user in the authentication system
- */
-export interface AuthUser {
-	id: string;
-	clerkId: string;
-	metadata?: Record<string, unknown>;
-}
-
-/**
- * Protocol-agnostic authentication context
- */
-export interface AuthContext {
-	user: AuthUser;
-	correlationId: string;
-	timestamp: number;
-	metadata?: Record<string, unknown>;
-}
+// Re-export HTTP request types from apitypes for convenience
+export type { HttpRequest, AuthenticatedRequest, AuthUser, AuthContext } from '@venta/apitypes';
 
 /**
  * Protocol-specific authentication metadata
@@ -38,14 +22,6 @@ export enum AuthProtocol {
 	HTTP = 'http',
 	WEBSOCKET = 'websocket',
 	GRPC = 'grpc',
-}
-
-/**
- * Express request with auth context
- */
-export interface AuthenticatedRequest extends Request {
-	user?: AuthUser;
-	authContext?: AuthContext;
 }
 
 /**

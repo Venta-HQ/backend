@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
+import { MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME } from '@venta/proto/marketplace/vendor-management';
 import { VendorManagementModule } from './vendor-management.module';
 
 async function bootstrap() {
@@ -18,8 +19,8 @@ async function bootstrap() {
 			main: {
 				defaultUrl: 'localhost:5004',
 				module: VendorManagementModule,
-				package: 'vendor',
-				protoPath: 'vendor.proto',
+				package: MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
+				protoPath: 'domains/marketplace/vendor-management.proto',
 				url: configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
 			},
 		});

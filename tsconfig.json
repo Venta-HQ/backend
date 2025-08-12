@@ -22,6 +22,8 @@
 			"@venta/proto/*": ["libs/proto/src/lib/domains/*.ts"],
 			"@venta/eventtypes": ["libs/eventtypes/src"],
 			"@venta/eventtypes/*": ["libs/eventtypes/src/*"],
+			"@venta/apitypes": ["libs/apitypes/src"],
+			"@venta/apitypes/*": ["libs/apitypes/src/*"],
 			"@venta/utils": ["libs/utils/src"],
 			"@venta/domains/*": ["domains/*"],
 			"@venta/test/helpers": ["test/helpers"],

@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { ExecutionContext, Injectable } from '@nestjs/common';
+import { HttpRequest } from '@venta/apitypes';
 import { RequestContextService } from '../../modules/networking/request-context';
 import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
@@ -8,26 +9,29 @@ import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.
  */
 class HttpRequestIdExtractor implements RequestIdExtractor {
 	extractId(context: ExecutionContext): string | undefined {
-		const request = context.switchToHttp().getRequest();
+		const request: HttpRequest = context.switchToHttp().getRequest();
+
+		// Helper to normalize header values (can be string or string[])
+		const getHeaderValue = (value: string | string[] | undefined): string | undefined => {
+			if (Array.isArray(value)) return value[0];
+			return value;
+		};
 
 		// Try to get request ID from headers (X-Request-ID, X-Correlation-ID, etc.)
-		const requestId =
-			request.headers['x-request-id'] ||
-			request.headers['x-correlation-id'] ||
-			request.headers['request-id'] ||
-			request.headers['correlation-id'];
+		const requestId = getHeaderValue(request.headers['x-request-id'] || request.headers['request-id']);
 
-		// If no request ID provided, generate a new one for this request
-		if (!requestId) {
-			const newRequestId = randomUUID();
-			// Set it on the request for other parts of the app to use
-			request.requestId = newRequestId;
-			return newRequestId;
+		const correlationId = getHeaderValue(request.headers['x-correlation-id'] || request.headers['correlation-id']);
+
+		// Use request ID if available, otherwise use correlation ID, otherwise generate new
+		const finalRequestId = requestId || correlationId || randomUUID();
+
+		// Set both fields on the request for other parts of the app to use
+		request.requestId = finalRequestId;
+		if (correlationId) {
+			request.correlationId = correlationId;
 		}
 
-		// Set the provided request ID on the request object
-		request.requestId = requestId;
-		return requestId;
+		return finalRequestId;
 	}
 
 	getProtocolName(): string {

@@ -57,7 +57,6 @@ export class BootstrapModule {
 			}),
 			LoggerModule.register(),
 			PrometheusModule.register(),
-			PrismaModule.register(),
 		];
 	}
 
@@ -97,6 +96,7 @@ export class BootstrapModule {
 
 	private static getHttpModules(): any[] {
 		return [
+			PrismaModule.register(),
 			HealthCheckModule,
 			ClerkModule.register(),
 			RedisModule,
@@ -121,21 +121,15 @@ export class BootstrapModule {
 	}
 
 	private static getGrpcModules(): any[] {
-		// gRPC services typically need Clerk for auth and Redis for caching
-		// but don't need HTTP-specific modules like ThrottlerModule
-		return [ClerkModule.register(), RedisModule];
+		// gRPC services have minimal dependencies by default
+		// Individual services can import what they need (Prisma, Clerk, etc.)
+		return [];
 	}
 
 	private static getGrpcProviders(): Provider[] {
-		// gRPC services need AuthService for token validation
-		// Note: GrpcAuthGuard no longer exists - services handle auth manually or via interceptors
-		return [
-			AuthService,
-			{
-				provide: APP_INTERCEPTOR,
-				useClass: GrpcAuthInterceptor,
-			},
-		];
+		// gRPC services have minimal global providers by default
+		// Individual services can add interceptors and auth as needed
+		return [];
 	}
 
 	private static getNatsModules(): any[] {

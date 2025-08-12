@@ -84,10 +84,11 @@ export class BootstrapService {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
 			options: {
 				package: options.package,
-				protoPath: options.protoPath.includes('/')
-					? ProtoPathUtil.resolveFromDirname(__dirname, options.protoPath)
-					: ProtoPathUtil.resolveProtoPath(options.protoPath),
+				protoPath: ProtoPathUtil.resolveProtoPath(options.protoPath),
 				url: options.url || options.defaultUrl || 'localhost:5000',
+				loader: {
+					includeDirs: [ProtoPathUtil.getProtoRoot()],
+				},
 			},
 			transport: Transport.GRPC,
 		});
