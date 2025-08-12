@@ -60,5 +60,4 @@ export interface AuthenticatedSocket extends Socket {
  */
 export interface AuthenticatedMetadata {
 	user?: AuthUser;
-	authContext?: AuthContext;
 }

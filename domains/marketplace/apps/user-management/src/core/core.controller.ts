@@ -1,9 +1,8 @@
 import { Empty } from 'libs/proto/src/lib/shared/common';
-import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserIdentityACL, UserVendorQueryACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { GrpcAuthGuard } from '@venta/nest/guards';
 // gRPC types (wire format)
 import { USER_MANAGEMENT_SERVICE_NAME, UserIdentityData, VendorList } from '@venta/proto/marketplace/user-management';
 import { CoreService } from './core.service';
@@ -11,9 +10,9 @@ import { CoreService } from './core.service';
 /**
  * Core gRPC controller for user-management operations
  * Handles core user-management operations (getUserVendors)
+ * Note: gRPC auth is handled via interceptors, not guards
  */
 @Controller()
-@UseGuards(GrpcAuthGuard)
 export class CoreController {
 	private readonly logger = new Logger(CoreController.name);
 

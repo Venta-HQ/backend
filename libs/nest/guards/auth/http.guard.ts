@@ -2,8 +2,8 @@ import { randomUUID } from 'crypto';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { RequestContextService } from '@venta/nest/modules';
-import { AuthService } from '../core';
 import { AuthenticatedRequest, AuthProtocol } from '../types';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

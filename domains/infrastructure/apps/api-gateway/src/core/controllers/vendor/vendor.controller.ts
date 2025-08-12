@@ -23,7 +23,7 @@ export class VendorController {
 	constructor(@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>) {}
 
 	@Get('/:id')
-	@UseGuards(AuthGuard)
+	// @UseGuards(AuthGuard)
 	@UsePipes(new SchemaValidatorPipe(idParamSchema))
 	async getVendorById(@Param() params: IdParam) {
 		return await firstValueFrom(

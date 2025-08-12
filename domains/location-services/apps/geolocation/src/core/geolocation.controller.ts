@@ -1,4 +1,4 @@
-import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { Controller, Logger, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GeospatialQueryACL, LocationUpdateACL } from '@venta/domains/location-services/contracts';
 import type {
@@ -7,11 +7,9 @@ import type {
 	LocationUpdate,
 } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { GrpcAuthGuard } from '@venta/nest/guards';
 import { GeolocationService } from './geolocation.service';
 
 @Controller()
-@UseGuards(GrpcAuthGuard)
 export class GeolocationController {
 	private readonly logger = new Logger(GeolocationController.name);
 
