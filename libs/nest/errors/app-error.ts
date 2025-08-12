@@ -88,6 +88,12 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 			data: this.data,
 		};
 
+		console.log('response', {
+			code: grpcCode,
+			message: this.message,
+			details: response,
+		});
+
 		return new RpcException({
 			code: grpcCode,
 			message: this.message,

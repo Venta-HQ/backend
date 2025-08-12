@@ -10,7 +10,7 @@ import {
 	VendorUpdateRequestACL,
 	vendorUpdateSchema,
 } from '@venta/domains/infrastructure/contracts';
-import { AuthenticatedRequest, AuthGuard } from '@venta/nest/guards';
+import { AuthenticatedRequest, HttpAuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
@@ -23,7 +23,7 @@ export class VendorController {
 	constructor(@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>) {}
 
 	@Get('/:id')
-	// @UseGuards(AuthGuard)
+	// @UseGuards(HttpAuthGuard)
 	@UsePipes(new SchemaValidatorPipe(idParamSchema))
 	async getVendorById(@Param() params: IdParam) {
 		return await firstValueFrom(
@@ -37,7 +37,7 @@ export class VendorController {
 	}
 
 	@Post()
-	@UseGuards(AuthGuard)
+	@UseGuards(HttpAuthGuard)
 	@UsePipes(new SchemaValidatorPipe(vendorCreateSchema))
 	async createVendor(@Req() req: AuthenticatedRequest, @Body() data: VendorCreateBody) {
 		// Validate and transform to gRPC
@@ -62,7 +62,7 @@ export class VendorController {
 	}
 
 	@Put('/:id')
-	@UseGuards(AuthGuard)
+	@UseGuards(HttpAuthGuard)
 	async updateVendor(
 		@Param(new SchemaValidatorPipe(idParamSchema)) params: IdParam,
 		@Req() req: AuthenticatedRequest,

@@ -6,8 +6,8 @@ import { AuthenticatedRequest, AuthProtocol } from '../types';
 import { AuthService } from './auth.service';
 
 @Injectable()
-export class AuthGuard implements CanActivate {
-	private readonly logger = new Logger(AuthGuard.name);
+export class HttpAuthGuard implements CanActivate {
+	private readonly logger = new Logger(HttpAuthGuard.name);
 
 	constructor(
 		private readonly authService: AuthService,

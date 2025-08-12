@@ -18,8 +18,6 @@ export class CoreService {
 	 * Domain method for vendor lookup
 	 */
 	async getVendorById(vendorId: string): Promise<Vendor | null> {
-		this.logger.log('Getting vendor by ID', { vendorId });
-
 		try {
 			const vendor = await this.prisma.db.vendor.findUnique({
 				where: { id: vendorId },

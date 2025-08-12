@@ -24,6 +24,10 @@ class GrpcInstance<T> {
 			metadata.set('x-clerk-id', this.request.user.clerkId);
 		}
 
+		if (this.request.requestId) {
+			metadata.set('x-request-id', this.request.requestId);
+		}
+
 		// Log the gRPC request being made
 		this.logger.log(`Making gRPC request to ${String(method)}`, {
 			userId: this.request.user?.id,

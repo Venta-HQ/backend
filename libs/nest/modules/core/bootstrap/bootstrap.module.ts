@@ -1,10 +1,9 @@
 import { DynamicModule, Module, Provider } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ErrorHandlingModule } from '@venta/nest/errors';
-import { AuthGuard, AuthService, WsAuthGuard } from '@venta/nest/guards';
-import { GrpcAuthInterceptor } from '@venta/nest/interceptors';
+import { AuthService, GrpcAuthGuard, HttpAuthGuard, WsAuthGuard } from '@venta/nest/guards';
 import {
 	ClerkModule,
 	HealthCheckModule,
@@ -51,7 +50,7 @@ export class BootstrapModule {
 	private static getBaseModules(options: BootstrapOptions): any[] {
 		return [
 			ConfigModule,
-			ErrorHandlingModule,
+			ErrorHandlingModule.forProtocol(options.protocol),
 			HealthModule.forRoot({
 				additionalChecks: options.healthChecks,
 			}),
@@ -112,7 +111,7 @@ export class BootstrapModule {
 	private static getHttpProviders(): Provider[] {
 		return [
 			AuthService,
-			AuthGuard,
+			HttpAuthGuard,
 			{
 				provide: APP_GUARD,
 				useClass: ThrottlerGuard,
@@ -128,8 +127,8 @@ export class BootstrapModule {
 
 	private static getGrpcProviders(): Provider[] {
 		// gRPC services have minimal global providers by default
-		// Individual services can add interceptors and auth as needed
-		return [];
+		// Exception handling is now provided by ErrorHandlingModule.forProtocol('grpc')
+		return [GrpcAuthGuard];
 	}
 
 	private static getNatsModules(): any[] {

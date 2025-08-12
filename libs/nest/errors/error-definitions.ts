@@ -158,7 +158,7 @@ const ERROR_DEFINITIONS = {
 		data: {} as Record<string, any>, // No context needed
 	},
 	ERR_DB_OPERATION: {
-		message: 'Database operation failed',
+		message: 'Database operation failed: {operation}',
 		data: {} as {
 			operation: string; // What database operation failed
 		},

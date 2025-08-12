@@ -103,7 +103,42 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 
 		if (exception instanceof RpcException) {
-			return AppError.internal(ErrorCodes.ERR_INTERNAL);
+			const rpcError = exception.getError() as any;
+
+			// Try to extract AppError details from RpcException
+			if (rpcError && rpcError.details) {
+				const details = rpcError.details;
+
+				// Check if details contains AppError structure (could be object or JSON string)
+				let parsedDetails = details;
+				if (typeof details === 'string') {
+					try {
+						parsedDetails = JSON.parse(details);
+					} catch (parseError) {
+						// Details might not be JSON, continue with original
+					}
+				}
+
+				// Check if this contains AppError structure
+				if (parsedDetails && parsedDetails.errorCode && parsedDetails.errorType) {
+					const appError = AppError.internal(parsedDetails.errorCode, parsedDetails.data || {});
+
+					// Restore original error type and message
+					Object.defineProperties(appError, {
+						errorType: { value: parsedDetails.errorType, writable: false },
+						message: { value: rpcError.message || parsedDetails.message, writable: false },
+						timestamp: { value: parsedDetails.timestamp || new Date().toISOString(), writable: false },
+					});
+
+					return appError;
+				}
+			}
+
+			// Fallback to generic internal error if we can't parse the details
+			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
+				originalRpcCode: rpcError?.code,
+				originalMessage: rpcError?.message || exception.message,
+			});
 		}
 
 		if (exception instanceof WsException) {
@@ -146,8 +181,6 @@ export class AppExceptionFilter implements ExceptionFilter {
 		}
 
 		const grpcException = (error as any).toGrpcException();
-		// Error is created but not used directly - it's thrown by the framework
-		grpcException.getError();
 
 		// For gRPC, we need to throw the exception to be handled by the gRPC framework
 		throw grpcException;

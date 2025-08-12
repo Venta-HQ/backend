@@ -1,10 +1,10 @@
 import { Empty } from 'libs/proto/src/lib/shared/common';
 import { Metadata } from '@grpc/grpc-js';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorCreateACL, VendorLookupACL, VendorUpdateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedGrpcContext } from '@venta/nest/guards';
+import { AuthenticatedGrpcContext, GrpcAuthGuard } from '@venta/nest/guards';
 import { GrpcRequestContext } from '@venta/nest/interceptors';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
@@ -23,6 +23,7 @@ import { CoreService } from './core.service';
  * Note: gRPC auth is handled via interceptors, not guards
  */
 @Controller()
+@UseGuards(GrpcAuthGuard)
 export class CoreController implements VendorManagementServiceController {
 	private readonly logger = new Logger(CoreController.name);
 
@@ -50,12 +51,18 @@ export class CoreController implements VendorManagementServiceController {
 
 			return { vendor };
 		} catch (error) {
-			this.logger.error('Failed to get vendor', error.stack, {
+			// If it's already an AppError (domain error), just re-throw it
+			// The exception filter will handle logging and response formatting
+			if (error instanceof AppError) {
+				throw error;
+			}
+
+			// Only log unexpected (non-domain) errors at the controller level
+			this.logger.error('Unexpected error in getVendorById', error.stack, {
 				error: error.message,
 				vendorId: request.id,
 			});
 
-			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'get_vendor_by_id',
 				vendorId: request.id,
@@ -79,11 +86,16 @@ export class CoreController implements VendorManagementServiceController {
 
 			return { id: vendorId };
 		} catch (error) {
-			this.logger.error('Failed to create vendor', error.stack, {
+			// If it's already an AppError (domain error), just re-throw it
+			if (error instanceof AppError) {
+				throw error;
+			}
+
+			// Only log unexpected (non-domain) errors
+			this.logger.error('Unexpected error in createVendor', error.stack, {
 				error: error.message,
 			});
 
-			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'create_vendor',
 			});
@@ -106,12 +118,17 @@ export class CoreController implements VendorManagementServiceController {
 
 			return;
 		} catch (error) {
-			this.logger.error('Failed to update vendor', error.stack, {
+			// If it's already an AppError (domain error), just re-throw it
+			if (error instanceof AppError) {
+				throw error;
+			}
+
+			// Only log unexpected (non-domain) errors
+			this.logger.error('Unexpected error in updateVendor', error.stack, {
 				error: error.message,
 				vendorId: request.id,
 			});
 
-			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'update_vendor',
 				vendorId: request.id,
