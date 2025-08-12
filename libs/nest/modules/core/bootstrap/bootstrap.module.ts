@@ -1,12 +1,17 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ErrorHandlingModule } from '@venta/nest/errors';
+import { AuthGuard, AuthService } from '@venta/nest/guards';
 import {
+	ClerkModule,
 	HealthCheckModule,
 	HealthModule,
 	LoggerModule,
 	PrismaModule,
 	PrometheusModule,
+	RedisModule,
 	RequestTracingModule,
 } from '@venta/nest/modules';
 
@@ -39,17 +44,43 @@ export class BootstrapModule {
 			PrismaModule.register(),
 		];
 
-		// Automatically include HealthCheckModule for HTTP services
-		const httpModules = options.protocol === 'http' ? [HealthCheckModule] : [];
+		// Automatically include modules for HTTP services
+		const httpModules =
+			options.protocol === 'http'
+				? [
+						HealthCheckModule,
+						ClerkModule.register(),
+						RedisModule,
+						ThrottlerModule.forRoot([
+							{
+								limit: 100,
+								ttl: 60000,
+							},
+						]),
+					]
+				: [];
 
 		// Automatically include RequestTracingModule for all services
 		const tracingModules = [RequestTracingModule.register({ protocol: options.protocol })];
+
+		// Automatically include providers for HTTP services
+		const httpProviders =
+			options.protocol === 'http'
+				? [
+						AuthService,
+						AuthGuard,
+						{
+							provide: APP_GUARD,
+							useClass: ThrottlerGuard,
+						},
+					]
+				: [];
 
 		return {
 			exports: baseModules,
 			imports: [...baseModules, ...httpModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
-			providers: [...(options.additionalProviders || [])],
+			providers: [...httpProviders, ...(options.additionalProviders || [])],
 		};
 	}
 }
