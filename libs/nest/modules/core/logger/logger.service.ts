@@ -3,6 +3,8 @@ import { RequestContextService } from '../../networking/request-context';
 import { LokiTransportService } from './loki-transport.service';
 
 const chalk = require('chalk');
+const PrettyError = require('pretty-error');
+const StackTracey = require('stacktracey');
 
 interface LogData {
 	context?: string;
@@ -16,11 +18,59 @@ interface LogData {
 @Injectable({ scope: Scope.TRANSIENT })
 export class Logger implements LoggerService {
 	private context?: string;
+	private prettyError?: any;
+	private readonly isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
 	constructor(
 		private readonly requestContextService?: RequestContextService,
 		private readonly lokiTransport?: LokiTransportService,
-	) {}
+	) {
+		// Initialize Pretty-Error with custom styling (only in development)
+		if (this.isDevelopment) {
+			try {
+				this.prettyError = new PrettyError();
+				this.setupPrettyError();
+			} catch (error) {
+				console.warn('Failed to initialize Pretty-Error:', error.message);
+			}
+		}
+	}
+
+	private setupPrettyError(): void {
+		if (!this.prettyError) return;
+
+		// Configure Pretty-Error for better readability
+		this.prettyError.skipNodeFiles(); // Hide node_modules from stack traces
+		this.prettyError.skipPackage('core-js'); // Skip polyfill noise
+
+		// Custom styling that matches our logger theme
+		this.prettyError.appendStyle({
+			'pretty-error > header > title > kind': {
+				background: 'none',
+				color: 'red',
+			},
+			'pretty-error > header > message': {
+				color: 'bright-white',
+				background: 'none',
+			},
+			'pretty-error > trace > item': {
+				marginBottom: 0,
+				bullet: '"    "', // Match our indentation
+			},
+			'pretty-error > trace > item > header > pointer > file': {
+				color: 'cyan',
+			},
+			'pretty-error > trace > item > header > pointer > line': {
+				color: 'yellow',
+			},
+			'pretty-error > trace > item > header > what': {
+				color: 'white',
+			},
+			'pretty-error > trace > item > source': {
+				color: 'grey',
+			},
+		});
+	}
 
 	setContext(context: string) {
 		this.context = context;
@@ -80,39 +130,48 @@ export class Logger implements LoggerService {
 	}
 
 	private logPretty(logData: LogData, trace?: string): void {
+		// Use Pretty-Error for everything if available, otherwise simple formatting
+		if (trace && this.prettyError) {
+			try {
+				// Create a rich error object for Pretty-Error
+				const error = new Error(logData.message);
+				error.stack = trace;
+
+				// Add context information as error properties
+				if (logData.context) {
+					(error as any).context = logData.context;
+				}
+				if (logData.data) {
+					Object.assign(error, logData.data);
+				}
+
+				// Render with Pretty-Error
+				console.log(this.prettyError.render(error));
+				return;
+			} catch (prettError) {
+				console.warn('Pretty-Error rendering failed:', prettError.message);
+			}
+		}
+
+		// Fallback to simple clean formatting
 		const timestamp = chalk.gray(new Date(logData.timestamp).toLocaleTimeString());
 		const level = this.formatLevel(logData.level);
 		const context = logData.context ? chalk.cyan(`[${logData.context}]`) : '';
-		const requestId = logData.requestId ? chalk.gray(`(${logData.requestId.slice(0, 8)}...)`) : '';
-
-		// Main message
 		const message = this.formatMessage(logData.message, logData.level);
 
-		// Format data if present
-		const dataStr = logData.data ? this.formatData(logData.data) : '';
+		// Simple one-line format
+		const logLine = [timestamp, level, context, message].filter(Boolean).join(' ');
+		console.log(logLine);
 
-		// Check if we should put data inline or on new line
-		const shouldUseNewLine = dataStr && (dataStr.length > 80 || dataStr.includes('\n'));
-
-		if (shouldUseNewLine) {
-			// Long or multi-line data goes on separate line
-			const logLine = [timestamp, level, context, requestId, message].filter(Boolean).join(' ');
-			console.log(logLine);
-			console.log('  ' + dataStr); // Indented for visual hierarchy
-		} else {
-			// Short data stays inline
-			const logLine = [timestamp, level, context, requestId, message, dataStr].filter(Boolean).join(' ');
-			console.log(logLine);
+		// Add data if present
+		if (logData.data) {
+			console.log(chalk.gray('  Data:'), JSON.stringify(logData.data, null, 2));
 		}
 
-		// Add trace if present
+		// Add trace if present (simple format)
 		if (trace) {
-			console.log('  ' + chalk.red('Stack Trace:'));
-			// Handle case where trace might be an object instead of string
-			const traceStr = typeof trace === 'string' ? trace : String(trace);
-			// Wrap and indent each line of the stack trace
-			const wrappedTrace = this.wrapStackTrace(traceStr);
-			console.log(chalk.gray(wrappedTrace));
+			console.log(chalk.red('  Stack Trace:'));
+			console.log(chalk.gray(trace));
 		}
 	}
 
@@ -164,100 +223,6 @@ export class Logger implements LoggerService {
 			default:
 				return chalk.white(message);
 		}
-	}
-
-	private formatData(data: Record<string, any>): string {
-		try {
-			// Handle case where data might be a string, array, or non-object
-			if (typeof data !== 'object' || data === null) {
-				return chalk.gray('│') + ' ' + chalk.white(String(data));
-			}
-
-			// Handle arrays
-			if (Array.isArray(data)) {
-				try {
-					return chalk.gray('│') + ' ' + chalk.white(JSON.stringify(data));
-				} catch {
-					return chalk.gray('│') + ' ' + chalk.white('[array]');
-				}
-			}
-
-			const formatted = Object.entries(data)
-				.map(([key, value]) => {
-					let formattedValue: string;
-					if (value === null) {
-						formattedValue = 'null';
-					} else if (value === undefined) {
-						formattedValue = 'undefined';
-					} else if (value instanceof Error) {
-						// Handle Error objects specially with line wrapping
-						const errorMessage = `${value.name}: ${value.message}`;
-						formattedValue = this.wrapText(errorMessage, 100, '  ');
-					} else if (typeof value === 'object') {
-						try {
-							// For plain objects, check if they have meaningful content
-							const stringified = JSON.stringify(value, null, 0);
-							formattedValue = stringified === '{}' ? '[empty object]' : stringified;
-						} catch {
-							formattedValue = '[circular object]';
-						}
-					} else {
-						formattedValue = String(value);
-					}
-					return `${chalk.gray(key)}=${chalk.white(formattedValue)}`;
-				})
-				.join(' ');
-			return formatted ? chalk.gray('│') + ' ' + formatted : '';
-		} catch {
-			return chalk.gray('│ [data formatting error]');
-		}
-	}
-
-	private wrapText(text: string, maxWidth: number, indent: string = ''): string {
-		const words = text.split(' ');
-		const lines: string[] = [];
-		let currentLine = '';
-
-		for (const word of words) {
-			const testLine = currentLine ? `${currentLine} ${word}` : word;
-
-			if (testLine.length <= maxWidth) {
-				currentLine = testLine;
-			} else {
-				if (currentLine) {
-					lines.push(currentLine);
-					currentLine = word;
-				} else {
-					// Word is longer than maxWidth, just add it
-					lines.push(word);
-				}
-			}
-		}
-
-		if (currentLine) {
-			lines.push(currentLine);
-		}
-
-		return lines.map((line, index) => (index === 0 ? line : indent + line)).join('\n');
-	}
-
-	private wrapStackTrace(trace: string): string {
-		const lines = trace.split('\n');
-		const wrappedLines: string[] = [];
-
-		for (const line of lines) {
-			if (line.trim()) {
-				// Wrap long lines but preserve stack trace formatting
-				const wrapped = this.wrapText(line.trim(), 120, '    ');
-				// Add base indentation for stack trace
-				const indented = '    ' + wrapped;
-				wrappedLines.push(indented);
-			} else {
-				wrappedLines.push('    '); // Preserve empty lines with indentation
-			}
-		}
-
-		return wrappedLines.join('\n');
 	}
 
 	log(message: string, data?: Record<string, any>, context?: string): void {

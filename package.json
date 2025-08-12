@@ -9,6 +9,7 @@
 		"build:proto": "protoc -I /usr/local/include --plugin=protoc-gen-ts_proto=node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=libs/proto/src/lib -I libs/proto/src/definitions --ts_proto_opt=nestJs=true --ts_proto_opt=useDate=true --ts_proto_opt=addGrpcMetadata=true index.proto",
 		"prebuild": "npm run build:proto",
 		"build": "nest build",
+		"start:dev": "NODE_ENV=development nest start",
 		"format": "prettier --write \"domains/**/*.ts\" \"libs/**/*.ts\"",
 		"lint": "eslint \"{src,domains,libs,test}/**/*.ts\" --fix",
 		"typecheck": "tsc --noEmit --skipLibCheck",
@@ -16,8 +17,7 @@
 		"test:run": "vitest run",
 		"test:coverage": "vitest run --coverage",
 		"test:ui": "vitest --ui",
-		"prisma:generate": "prisma generate",
-		"start:dev": "concurrently \"nest start gateway --watch\" \"nest start user --watch\" \"nest start vendor --watch\" \"nest start location --watch\" \"nest start websocket-gateway --watch\" \"nest start algolia-sync --watch\""
+		"prisma:generate": "prisma generate"
 	},
 	"dependencies": {
 		"@clerk/clerk-sdk-node": "^5.0.26",
@@ -42,10 +42,12 @@
 		"express": "^5.1.0",
 		"ioredis": "^5.4.1",
 		"nats": "^2.29.3",
+		"pretty-error": "^4.0.0",
 		"prom-client": "^15.1.0",
 		"reflect-metadata": "^0.2.0",
 		"rxjs": "^7.8.1",
 		"socket.io": "^4.7.5",
+		"stacktracey": "^2.1.8",
 		"svix": "^1.29.0",
 		"zod": "^3.23.8"
 	},
@@ -66,6 +68,7 @@
 		"prettier": "^3.0.0",
 		"prisma": "^6.13.0",
 		"ts-loader": "^9.5.2",
+		"ts-node": "^10.9.2",
 		"ts-proto": "^2.7.6",
 		"typescript": "^5.1.3",
 		"vitest": "^3.2.4"
