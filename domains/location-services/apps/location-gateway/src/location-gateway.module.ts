@@ -59,7 +59,7 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 				}),
 			],
 			appName: APP_NAMES.LOCATION_GATEWAY,
-			protocol: 'http',
+			protocol: 'websocket',
 		}),
 	],
 	providers: [

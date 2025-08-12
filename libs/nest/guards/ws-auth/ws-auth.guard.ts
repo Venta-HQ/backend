@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthService } from '../core';
+import { AuthService } from '../auth';
 import { AuthenticatedSocket, AuthProtocol } from '../types';
 
 @Injectable()
