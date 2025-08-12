@@ -4,6 +4,8 @@ import { Controller, Logger } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorCreateACL, VendorLookupACL, VendorUpdateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { AuthenticatedGrpcContext } from '@venta/nest/guards';
+import { GrpcRequestContext } from '@venta/nest/interceptors';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorCreateData,
@@ -62,18 +64,18 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	async createVendor(request: VendorCreateData, metadata: Metadata): Promise<VendorIdentityData> {
+	async createVendor(
+		request: VendorCreateData,
+		_metadata?: Metadata,
+		@GrpcRequestContext() context?: AuthenticatedGrpcContext,
+	): Promise<VendorIdentityData> {
 		this.logger.debug('Creating new vendor');
 
 		try {
-			// Extract authenticated user from metadata
-			const userMetadata = metadata.get('user')[0] as string;
-			const authenticatedUser = JSON.parse(userMetadata);
-
 			// Validate and transform request
 			const domainRequest = VendorCreateACL.toDomain(request);
 
-			const vendorId = await this.coreService.createVendor(domainRequest, authenticatedUser.id);
+			const vendorId = await this.coreService.createVendor(domainRequest, context!.user.id);
 
 			return { id: vendorId };
 		} catch (error) {
@@ -89,18 +91,18 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	async updateVendor(request: VendorUpdateData, metadata: Metadata): Promise<Empty> {
+	async updateVendor(
+		request: VendorUpdateData,
+		_metadata?: Metadata,
+		@GrpcRequestContext() context?: AuthenticatedGrpcContext,
+	): Promise<Empty> {
 		this.logger.debug('Updating vendor', { vendorId: request.id });
 
 		try {
-			// Extract authenticated user from metadata
-			const userMetadata = metadata.get('user')[0] as string;
-			const authenticatedUser = JSON.parse(userMetadata);
-
 			// Validate and transform request
 			const domainRequest = VendorUpdateACL.toDomain(request);
 
-			await this.coreService.updateVendor(domainRequest, authenticatedUser.id);
+			await this.coreService.updateVendor(domainRequest, context!.user.id);
 
 			return;
 		} catch (error) {

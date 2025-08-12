@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { Socket } from 'socket.io';
+import { Metadata } from '@grpc/grpc-js';
 
 /**
  * Represents a user in the authentication system
@@ -56,8 +57,10 @@ export interface AuthenticatedSocket extends Socket {
 }
 
 /**
- * gRPC metadata with auth context
+ * gRPC call object with auth context
  */
-export interface AuthenticatedMetadata {
-	user?: AuthUser;
+export interface AuthenticatedGrpcContext {
+	user: AuthUser;
+	metadata: Metadata;
+	// Other properties from ServerUnaryCall can be added as needed
 }

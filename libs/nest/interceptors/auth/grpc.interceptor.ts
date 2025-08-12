@@ -1,13 +1,14 @@
 import { Observable } from 'rxjs';
-import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
+import { CallHandler, createParamDecorator, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthUser } from '@venta/nest/guards';
+import { AuthenticatedGrpcContext } from '@venta/nest/guards';
 
 @Injectable()
 export class GrpcAuthInterceptor implements NestInterceptor {
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 		const rpcHost = context.switchToRpc();
-		const metadata = rpcHost.getContext().metadata;
+		const call = rpcHost.getContext(); // ServerUnaryCall
+		const metadata = call.metadata;
 
 		const userId = metadata.get('x-user-id');
 		const clerkId = metadata.get('x-clerk-id');
@@ -18,11 +19,18 @@ export class GrpcAuthInterceptor implements NestInterceptor {
 			});
 		}
 
-		metadata.set('user', {
-			id: userId,
-			clerkId: clerkId,
-		} as AuthUser);
+		// Attach user data to the call object
+		(call as any).user = {
+			id: Array.isArray(userId) ? userId[0] : userId,
+			clerkId: Array.isArray(clerkId) ? clerkId[0] : clerkId,
+		};
 
 		return next.handle();
 	}
 }
+
+export const GrpcRequestContext = createParamDecorator((data, ctx: ExecutionContext) => {
+	const rpcHost = ctx.switchToRpc();
+	const call = rpcHost.getContext() as AuthenticatedGrpcContext;
+	return call;
+});
