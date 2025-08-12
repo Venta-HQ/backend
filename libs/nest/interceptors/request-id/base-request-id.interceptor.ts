@@ -53,9 +53,6 @@ export abstract class BaseRequestIdInterceptor {
 				if (!this.requestContextService.getRequestId()) {
 					this.setId(id);
 				}
-				this.logger.debug(`Extracted ${this.extractor.getProtocolName()} request ID: ${id}`);
-			} else {
-				this.logger.debug(`No ${this.extractor.getProtocolName()} ID found`);
 			}
 
 			// Process the request
@@ -64,8 +61,10 @@ export abstract class BaseRequestIdInterceptor {
 					next: () => {
 						this.logger.debug(`Request completed successfully for ${this.extractor.getProtocolName()}`);
 					},
-					error: () => {
-						this.logger.debug(`Request failed for ${this.extractor.getProtocolName()}`);
+					error: (e) => {
+						this.logger.error(`Request failed for ${this.extractor.getProtocolName()}`, e.stack, {
+							error: e,
+						});
 					},
 				}),
 			);

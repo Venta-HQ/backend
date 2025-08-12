@@ -50,7 +50,7 @@ export class CoreController implements VendorManagementServiceController {
 
 			return { vendor };
 		} catch (error) {
-			this.logger.error('Failed to get vendor', {
+			this.logger.error('Failed to get vendor', error.stack, {
 				error: error.message,
 				vendorId: request.id,
 			});
@@ -79,7 +79,7 @@ export class CoreController implements VendorManagementServiceController {
 
 			return { id: vendorId };
 		} catch (error) {
-			this.logger.error('Failed to create vendor', {
+			this.logger.error('Failed to create vendor', error.stack, {
 				error: error.message,
 			});
 
@@ -106,7 +106,7 @@ export class CoreController implements VendorManagementServiceController {
 
 			return;
 		} catch (error) {
-			this.logger.error('Failed to update vendor', {
+			this.logger.error('Failed to update vendor', error.stack, {
 				error: error.message,
 				vendorId: request.id,
 			});

@@ -6,9 +6,8 @@ import { AuthenticatedGrpcContext } from '@venta/nest/guards';
 @Injectable()
 export class GrpcAuthInterceptor implements NestInterceptor {
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-		const rpcHost = context.switchToRpc();
-		const call = rpcHost.getContext(); // ServerUnaryCall
-		const metadata = call.metadata;
+		const grpcContext = context.switchToRpc();
+		const metadata = grpcContext.getContext();
 
 		const userId = metadata.get('x-user-id');
 		const clerkId = metadata.get('x-clerk-id');
@@ -20,7 +19,7 @@ export class GrpcAuthInterceptor implements NestInterceptor {
 		}
 
 		// Attach user data to the call object
-		(call as any).user = {
+		(grpcContext as any).user = {
 			id: Array.isArray(userId) ? userId[0] : userId,
 			clerkId: Array.isArray(clerkId) ? clerkId[0] : clerkId,
 		};

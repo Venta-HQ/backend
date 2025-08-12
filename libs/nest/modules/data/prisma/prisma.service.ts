@@ -32,11 +32,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 		this.client = getClient(connectionString);
 
 		this.client.$on('error', (e) => {
-			this.logger.error(e);
+			this.logger.error('Database error occurred', undefined, { error: e });
 		});
 
 		this.client.$on('query', (e) => {
-			this.logger.log({
+			this.logger.log('Database query executed', {
 				duration: e.duration,
 				params: e.params,
 				query: e.query,

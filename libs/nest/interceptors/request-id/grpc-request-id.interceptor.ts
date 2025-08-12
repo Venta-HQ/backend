@@ -9,6 +9,7 @@ class GrpcRequestIdExtractor implements RequestIdExtractor {
 	extractId(context: ExecutionContext): string | undefined {
 		const grpcContext = context.switchToRpc();
 		const metadata = grpcContext.getContext();
+
 		return metadata?.get('x-request-id')?.[0];
 	}
 

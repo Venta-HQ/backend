@@ -37,6 +37,7 @@
 		"@prisma/extension-pulse": "^1.2.0",
 		"algoliasearch": "^5.35.0",
 		"buffer-to-stream": "^1.0.0",
+		"chalk": "^4.1.2",
 		"cloudinary": "^2.5.0",
 		"express": "^5.1.0",
 		"ioredis": "^5.4.1",
