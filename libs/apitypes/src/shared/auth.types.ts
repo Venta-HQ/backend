@@ -3,5 +3,5 @@
  */
 export interface AuthUser {
 	id: string;
-	clerkId: string;
+	clerkId?: string;
 }

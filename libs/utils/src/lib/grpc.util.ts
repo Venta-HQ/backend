@@ -12,19 +12,9 @@ export function extractAuthFromMetadata(metadata?: Metadata): AuthUser | null {
 	const userId = metadata.get('x-user-id')?.[0] as string;
 	const clerkId = metadata.get('x-clerk-id')?.[0] as string;
 
-	if (!userId || !clerkId) return null;
+	if (!userId) return null;
 
 	return { id: userId, clerkId };
-}
-
-/**
- * Extracts user ID from gRPC metadata
- * @param metadata - gRPC metadata from the interceptor
- * @returns User ID or null if not found
- */
-export function extractUserIdFromMetadata(metadata?: Metadata): string | null {
-	const auth = extractAuthFromMetadata(metadata);
-	return auth?.id || null;
 }
 
 /**
@@ -47,13 +37,8 @@ export function extractGrpcRequestMetadata(metadata?: Metadata): GrpcRequestMeta
 	const auth = extractAuthFromMetadata(metadata);
 	const requestId = extractRequestIdFromMetadata(metadata);
 
-	if (!auth || !requestId) return null;
-
 	return {
-		user: {
-			id: auth.id,
-			clerkId: auth.clerkId,
-		},
+		...(auth?.id ? { user: { id: auth.id, clerkId: auth?.clerkId } } : {}),
 		requestId,
 	};
 }

@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { extractGrpcRequestMetadata } from '@venta/utils';
 
 @Injectable()
 export class GrpcAuthGuard implements CanActivate {
@@ -11,15 +12,14 @@ export class GrpcAuthGuard implements CanActivate {
 		const grpcContext = context.switchToRpc();
 		const metadata = grpcContext.getContext();
 
-		// Check if user was set by the interceptor
-		const userId = metadata.get('x-user-id');
-		const clerkId = metadata.get('x-clerk-id');
+		const metadataExtracted = extractGrpcRequestMetadata(metadata);
 
-		if (!userId || !clerkId) {
-			this.logger.error('GrpcAuthGuard - Authentication required but no user found:', {
-				hasMetadata: !!metadata,
-				userIdExists: !!userId,
-				clerkIdExists: !!clerkId,
+		this.logger.debug('Metadata', metadataExtracted);
+
+		if (!metadataExtracted?.user?.id || !metadataExtracted?.user?.clerkId) {
+			this.logger.error('GrpcAuthGuard - Authentication required but no user found', {
+				userIdExists: !!metadataExtracted?.user?.id,
+				clerkIdExists: !!metadataExtracted?.user?.clerkId,
 			});
 
 			throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
