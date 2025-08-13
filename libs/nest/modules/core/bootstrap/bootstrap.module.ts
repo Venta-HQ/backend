@@ -1,11 +1,11 @@
-import { DynamicModule, Module, Provider } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ErrorHandlingModule } from '@venta/nest/errors';
-import { AuthService, GrpcAuthGuard, HttpAuthGuard, WsAuthGuard } from '@venta/nest/guards';
+import { GrpcAuthGuard, HttpAuthGuard, WsAuthGuard } from '@venta/nest/guards';
 import {
 	ClerkModule,
+	ConfigModule,
 	HealthCheckModule,
 	HealthModule,
 	LoggerModule,
@@ -25,6 +25,7 @@ export interface BootstrapOptions {
 	protocol?: 'http' | 'grpc' | 'websocket' | 'nats';
 }
 
+@Global()
 @Module({})
 export class BootstrapModule {
 	static forRoot(options: BootstrapOptions): DynamicModule {
@@ -39,12 +40,26 @@ export class BootstrapModule {
 		const tracingModules = this.getTracingModules(options);
 		const protocolProviders = this.getProtocolProviders(options);
 
+		// Only export injectable classes that sub-modules may reference
+		const exportedProviders = this.getExportedProviders(options);
+
 		return {
-			exports: baseModules,
+			exports: [...exportedProviders],
 			imports: [...baseModules, ...protocolModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
 			providers: [...protocolProviders, ...(options.additionalProviders || [])],
 		};
+	}
+
+	private static getExportedProviders(options: BootstrapOptions): Provider[] {
+		switch (options.protocol) {
+			case 'grpc':
+				return [GrpcAuthGuard];
+			case 'websocket':
+				return [WsAuthGuard];
+			default:
+				return [];
+		}
 	}
 
 	private static getBaseModules(options: BootstrapOptions): any[] {
@@ -110,8 +125,6 @@ export class BootstrapModule {
 
 	private static getHttpProviders(): Provider[] {
 		return [
-			AuthService,
-			HttpAuthGuard,
 			{
 				provide: APP_GUARD,
 				useClass: ThrottlerGuard,
@@ -147,7 +160,7 @@ export class BootstrapModule {
 	}
 
 	private static getWebSocketProviders(): Provider[] {
-		// WebSocket services need AuthService for token validation and WsAuthGuard for connections
-		return [AuthService, WsAuthGuard];
+		// WebSocket services provide WsAuthGuard at app level
+		return [WsAuthGuard];
 	}
 }

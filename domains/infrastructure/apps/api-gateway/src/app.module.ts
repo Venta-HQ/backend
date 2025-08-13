@@ -5,11 +5,11 @@ import { CoreModule } from './core/core.module';
 @Module({
 	imports: [
 		BootstrapModule.forRoot({
-			additionalModules: [CoreModule],
 			appName: APP_NAMES.GATEWAY,
-			domain: 'infrastructure', // DDD domain for infrastructure services
+			domain: 'infrastructure',
 			protocol: 'http',
 		}),
+		CoreModule,
 	],
 })
 export class AppModule {}

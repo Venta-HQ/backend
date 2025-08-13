@@ -3,7 +3,8 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
 import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { ClerkService, PrismaService } from '@venta/nest/modules';
+import { PrismaService } from '@venta/nest/modules/data/prisma';
+import { ClerkService } from '@venta/nest/modules/external/clerk';
 
 @Injectable()
 export class AuthService {

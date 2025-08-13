@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { AuthenticatedRequest } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { RequestContextService } from '@venta/nest/modules';
+import { RequestContextService } from '@venta/nest/modules/networking/request-context';
 import { AuthService } from './auth.service';
 
 @Injectable()

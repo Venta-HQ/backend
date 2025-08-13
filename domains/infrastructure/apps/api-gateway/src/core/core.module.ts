@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '@venta/nest/guards';
 import { GrpcInstanceModule } from '@venta/nest/modules';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
@@ -22,6 +23,7 @@ import { VendorController } from './controllers/vendor/vendor.controller';
 
 @Module({
 	imports: [
+		AuthModule,
 		ConfigModule,
 		GrpcInstanceModule.register<UserManagementServiceClient>({
 			proto: 'domains/marketplace/user-management.proto',
