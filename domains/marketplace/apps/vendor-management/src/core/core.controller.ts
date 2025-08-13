@@ -28,12 +28,7 @@ export class CoreController implements VendorManagementServiceController {
 	constructor(private readonly coreService: CoreService) {}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	@UseGuards(GrpcAuthGuard)
-	async getVendorById(request: VendorIdentityData, metadata: Metadata): Promise<VendorLookupResponse> {
-		const context = extractGrpcRequestMetadata(metadata);
-		this.logger.debug('Context', context);
-		this.logger.debug('Getting vendor by ID', { vendorId: request.id, userId: context.user!.id });
-
+	async getVendorById(request: VendorIdentityData): Promise<VendorLookupResponse> {
 		try {
 			// Validate and transform request
 			const domainRequest = VendorLookupACL.toDomain(request);
@@ -71,8 +66,6 @@ export class CoreController implements VendorManagementServiceController {
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	@UseGuards(GrpcAuthGuard)
 	async createVendor(request: VendorCreateData, metadata: Metadata): Promise<VendorIdentityData> {
-		this.logger.debug('Creating new vendor');
-
 		const context = extractGrpcRequestMetadata(metadata);
 
 		try {

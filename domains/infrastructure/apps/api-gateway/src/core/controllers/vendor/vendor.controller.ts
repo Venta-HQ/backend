@@ -1,5 +1,6 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
+import { AuthenticatedRequest } from '@venta/apitypes';
 import {
 	IdParam,
 	idParamSchema,
@@ -10,7 +11,7 @@ import {
 	VendorUpdateRequestACL,
 	vendorUpdateSchema,
 } from '@venta/domains/infrastructure/contracts';
-import { AuthenticatedRequest, HttpAuthGuard } from '@venta/nest/guards';
+import { HttpAuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {

@@ -1,6 +1,7 @@
 import { catchError, firstValueFrom } from 'rxjs';
 import { Controller, Get, Inject, Req, UseGuards } from '@nestjs/common';
-import { AuthenticatedRequest, HttpAuthGuard } from '@venta/nest/guards';
+import { AuthenticatedRequest } from '@venta/apitypes';
+import { HttpAuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 

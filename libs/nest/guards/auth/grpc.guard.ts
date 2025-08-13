@@ -14,14 +14,7 @@ export class GrpcAuthGuard implements CanActivate {
 
 		const metadataExtracted = extractGrpcRequestMetadata(metadata);
 
-		this.logger.debug('Metadata', metadataExtracted);
-
 		if (!metadataExtracted?.user?.id || !metadataExtracted?.user?.clerkId) {
-			this.logger.error('GrpcAuthGuard - Authentication required but no user found', {
-				userIdExists: !!metadataExtracted?.user?.id,
-				clerkIdExists: !!metadataExtracted?.user?.clerkId,
-			});
-
 			throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
 				resource: 'grpc_endpoint',
 				reason: 'Authentication required - missing or invalid auth headers',
