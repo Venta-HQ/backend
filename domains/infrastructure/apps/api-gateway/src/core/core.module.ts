@@ -39,7 +39,7 @@ import { VendorController } from './controllers/vendor/vendor.controller';
 			provide: VENDOR_MANAGEMENT_SERVICE_NAME,
 			serviceName: VENDOR_MANAGEMENT_SERVICE_NAME,
 			urlFactory: (configService: ConfigService) =>
-				configService.get('VENDOR_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5003',
+				configService.get('VENDOR_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5004',
 		}),
 		GrpcInstanceModule.register<FileManagementServiceClient>({
 			proto: 'domains/infrastructure/file-management.proto',
@@ -47,7 +47,7 @@ import { VendorController } from './controllers/vendor/vendor.controller';
 			provide: FILE_MANAGEMENT_SERVICE_NAME,
 			serviceName: FILE_MANAGEMENT_SERVICE_NAME,
 			urlFactory: (configService: ConfigService) =>
-				configService.get('FILE_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5004',
+				configService.get('FILE_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5005',
 		}),
 	],
 	controllers: [UploadController, UserController, VendorController],
