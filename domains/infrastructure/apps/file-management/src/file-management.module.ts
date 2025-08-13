@@ -5,11 +5,11 @@ import { CoreModule } from './core/core.module';
 
 @Module({
 	imports: [
-		BootstrapModule.forRoot({
-			appName: 'file-management',
-			domain: 'infrastructure',
-			protocol: 'grpc',
-		}),
+        BootstrapModule.forRoot({
+            appName: 'file-management',
+            domain: 'infrastructure',
+            protocol: 'grpc',
+        }),
 		ConfigModule,
 		CoreModule,
 	],

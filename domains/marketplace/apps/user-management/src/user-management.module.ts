@@ -6,11 +6,11 @@ import { SubscriptionModule } from './subscriptions/subscription.module';
 
 @Module({
 	imports: [
-		BootstrapModule.forRoot({
-			additionalModules: [NatsQueueModule],
-			appName: APP_NAMES.USER,
-			protocol: 'grpc',
-		}),
+        BootstrapModule.forRoot({
+            appName: APP_NAMES.USER,
+            protocol: 'grpc',
+        }),
+        NatsQueueModule,
 
 		CoreModule,
 		SubscriptionModule,

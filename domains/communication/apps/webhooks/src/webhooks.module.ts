@@ -5,12 +5,13 @@ import { RevenueCatModule } from './revenuecat/revenuecat.module';
 
 @Module({
 	imports: [
-		BootstrapModule.forRoot({
-			additionalModules: [ClerkModule, RevenueCatModule],
-			appName: 'webhooks',
-			domain: 'communication',
-			protocol: 'http',
-		}),
+        BootstrapModule.forRoot({
+            appName: 'webhooks',
+            domain: 'communication',
+            protocol: 'http',
+        }),
+        ClerkModule,
+        RevenueCatModule,
 	],
 })
 export class WebhooksModule {}

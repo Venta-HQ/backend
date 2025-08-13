@@ -8,14 +8,8 @@ import {
 	WsRateLimitGuardStatus,
 	WsRateLimitGuardStrict,
 } from '@venta/nest/guards';
-import {
-	APP_NAMES,
-	BootstrapModule,
-	ClerkModule,
-	GrpcInstanceModule,
-	PrometheusService,
-	RedisModule,
-} from '@venta/nest/modules';
+import { APP_NAMES, BootstrapModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
+import { AuthModule } from '@venta/nest/guards';
 import {
 	GEOLOCATION_SERVICE_NAME,
 	GeolocationServiceClient,
@@ -29,38 +23,35 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 
 @Module({
 	imports: [
-		BootstrapModule.forRoot({
-			additionalModules: [
-				RedisModule,
-				ClerkModule.register(),
-				ConfigModule,
-				GrpcInstanceModule.register<GeolocationServiceClient>({
-					proto: 'geolocation.proto',
-					protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
-					provide: GEOLOCATION_SERVICE_NAME,
-					serviceName: GEOLOCATION_SERVICE_NAME,
-					urlFactory: (configService: ConfigService) =>
-						configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
-				}),
-				ClientsModule.registerAsync({
-					clients: [
-						{
-							imports: [ConfigModule],
-							inject: [ConfigService],
-							name: 'NATS_SERVICE',
-							useFactory: (configService: ConfigService) => ({
-								options: {
-									servers: configService.get('NATS_URL') || 'nats://localhost:4222',
-								},
-								transport: Transport.NATS,
-							}),
-						},
-					],
-				}),
-			],
-			appName: APP_NAMES.LOCATION_GATEWAY,
-			protocol: 'websocket',
-		}),
+        BootstrapModule.forRoot({
+            appName: APP_NAMES.LOCATION_GATEWAY,
+            protocol: 'websocket',
+        }),
+        ConfigModule,
+        AuthModule,
+        GrpcInstanceModule.register<GeolocationServiceClient>({
+            proto: 'geolocation.proto',
+            protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
+            provide: GEOLOCATION_SERVICE_NAME,
+            serviceName: GEOLOCATION_SERVICE_NAME,
+            urlFactory: (configService: ConfigService) =>
+                configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
+        }),
+        ClientsModule.registerAsync({
+            clients: [
+                {
+                    imports: [ConfigModule],
+                    inject: [ConfigService],
+                    name: 'NATS_SERVICE',
+                    useFactory: (configService: ConfigService) => ({
+                        options: {
+                            servers: configService.get('NATS_URL') || 'nats://localhost:4222',
+                        },
+                        transport: Transport.NATS,
+                    }),
+                },
+            ],
+        }),
 	],
 	providers: [
 		{

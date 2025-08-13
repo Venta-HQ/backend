@@ -160,7 +160,7 @@ export class BootstrapModule {
 	}
 
 	private static getWebSocketProviders(): Provider[] {
-		// WebSocket services provide WsAuthGuard at app level
-		return [WsAuthGuard];
+		// Let feature modules provide WS auth guards so they can also import AuthModule
+		return [];
 	}
 }
