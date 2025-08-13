@@ -1,8 +1,8 @@
 import Redis from 'ioredis';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedSocket } from '../types';
 
 @Injectable()
 export class WsRateLimitGuard implements CanActivate {

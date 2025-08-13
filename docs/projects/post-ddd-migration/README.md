@@ -204,7 +204,7 @@ async handleClerkEvent(
 
 5. **Authentication**
 
-   - ✅ Created standardized auth types (`AuthUser`, `AuthContext`, `AuthMetadata`)
+   - ✅ Created standardized auth types (`AuthUser`, `AuthMetadata`)
    - ✅ Created `AuthService` for shared logic
    - ✅ Created `GrpcAuthGuard` and `GrpcAuthInterceptor`
    - ✅ Updated `AuthGuard` and `WsAuthGuard` to use new types

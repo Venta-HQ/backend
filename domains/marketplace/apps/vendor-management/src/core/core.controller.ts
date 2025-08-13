@@ -4,8 +4,7 @@ import { Controller, Logger, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorCreateACL, VendorLookupACL, VendorUpdateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedGrpcContext, GrpcAuthGuard } from '@venta/nest/guards';
-import { GrpcRequestContext } from '@venta/nest/interceptors';
+import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorCreateData,
@@ -14,27 +13,26 @@ import {
 	VendorManagementServiceController,
 	VendorUpdateData,
 } from '@venta/proto/marketplace/vendor-management';
-import { LocationService } from '../location/location.service';
+import { extractGrpcRequestMetadata } from '@venta/utils';
 import { CoreService } from './core.service';
 
 /**
  * gRPC controller for vendor management service
  * Implements the service interface generated from proto/marketplace/vendor-management.proto
- * Note: gRPC auth is handled via interceptors, not guards
+ * Note: Auth extraction is handled by interceptors, validation by guards (applied per method)
  */
 @Controller()
-@UseGuards(GrpcAuthGuard)
 export class CoreController implements VendorManagementServiceController {
 	private readonly logger = new Logger(CoreController.name);
 
-	constructor(
-		private readonly coreService: CoreService,
-		private readonly locationService: LocationService,
-	) {}
+	constructor(private readonly coreService: CoreService) {}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	async getVendorById(request: VendorIdentityData): Promise<VendorLookupResponse> {
-		this.logger.debug('Getting vendor by ID', { vendorId: request.id });
+	@UseGuards(GrpcAuthGuard)
+	async getVendorById(request: VendorIdentityData, metadata: Metadata): Promise<VendorLookupResponse> {
+		const context = extractGrpcRequestMetadata(metadata);
+		this.logger.debug('Context', context);
+		this.logger.debug('Getting vendor by ID', { vendorId: request.id, userId: context.user!.id });
 
 		try {
 			// Validate and transform request
@@ -71,18 +69,17 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	async createVendor(
-		request: VendorCreateData,
-		_metadata?: Metadata,
-		@GrpcRequestContext() context?: AuthenticatedGrpcContext,
-	): Promise<VendorIdentityData> {
+	@UseGuards(GrpcAuthGuard)
+	async createVendor(request: VendorCreateData, metadata: Metadata): Promise<VendorIdentityData> {
 		this.logger.debug('Creating new vendor');
+
+		const context = extractGrpcRequestMetadata(metadata);
 
 		try {
 			// Validate and transform request
 			const domainRequest = VendorCreateACL.toDomain(request);
 
-			const vendorId = await this.coreService.createVendor(domainRequest, context!.user.id);
+			const vendorId = await this.coreService.createVendor(domainRequest, context.user!.id);
 
 			return { id: vendorId };
 		} catch (error) {
@@ -103,18 +100,17 @@ export class CoreController implements VendorManagementServiceController {
 	}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
-	async updateVendor(
-		request: VendorUpdateData,
-		_metadata?: Metadata,
-		@GrpcRequestContext() context?: AuthenticatedGrpcContext,
-	): Promise<Empty> {
+	@UseGuards(GrpcAuthGuard)
+	async updateVendor(request: VendorUpdateData, metadata: Metadata): Promise<Empty> {
 		this.logger.debug('Updating vendor', { vendorId: request.id });
+
+		const context = extractGrpcRequestMetadata(metadata);
 
 		try {
 			// Validate and transform request
 			const domainRequest = VendorUpdateACL.toDomain(request);
 
-			await this.coreService.updateVendor(domainRequest, context!.user.id);
+			await this.coreService.updateVendor(domainRequest, context.user!.id);
 
 			return;
 		} catch (error) {

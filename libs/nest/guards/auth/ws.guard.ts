@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
+import { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedSocket, AuthProtocol } from '../types';
-import { AuthService } from '.';
+import { AuthService } from './auth.service';
 
 @Injectable()
 export class WsAuthGuard implements CanActivate {
@@ -26,14 +26,9 @@ export class WsAuthGuard implements CanActivate {
 
 		try {
 			const user = await this.authService.validateToken(token);
-			const authContext = this.authService.createAuthContext(user, AuthProtocol.WEBSOCKET, {
-				correlationId: client.handshake.headers['x-correlation-id']?.toString(),
-				token,
-			});
 
 			// Attach auth data to socket
 			client.user = user;
-			client.authContext = authContext;
 			return true;
 		} catch (error) {
 			this.logger.warn('WebSocket authentication failed', { error: error.message });

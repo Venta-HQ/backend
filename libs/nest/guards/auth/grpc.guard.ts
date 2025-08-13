@@ -11,14 +11,21 @@ export class GrpcAuthGuard implements CanActivate {
 		const grpcContext = context.switchToRpc();
 		const metadata = grpcContext.getContext();
 
-		const userId = metadata?.get('x-user-id')?.[0];
-		const clerkId = metadata?.get('x-clerk-id')?.[0];
-
-		console.log('userId', userId);
-		console.log('clerkId', clerkId);
+		// Check if user was set by the interceptor
+		const userId = metadata.get('x-user-id');
+		const clerkId = metadata.get('x-clerk-id');
 
 		if (!userId || !clerkId) {
-			throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
+			this.logger.error('GrpcAuthGuard - Authentication required but no user found:', {
+				hasMetadata: !!metadata,
+				userIdExists: !!userId,
+				clerkIdExists: !!clerkId,
+			});
+
+			throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED, {
+				resource: 'grpc_endpoint',
+				reason: 'Authentication required - missing or invalid auth headers',
+			});
 		}
 
 		return true;

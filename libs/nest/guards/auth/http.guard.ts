@@ -1,8 +1,8 @@
 import { randomUUID } from 'crypto';
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { AuthenticatedRequest } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { RequestContextService } from '@venta/nest/modules';
-import { AuthenticatedRequest, AuthProtocol } from '../types';
 import { AuthService } from './auth.service';
 
 @Injectable()
@@ -48,14 +48,9 @@ export class HttpAuthGuard implements CanActivate {
 
 		try {
 			const user = await this.authService.validateToken(token);
-			const authContext = this.authService.createAuthContext(user, AuthProtocol.HTTP, {
-				correlationId: request.headers['x-correlation-id']?.toString(),
-				token,
-			});
 
 			// Attach auth data to request
 			request.user = user;
-			request.authContext = authContext;
 
 			return true; // Allow access
 		} catch (error) {

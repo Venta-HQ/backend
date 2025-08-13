@@ -27,9 +27,6 @@ class HttpRequestIdExtractor implements RequestIdExtractor {
 
 		// Set both fields on the request for other parts of the app to use
 		request.requestId = finalRequestId;
-		if (correlationId) {
-			request.correlationId = correlationId;
-		}
 
 		return finalRequestId;
 	}

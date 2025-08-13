@@ -6,3 +6,4 @@ export * from './lib/proto-path.util';
 export * from './lib/validation.util';
 export * from './lib/transformation.util';
 export * from './lib/schema-validation.util';
+export * from './lib/grpc.util';

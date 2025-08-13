@@ -35,7 +35,6 @@ Currently, authentication and authorization are handled in various ways across t
 1. Core Authentication Types (`libs/nest/guards/types`)
 
    - ✅ `AuthUser` interface
-   - ✅ `AuthContext` interface
    - ✅ `AuthMetadata` interface
    - ✅ `AuthProtocol` enum
    - ✅ Protocol-specific interfaces (`AuthenticatedRequest`, `AuthenticatedSocket`, `AuthenticatedMetadata`)
@@ -98,7 +97,6 @@ Currently, authentication and authorization are handled in various ways across t
 1. Create standardized auth types in `libs/nest/guards/types`:
 
    - `AuthUser` interface (extending existing user types)
-   - `AuthContext` interface (for protocol-agnostic auth data)
    - `AuthMetadata` interface (for protocol-specific auth data)
    - `AuthRole` enum (standardizing roles across domains)
    - `AuthPermission` type (for fine-grained access control)

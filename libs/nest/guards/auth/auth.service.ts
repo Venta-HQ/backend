@@ -1,11 +1,9 @@
-import { randomUUID } from 'crypto';
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Logger } from '@nestjs/common';
+import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { PrismaService } from '@venta/nest/modules';
-import { ClerkService } from '../../modules/external/clerk';
-import { AuthContext, AuthProtocol, AuthUser } from '../types';
+import { ClerkService, PrismaService } from '@venta/nest/modules';
 
 @Injectable()
 export class AuthService {
@@ -67,30 +65,6 @@ export class AuthService {
 			}
 			throw AppError.unauthorized(ErrorCodes.ERR_INVALID_TOKEN);
 		}
-	}
-
-	/**
-	 * Creates an auth context for a user
-	 */
-	createAuthContext(
-		user: AuthUser,
-		protocol: AuthProtocol,
-		options: {
-			correlationId?: string;
-			token?: string;
-			metadata?: Record<string, unknown>;
-		} = {},
-	): AuthContext {
-		return {
-			user,
-			correlationId: options.correlationId || randomUUID(),
-			timestamp: Date.now(),
-			metadata: {
-				protocol,
-				token: options.token,
-				...options.metadata,
-			},
-		};
 	}
 
 	/**
