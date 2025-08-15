@@ -1,10 +1,11 @@
 import { Empty } from 'libs/proto/src/lib/shared/common';
 import { Metadata } from '@grpc/grpc-js';
-import { Controller, Logger, UseGuards } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { VendorCreateACL, VendorLookupACL, VendorUpdateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcAuthGuard } from '@venta/nest/guards';
+import { Logger } from '@venta/nest/modules';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorCreateData,
@@ -23,9 +24,12 @@ import { CoreService } from './core.service';
  */
 @Controller()
 export class CoreController implements VendorManagementServiceController {
-	private readonly logger = new Logger(CoreController.name);
-
-	constructor(private readonly coreService: CoreService) {}
+	constructor(
+		private readonly coreService: CoreService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(CoreController.name);
+	}
 
 	@GrpcMethod(VENDOR_MANAGEMENT_SERVICE_NAME)
 	async getVendorById(request: VendorIdentityData): Promise<VendorLookupResponse> {

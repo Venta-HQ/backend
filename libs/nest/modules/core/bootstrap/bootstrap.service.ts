@@ -95,7 +95,7 @@ export class BootstrapService {
 
 		// Set our custom Logger as the application logger
 		try {
-			const customLogger = new Logger();
+			const customLogger = await (app as any).resolve(Logger);
 			app.useLogger(customLogger);
 		} catch (error) {
 			// Fallback to default logger if custom logger is not available
@@ -116,7 +116,7 @@ export class BootstrapService {
 
 		// Set our custom Logger as the application logger
 		try {
-			const customLogger = new Logger();
+			const customLogger = await (app as any).resolve(Logger);
 			app.useLogger(customLogger);
 		} catch (error) {
 			// Fallback to default logger if custom logger is not available

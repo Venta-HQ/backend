@@ -1,17 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { VendorCreate, VendorUpdate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { EventService, PrismaService } from '@venta/nest/modules';
+import { EventService, Logger, PrismaService } from '@venta/nest/modules';
 import { Vendor } from '@venta/proto/marketplace/vendor-management';
 
 @Injectable()
 export class CoreService {
-	private readonly logger = new Logger(CoreService.name);
-
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly eventService: EventService,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(CoreService.name);
+	}
 
 	/**
 	 * Get vendor by ID

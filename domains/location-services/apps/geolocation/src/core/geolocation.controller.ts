@@ -1,4 +1,4 @@
-import { Controller, Logger, UseInterceptors } from '@nestjs/common';
+import { Controller, UseInterceptors } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { GeospatialQueryACL, LocationUpdateACL } from '@venta/domains/location-services/contracts';
 import type {
@@ -7,13 +7,17 @@ import type {
 	LocationUpdate,
 } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 import { GeolocationService } from './geolocation.service';
 
 @Controller()
 export class GeolocationController {
-	private readonly logger = new Logger(GeolocationController.name);
-
-	constructor(private readonly geolocationService: GeolocationService) {}
+	constructor(
+		private readonly geolocationService: GeolocationService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(GeolocationController.name);
+	}
 
 	@GrpcMethod('GeolocationService', 'UpdateVendorLocation')
 	async updateVendorLocation(request: any) {

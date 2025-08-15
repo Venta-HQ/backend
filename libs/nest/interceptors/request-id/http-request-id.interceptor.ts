@@ -10,6 +10,7 @@ import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.
 class HttpRequestIdExtractor implements RequestIdExtractor {
 	extractId(context: ExecutionContext): string | undefined {
 		const request: HttpRequest = context.switchToHttp().getRequest();
+		const response = context.switchToHttp().getResponse();
 
 		// Helper to normalize header values (can be string or string[])
 		const getHeaderValue = (value: string | string[] | undefined): string | undefined => {
@@ -27,6 +28,11 @@ class HttpRequestIdExtractor implements RequestIdExtractor {
 
 		// Set both fields on the request for other parts of the app to use
 		request.requestId = finalRequestId;
+
+		// Ensure the response always includes X-Request-ID header
+		if (response && typeof response.setHeader === 'function') {
+			response.setHeader('x-request-id', finalRequestId);
+		}
 
 		return finalRequestId;
 	}
