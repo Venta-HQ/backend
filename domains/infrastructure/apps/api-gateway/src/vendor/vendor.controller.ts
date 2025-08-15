@@ -1,6 +1,5 @@
 import { catchError, firstValueFrom } from 'rxjs';
-import { Body, Controller, Get, Inject, Param, Post, Put, Req, UseGuards, UsePipes } from '@nestjs/common';
-import { AuthenticatedRequest } from '@venta/apitypes';
+import { Body, Controller, Get, Inject, Param, Post, Put, UseGuards, UsePipes } from '@nestjs/common';
 import {
 	IdParam,
 	idParamSchema,
