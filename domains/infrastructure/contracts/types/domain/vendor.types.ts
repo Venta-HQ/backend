@@ -5,7 +5,6 @@ export interface VendorCreateRequest {
 	phone: string;
 	website: string;
 	imageUrl: string;
-	userId: string;
 }
 
 export interface VendorUpdateRequest {

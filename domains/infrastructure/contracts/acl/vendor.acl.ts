@@ -17,7 +17,6 @@ export class VendorCreateRequestACL {
 	static validate(request: VendorCreateRequest): void {
 		validateRequiredString(request.name, 'name');
 		validateEmail(request.email, 'email');
-		validateRequiredString(request.userId, 'userId');
 		validateRequiredString(request.imageUrl, 'imageUrl');
 	}
 
