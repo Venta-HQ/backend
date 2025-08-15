@@ -1,2 +1,2 @@
-export * from '../errors/app-exception.filter';
+export * from './app-exception.filter';
 export * from './grpc-exception.filter';

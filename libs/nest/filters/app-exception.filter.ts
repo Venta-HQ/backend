@@ -3,8 +3,7 @@ import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
-import { AppError } from './app-error';
-import { ErrorCodes } from './error-definitions';
+import { AppError, decodeGrpcError, ErrorCodes, mapGrpcCodeToAppErrorFallback } from '@venta/nest/errors';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
@@ -22,8 +21,6 @@ export class AppExceptionFilter implements ExceptionFilter {
 		switch (contextType) {
 			case 'http':
 				return this.handleHttpException(appError, host);
-			case 'rpc':
-				return this.handleGrpcException(appError, host);
 			case 'ws':
 				return this.handleWsException(appError, host);
 			default:
@@ -102,43 +99,17 @@ export class AppExceptionFilter implements ExceptionFilter {
 			}
 		}
 
+		// Handle gRPC-like errors thrown by client Observables via shared decoder
+		if (typeof exception === 'object' && exception !== null && 'code' in (exception as any)) {
+			const decoded = decodeGrpcError(exception);
+			if (decoded) return decoded;
+			return mapGrpcCodeToAppErrorFallback((exception as any)?.code, (exception as any)?.message);
+		}
+
 		if (exception instanceof RpcException) {
-			const rpcError = exception.getError() as any;
-
-			// Try to extract AppError details from RpcException
-			if (rpcError && rpcError.details) {
-				const details = rpcError.details;
-
-				// Check if details contains AppError structure (could be object or JSON string)
-				let parsedDetails = details;
-				if (typeof details === 'string') {
-					try {
-						parsedDetails = JSON.parse(details);
-					} catch (parseError) {
-						// Details might not be JSON, continue with original
-					}
-				}
-
-				// Check if this contains AppError structure
-				if (parsedDetails && parsedDetails.errorCode && parsedDetails.errorType) {
-					const appError = AppError.internal(parsedDetails.errorCode, parsedDetails.data || {});
-
-					// Restore original error type and message
-					Object.defineProperties(appError, {
-						errorType: { value: parsedDetails.errorType, writable: false },
-						message: { value: rpcError.message || parsedDetails.message, writable: false },
-						timestamp: { value: parsedDetails.timestamp || new Date().toISOString(), writable: false },
-					});
-
-					return appError;
-				}
-			}
-
-			// Fallback to generic internal error if we can't parse the details
-			return AppError.internal(ErrorCodes.ERR_INTERNAL, {
-				originalRpcCode: rpcError?.code,
-				originalMessage: rpcError?.message || exception.message,
-			});
+			const decoded = decodeGrpcError(exception.getError());
+			if (decoded) return decoded;
+			return AppError.internal(ErrorCodes.ERR_INTERNAL);
 		}
 
 		if (exception instanceof WsException) {
@@ -169,21 +140,6 @@ export class AppExceptionFilter implements ExceptionFilter {
 		const responseBody = httpException.getResponse();
 
 		response.status(status).json(responseBody);
-	}
-
-	private handleGrpcException(error: AppError, host: ArgumentsHost) {
-		const ctx = host.switchToRpc();
-		const context = ctx.getContext();
-
-		// Add context information if available
-		if (context && context.get) {
-			(error as any).requestId = context.get('request-id');
-		}
-
-		const grpcException = (error as any).toGrpcException();
-
-		// For gRPC, we need to throw the exception to be handled by the gRPC framework
-		throw grpcException;
 	}
 
 	private handleWsException(error: AppError, host: ArgumentsHost) {

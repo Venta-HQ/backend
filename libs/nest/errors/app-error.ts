@@ -80,25 +80,16 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 	 * Converts AppError to RpcException for gRPC transport
 	 */
 	toGrpcException(): RpcException {
-		const grpcCode = this.getGrpcCode();
-		const response = {
-			message: this.message,
-			errorCode: this.errorCode,
-			errorType: this.errorType,
-			data: this.data,
-		};
-
-		console.log('response', {
-			code: grpcCode,
-			message: this.message,
-			details: response,
-		});
-
-		return new RpcException({
-			code: grpcCode,
-			message: this.message,
-			details: response,
-		});
+		// Delegate to the shared encoder for consistent gRPC errors
+		// Import lazily to avoid circular deps
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const { encodeAppErrorToGrpc } = require('./grpc-error.codec');
+		const { code, message, metadata } = encodeAppErrorToGrpc(this as any);
+		const err: any = new Error(message);
+		err.code = code;
+		err.details = message;
+		err.metadata = metadata;
+		return new RpcException(err);
 	}
 
 	/**
@@ -139,27 +130,5 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 		}
 	}
 
-	/**
-	 * Maps ErrorType to gRPC status code
-	 */
-	private getGrpcCode(): number {
-		switch (this.errorType) {
-			case ErrorType.VALIDATION:
-				return 3; // INVALID_ARGUMENT
-			case ErrorType.NOT_FOUND:
-				return 5; // NOT_FOUND
-			case ErrorType.UNAUTHORIZED:
-				return 16; // UNAUTHENTICATED
-			case ErrorType.FORBIDDEN:
-				return 7; // PERMISSION_DENIED
-			case ErrorType.RATE_LIMIT:
-				return 8; // RESOURCE_EXHAUSTED
-			case ErrorType.INTERNAL:
-				return 13; // INTERNAL
-			case ErrorType.EXTERNAL_SERVICE:
-				return 14; // UNAVAILABLE
-			default:
-				return 13; // INTERNAL
-		}
-	}
+	// gRPC status mapping handled by shared encoder
 }

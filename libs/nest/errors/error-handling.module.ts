@@ -1,8 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
-import { GrpcExceptionFilter } from '@venta/nest/filters';
-import { AppExceptionFilter } from './app-exception.filter';
+import { AppExceptionFilter, GrpcExceptionFilter } from '@venta/nest/filters';
 
 @Module({})
 export class ErrorHandlingModule {

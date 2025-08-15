@@ -2,7 +2,7 @@ import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { HttpRequest } from '@venta/apitypes';
-import { retryObservable } from '@venta/utils';
+import { retryObservable, shouldRetryGrpcCode } from '@venta/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 class GrpcInstance<T> {
@@ -38,13 +38,12 @@ class GrpcInstance<T> {
 		if (this.service[method]) {
 			const result = (this.service[method] as (...args: any[]) => any)(data, metadata);
 
-			// If the result is an Observable, add retry logic using shared utility
+			// If the result is an Observable, add retry logic with transient-error policy
 			if (result && typeof result.pipe === 'function') {
-				return retryObservable(result, `gRPC call to ${String(method)}`, { logger: this.logger }) as T[K] extends (
-					...args: any[]
-				) => any
-					? ReturnType<T[K]>
-					: never;
+				return retryObservable(result, `gRPC call to ${String(method)}`, {
+					logger: this.logger,
+					retryCondition: (error: any) => shouldRetryGrpcCode(typeof error?.code === 'number' ? error.code : undefined),
+				}) as T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never;
 			}
 
 			return result;

@@ -12,6 +12,13 @@ export interface RetryOptions {
 	retryCondition?: (error: any) => boolean;
 	retryDelay?: number;
 }
+/**
+ * gRPC codes considered transient and safe to retry
+ * DEADLINE_EXCEEDED(4), RESOURCE_EXHAUSTED(8), UNAVAILABLE(14)
+ */
+export function shouldRetryGrpcCode(code: number | undefined): boolean {
+	return code === 4 || code === 8 || code === 14;
+}
 
 /**
  * Calculate delay with optional jitter to prevent thundering herd
