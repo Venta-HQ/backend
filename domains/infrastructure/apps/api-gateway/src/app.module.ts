@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { APP_NAMES, BootstrapModule } from '@venta/nest/modules';
-import { CoreModule } from './core/core.module';
+import { UploadModule } from './upload/upload.module';
+import { UserModule } from './user/user.module';
+import { VendorModule } from './vendor/vendor.module';
 
 @Module({
 	imports: [
@@ -9,7 +11,9 @@ import { CoreModule } from './core/core.module';
 			domain: 'infrastructure',
 			protocol: 'http',
 		}),
-		CoreModule,
+		UserModule,
+		VendorModule,
+		UploadModule,
 	],
 })
 export class AppModule {}
