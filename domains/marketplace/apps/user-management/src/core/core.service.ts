@@ -1,16 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { UserVendorResult } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { PrismaService } from '@venta/nest/modules';
+import { Logger, PrismaService } from '@venta/nest/modules';
 
 /**
  * Core service for user-management operations
  */
 @Injectable()
 export class CoreService {
-	private readonly logger = new Logger(CoreService.name);
-
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(CoreService.name);
+	}
 
 	/**
 	 * Handle user identity creation from external auth provider

@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { GeospatialQueryACL } from '@venta/domains/location-services/contracts';
 import type {
 	GeospatialQuery,
@@ -8,16 +8,17 @@ import type {
 	LocationUpdate,
 } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { EventService } from '@venta/nest/modules';
+import { EventService, Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class GeolocationService {
-	private readonly logger = new Logger(GeolocationService.name);
-
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly eventService: EventService,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(GeolocationService.name);
+	}
 
 	/**
 	 * Update vendor location
@@ -46,7 +47,7 @@ export class GeolocationService {
 				coordinates: request.coordinates,
 			});
 		} catch (error) {
-			this.logger.error('Failed to update vendor location', {
+			this.logger.error('Failed to update vendor location', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId: request.entityId,
 			});
@@ -90,7 +91,7 @@ export class GeolocationService {
 				lastUpdated: new Date().toISOString(),
 			}));
 		} catch (error) {
-			this.logger.error('Failed to get nearby entities', {
+			this.logger.error('Failed to get nearby entities', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				center: request.center,
 				radius: request.radius,

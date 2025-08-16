@@ -1,6 +1,7 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { withPulse } from '@prisma/extension-pulse';
+import { Logger } from '@venta/nest/modules';
 
 const getExtendedClientType = (client: PrismaClient, apiKey: string) => {
 	return client.$extends(withPulse({ apiKey }));
@@ -24,11 +25,15 @@ type CustomPrismaClient = ReturnType<typeof getClient>;
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
-	private readonly logger = new Logger(PrismaService.name);
 	private client: CustomPrismaClient;
 	private pulseClient: ExtendedPrismaClient;
 
-	constructor(connectionString: string, pulseKey: string) {
+	constructor(
+		connectionString: string,
+		pulseKey: string,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(PrismaService.name);
 		this.client = getClient(connectionString);
 
 		this.client.$on('error', (e) => {

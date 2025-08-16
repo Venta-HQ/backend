@@ -1,9 +1,10 @@
 import { ZodError, ZodSchema } from 'zod';
-import { ArgumentMetadata, Logger, PipeTransform } from '@nestjs/common';
+import { ArgumentMetadata, PipeTransform } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 export class SchemaValidatorPipe implements PipeTransform {
-	private readonly logger = new Logger(SchemaValidatorPipe.name);
+	private readonly logger = new Logger().setContext(SchemaValidatorPipe.name);
 
 	constructor(private schema: ZodSchema) {}
 
@@ -11,7 +12,7 @@ export class SchemaValidatorPipe implements PipeTransform {
 		try {
 			return this.schema.parse(value);
 		} catch (error) {
-			this.logger.error('Schema validation failed', {
+			this.logger.error('Schema validation failed', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				value,
 				type: metadata.type,

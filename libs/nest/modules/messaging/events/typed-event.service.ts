@@ -1,21 +1,23 @@
 import { randomUUID } from 'crypto';
 import { z } from 'zod';
-import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { ALL_EVENT_SCHEMAS, AvailableEventSubjects, BaseEvent, EventDataMap } from '@venta/eventtypes';
+import { Logger } from '@venta/nest/modules';
 import { RequestContextService } from '../../networking/request-context';
 
 @Injectable()
 export class EventService {
-	private readonly logger = new Logger(EventService.name);
 	private readonly appName: string;
 
 	constructor(
 		@Inject('NATS_SERVICE') private readonly natsClient: ClientProxy,
+		private readonly logger: Logger,
 		@Optional() private readonly requestContextService?: RequestContextService,
 		@Optional() private readonly configService?: ConfigService,
 	) {
+		this.logger.setContext(EventService.name);
 		// Get app name from ConfigService, with fallback
 		this.appName = this.configService?.get('APP_NAME') || 'unknown-service';
 	}

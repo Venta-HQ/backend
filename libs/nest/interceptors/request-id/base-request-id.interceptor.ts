@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { CallHandler, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Injectable } from '@nestjs/common';
+import { Logger } from '@venta/nest/modules';
 import { RequestContextService } from '../../modules/networking/request-context';
 
 export interface RequestIdExtractor {
@@ -14,12 +15,13 @@ export interface RequestIdExtractor {
  */
 @Injectable()
 export abstract class BaseRequestIdInterceptor {
-	protected readonly logger = new Logger(this.constructor.name);
-
 	constructor(
 		protected readonly requestContextService: RequestContextService,
 		protected readonly extractor: RequestIdExtractor,
-	) {}
+		protected readonly logger: Logger,
+	) {
+		this.logger.setContext(this.constructor.name);
+	}
 
 	intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
 		// Check if we already have an ALS context (e.g., from AuthGuard)

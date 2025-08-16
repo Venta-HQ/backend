@@ -1,15 +1,18 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
-import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
+import { Injectable } from '@nestjs/common';
 import type { LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class LocationTrackingService {
-	private readonly logger = new Logger(LocationTrackingService.name);
-
-	constructor(@InjectRedis() private readonly redis: Redis) {}
+	constructor(
+		@InjectRedis() private readonly redis: Redis,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(LocationTrackingService.name);
+	}
 
 	validateCoordinates(coordinates: { lat: number; lng: number }): boolean {
 		return coordinates.lat >= -90 && coordinates.lat <= 90 && coordinates.lng >= -180 && coordinates.lng <= 180;
@@ -26,7 +29,7 @@ export class LocationTrackingService {
 				}),
 			);
 		} catch (error) {
-			this.logger.error('Failed to update entity status', {
+			this.logger.error('Failed to update entity status', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				entityId: locationUpdate.entityId,
 				entityType: locationUpdate.entityType,
@@ -65,7 +68,7 @@ export class LocationTrackingService {
 				isActive,
 			};
 		} catch (error) {
-			this.logger.error('Failed to get vendor status', {
+			this.logger.error('Failed to get vendor status', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				entityId,
 			});

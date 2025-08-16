@@ -1,14 +1,18 @@
-import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class WsAuthGuard implements CanActivate {
-	private readonly logger = new Logger(WsAuthGuard.name);
-
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(WsAuthGuard.name);
+	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const client = context.switchToWs().getClient<AuthenticatedSocket>();

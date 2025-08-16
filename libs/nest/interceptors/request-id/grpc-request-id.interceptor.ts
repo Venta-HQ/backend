@@ -1,4 +1,5 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Inject, Injectable } from '@nestjs/common';
+import { Logger } from '../../modules/core/logger/logger.service';
 import { RequestContextService } from '../../modules/networking/request-context';
 import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
@@ -24,7 +25,7 @@ class GrpcRequestIdExtractor implements RequestIdExtractor {
  */
 @Injectable()
 export class GrpcRequestIdInterceptor extends BaseRequestIdInterceptor {
-	constructor(requestContextService: RequestContextService) {
-		super(requestContextService, new GrpcRequestIdExtractor());
+	constructor(requestContextService: RequestContextService, @Inject(Logger) logger: Logger) {
+		super(requestContextService, new GrpcRequestIdExtractor(), logger);
 	}
 }

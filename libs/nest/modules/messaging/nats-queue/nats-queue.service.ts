@@ -1,6 +1,7 @@
 import { connect, NatsConnection, Subscription } from 'nats';
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@venta/nest/modules';
 
 export interface QueueMessage {
 	data: any;
@@ -17,9 +18,13 @@ export interface QueueHandler {
 export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 	private nc: NatsConnection;
 	private subscriptions: Subscription[] = [];
-	private readonly logger = new Logger(NatsQueueService.name);
 
-	constructor(private readonly configService: ConfigService) {}
+	constructor(
+		private readonly configService: ConfigService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(NatsQueueService.name);
+	}
 
 	async onModuleInit() {
 		const natsUrl = this.configService.get('NATS_URL') || 'nats://localhost:4222';

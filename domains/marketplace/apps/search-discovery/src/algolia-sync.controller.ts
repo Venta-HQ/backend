@@ -1,8 +1,8 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 // Import specific event types instead of namespace
 import type { EventDataMap } from '@venta/eventtypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { NatsQueueService } from '@venta/nest/modules';
+import { Logger, NatsQueueService } from '@venta/nest/modules';
 import { AlgoliaSyncService } from './algolia-sync.service';
 
 /**
@@ -10,12 +10,13 @@ import { AlgoliaSyncService } from './algolia-sync.service';
  */
 @Injectable()
 export class AlgoliaSyncController implements OnModuleInit {
-	private readonly logger = new Logger(AlgoliaSyncController.name);
-
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
 		private readonly algoliaSyncService: AlgoliaSyncService,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(AlgoliaSyncController.name);
+	}
 
 	async onModuleInit() {
 		this.logger.debug('Initializing Algolia sync controller');
@@ -36,9 +37,11 @@ export class AlgoliaSyncController implements OnModuleInit {
 
 			this.logger.debug('Algolia sync controller initialized successfully');
 		} catch (error) {
-			this.logger.error('Failed to initialize Algolia sync controller', {
-				error: error.message,
-			});
+			this.logger.error(
+				'Failed to initialize Algolia sync controller',
+				error instanceof Error ? error.stack : undefined,
+				{ error: error instanceof Error ? error.message : 'Unknown error' },
+			);
 
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
@@ -86,8 +89,8 @@ export class AlgoliaSyncController implements OnModuleInit {
 				eventId: event.timestamp,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle marketplace vendor event', {
-				error: error.message,
+			this.logger.error('Failed to handle marketplace vendor event', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				subject,
 				eventId: event.timestamp,
 			});
@@ -127,8 +130,8 @@ export class AlgoliaSyncController implements OnModuleInit {
 				this.logger.warn('Unhandled location vendor event', { subject });
 			}
 		} catch (error) {
-			this.logger.error('Failed to handle location vendor event', {
-				error: error.message,
+			this.logger.error('Failed to handle location vendor event', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				subject,
 				vendorId: event.vendorId,
 			});

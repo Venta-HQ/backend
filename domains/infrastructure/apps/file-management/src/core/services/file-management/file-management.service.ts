@@ -1,21 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { CloudinaryOptionsACL, FileUploadACL } from '@venta/domains/infrastructure/contracts';
+import { Injectable } from '@nestjs/common';
+import { CloudinaryOptionsACL } from '@venta/domains/infrastructure/contracts';
 import type {
 	CloudinaryUploadOptions,
 	FileUpload,
 	FileUploadResult,
 } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { CloudinaryService } from '@venta/nest/modules';
+import { CloudinaryService, Logger } from '@venta/nest/modules';
 
 /**
  * File management service for infrastructure domain
  */
 @Injectable()
 export class FileManagementService {
-	private readonly logger = new Logger(FileManagementService.name);
-
-	constructor(private readonly cloudinaryService: CloudinaryService) {}
+	constructor(
+		private readonly cloudinaryService: CloudinaryService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(FileManagementService.name);
+	}
 
 	/**
 	 * Upload a file to cloud storage
@@ -80,7 +83,7 @@ export class FileManagementService {
 
 			return uploadResult;
 		} catch (error) {
-			this.logger.error('Failed to upload file', {
+			this.logger.error('Failed to upload file', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: request.filename,
 				size: request.size,

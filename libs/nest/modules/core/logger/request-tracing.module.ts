@@ -6,6 +6,7 @@ import {
 	NatsRequestIdInterceptor,
 } from '../../../interceptors/request-id';
 import { RequestContextModule } from '../../networking/request-context';
+import { LoggerModule } from './logger.module';
 
 export interface RequestTracingOptions {
 	protocol: 'http' | 'grpc' | 'websocket' | 'nats';
@@ -35,7 +36,7 @@ export class RequestTracingModule {
 		}
 
 		return {
-			imports: [RequestContextModule],
+			imports: [RequestContextModule, LoggerModule.register()],
 			module: RequestTracingModule,
 			providers,
 		};

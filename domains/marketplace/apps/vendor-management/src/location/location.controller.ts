@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { EventDataMap } from '@venta/eventtypes';
-import { NatsQueueService } from '@venta/nest/modules';
+import { Logger, NatsQueueService } from '@venta/nest/modules';
 import { LocationService } from './location.service';
 
 /**
@@ -14,12 +14,13 @@ import { LocationService } from './location.service';
  */
 @Injectable()
 export class LocationController implements OnModuleInit {
-	private readonly logger = new Logger(LocationController.name);
-
 	constructor(
 		private readonly natsQueueService: NatsQueueService,
 		private readonly locationService: LocationService,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(LocationController.name);
+	}
 
 	async onModuleInit() {
 		// Set up queue subscription for vendor location update events
@@ -48,10 +49,11 @@ export class LocationController implements OnModuleInit {
 				lng: location.lng,
 			});
 		} catch (error) {
-			this.logger.error(`Failed to handle vendor location event: location.vendor.location_updated`, {
-				error,
-				vendorId,
-			});
+			this.logger.error(
+				`Failed to handle vendor location event: location.vendor.location_updated`,
+				error instanceof Error ? error.stack : undefined,
+				{ error: error instanceof Error ? error.message : 'Unknown error', vendorId },
+			);
 			throw error;
 		}
 	}

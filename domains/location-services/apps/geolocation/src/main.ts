@@ -1,10 +1,9 @@
-import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
+import { BootstrapService, HealthCheckModule, Logger } from '@venta/nest/modules';
 import { GeolocationModule } from './geolocation.module';
 
 async function bootstrap() {
-	const logger = new Logger('GeolocationService');
+	const logger = new Logger().setContext('GeolocationService');
 
 	try {
 		// Create a temporary ConfigService instance for environment variable access
@@ -29,7 +28,9 @@ async function bootstrap() {
 
 		logger.log('Geolocation microservice started successfully');
 	} catch (error) {
-		logger.error('Failed to start geolocation microservice:', error);
+		logger.error('Failed to start geolocation microservice:', error instanceof Error ? error.stack : undefined, {
+			error,
+		});
 		process.exit(1);
 	}
 }

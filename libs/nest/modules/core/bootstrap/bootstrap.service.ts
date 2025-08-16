@@ -1,4 +1,3 @@
-import { Logger as NestLogger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -47,10 +46,10 @@ export interface MicroserviceBootstrapOptions {
 }
 
 export class BootstrapService {
-	private static readonly logger = new NestLogger(BootstrapService.name);
+	private static readonly logger = new Logger().setContext(BootstrapService.name);
 
 	static async createHttpApp(options: HttpBootstrapOptions) {
-		const app = await NestFactory.create(options.module);
+		const app = await NestFactory.create(options.module, { bufferLogs: true });
 		const configService = app.get(ConfigService);
 
 		// Configure CORS if enabled
@@ -82,6 +81,7 @@ export class BootstrapService {
 
 	static async createGrpcApp(options: GrpcBootstrapOptions) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
+			bufferLogs: true as any,
 			options: {
 				package: options.package,
 				protoPath: ProtoPathUtil.resolveProtoPath(options.protoPath),
@@ -107,6 +107,7 @@ export class BootstrapService {
 
 	static async createNatsApp(options: NatsBootstrapOptions) {
 		const app = await NestFactory.createMicroservice<MicroserviceOptions>(options.module, {
+			bufferLogs: true as any,
 			options: {
 				queue: options.queue || 'default-queue',
 				servers: options.url || options.defaultUrl || 'nats://localhost:4222',
@@ -159,7 +160,7 @@ export class BootstrapService {
 	}
 
 	static async bootstrapHealthCheck(options: HealthBootstrapOptions) {
-		const app = await NestFactory.create(options.module);
+		const app = await NestFactory.create(options.module, { bufferLogs: true });
 
 		// Get port and host
 		const port = options.port || 3000;

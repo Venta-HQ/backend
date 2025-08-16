@@ -1,12 +1,13 @@
-import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { extractGrpcRequestMetadata } from '@venta/utils';
+import { Logger } from '../../modules/core/logger/logger.service';
 
 @Injectable()
 export class GrpcAuthGuard implements CanActivate {
-	private readonly logger = new Logger(GrpcAuthGuard.name);
-
-	constructor() {}
+	constructor(private readonly logger: Logger) {
+		this.logger.setContext(GrpcAuthGuard.name);
+	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const grpcContext = context.switchToRpc();

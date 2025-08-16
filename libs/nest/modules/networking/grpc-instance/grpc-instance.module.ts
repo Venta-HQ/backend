@@ -4,6 +4,7 @@ import { REQUEST } from '@nestjs/core';
 import { ClientGrpc, ClientsModule, Transport } from '@nestjs/microservices';
 import { HttpRequest } from '@venta/apitypes';
 import { ProtoPathUtil } from '@venta/utils';
+import { Logger } from '../../core/logger';
 import GrpcInstance from './grpc-instance.service';
 
 @Module({})
@@ -59,7 +60,7 @@ export class GrpcInstanceModule {
 					scope: Scope.REQUEST,
 					useFactory: (req: HttpRequest, client: ClientGrpc) => {
 						const service = client.getService<T>(serviceName);
-						return new GrpcInstance(req, service);
+						return new GrpcInstance(req, service, new Logger());
 					},
 				},
 			],

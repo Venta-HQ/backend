@@ -1,10 +1,9 @@
-import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BootstrapService, HealthCheckModule } from '@venta/nest/modules';
+import { BootstrapService, HealthCheckModule, Logger } from '@venta/nest/modules';
 import { UserManagementModule } from './user-management.module';
 
 async function bootstrap() {
-	const logger = new Logger('UserService');
+	const logger = new Logger().setContext('UserService');
 
 	try {
 		// Create a temporary ConfigService instance for environment variable access
@@ -29,7 +28,7 @@ async function bootstrap() {
 
 		logger.log('User microservice started successfully');
 	} catch (error) {
-		logger.error('Failed to start user microservice:', error);
+		logger.error('Failed to start user microservice:', error instanceof Error ? error.stack : undefined, { error });
 		process.exit(1);
 	}
 }

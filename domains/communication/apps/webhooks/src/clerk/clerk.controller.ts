@@ -1,18 +1,19 @@
-import { Body, Controller, Inject, Logger, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common';
 import { ClerkWebhookACL, ClerkWebhookPayload } from '@venta/domains/communication/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SignedWebhookGuard } from '@venta/nest/guards';
-import { GrpcInstance } from '@venta/nest/modules';
+import { GrpcInstance, Logger } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller()
 export class ClerkController {
-	private readonly logger = new Logger(ClerkController.name);
-
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
 		private readonly client: GrpcInstance<UserManagementServiceClient>,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(ClerkController.name);
+	}
 
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
@@ -50,7 +51,7 @@ export class ClerkController {
 
 			return { message: 'Event processed successfully' };
 		} catch (error) {
-			this.logger.error('Failed to handle Clerk webhook event', {
+			this.logger.error('Failed to handle Clerk webhook event', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				eventType: event.type,
 				eventId: event.data?.id,

@@ -1,17 +1,20 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 // Import specific event types instead of namespace
 import type { EventDataMap } from '@venta/eventtypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AlgoliaService } from '@venta/nest/modules';
+import { AlgoliaService, Logger } from '@venta/nest/modules';
 
 /**
  * Service for syncing vendor data with Algolia search index
  */
 @Injectable()
 export class AlgoliaSyncService {
-	private readonly logger = new Logger(AlgoliaSyncService.name);
-
-	constructor(private readonly algoliaService: AlgoliaService) {}
+	constructor(
+		private readonly algoliaService: AlgoliaService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(AlgoliaSyncService.name);
+	}
 
 	/**
 	 * Handle vendor creation event
@@ -43,8 +46,8 @@ export class AlgoliaSyncService {
 				vendorId: event.vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to index vendor', {
-				error: error.message,
+			this.logger.error('Failed to index vendor', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId: event.vendorId,
 			});
 
@@ -84,8 +87,8 @@ export class AlgoliaSyncService {
 				updatedFields: event.updatedFields,
 			});
 		} catch (error) {
-			this.logger.error('Failed to update vendor index', {
-				error: error.message,
+			this.logger.error('Failed to update vendor index', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId: event.vendorId,
 			});
 
@@ -115,8 +118,8 @@ export class AlgoliaSyncService {
 				vendorId: event.vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to remove vendor from index', {
-				error: error.message,
+			this.logger.error('Failed to remove vendor from index', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId: event.vendorId,
 			});
 
@@ -162,8 +165,8 @@ export class AlgoliaSyncService {
 				},
 			});
 		} catch (error) {
-			this.logger.error('Failed to update vendor location', {
-				error: error.message,
+			this.logger.error('Failed to update vendor location', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId: event.vendorId,
 			});
 

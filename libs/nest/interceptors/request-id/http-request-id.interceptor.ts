@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Inject, Injectable } from '@nestjs/common';
 import { HttpRequest } from '@venta/apitypes';
+import { Logger } from '../../modules/core/logger/logger.service';
 import { RequestContextService } from '../../modules/networking/request-context';
 import { BaseRequestIdInterceptor, RequestIdExtractor } from './base-request-id.interceptor';
 
@@ -56,7 +57,7 @@ class HttpRequestIdExtractor implements RequestIdExtractor {
  */
 @Injectable()
 export class HttpRequestIdInterceptor extends BaseRequestIdInterceptor {
-	constructor(requestContextService: RequestContextService) {
-		super(requestContextService, new HttpRequestIdExtractor());
+	constructor(requestContextService: RequestContextService, @Inject(Logger) logger: Logger) {
+		super(requestContextService, new HttpRequestIdExtractor(), logger);
 	}
 }

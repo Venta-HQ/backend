@@ -1,8 +1,9 @@
-import { Controller, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
 import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 import { FileManagementService } from '../../../core/services/file-management/file-management.service';
 
 /**
@@ -10,9 +11,12 @@ import { FileManagementService } from '../../../core/services/file-management/fi
  */
 @Controller()
 export class FileManagementController {
-	private readonly logger = new Logger(FileManagementController.name);
-
-	constructor(private readonly fileManagementService: FileManagementService) {}
+	constructor(
+		private readonly fileManagementService: FileManagementService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(FileManagementController.name);
+	}
 
 	@GrpcMethod('FileManagementService', 'UploadImage')
 	async uploadImage(request: FileUpload): Promise<FileUploadResult> {
@@ -50,7 +54,7 @@ export class FileManagementController {
 
 			return result;
 		} catch (error) {
-			this.logger.error('Failed to handle image upload', {
+			this.logger.error('Failed to handle image upload', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: request.filename,
 			});

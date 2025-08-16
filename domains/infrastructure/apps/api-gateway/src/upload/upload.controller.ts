@@ -1,11 +1,11 @@
 import { lastValueFrom } from 'rxjs';
-import { Controller, Inject, Logger, Post, Query, Req, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Inject, Post, Query, Req, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { HttpRequest } from '@venta/apitypes';
 import { FileUploadACL, ImageUploadQuery, imageUploadQuerySchema } from '@venta/domains/infrastructure/contracts';
 import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { GrpcInstance } from '@venta/nest/modules';
+import { GrpcInstance, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
@@ -15,12 +15,13 @@ import {
 
 @Controller('upload')
 export class UploadController {
-	private readonly logger = new Logger(UploadController.name);
-
 	constructor(
 		@Inject(FILE_MANAGEMENT_SERVICE_NAME)
 		private readonly fileManagementClient: GrpcInstance<FileManagementServiceClient>,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(UploadController.name);
+	}
 
 	@Post('image')
 	@UseInterceptors(
@@ -81,8 +82,8 @@ export class UploadController {
 			// Transform gRPC response back to domain using ACL
 			return FileUploadACL.fromGrpc(grpcResult);
 		} catch (error) {
-			this.logger.error('Failed to upload image', {
-				error: error.message,
+			this.logger.error('Failed to upload image', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: file?.originalname,
 			});
 

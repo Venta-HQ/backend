@@ -1,20 +1,22 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules/data/prisma';
 import { ClerkService } from '@venta/nest/modules/external/clerk';
+import { Logger } from '../../modules/core/logger/logger.service';
 
 @Injectable()
 export class AuthService {
-	private readonly logger = new Logger(AuthService.name);
-
 	constructor(
 		private readonly clerkService: ClerkService,
 		private readonly prisma: PrismaService,
 		@InjectRedis() private readonly redis: Redis,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(AuthService.name);
+	}
 
 	/**
 	 * Validates a token and returns the authenticated user

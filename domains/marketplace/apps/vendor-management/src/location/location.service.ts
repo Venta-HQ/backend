@@ -1,12 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { PrismaService } from '@venta/nest/modules';
+import { Logger, PrismaService } from '@venta/nest/modules';
 
 @Injectable()
 export class LocationService {
-	private readonly logger = new Logger(LocationService.name);
-
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(LocationService.name);
+	}
 
 	/**
 	 * Update vendor location from event data

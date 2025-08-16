@@ -1,12 +1,15 @@
 import { v2 as cloudinary, UploadApiOptions, UploadApiResponse } from 'cloudinary';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class CloudinaryService {
-	private readonly logger = new Logger(CloudinaryService.name);
-
-	constructor(private readonly configService: ConfigService) {
+	constructor(
+		private readonly configService: ConfigService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(CloudinaryService.name);
 		cloudinary.config({
 			cloud_name: this.configService.get('CLOUDINARY_CLOUD_NAME'),
 			api_key: this.configService.get('CLOUDINARY_API_KEY'),

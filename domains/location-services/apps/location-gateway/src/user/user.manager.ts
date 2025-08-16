@@ -1,13 +1,17 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class UserConnectionManagerService {
-	private readonly logger = new Logger(UserConnectionManagerService.name);
-
-	constructor(@InjectRedis() private readonly redis: Redis) {}
+	constructor(
+		@InjectRedis() private readonly redis: Redis,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(UserConnectionManagerService.name);
+	}
 
 	/**
 	 * Register a new user connection
@@ -25,7 +29,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to register user connection', {
+			this.logger.error('Failed to register user connection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 				userId,
@@ -54,7 +58,7 @@ export class UserConnectionManagerService {
 
 			return { userId };
 		} catch (error) {
-			this.logger.error('Failed to get connection info', {
+			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
@@ -72,7 +76,7 @@ export class UserConnectionManagerService {
 		try {
 			return this.redis.get(`socket:${socketId}:user`);
 		} catch (error) {
-			this.logger.error('Failed to get socket user ID', {
+			this.logger.error('Failed to get socket user ID', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
@@ -90,7 +94,7 @@ export class UserConnectionManagerService {
 		try {
 			return this.redis.smembers(`user:${userId}:vendor_rooms`);
 		} catch (error) {
-			this.logger.error('Failed to get user vendor rooms', {
+			this.logger.error('Failed to get user vendor rooms', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 			});
@@ -113,7 +117,7 @@ export class UserConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to add user to vendor room', {
+			this.logger.error('Failed to add user to vendor room', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 				vendorId,
@@ -137,7 +141,7 @@ export class UserConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to remove user from vendor room', {
+			this.logger.error('Failed to remove user from vendor room', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 				vendorId,
@@ -173,7 +177,7 @@ export class UserConnectionManagerService {
 				userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle user disconnect', {
+			this.logger.error('Failed to handle user disconnect', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 				userId,
@@ -192,7 +196,7 @@ export class UserConnectionManagerService {
 		try {
 			return this.redis.smembers(`user:${userId}:sockets`);
 		} catch (error) {
-			this.logger.error('Failed to get user sockets', {
+			this.logger.error('Failed to get user sockets', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 			});
@@ -210,7 +214,7 @@ export class UserConnectionManagerService {
 		try {
 			return (await this.redis.sismember(`user:${userId}:vendor_rooms`, vendorId)) === 1;
 		} catch (error) {
-			this.logger.error('Failed to check if user is in vendor room', {
+			this.logger.error('Failed to check if user is in vendor room', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				userId,
 				vendorId,

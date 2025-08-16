@@ -1,17 +1,22 @@
 import { PassThrough } from 'stream';
 import { v2 as cloudinary } from 'cloudinary';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 /**
  * File upload service for infrastructure domain
  */
 @Injectable()
 export class UploadService {
-	private readonly logger = new Logger(UploadService.name);
-
-	constructor(apiKey: string, apiSecret: string, cloudName: string) {
+	constructor(
+		private readonly logger: Logger,
+		apiKey: string,
+		apiSecret: string,
+		cloudName: string,
+	) {
+		this.logger.setContext(UploadService.name);
 		cloudinary.config({
 			api_key: apiKey,
 			api_secret: apiSecret,
@@ -38,8 +43,8 @@ export class UploadService {
 				createdAt: new Date().toISOString(),
 			};
 		} catch (error) {
-			this.logger.error('Failed to upload file', {
-				error: error.message,
+			this.logger.error('Failed to upload file', error instanceof Error ? error.stack : undefined, {
+				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: file.filename,
 				size: file.size,
 			});

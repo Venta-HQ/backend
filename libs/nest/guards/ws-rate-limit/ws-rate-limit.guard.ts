@@ -1,21 +1,23 @@
 import Redis from 'ioredis';
-import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { WsException } from '@nestjs/websockets';
 import { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class WsRateLimitGuard implements CanActivate {
-	private readonly logger = new Logger(WsRateLimitGuard.name);
 	private readonly windowMs: number;
 	private readonly maxRequests: number;
 	constructor(
 		protected readonly redis: Redis,
 		windowMs: number,
 		maxRequests: number,
+		private readonly logger: Logger,
 	) {
 		this.windowMs = windowMs;
 		this.maxRequests = maxRequests;
+		this.logger.setContext(WsRateLimitGuard.name);
 	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {

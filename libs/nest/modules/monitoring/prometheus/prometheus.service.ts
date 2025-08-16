@@ -1,6 +1,7 @@
 import { Counter, Gauge, Histogram, Registry } from 'prom-client';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@venta/nest/modules';
 
 export interface MetricDefinition {
 	buckets?: number[];
@@ -32,7 +33,6 @@ export interface PrometheusMetrics {
 export class PrometheusService implements OnModuleInit {
 	private readonly registry = new Registry();
 	private readonly metrics: Map<string, Counter<string> | Gauge<string> | Histogram<string>> = new Map();
-	private readonly logger = new Logger(PrometheusService.name);
 
 	public readonly application = {
 		memoryUsage: new Gauge({
@@ -55,7 +55,12 @@ export class PrometheusService implements OnModuleInit {
 		}),
 	};
 
-	constructor(private readonly configService: ConfigService) {}
+	constructor(
+		private readonly configService: ConfigService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(PrometheusService.name);
+	}
 
 	onModuleInit() {
 		// Set initial application version

@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Prisma, SubscriptionProvider, SubscriptionStatus } from '@prisma/client';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { PrismaService } from '@venta/nest/modules';
+import { Logger, PrismaService } from '@venta/nest/modules';
 
 interface UserSubscriptionData {
 	clerkUserId: string;
@@ -9,9 +9,12 @@ interface UserSubscriptionData {
 
 @Injectable()
 export class SubscriptionService {
-	private readonly logger = new Logger(SubscriptionService.name);
-
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(SubscriptionService.name);
+	}
 
 	/**
 	 * Create user subscription record (legacy method)

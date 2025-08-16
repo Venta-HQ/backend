@@ -1,6 +1,7 @@
 import { algoliasearch } from 'algoliasearch';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 // Define proper types for Algolia operations
 export interface AlgoliaObject extends Record<string, unknown> {
@@ -13,9 +14,13 @@ export type AlgoliaUpdateAttributes = Partial<AlgoliaObject>;
 @Injectable()
 export class AlgoliaService {
 	private client: ReturnType<typeof algoliasearch>;
-	private readonly logger = new Logger(AlgoliaService.name);
 
-	constructor(applicationId: string, apiKey: string) {
+	constructor(
+		applicationId: string,
+		apiKey: string,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(AlgoliaService.name);
 		if (!applicationId || !apiKey) {
 			throw AppError.internal(ErrorCodes.ERR_EXTERNAL_SERVICE_ERROR, {
 				service: 'algolia',

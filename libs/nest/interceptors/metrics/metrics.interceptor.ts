@@ -1,7 +1,8 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { CallHandler, ExecutionContext, Inject, Injectable, Logger, NestInterceptor } from '@nestjs/common';
+import { CallHandler, ExecutionContext, Inject, Injectable, NestInterceptor } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Logger } from '@venta/nest/modules';
 import { MetricsFactoryRegistry } from '../../modules/monitoring/prometheus/factories/metrics-factory-registry';
 import { RequestMetrics } from '../../modules/monitoring/prometheus/interfaces/request-metrics.interface';
 import { PrometheusService } from '../../modules/monitoring/prometheus/prometheus.service';
@@ -15,7 +16,6 @@ interface Metrics {
 
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
-	private readonly logger = new Logger(MetricsInterceptor.name);
 	private metrics: Metrics | null = null;
 	private metricsInitialized = false;
 
@@ -23,7 +23,10 @@ export class MetricsInterceptor implements NestInterceptor {
 		private readonly prometheusService: PrometheusService,
 		private readonly configService: ConfigService,
 		@Inject('PROMETHEUS_OPTIONS') private readonly options: { appName: string },
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(MetricsInterceptor.name);
+	}
 
 	private initializeMetrics() {
 		if (this.metricsInitialized) return;

@@ -1,13 +1,17 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class VendorConnectionManagerService {
-	private readonly logger = new Logger(VendorConnectionManagerService.name);
-
-	constructor(@InjectRedis() private readonly redis: Redis) {}
+	constructor(
+		@InjectRedis() private readonly redis: Redis,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(VendorConnectionManagerService.name);
+	}
 
 	/**
 	 * Register a new vendor connection
@@ -25,7 +29,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to register vendor connection', {
+			this.logger.error('Failed to register vendor connection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 				vendorId,
@@ -54,7 +58,7 @@ export class VendorConnectionManagerService {
 
 			return { vendorId };
 		} catch (error) {
-			this.logger.error('Failed to get connection info', {
+			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
@@ -72,7 +76,7 @@ export class VendorConnectionManagerService {
 		try {
 			return this.redis.get(`socket:${socketId}:vendor`);
 		} catch (error) {
-			this.logger.error('Failed to get socket vendor ID', {
+			this.logger.error('Failed to get socket vendor ID', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 			});
@@ -90,7 +94,7 @@ export class VendorConnectionManagerService {
 		try {
 			return this.redis.smembers(`vendor:${vendorId}:room_users`);
 		} catch (error) {
-			this.logger.error('Failed to get vendor room users', {
+			this.logger.error('Failed to get vendor room users', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});
@@ -125,7 +129,7 @@ export class VendorConnectionManagerService {
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle vendor disconnect', {
+			this.logger.error('Failed to handle vendor disconnect', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId,
 				vendorId,
@@ -144,7 +148,7 @@ export class VendorConnectionManagerService {
 		try {
 			return this.redis.smembers(`vendor:${vendorId}:sockets`);
 		} catch (error) {
-			this.logger.error('Failed to get vendor sockets', {
+			this.logger.error('Failed to get vendor sockets', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});
@@ -163,7 +167,7 @@ export class VendorConnectionManagerService {
 			const sockets = await this.redis.smembers(`vendor:${vendorId}:sockets`);
 			return sockets.length > 0;
 		} catch (error) {
-			this.logger.error('Failed to check if vendor is online', {
+			this.logger.error('Failed to check if vendor is online', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				vendorId,
 			});

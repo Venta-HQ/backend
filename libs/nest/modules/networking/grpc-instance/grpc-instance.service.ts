@@ -1,16 +1,19 @@
 import { Metadata } from '@grpc/grpc-js';
-import { Inject, Injectable, Logger, Scope } from '@nestjs/common';
+import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { HttpRequest } from '@venta/apitypes';
+import { Logger } from '@venta/nest/modules';
 import { retryObservable, shouldRetryGrpcCode } from '@venta/utils';
 
 @Injectable({ scope: Scope.REQUEST })
 class GrpcInstance<T> {
-	private readonly logger = new Logger(GrpcInstance.name);
 	constructor(
 		@Inject(REQUEST) private readonly request: HttpRequest,
 		private readonly service: T,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(GrpcInstance.name);
+	}
 
 	invoke<K extends keyof T>(
 		method: K,

@@ -1,16 +1,20 @@
 import { Empty } from 'libs/proto/src/lib/shared/common';
-import { Controller, Logger } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { SubscriptionCreateACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 import { CreateSubscriptionData, USER_MANAGEMENT_SERVICE_NAME } from '@venta/proto/marketplace/user-management';
 import { SubscriptionService } from './subscription.service';
 
 @Controller()
 export class SubscriptionController {
-	private readonly logger = new Logger(SubscriptionController.name);
-
-	constructor(private readonly subscriptionService: SubscriptionService) {}
+	constructor(
+		private readonly subscriptionService: SubscriptionService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(SubscriptionController.name);
+	}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
 	async handleSubscriptionCreated(request: CreateSubscriptionData): Promise<Empty> {

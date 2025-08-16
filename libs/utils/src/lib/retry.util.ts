@@ -1,6 +1,6 @@
 import { Observable, timer } from 'rxjs';
 import { retry } from 'rxjs/operators';
-import { Logger } from '@nestjs/common';
+import { Logger } from '@venta/nest/modules';
 
 export interface RetryOptions {
 	backoffMultiplier?: number;
@@ -46,7 +46,7 @@ export async function retryOperation<T>(
 	description: string,
 	options: RetryOptions = {},
 ): Promise<T> {
-	const logger = options.logger ?? new Logger('RetryUtil');
+	const logger = options.logger ?? new Logger().setContext('RetryUtil');
 	const maxRetries = options.maxRetries ?? 3;
 	const retryDelay = options.retryDelay ?? 1000;
 	const backoffMultiplier = options.backoffMultiplier ?? 2;
@@ -88,7 +88,7 @@ export function retryObservable<T>(
 	description: string,
 	options: RetryOptions = {},
 ): Observable<T> {
-	const logger = options.logger ?? new Logger('RetryUtil');
+	const logger = options.logger ?? new Logger().setContext('RetryUtil');
 	const maxRetries = options.maxRetries ?? 3;
 	const retryDelay = options.retryDelay ?? 1000;
 	const backoffMultiplier = options.backoffMultiplier ?? 2;

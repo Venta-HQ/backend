@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
 	OnGatewayConnection,
 	OnGatewayDisconnect,
@@ -7,11 +7,11 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
-import { LocationUpdateACL, RealtimeMessageACL } from '@venta/domains/location-services/contracts';
-import type { LocationUpdate, RealtimeMessage } from '@venta/domains/location-services/contracts/types/domain';
+import type { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
-import { VendorConnectionManagerService } from '../vendor-connection-manager.service';
+import { WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
+import { Logger } from '@venta/nest/modules';
+import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
 	namespace: 'vendor',
@@ -24,12 +24,13 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 	@WebSocketServer()
 	server: Server;
 
-	private readonly logger = new Logger(VendorLocationGateway.name);
-
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
 		private readonly geolocationService: any, // TODO: Import proper geolocation service type
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(VendorLocationGateway.name);
+	}
 
 	/**
 	 * Handle new WebSocket connections
@@ -64,7 +65,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle vendor connection', {
+			this.logger.error('Failed to handle vendor connection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
@@ -109,7 +110,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				vendorId: connectionInfo.vendorId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle vendor disconnection', {
+			this.logger.error('Failed to handle vendor disconnection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
@@ -174,7 +175,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				location: data,
 			});
 		} catch (error) {
-			this.logger.error('Failed to update vendor location', {
+			this.logger.error('Failed to update vendor location', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: socket.id,
 			});

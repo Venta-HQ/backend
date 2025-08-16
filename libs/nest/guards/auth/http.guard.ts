@@ -1,18 +1,20 @@
 import { randomUUID } from 'crypto';
-import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthenticatedRequest } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { RequestContextService } from '@venta/nest/modules/networking/request-context';
+import { Logger } from '../../modules/core/logger/logger.service';
 import { AuthService } from './auth.service';
 
 @Injectable()
 export class HttpAuthGuard implements CanActivate {
-	private readonly logger = new Logger(HttpAuthGuard.name);
-
 	constructor(
 		private readonly authService: AuthService,
 		private readonly requestContextService: RequestContextService,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(HttpAuthGuard.name);
+	}
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const request = context.switchToHttp().getRequest<AuthenticatedRequest>();

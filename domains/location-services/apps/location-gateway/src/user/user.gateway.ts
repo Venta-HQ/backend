@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { Logger, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import {
 	OnGatewayConnection,
 	OnGatewayDisconnect,
@@ -7,10 +7,12 @@ import {
 	WebSocketGateway,
 	WebSocketServer,
 } from '@nestjs/websockets';
+import type { AuthenticatedSocket } from '@venta/apitypes';
 import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
 import type { GeospatialQuery, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { AuthenticatedSocket, WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
+import { WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
+import { Logger } from '@venta/nest/modules';
 import { GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';
 
@@ -25,12 +27,13 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	@WebSocketServer()
 	server: Server;
 
-	private readonly logger = new Logger(UserLocationGateway.name);
-
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
 		private readonly geolocationService: GeolocationServiceClient,
-	) {}
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(UserLocationGateway.name);
+	}
 
 	/**
 	 * Handle new WebSocket connections
@@ -62,7 +65,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle user connection', {
+			this.logger.error('Failed to handle user connection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
@@ -107,7 +110,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				userId: connectionInfo.userId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to handle user disconnection', {
+			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
@@ -193,7 +196,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				location: data,
 			});
 		} catch (error) {
-			this.logger.error('Failed to update user location', {
+			this.logger.error('Failed to update user location', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: socket.id,
 			});
