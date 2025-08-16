@@ -12,8 +12,8 @@ export const vendorEventSchemas = {
 	'marketplace.vendor.onboarded': createEventSchema({
 		vendorId: z.string(),
 		ownerId: z.string(),
-		// location schema
-		location: LocationSchema,
+		// location schema (optional at onboarding time)
+		location: LocationSchema.optional(),
 		timestamp: z
 			.string()
 			.datetime()
