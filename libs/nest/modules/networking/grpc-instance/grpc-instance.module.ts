@@ -55,12 +55,12 @@ export class GrpcInstanceModule {
 			module: GrpcInstanceModule,
 			providers: [
 				{
-					inject: [REQUEST, `${serviceName}-client`],
+					inject: [REQUEST, `${serviceName}-client`, Logger],
 					provide,
 					scope: Scope.REQUEST,
-					useFactory: (req: HttpRequest, client: ClientGrpc) => {
+					useFactory: (req: HttpRequest, client: ClientGrpc, logger: Logger) => {
 						const service = client.getService<T>(serviceName);
-						return new GrpcInstance(req, service, new Logger());
+						return new GrpcInstance(req, service, logger);
 					},
 				},
 			],

@@ -1,6 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AlgoliaService } from './algolia.service';
+import { Logger } from '../../core/logger';
 
 @Module({})
 export class AlgoliaModule {
@@ -11,9 +12,9 @@ export class AlgoliaModule {
 			module: AlgoliaModule,
 			providers: [
 				{
-					inject: [ConfigService],
+					inject: [ConfigService, Logger],
 					provide: AlgoliaService,
-					useFactory: (configService: ConfigService) => {
+					useFactory: (configService: ConfigService, logger: Logger) => {
 						if (!configService.get('ALGOLIA_APPLICATION_ID')) {
 							throw new Error('ALGOLIA_APPLICATION_ID required');
 						}
@@ -24,7 +25,7 @@ export class AlgoliaModule {
 						return new AlgoliaService(
 							configService.get('ALGOLIA_APPLICATION_ID'),
 							configService.get('ALGOLIA_API_KEY'),
-							new (require('../../core/logger').Logger)(),
+							logger,
 						);
 					},
 				},
