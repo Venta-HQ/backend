@@ -1,12 +1,7 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { withPulse } from '@prisma/extension-pulse';
-import { Logger } from '@venta/nest/modules';
-
-const getExtendedClientType = (client: PrismaClient, apiKey: string) => {
-	return client.$extends(withPulse({ apiKey }));
-};
-type ExtendedPrismaClient = ReturnType<typeof getExtendedClientType>;
+import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { Logger } from '../../core/logger';
+import { RequestContextService } from '../../networking/request-context';
 
 const getClient = (url) => {
 	return new PrismaClient({
@@ -15,47 +10,49 @@ const getClient = (url) => {
 				url,
 			},
 		},
-		log: [
-			{ emit: 'event', level: 'query' },
-			{ emit: 'event', level: 'error' },
-		],
 	});
 };
+
 type CustomPrismaClient = ReturnType<typeof getClient>;
 
 @Injectable()
 export class PrismaService implements OnModuleInit, OnModuleDestroy {
 	private client: CustomPrismaClient;
-	private pulseClient: ExtendedPrismaClient;
 
 	constructor(
 		connectionString: string,
-		pulseKey: string,
+		_pulseKey: string,
 		private readonly logger: Logger,
+		@Optional() private readonly requestContextService?: RequestContextService,
 	) {
 		this.logger.setContext(PrismaService.name);
-		this.client = getClient(connectionString).$extends({
+		this.client = getClient(connectionString);
+
+		// Use a Prisma extension to reliably capture ALS requestId at the callsite
+		const logExtension = Prisma.defineExtension({
 			query: {
 				$allModels: {
 					$allOperations: async ({ model, operation, args, query }) => {
+						const requestId =
+							this.requestContextService?.getRequestId() || this.requestContextService?.getCorrelationId();
 						const start = Date.now();
 						try {
 							const result = await query(args);
-							const durationMs = Date.now() - start;
-							this.logger.debug('Prisma operation executed', {
-								action: operation,
+							this.logger.log('Prisma query executed', {
 								model,
-								operation: `${model || 'Raw'}.${operation}`,
-								durationMs,
+								action: operation,
+								params: args,
+								durationMs: Date.now() - start,
+								...(requestId && { requestId }),
 							});
 							return result;
 						} catch (err) {
-							const durationMs = Date.now() - start;
-							this.logger.error('Prisma operation failed', err instanceof Error ? err.stack : undefined, {
-								action: operation,
+							this.logger.error('Prisma query error', err instanceof Error ? err.stack : undefined, {
 								model,
-								durationMs,
-								error: err instanceof Error ? err.message : String(err),
+								action: operation,
+								params: args,
+								message: err instanceof Error ? err.message : String(err),
+								...(requestId && { requestId }),
 							});
 							throw err;
 						}
@@ -64,27 +61,11 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 			},
 		});
 
-		this.client.$on('error', (e) => {
-			this.logger.error('Database error occurred', undefined, { error: e });
-		});
-
-		this.client.$on('query', (e) => {
-			this.logger.log('Database query executed', {
-				duration: e.duration,
-				params: e.params,
-				query: e.query,
-			});
-		});
-
-		this.pulseClient = getExtendedClientType(this.client, pulseKey);
+		this.client = (this.client as PrismaClient).$extends(logExtension) as unknown as PrismaClient;
 	}
 
 	get db() {
 		return this.client;
-	}
-
-	get pulse() {
-		return this.pulseClient;
 	}
 
 	async onModuleInit() {
