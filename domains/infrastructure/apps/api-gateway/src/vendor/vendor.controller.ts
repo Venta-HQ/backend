@@ -43,10 +43,10 @@ export class VendorController {
 		// Validate and transform to gRPC
 		const grpcData = VendorCreateRequestACL.toGrpc({
 			name: data.name,
-			description: data.description || '',
+			description: data.description,
 			email: data.email,
-			phone: data.phone || '',
-			website: data.website || '',
+			phone: data.phone,
+			website: data.website,
 			profileImage: data.profileImage,
 		});
 
@@ -68,12 +68,12 @@ export class VendorController {
 	) {
 		const grpcData = VendorUpdateRequestACL.toGrpc({
 			id: params.id,
-			name: data.name || '',
-			description: data.description || '',
-			email: data.email || '',
-			phone: data.phone || '',
-			website: data.website || '',
-			profileImage: data.profileImage || '',
+			name: data.name,
+			description: data.description,
+			email: data.email,
+			phone: data.phone,
+			website: data.website,
+			profileImage: data.profileImage,
 		});
 
 		return await firstValueFrom(

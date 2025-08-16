@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { VendorCreate, VendorUpdate } from '@venta/domains/marketplace/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, Logger, PrismaService } from '@venta/nest/modules';
@@ -130,20 +131,22 @@ export class CoreService {
 	 * Domain method for vendor profile updates
 	 */
 	async updateVendor(data: VendorUpdate, userId: string): Promise<void> {
-		this.logger.log('Updating vendor', { vendorId: data.id });
+		this.logger.log('Updating vendor', { vendorId: data.id, userId });
+
+		const updates: Prisma.VendorUpdateInput = {
+			...(data.name && { name: data.name }),
+			...(data.description && { description: data.description }),
+			...(data.email && { email: data.email }),
+			...(data.phone && { phone: data.phone }),
+			...(data.website && { website: data.website }),
+			...(data.profileImage && { profileImage: data.profileImage }),
+		};
 
 		try {
 			// Update vendor
 			const updatedVendor = await this.prisma.db.vendor.update({
 				where: { id: data.id, ownerId: userId },
-				data: {
-					name: data.name,
-					description: data.description,
-					email: data.email,
-					phone: data.phone,
-					website: data.website,
-					profileImage: data.profileImage,
-				},
+				data: updates,
 			});
 
 			if (!updatedVendor) {

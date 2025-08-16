@@ -32,12 +32,12 @@ message VendorLookupResponse {
 
 message VendorUpdateData {
   string id = 1;
-  string name = 2;
-  string description = 3;
-  string email = 4;
-  string website = 5;
-  string phone = 6;
-  string profileImage = 7;
+  optional string name = 2;
+  optional string description = 3;
+  optional string email = 4;
+  optional string website = 5;
+  optional string phone = 6;
+  optional string profileImage = 7;
 }
 
 // Helper Types

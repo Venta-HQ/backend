@@ -32,12 +32,12 @@ export interface VendorLookupResponse {
 
 export interface VendorUpdateData {
   id: string;
-  name: string;
-  description: string;
-  email: string;
-  website: string;
-  phone: string;
-  profileImage: string;
+  name?: string | undefined;
+  description?: string | undefined;
+  email?: string | undefined;
+  website?: string | undefined;
+  phone?: string | undefined;
+  profileImage?: string | undefined;
 }
 
 export interface Vendor {
