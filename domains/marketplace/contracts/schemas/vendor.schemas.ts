@@ -6,11 +6,11 @@ export const grpcVendorLookupSchema = z.object({
 
 export const grpcVendorCreateSchema = z.object({
 	name: z.string(),
-	description: z.string(),
+	description: z.string().optional().nullable(),
 	email: z.string().email(),
-	phone: z.string(),
-	website: z.string().url(),
-	imageUrl: z.string(),
+	phone: z.string().optional().nullable(),
+	website: z.string().url().optional().nullable(),
+	profileImage: z.string().optional().nullable(),
 });
 
 export const grpcVendorUpdateSchema = z.object({
@@ -20,5 +20,5 @@ export const grpcVendorUpdateSchema = z.object({
 	email: z.string().email(),
 	phone: z.string(),
 	website: z.string().url(),
-	imageUrl: z.string(),
+	profileImage: z.string(),
 });

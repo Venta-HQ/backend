@@ -20,7 +20,7 @@ export interface VendorCreate {
 	email: string;
 	phone: string;
 	website: string;
-	imageUrl: string;
+	profileImage: string;
 }
 
 export interface VendorUpdate {
@@ -30,7 +30,7 @@ export interface VendorUpdate {
 	email: string;
 	website: string;
 	phone: string;
-	imageUrl: string;
+	profileImage: string;
 }
 
 export interface VendorLookup {

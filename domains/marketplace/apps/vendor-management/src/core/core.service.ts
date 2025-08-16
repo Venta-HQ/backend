@@ -86,7 +86,7 @@ export class CoreService {
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					profileImage: data.imageUrl,
+					profileImage: data.profileImage,
 					ownerId: userId,
 				},
 			});
@@ -142,7 +142,7 @@ export class CoreService {
 					email: data.email,
 					phone: data.phone,
 					website: data.website,
-					profileImage: data.imageUrl,
+					profileImage: data.profileImage,
 				},
 			});
 

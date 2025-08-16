@@ -24,9 +24,9 @@ export const vendorCreateSchema = z.object({
 	name: z.string().min(1, 'Vendor name is required').max(100, 'Vendor name too long'),
 	description: z.string().max(500, 'Description too long').optional().default(''),
 	email: z.string().email('Valid email address is required'),
-	phone: z.string().max(20, 'Phone number too long').optional().default(''),
-	website: z.string().url('Valid website URL is required').optional().default(''),
-	imageUrl: z.string().url('Valid image URL is required'),
+	phone: z.string().max(20, 'Phone number too long').optional().nullable(),
+	website: z.string().url('Valid website URL is required').optional().nullable(),
+	profileImage: z.string().url('Valid image URL is required').optional().nullable(),
 });
 
 export const vendorUpdateSchema = z.object({
@@ -35,7 +35,7 @@ export const vendorUpdateSchema = z.object({
 	email: z.string().email('Valid email address is required').optional(),
 	phone: z.string().max(20, 'Phone number too long').optional(),
 	website: z.string().url('Valid website URL is required').optional(),
-	imageUrl: z.string().url('Valid image URL is required').optional(),
+	profileImage: z.string().url('Valid image URL is required').optional(),
 });
 
 // User query schemas

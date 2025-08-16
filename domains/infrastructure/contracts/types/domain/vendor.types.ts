@@ -4,7 +4,7 @@ export interface VendorCreateRequest {
 	email: string;
 	phone: string;
 	website: string;
-	imageUrl: string;
+	profileImage: string;
 }
 
 export interface VendorUpdateRequest {
@@ -14,5 +14,5 @@ export interface VendorUpdateRequest {
 	email: string;
 	phone: string;
 	website: string;
-	imageUrl: string;
+	profileImage: string;
 }

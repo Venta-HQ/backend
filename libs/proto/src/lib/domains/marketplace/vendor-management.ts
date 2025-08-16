@@ -15,11 +15,11 @@ export const protobufPackage = "marketplace.vendor_management";
 
 export interface VendorCreateData {
   name: string;
-  description: string;
+  description?: string | undefined;
   email: string;
-  phone: string;
-  website: string;
-  profileImage: string;
+  phone?: string | undefined;
+  website?: string | undefined;
+  profileImage?: string | undefined;
 }
 
 export interface VendorIdentityData {
@@ -37,7 +37,7 @@ export interface VendorUpdateData {
   email: string;
   website: string;
   phone: string;
-  imageUrl: string;
+  profileImage: string;
 }
 
 export interface Vendor {

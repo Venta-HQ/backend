@@ -52,7 +52,7 @@ export class VendorCreateACL {
 			email: grpc.email,
 			phone: grpc.phone,
 			website: grpc.website,
-			imageUrl: grpc.profileImage,
+			profileImage: grpc.profileImage,
 		};
 	}
 }
@@ -77,7 +77,7 @@ export class VendorUpdateACL {
 			email: grpc.email,
 			phone: grpc.phone,
 			website: grpc.website,
-			imageUrl: grpc.imageUrl,
+			profileImage: grpc.profileImage,
 		};
 	}
 }

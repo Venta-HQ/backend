@@ -281,7 +281,7 @@ export const data = {
 		description: 'Test Description',
 		email: 'vendor@example.com',
 		id: 'vendor_123',
-		imageUrl: 'https://example.com/image.jpg',
+		profileImage: 'https://example.com/image.jpg',
 		lat: 40.7128,
 		long: -74.006,
 		name: 'Test Vendor',

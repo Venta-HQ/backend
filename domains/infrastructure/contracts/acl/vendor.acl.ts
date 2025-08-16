@@ -17,7 +17,6 @@ export class VendorCreateRequestACL {
 	static validate(request: VendorCreateRequest): void {
 		validateRequiredString(request.name, 'name');
 		validateEmail(request.email, 'email');
-		validateRequiredString(request.imageUrl, 'imageUrl');
 	}
 
 	static toGrpc(request: VendorCreateRequest): VendorCreateData {
@@ -29,7 +28,7 @@ export class VendorCreateRequestACL {
 			description: request.description,
 			phone: request.phone,
 			website: request.website,
-			profileImage: request.imageUrl,
+			profileImage: request.profileImage,
 		};
 	}
 }
@@ -49,7 +48,7 @@ export class VendorUpdateRequestACL {
 			description: request.description,
 			phone: request.phone,
 			website: request.website,
-			imageUrl: request.imageUrl,
+			profileImage: request.profileImage,
 		};
 	}
 }

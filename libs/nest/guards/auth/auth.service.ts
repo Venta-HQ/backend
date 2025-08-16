@@ -73,12 +73,13 @@ export class AuthService {
 	 */
 	extractHttpToken(headers: Record<string, string | string[]>): string | null {
 		const authHeader = headers['authorization'];
+
 		if (!authHeader) return null;
 
 		const token = Array.isArray(authHeader) ? authHeader[0] : authHeader;
 		if (!token?.startsWith('Bearer ')) return null;
 
-		return token.substring(7);
+		return token.split('Bearer ')[1];
 	}
 
 	/**
@@ -104,25 +105,6 @@ export class AuthService {
 			if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
 				return authHeader.substring(7);
 			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Extracts a token from gRPC metadata
-	 */
-	extractGrpcToken(metadata: any): string | null {
-		// Try to get token from authorization metadata
-		const auth = metadata.get('authorization')?.[0];
-		if (auth?.startsWith('Bearer ')) {
-			return auth.substring(7);
-		}
-
-		// Try to get token directly
-		const token = metadata.get('token')?.[0];
-		if (token) {
-			return token;
 		}
 
 		return null;

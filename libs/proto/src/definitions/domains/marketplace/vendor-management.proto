@@ -15,11 +15,11 @@ service VendorManagementService {
 
 message VendorCreateData {
   string name = 1;
-  string description = 2;
+  optional string description = 2;
   string email = 3;
-  string phone = 4;
-  string website = 5;
-  string profileImage = 6;
+  optional string phone = 4;
+  optional string website = 5;
+  optional string profileImage = 6;
 }
 
 message VendorIdentityData {
@@ -37,7 +37,7 @@ message VendorUpdateData {
   string email = 4;
   string website = 5;
   string phone = 6;
-  string imageUrl = 7;
+  string profileImage = 7;
 }
 
 // Helper Types

@@ -47,7 +47,7 @@ export class VendorController {
 			email: data.email,
 			phone: data.phone || '',
 			website: data.website || '',
-			imageUrl: data.imageUrl,
+			profileImage: data.profileImage,
 		});
 
 		return await firstValueFrom(
@@ -73,7 +73,7 @@ export class VendorController {
 			email: data.email || '',
 			phone: data.phone || '',
 			website: data.website || '',
-			imageUrl: data.imageUrl || '',
+			profileImage: data.profileImage || '',
 		});
 
 		return await firstValueFrom(
