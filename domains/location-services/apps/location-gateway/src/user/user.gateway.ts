@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import { UseGuards } from '@nestjs/common';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import {
 	OnGatewayConnection,
 	OnGatewayDisconnect,
@@ -22,7 +23,7 @@ import { UserConnectionManagerService } from './user.manager';
 		origin: '*',
 	},
 })
-@UseGuards(WsAuthGuard, WsRateLimitGuard)
+@UseGuards(WsAuthGuard)
 export class UserLocationGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	@WebSocketServer()
 	server: Server;
@@ -126,6 +127,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	 * Handle user location updates
 	 */
 	@SubscribeMessage('update_location')
+	@Throttle({ default: { ttl: 60_000, limit: 15 } })
 	async handleLocationUpdate(
 		socket: Socket,
 		data: any, // Raw WebSocket data
