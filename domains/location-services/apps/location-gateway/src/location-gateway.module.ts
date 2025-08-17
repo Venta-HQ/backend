@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
+import Redis from 'ioredis';
+import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { AuthModule, WsAuthGuard, WsThrottlerGuard } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
 import {
@@ -15,6 +17,7 @@ import { UserLocationGateway } from './user/user.gateway';
 import { UserConnectionManagerService } from './user/user.manager';
 import { VendorLocationGateway } from './vendor/vendor.gateway';
 import { VendorConnectionManagerService } from './vendor/vendor.manager';
+
 // removed domain-local guard; using shared guard from libs
 
 @Module({
@@ -47,13 +50,24 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 				},
 			],
 		}),
-		ThrottlerModule.forRoot([
-			{
-				name: 'ws-user',
-				ttl: 60_000,
-				limit: 15,
+		ThrottlerModule.forRootAsync({
+			imports: [ConfigModule],
+			inject: [ConfigService],
+			useFactory: (configService: ConfigService) => {
+				const redisUrl = configService.get('REDIS_URL') || 'redis://localhost:6379';
+				const redis = new Redis(redisUrl);
+				return {
+					throttlers: [
+						{
+							name: 'ws-user',
+							ttl: 60_000,
+							limit: 15,
+						},
+					],
+					storage: new ThrottlerStorageRedisService(redis),
+				};
 			},
-		]),
+		}),
 	],
 	providers: [
 		{
