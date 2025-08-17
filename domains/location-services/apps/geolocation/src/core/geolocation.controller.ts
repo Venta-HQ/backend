@@ -34,7 +34,7 @@ export class GeolocationController {
 			await this.geolocationService.updateVendorLocation(domainRequest);
 			return { success: true };
 		} catch (error) {
-			this.logger.error('Failed to update vendor location', {
+			this.logger.error('Failed to update vendor location', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				entityId: domainRequest.entityId,
 				entityType: domainRequest.entityType,
@@ -63,7 +63,7 @@ export class GeolocationController {
 		try {
 			return await this.geolocationService.getNearbyVendors(domainRequest);
 		} catch (error) {
-			this.logger.error('Failed to get nearby entities', {
+			this.logger.error('Failed to get nearby entities', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				center: domainRequest.center,
 				radius: domainRequest.radius,

@@ -130,7 +130,10 @@ export class CoreService {
 
 			return user.vendors;
 		} catch (error) {
-			this.logger.error('Failed to get vendors for user', { error: error.message, userId });
+			this.logger.error('Failed to get vendors for user', (error as Error).stack, {
+				error: (error as Error).message,
+				userId,
+			});
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
 				operation: 'get_user_vendors',

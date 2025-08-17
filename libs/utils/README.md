@@ -59,10 +59,10 @@ const dateRange = safeParse(dateRangeSchema, {
 });
 // Ensures endDate is after startDate
 
-// Coordinates validation
+// Coordinates validation (lat/lng)
 const location = safeParse(coordinatesSchema, {
 	lat: 40.7128,
-	long: -74.006,
+	lng: -74.006,
 });
 // Ensures lat/long are within valid ranges
 ```

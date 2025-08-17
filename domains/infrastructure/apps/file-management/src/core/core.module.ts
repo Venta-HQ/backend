@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { CloudinaryService } from '@venta/nest/modules';
+import { CloudinaryService, Logger } from '@venta/nest/modules';
 import { UploadController } from './controllers/upload/upload.controller';
 import { UploadService } from './services/upload/upload.service';
 
@@ -8,12 +8,14 @@ import { UploadService } from './services/upload/upload.service';
 	providers: [
 		{
 			provide: UploadService,
-			useFactory: () =>
+			useFactory: (logger: Logger) =>
 				new UploadService(
+					logger,
 					process.env.CLOUDINARY_API_KEY || '',
 					process.env.CLOUDINARY_API_SECRET || '',
 					process.env.CLOUDINARY_CLOUD_NAME || '',
 				),
+			inject: [Logger],
 		},
 		CloudinaryService,
 	],

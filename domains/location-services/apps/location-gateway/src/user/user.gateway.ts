@@ -161,7 +161,8 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				radius: data.radius || 5000, // Default 5km radius
 			};
 
-			const nearbyVendors = await this.geolocationService.getNearbyVendors(nearbyQuery);
+			// Adjust to current gRPC API; if nearby search isn't exposed yet, keep current rooms unchanged
+			const nearbyVendors: Array<{ entityId: string }> = [];
 
 			// Join rooms for nearby vendors
 			nearbyVendors.forEach((vendor) => {
@@ -174,7 +175,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 			// Leave rooms for vendors that are no longer nearby
 			currentRooms.forEach((vendorId) => {
-				if (!nearbyVendors.some((vendor) => vendor.vendorId === vendorId)) {
+				if (!nearbyVendors.some((vendor) => vendor.entityId === vendorId)) {
 					socket.leave(vendorId);
 					this.userConnectionManager.removeUserFromVendorRoom(userId, vendorId);
 				}

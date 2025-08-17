@@ -39,8 +39,8 @@ export class SubscriptionController {
 
 			return { message: 'Success' };
 		} catch (error) {
-			this.logger.error('Failed to create subscription', {
-				error: error.message,
+			this.logger.error('Failed to create subscription', (error as Error).stack, {
+				error: (error as Error).message,
 				userId: domainRequest.userId,
 				providerId: domainRequest.providerId,
 			});
