@@ -12,7 +12,7 @@ import type { AuthenticatedSocket } from '@venta/apitypes';
 import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
 import type { GeospatialQuery, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
+import { WsAuthGuard } from '@venta/nest/guards';
 import { Logger } from '@venta/nest/modules';
 import { GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';

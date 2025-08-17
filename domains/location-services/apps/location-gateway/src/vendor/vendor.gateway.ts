@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { WsAuthGuard, WsRateLimitGuard } from '@venta/nest/guards';
+import { WsAuthGuard } from '@venta/nest/guards';
 import { Logger } from '@venta/nest/modules';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
@@ -19,7 +19,7 @@ import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 		origin: '*',
 	},
 })
-@UseGuards(WsAuthGuard, WsRateLimitGuard)
+@UseGuards(WsAuthGuard)
 export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	@WebSocketServer()
 	server: Server;
