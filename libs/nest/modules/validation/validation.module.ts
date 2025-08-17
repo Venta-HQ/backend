@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 
 @Module({
 	providers: [SchemaValidatorPipe],

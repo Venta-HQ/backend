@@ -158,7 +158,7 @@ export const coordinatesSchema = z.object({
  * ```
  */
 export function isPlainObject(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
+	return Object.prototype.toString.call(value) === '[object Object]';
 }
 
 /**
