@@ -1,10 +1,9 @@
+import * as chalk from 'chalk';
+import * as PrettyErrorLib from 'pretty-error';
 import { Injectable, LoggerService, Scope } from '@nestjs/common';
+import { trace } from '@opentelemetry/api';
 import { RequestContextService } from '../../networking/request-context';
 import { LokiTransportService } from './loki-transport.service';
-
-const chalk = require('chalk');
-const PrettyError = require('pretty-error');
-const StackTracey = require('stacktracey');
 
 interface LogData {
 	context?: string;
@@ -28,10 +27,11 @@ export class Logger implements LoggerService {
 		// Initialize Pretty-Error with custom styling (only in development)
 		if (this.isDevelopment) {
 			try {
-				this.prettyError = new PrettyError();
+				const PrettyErrorCtor: any = (PrettyErrorLib as any)?.default || (PrettyErrorLib as any);
+				this.prettyError = new PrettyErrorCtor();
 				this.setupPrettyError();
 			} catch (error) {
-				console.warn('Failed to initialize Pretty-Error:', error.message);
+				console.warn('Failed to initialize Pretty-Error:', (error as any).message);
 			}
 		}
 	}
@@ -106,36 +106,37 @@ export class Logger implements LoggerService {
 		data?: Record<string, any>,
 		context?: string,
 	): LogData {
+		const activeTraceId = trace.getActiveSpan()?.spanContext().traceId;
 		return {
 			context: context || this.context,
 			data,
 			level,
 			message,
-			requestId: this.getRequestId(),
+			requestId: this.getRequestId() || activeTraceId,
 			timestamp: new Date().toISOString(),
 		};
 	}
 
-	private logToConsole(logData: LogData, trace?: string): void {
+	private logToConsole(logData: LogData, traceStr?: string): void {
 		// Check if we're in development mode
 		const isDevelopment = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
 
 		if (isDevelopment) {
 			// Pretty formatted logs for development
-			this.logPretty(logData, trace);
+			this.logPretty(logData, traceStr);
 		} else {
 			// Structured JSON logs for production
-			this.logStructured(logData, trace);
+			this.logStructured(logData, traceStr);
 		}
 	}
 
-	private logPretty(logData: LogData, trace?: string): void {
+	private logPretty(logData: LogData, traceStr?: string): void {
 		// Use Pretty-Error for everything if available, otherwise simple formatting
-		if (trace && this.prettyError) {
+		if (traceStr && this.prettyError) {
 			try {
 				// Create a rich error object for Pretty-Error
 				const error = new Error(logData.message);
-				error.stack = trace;
+				error.stack = traceStr;
 
 				// Add context information as error properties
 				if (logData.context) {
@@ -149,7 +150,7 @@ export class Logger implements LoggerService {
 				console.log(this.prettyError.render(error));
 				return;
 			} catch (prettError) {
-				console.warn('Pretty-Error rendering failed:', prettError.message);
+				console.warn('Pretty-Error rendering failed:', (prettError as any).message);
 			}
 		}
 
@@ -169,13 +170,13 @@ export class Logger implements LoggerService {
 		}
 
 		// Add trace if present (simple format)
-		if (trace) {
+		if (traceStr) {
 			console.log(chalk.red('  Stack Trace:'));
-			console.log(chalk.gray(trace));
+			console.log(chalk.gray(traceStr));
 		}
 	}
 
-	private logStructured(logData: LogData, trace?: string): void {
+	private logStructured(logData: LogData, traceStr?: string): void {
 		const { requestId, ...consoleData } = logData;
 		const structuredMessage = JSON.stringify({
 			...consoleData,
@@ -184,7 +185,7 @@ export class Logger implements LoggerService {
 
 		switch (logData.level) {
 			case 'error':
-				console.error(trace ? `${structuredMessage}\nTrace: ${trace}` : structuredMessage);
+				console.error(traceStr ? `${structuredMessage}\nTrace: ${traceStr}` : structuredMessage);
 				break;
 			case 'warn':
 				console.warn(structuredMessage);
@@ -231,9 +232,9 @@ export class Logger implements LoggerService {
 		this.lokiTransport?.sendLog(logData);
 	}
 
-	error(message: string, trace?: string, data?: Record<string, any>, context?: string): void {
+	error(message: string, traceStr?: string, data?: Record<string, any>, context?: string): void {
 		const logData = this.createLogData(message, 'error', data, context);
-		this.logToConsole(logData, trace);
+		this.logToConsole(logData, traceStr);
 		this.lokiTransport?.sendLog(logData);
 	}
 

@@ -59,28 +59,29 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 			},
 		});
 
-		// NOTE: We can't accurately correlate a requestId to a Prisma query this way, so we are not doing this for now
-		// this.client.$on('query', (e) => {
-		// 	const requestId = this.requestContextService?.getRequestId() || this.requestContextService?.getCorrelationId();
-		// 	console.log('requestId', requestId);
-		// 	this.logger.log('Prisma query intercepted', {
-		// 		query: e.query,
-		// 		params: e.params,
-		// 		durationMs: e.duration,
-		// 	});
-		// });
-
-		// this.client.$on('error', (e) => {
-		// 	this.logger.error('Prisma query error intercepted', undefined, {
-		// 		message: e.message,
-		// 	});
-		// });
-
 		this.client = (this.client as PrismaClient).$extends(logExtension) as unknown as PrismaClient;
 	}
 
 	get db() {
 		return this.client;
+	}
+
+	/**
+	 * Extract SQL operation type for searchable attributes
+	 */
+	private extractSqlOperationType(query: string): string {
+		const trimmed = query.trim().toUpperCase();
+
+		if (trimmed.startsWith('SELECT')) return 'SELECT';
+		if (trimmed.startsWith('INSERT')) return 'INSERT';
+		if (trimmed.startsWith('UPDATE')) return 'UPDATE';
+		if (trimmed.startsWith('DELETE')) return 'DELETE';
+		if (trimmed.startsWith('CREATE')) return 'CREATE';
+		if (trimmed.startsWith('DROP')) return 'DROP';
+		if (trimmed.startsWith('ALTER')) return 'ALTER';
+		if (trimmed.startsWith('WITH')) return 'WITH'; // CTE queries
+
+		return 'OTHER';
 	}
 
 	async onModuleInit() {

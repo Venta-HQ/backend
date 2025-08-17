@@ -30,29 +30,35 @@ This guide outlines the monitoring and observability practices for the Venta bac
    - Log aggregation
 
 3. **Tracing**
-   - Request tracking
-   - Cross-service correlation
-   - Performance monitoring
+   - OpenTelemetry distributed tracing
+   - Request correlation via requestId
+   - SQL query visibility
+   - Cross-service spans with NATS context propagation
 
 ### Architecture
 
 ```
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Services   │───▶│   Metrics    │───▶│   Grafana    │
-└──────────────┘    │  (Prometheus)│    └──────────────┘
-       │            └──────────────┘           ▲
-       │                                       │
-       ▼            ┌──────────────┐          │
-┌──────────────┐    │    Logs     │          │
-│   Logging    │───▶│             │──────────┘
-└──────────────┘    └──────────────┘
+                    ┌──────────────┐    ┌──────────────┐
+               ┌───▶│   Metrics    │───▶│              │
+               │    │  (Prometheus)│    │              │
+┌──────────────┐    └──────────────┘    │   Grafana    │
+│   Services   │                        │  (Dashboards │
+│   (NestJS)   │    ┌──────────────┐    │ & Explore)   │
+│              │───▶│    Traces    │───▶│              │
+└──────────────┘    │   (Tempo)    │    │              │
+      │            └──────────────┘    │              │
+      │                                │              │
+      └────────────┌──────────────┐    │              │
+                   │    Logs      │───▶│              │
+                   │   (Loki)     │    └──────────────┘
+                   └──────────────┘
 ```
 
 ## Metrics Collection
 
 ### Service Metrics
 
-Service metrics are collected with request context for better traceability. See the [Request Context Guide](./request-context-guide.md) for details about context propagation.
+Service metrics are collected with request context for better traceability. Request correlation is handled automatically through OpenTelemetry tracing and AsyncLocalStorage.
 
 ```typescript
 // Service with metrics and context
@@ -262,14 +268,35 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 ## Request Tracing
 
-For detailed information about request context and tracing, see the [Request Context Guide](./request-context-guide.md).
+The Venta backend uses **OpenTelemetry** for comprehensive distributed tracing. For complete details, see the [Tracing Guide](./tracing-guide.md).
 
-The monitoring system integrates with request context to provide:
+### Key Features
 
-- Request correlation in metrics
-- Trace ID in logs
-- Context in alerts
-- End-to-end request visibility
+- **Automatic Instrumentation**: HTTP, gRPC, Prisma, Redis, Socket.IO, NATS, and external calls
+- **Request Correlation**: Every request gets a unique `requestId` that flows through all operations
+- **SQL Visibility**: Raw SQL queries captured in span events for debugging
+- **Cross-Service Tracing**: NATS context propagation links operations across services
+- **Log Correlation**: Logger includes `requestId` and falls back to `traceId`
+
+### Quick Example
+
+```traceql
+# Find a specific request's complete trace
+{ span.request.id = "req-abc-123" }
+
+# Find slow database operations
+{ span.db.duration.ms > 100 }
+
+# Find errors in a specific service
+{ resource.service.name = "api-gateway" && span.status = error }
+```
+
+The monitoring system integrates seamlessly with tracing to provide:
+
+- **Request correlation** in metrics via span attributes
+- **Trace ID** automatically included in structured logs
+- **Context propagation** across all service boundaries
+- **End-to-end visibility** from HTTP request to database query
 
 ## Alerting
 
@@ -489,22 +516,28 @@ export const businessDashboard = {
 
 ### Tracing
 
-1. **Context**
+1. **Request Correlation**
 
-   - Propagate trace IDs
-   - Add span context
-   - Include user context
+   - Use `requestId` for searching traces: `{ span.request.id = "req-123" }`
+   - Search by operation type: `{ span.db.operation.type = "SELECT" }`
+   - Filter by duration: `{ span.db.duration.ms > 100 }`
 
-2. **Sampling**
+2. **SQL Debugging**
 
-   - Use adaptive sampling
-   - Focus on errors
-   - Sample by feature
+   - Raw SQL stored in span events (no size limits)
+   - Parameters included for complete visibility
+   - Operation types automatically extracted
 
-3. **Performance**
-   - Minimize overhead
-   - Batch operations
-   - Use async processing
+3. **Context Propagation**
+
+   - NATS messages automatically propagate trace context
+   - AsyncLocalStorage maintains `requestId` across async operations
+   - Logger includes `traceId` when `requestId` unavailable
+
+4. **Performance**
+   - SQL queries stored in events, not attributes (better performance)
+   - Searchable metadata in small attributes only
+   - Automatic instrumentation minimizes overhead
 
 ## Additional Resources
 

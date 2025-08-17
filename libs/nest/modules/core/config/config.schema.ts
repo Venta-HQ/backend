@@ -38,4 +38,7 @@ export const configSchema = z.object({
 	VENDOR_HEALTH_PORT: z.string().or(z.number()),
 	VENDOR_SERVICE_ADDRESS: z.string(),
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
+
+	// Tracing
+	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.string().url(),
 });

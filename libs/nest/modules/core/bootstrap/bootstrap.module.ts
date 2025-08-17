@@ -2,7 +2,7 @@ import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ErrorHandlingModule } from '@venta/nest/errors';
-import { GrpcAuthGuard, HttpAuthGuard, WsAuthGuard } from '@venta/nest/guards';
+import { GrpcAuthGuard, WsAuthGuard } from '@venta/nest/guards';
 import {
 	ClerkModule,
 	ConfigModule,
@@ -14,6 +14,7 @@ import {
 	PrometheusModule,
 	RedisModule,
 	RequestTracingModule,
+	TracingModule,
 } from '@venta/nest/modules';
 
 export interface BootstrapOptions {
@@ -70,6 +71,7 @@ export class BootstrapModule {
 				additionalChecks: options.healthChecks,
 			}),
 			LoggerModule.register(),
+			TracingModule.register(),
 			PrometheusModule.register(),
 		];
 	}

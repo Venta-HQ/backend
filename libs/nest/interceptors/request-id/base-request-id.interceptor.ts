@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { CallHandler, ExecutionContext, Injectable } from '@nestjs/common';
+import { trace } from '@opentelemetry/api';
 import { Logger } from '@venta/nest/modules';
 import { RequestContextService } from '../../modules/networking/request-context';
 
@@ -54,6 +55,14 @@ export abstract class BaseRequestIdInterceptor {
 				// Only set if not already set
 				if (!this.requestContextService.getRequestId()) {
 					this.setId(id);
+				}
+
+				// Tag active span for tracing correlation
+				const span = trace.getActiveSpan();
+				if (span) {
+					span.setAttribute('request.id', this.requestContextService.getRequestId() ?? id);
+					const corr = this.requestContextService.getCorrelationId();
+					if (corr) span.setAttribute('correlation.id', corr);
 				}
 			}
 

@@ -1,7 +1,9 @@
 import { connect, NatsConnection, Subscription } from 'nats';
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { context as otContext, propagation, trace } from '@opentelemetry/api';
 import { Logger } from '@venta/nest/modules';
+import { RequestContextService } from '../../networking/request-context';
 
 export interface QueueMessage {
 	data: any;
@@ -22,6 +24,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 	constructor(
 		private readonly configService: ConfigService,
 		private readonly logger: Logger,
+		private readonly requestContextService: RequestContextService,
 	) {
 		this.logger.setContext(NatsQueueService.name);
 	}
@@ -63,10 +66,34 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 		(async () => {
 			for await (const msg of subscription) {
 				try {
-					const data = JSON.parse(msg.data.toString());
-					this.logger.log(`Processing message from queue ${queueGroup}: ${subject}`);
+					// Extract distributed context from NATS headers
+					const carrier: Record<string, string> = {};
+					const hdrs = msg.headers;
+					if (hdrs) {
+						for (const key of hdrs.keys()) {
+							const value = hdrs.get(key);
+							if (value !== undefined) {
+								carrier[key] = value;
+							}
+						}
+					}
+					const extracted = propagation.extract(otContext.active(), carrier);
+					const span = trace.getTracer('nats').startSpan(`nats receive ${subject}`, undefined, extracted);
 
-					await handler(data);
+					// Run in ALS for downstream correlation
+					this.requestContextService.run(async () => {
+						const data = JSON.parse(msg.data.toString());
+						this.logger.log(`Processing message from queue ${queueGroup}: ${subject}`);
+						try {
+							await handler(data);
+							span.end();
+						} catch (e) {
+							span.recordException(e as any);
+							span.setStatus({ code: 2 });
+							span.end();
+							throw e;
+						}
+					});
 
 					// In NATS v2, we don't need explicit ack/nak for regular subscriptions
 					// Messages are automatically acknowledged
@@ -96,12 +123,18 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 	 */
 	async publish(subject: string, data: any): Promise<void> {
 		try {
+			// Inject distributed context into headers
+			const carrier: Record<string, string> = {};
+			propagation.inject(otContext.active(), carrier);
+
 			const message = JSON.stringify({
 				...data,
 				timestamp: new Date().toISOString(),
 			});
 
-			await this.nc.publish(subject, message);
+			const span = trace.getTracer('nats').startSpan(`nats publish ${subject}`);
+			await this.nc.publish(subject, Buffer.from(message), { headers: carrier as any });
+			span.end();
 			this.logger.log(`Published message to ${subject}`);
 		} catch (error) {
 			this.logger.error(`Failed to publish message to ${subject}:`, error.stack, { error, subject });

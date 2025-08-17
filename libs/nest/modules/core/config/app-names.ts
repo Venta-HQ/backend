@@ -5,15 +5,15 @@
  * Using this ensures consistency and makes it easy to update app names in one place.
  */
 export const APP_NAMES = {
-	ALGOLIA_SYNC: 'Algolia Sync Service',
-	CLERK_WEBHOOKS: 'Clerk Webhooks Service',
-	FILE_MANAGEMENT: 'File Management Service',
-	GATEWAY: 'Gateway Service',
-	LOCATION: 'Location Microservice',
-	SUBSCRIPTION_WEBHOOKS: 'Subscription Webhooks Service',
-	USER: 'User Microservice',
-	VENDOR: 'Vendor Microservice',
-	LOCATION_GATEWAY: 'Location Gateway Microservice',
+	ALGOLIA_SYNC: 'algolia-sync',
+	CLERK_WEBHOOKS: 'clerk-webhooks',
+	FILE_MANAGEMENT: 'file-management',
+	GATEWAY: 'api-gateway',
+	LOCATION: 'location-service',
+	SUBSCRIPTION_WEBHOOKS: 'subscription-webhooks',
+	USER: 'user-service',
+	VENDOR: 'vendor-service',
+	LOCATION_GATEWAY: 'location-gateway',
 } as const;
 
 export type AppName = (typeof APP_NAMES)[keyof typeof APP_NAMES];

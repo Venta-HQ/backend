@@ -4,6 +4,7 @@ import {
 	GrpcRequestIdInterceptor,
 	HttpRequestIdInterceptor,
 	NatsRequestIdInterceptor,
+	WsRequestIdInterceptor,
 } from '../../../interceptors/request-id';
 import { RequestContextModule } from '../../networking/request-context';
 import { LoggerModule } from './logger.module';
@@ -32,6 +33,11 @@ export class RequestTracingModule {
 			providers.push({
 				provide: APP_INTERCEPTOR,
 				useClass: NatsRequestIdInterceptor,
+			});
+		} else if (options.protocol === 'websocket') {
+			providers.push({
+				provide: APP_INTERCEPTOR,
+				useClass: WsRequestIdInterceptor,
 			});
 		}
 
