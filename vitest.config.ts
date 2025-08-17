@@ -10,7 +10,7 @@ export default defineConfig({
 			'@venta/nest/filters': resolve(__dirname, './libs/nest/filters'),
 			'@venta/nest/guards': resolve(__dirname, './libs/nest/guards'),
 			'@venta/nest/modules': resolve(__dirname, './libs/nest/modules'),
-			'@venta/nest/validation': resolve(__dirname, './libs/nest/validation'),
+			'@venta/nest/validation': resolve(__dirname, './libs/nest/modules/validation'),
 			'@venta/proto': resolve(__dirname, './libs/proto/src/lib/domains'),
 			'@venta/utils': resolve(__dirname, './libs/utils/src'),
 			'@venta/test/helpers': resolve(__dirname, './test/helpers'),
