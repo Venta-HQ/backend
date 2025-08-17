@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
-import { AuthModule, WsAuthGuard } from '@venta/nest/guards';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AuthModule, WsAuthGuard, WsThrottlerGuard } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
 import {
 	GEOLOCATION_SERVICE_NAME,
@@ -15,6 +15,7 @@ import { UserLocationGateway } from './user/user.gateway';
 import { UserConnectionManagerService } from './user/user.manager';
 import { VendorLocationGateway } from './vendor/vendor.gateway';
 import { VendorConnectionManagerService } from './vendor/vendor.manager';
+// removed domain-local guard; using shared guard from libs
 
 @Module({
 	imports: [
@@ -68,7 +69,7 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		VendorConnectionManagerService,
 		// Authentication guard and global throttler guard
 		WsAuthGuard,
-		{ provide: APP_GUARD, useClass: ThrottlerGuard },
+		{ provide: APP_GUARD, useClass: WsThrottlerGuard },
 	],
 })
 export class LocationGatewayModule {}
