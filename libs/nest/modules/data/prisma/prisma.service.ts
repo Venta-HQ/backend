@@ -10,6 +10,10 @@ const getClient = (url) => {
 				url,
 			},
 		},
+		log: [
+			{ emit: 'event', level: 'query' },
+			{ emit: 'event', level: 'error' },
+		],
 	});
 };
 
@@ -60,6 +64,22 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 				},
 			},
 		});
+
+		// this.client.$on('query', (e) => {
+		// 	const requestId = this.requestContextService?.getRequestId() || this.requestContextService?.getCorrelationId();
+		// 	console.log('requestId', requestId);
+		// 	this.logger.log('Prisma query intercepted', {
+		// 		query: e.query,
+		// 		params: e.params,
+		// 		durationMs: e.duration,
+		// 	});
+		// });
+
+		// this.client.$on('error', (e) => {
+		// 	this.logger.error('Prisma query error intercepted', undefined, {
+		// 		message: e.message,
+		// 	});
+		// });
 
 		this.client = (this.client as PrismaClient).$extends(logExtension) as unknown as PrismaClient;
 	}
