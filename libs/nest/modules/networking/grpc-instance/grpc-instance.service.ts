@@ -1,7 +1,9 @@
+import { throwError } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { context, propagation } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
 import { HttpRequest } from '@venta/apitypes';
 import { Logger } from '@venta/nest/modules';
 import { retryObservable, shouldRetryGrpcCode } from '@venta/utils';
@@ -22,11 +24,10 @@ class GrpcInstance<T> {
 	): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
 		const metadata = new Metadata();
 
-		// CRITICAL: Inject OpenTelemetry trace context for distributed tracing
-		// This ensures spans are properly linked across service boundaries
+		// CRITICAL: Manually inject OpenTelemetry trace context for cross-service linking
+		// The automatic gRPC instrumentation doesn't work well with NestJS's ClientGrpc wrapper
 		try {
 			const carrier: Record<string, string> = {};
-			// Get current active context and inject it into the carrier
 			propagation.inject(context.active(), carrier);
 
 			// Add OpenTelemetry context to gRPC metadata
@@ -58,17 +59,54 @@ class GrpcInstance<T> {
 
 		// Adds our custom metadata
 		if (this.service[method]) {
-			const result = (this.service[method] as (...args: any[]) => any)(data, metadata);
+			// Create manual gRPC client span since automatic instrumentation doesn't work with NestJS ClientGrpc
+			const tracer = trace.getTracer('grpc-instance');
+			const span = tracer.startSpan(`grpc.client.${String(method)}`, {
+				kind: 2, // SPAN_KIND_CLIENT
+				attributes: {
+					'rpc.system': 'grpc',
+					'rpc.method': String(method),
+					'rpc.service': 'grpc-service',
+				},
+			});
 
-			// If the result is an Observable, add retry logic with transient-error policy
-			if (result && typeof result.pipe === 'function') {
-				return retryObservable(result, `gRPC call to ${String(method)}`, {
-					logger: this.logger,
-					retryCondition: (error: any) => shouldRetryGrpcCode(typeof error?.code === 'number' ? error.code : undefined),
-				}) as T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never;
-			}
+			return context.with(trace.setSpan(context.active(), span), () => {
+				try {
+					const result = (this.service[method] as (...args: any[]) => any)(data, metadata);
 
-			return result;
+					// If the result is an Observable, add retry logic and span completion
+					if (result && typeof result.pipe === 'function') {
+						return retryObservable(result, `gRPC call to ${String(method)}`, {
+							logger: this.logger,
+							retryCondition: (error: any) =>
+								shouldRetryGrpcCode(typeof error?.code === 'number' ? error.code : undefined),
+						}).pipe(
+							tap(() => {
+								// Success - mark span as OK and end it
+								span.setStatus({ code: 1 }); // OK
+								span.end();
+							}),
+							catchError((error: any) => {
+								// Error - record exception and end span
+								span.recordException(error);
+								span.setStatus({ code: 2, message: error.message }); // ERROR
+								span.end();
+								return throwError(() => error);
+							}),
+						) as T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never;
+					}
+
+					// For non-Observable results, end span immediately
+					span.setStatus({ code: 1 }); // OK
+					span.end();
+					return result;
+				} catch (error) {
+					span.recordException(error as Error);
+					span.setStatus({ code: 2, message: (error as Error).message });
+					span.end();
+					throw error;
+				}
+			});
 		}
 
 		// This should never happen if the method exists, but TypeScript requires a return

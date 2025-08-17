@@ -23,7 +23,6 @@ export class TracingModule {
 						const { ExpressInstrumentation } = await import('@opentelemetry/instrumentation-express');
 						const { GrpcInstrumentation } = await import('@opentelemetry/instrumentation-grpc');
 						const { IORedisInstrumentation } = await import('@opentelemetry/instrumentation-ioredis');
-						const { UndiciInstrumentation } = await import('@opentelemetry/instrumentation-undici');
 						const { SocketIoInstrumentation } = await import('@opentelemetry/instrumentation-socket.io');
 
 						const serviceName = configService.get('APP_NAME') || 'venta-service';
@@ -58,12 +57,20 @@ export class TracingModule {
 						});
 
 						const instrumentations = [
-							new HttpInstrumentation(),
+							new HttpInstrumentation({
+								// Exclude fetch calls to prevent Loki logging from keeping HTTP spans open
+								ignoreOutgoingRequestHook: (options) => {
+									// Skip tracing fetch requests to Loki (localhost:3100)
+									const hostname = options?.hostname || options?.host || '';
+									const port = options?.port;
+									const path = options?.path || '';
+									return hostname === 'localhost' && port === 3100 && path.includes('/loki/api/v1/push');
+								},
+							}),
 							new ExpressInstrumentation(),
 							new GrpcInstrumentation(),
 							new PrismaInstrumentation(),
 							new IORedisInstrumentation(),
-							new UndiciInstrumentation(),
 							new SocketIoInstrumentation(),
 						];
 

@@ -66,24 +66,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 		return this.client;
 	}
 
-	/**
-	 * Extract SQL operation type for searchable attributes
-	 */
-	private extractSqlOperationType(query: string): string {
-		const trimmed = query.trim().toUpperCase();
-
-		if (trimmed.startsWith('SELECT')) return 'SELECT';
-		if (trimmed.startsWith('INSERT')) return 'INSERT';
-		if (trimmed.startsWith('UPDATE')) return 'UPDATE';
-		if (trimmed.startsWith('DELETE')) return 'DELETE';
-		if (trimmed.startsWith('CREATE')) return 'CREATE';
-		if (trimmed.startsWith('DROP')) return 'DROP';
-		if (trimmed.startsWith('ALTER')) return 'ALTER';
-		if (trimmed.startsWith('WITH')) return 'WITH'; // CTE queries
-
-		return 'OTHER';
-	}
-
 	async onModuleInit() {
 		await this.client.$connect();
 	}

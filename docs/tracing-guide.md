@@ -278,7 +278,8 @@ For **cross-pod gRPC communication**, context propagation ensures unified traces
 
 **Client Side** (API Gateway → gRPC Service):
 
-- `GrpcInstance` service injects OpenTelemetry context into gRPC metadata
+- `GrpcInstance` service manually creates gRPC client spans and injects trace context
+- Manual implementation needed due to NestJS ClientGrpc wrapper incompatibility with automatic instrumentation
 - Trace context flows from HTTP requests to downstream gRPC calls
 
 **Server Side** (gRPC Service in different pod):
