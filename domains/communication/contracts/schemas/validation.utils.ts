@@ -1,4 +1,5 @@
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { ensureRequiredString } from '@venta/utils';
 
 /**
  * Validation utilities for communication domain ACL validation
@@ -8,13 +9,7 @@ import { AppError, ErrorCodes } from '@venta/nest/errors';
  * Validates a required string field
  */
 export function validateRequiredString(value: string | undefined, fieldName: string): string {
-	if (!value || !value.trim()) {
-		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-			field: fieldName,
-			message: `${fieldName} is required`,
-		});
-	}
-	return value.trim();
+	return ensureRequiredString(value, fieldName);
 }
 
 /**

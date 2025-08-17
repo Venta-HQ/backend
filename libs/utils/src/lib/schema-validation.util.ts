@@ -27,3 +27,17 @@ export function validateSchema<T>(schema: ZodSchema<T>, data: T): T {
 		});
 	}
 }
+
+/**
+ * Ensures a required string value is present and non-empty.
+ * Throws a typed AppError when validation fails.
+ */
+export function ensureRequiredString(value: string | undefined, fieldName: string): string {
+	if (!value || !value.trim()) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: fieldName,
+			message: `${fieldName} is required`,
+		});
+	}
+	return value.trim();
+}
