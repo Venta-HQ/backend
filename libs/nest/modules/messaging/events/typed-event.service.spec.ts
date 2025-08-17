@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ClientProxy } from '@nestjs/microservices';
-import { Logger } from '@venta/nest/modules';
+import { Logger } from '../../core/logger/logger.service';
 import { EventService } from './typed-event.service';
 
 describe('EventService', () => {

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { WsException } from '@nestjs/websockets';
-import { Logger } from '@venta/nest/modules';
+import { Logger } from '../../modules/core/logger/logger.service';
 import { WsThrottlerGuard } from './ws-throttler.guard';
 
 describe('WsThrottlerGuard', () => {

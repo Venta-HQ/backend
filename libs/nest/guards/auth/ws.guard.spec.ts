@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ExecutionContext } from '@nestjs/common';
-import { Logger } from '@venta/nest/modules';
+import { Logger } from '../../modules/core/logger/logger.service';
 import { AuthService } from './auth.service';
 import { WsAuthGuard } from './ws.guard';
 
