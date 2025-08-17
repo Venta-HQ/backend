@@ -1,6 +1,7 @@
 import { Metadata } from '@grpc/grpc-js';
 import { Inject, Injectable, Scope } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
+import { context, propagation } from '@opentelemetry/api';
 import { HttpRequest } from '@venta/apitypes';
 import { Logger } from '@venta/nest/modules';
 import { retryObservable, shouldRetryGrpcCode } from '@venta/utils';
@@ -20,6 +21,24 @@ class GrpcInstance<T> {
 		data: T[K] extends (...args: any[]) => any ? Parameters<T[K]>[0] : never,
 	): T[K] extends (...args: any[]) => any ? ReturnType<T[K]> : never {
 		const metadata = new Metadata();
+
+		// CRITICAL: Inject OpenTelemetry trace context for distributed tracing
+		// This ensures spans are properly linked across service boundaries
+		try {
+			const carrier: Record<string, string> = {};
+			// Get current active context and inject it into the carrier
+			propagation.inject(context.active(), carrier);
+
+			// Add OpenTelemetry context to gRPC metadata
+			Object.entries(carrier).forEach(([key, value]) => {
+				if (value) {
+					metadata.set(key, value);
+				}
+			});
+		} catch (error) {
+			// Log but don't fail the gRPC call if context propagation fails
+			this.logger.warn('Failed to inject trace context into gRPC metadata', { error: error.message });
+		}
 
 		// Add authentication metadata if user exists (optional for public endpoints)
 		if (this.request.user?.id) {

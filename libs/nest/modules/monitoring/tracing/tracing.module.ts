@@ -17,6 +17,7 @@ export class TracingModule {
 						// Lazy import to avoid adding hard runtime deps when not used
 						const { NodeSDK } = await import('@opentelemetry/sdk-node');
 						const { OTLPTraceExporter } = await import('@opentelemetry/exporter-trace-otlp-http');
+						const { BatchSpanProcessor } = await import('@opentelemetry/sdk-trace-node');
 						const { PrismaInstrumentation } = await import('@prisma/instrumentation');
 						const { HttpInstrumentation } = await import('@opentelemetry/instrumentation-http');
 						const { ExpressInstrumentation } = await import('@opentelemetry/instrumentation-express');
@@ -49,6 +50,13 @@ export class TracingModule {
 						// Set environment variable for NodeSDK to pick up
 						process.env.OTEL_RESOURCE_ATTRIBUTES = allResourceAttrs;
 
+						// Configure span processor for production use
+						const spanProcessor = new BatchSpanProcessor(traceExporter, {
+							maxExportBatchSize: 100,
+							scheduledDelayMillis: 1000, // Export every 1 second
+							exportTimeoutMillis: 5000, // 5 second timeout
+						});
+
 						const instrumentations = [
 							new HttpInstrumentation(),
 							new ExpressInstrumentation(),
@@ -60,7 +68,7 @@ export class TracingModule {
 						];
 
 						const sdk = new NodeSDK({
-							traceExporter,
+							spanProcessor,
 							instrumentations,
 						});
 

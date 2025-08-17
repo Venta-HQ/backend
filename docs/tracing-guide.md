@@ -40,6 +40,14 @@ Request → RequestIdInterceptor → TracingModule → Instrumented Code → Tem
 | `NODE_ENV`                           | Deployment environment                     | -                                 |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Tempo endpoint                             | `http://localhost:4318/v1/traces` |
 
+### Span Processing
+
+Uses `BatchSpanProcessor` with optimized settings for all environments:
+
+- **Batch size**: 100 spans per export
+- **Export interval**: 1 second
+- **Timeout**: 5 seconds
+
 ### Service Names
 
 Services use standardized kebab-case names from `APP_NAMES`:
@@ -264,7 +272,22 @@ curl -v http://localhost:5002/api/users/123
 - Check database queries in span events
 - Follow distributed calls across services
 
-### 4. Debug Issues
+### 4. Cross-Service Communication
+
+For **cross-pod gRPC communication**, context propagation ensures unified traces:
+
+**Client Side** (API Gateway → gRPC Service):
+
+- `GrpcInstance` service injects OpenTelemetry context into gRPC metadata
+- Trace context flows from HTTP requests to downstream gRPC calls
+
+**Server Side** (gRPC Service in different pod):
+
+- Built-in `GrpcInstrumentation` automatically extracts context from incoming gRPC metadata
+- Links gRPC method execution to the distributed trace
+- Creates child spans instead of separate root traces
+
+### 5. Debug Issues
 
 - Check span status for errors
 - Review span events for detailed context

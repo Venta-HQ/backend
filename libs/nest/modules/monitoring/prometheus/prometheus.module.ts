@@ -26,7 +26,6 @@ export class PrometheusModule {
 						appName: configService.get('APP_NAME') || 'unknown-service',
 					}),
 				},
-				ConfigService, // Make ConfigService available to Prometheus services
 			],
 		};
 	}
