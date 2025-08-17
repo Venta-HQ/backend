@@ -1,4 +1,4 @@
-import { z } from 'zod';
+// Base API types and interfaces
 
 /**
  * Base API request interface
@@ -47,33 +47,3 @@ export interface PaginationParams {
 	sort?: string;
 	order?: 'asc' | 'desc';
 }
-
-/**
- * Base validation schemas
- */
-export const PaginationSchema = z.object({
-	page: z.number().min(1).optional(),
-	limit: z.number().min(1).max(100).optional(),
-	sort: z.string().optional(),
-	order: z.enum(['asc', 'desc']).optional(),
-});
-
-export const ApiErrorSchema = z.object({
-	code: z.string(),
-	message: z.string(),
-	details: z.record(z.unknown()).optional(),
-});
-
-export const ApiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
-	z.object({
-		data: dataSchema.optional(),
-		error: ApiErrorSchema.optional(),
-		meta: z
-			.object({
-				page: z.number().optional(),
-				limit: z.number().optional(),
-				total: z.number().optional(),
-			})
-			.catchall(z.unknown())
-			.optional(),
-	});
