@@ -4,38 +4,9 @@ Generic utility functions and helpers that can be used across any project. These
 
 ## Categories
 
-### Type Guards (`type-guards.util.ts`)
+### Type Guards
 
-Type-safe runtime checks for common data types and structures.
-
-```typescript
-import { isNonEmptyString, isValidArray, isValidNumber } from '@venta/utils';
-
-// String validation
-const input = getUserInput();
-if (isNonEmptyString(input)) {
-	// TypeScript knows input is a non-empty string
-	processString(input);
-}
-
-// Array validation with custom type guard
-const data = getApiResponse();
-if (isValidArray(data, isValidNumber)) {
-	// TypeScript knows data is number[]
-	const sum = data.reduce((a, b) => a + b, 0);
-}
-
-// Object property validation
-interface User {
-	id: string;
-	name: string;
-}
-const obj = getObject();
-if (hasRequiredProperties<User>(obj, ['id', 'name'])) {
-	// TypeScript knows obj has id and name properties
-	console.log(obj.id, obj.name);
-}
-```
+Keep custom runtime type guards close to their domains. We intentionally removed generic type-guard exports from `@venta/utils` to reduce API surface area.
 
 ### Validation (`validation.util.ts`)
 

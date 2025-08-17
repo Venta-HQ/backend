@@ -6,7 +6,7 @@ import { FileUploadACL, ImageUploadQuery, imageUploadQuerySchema } from '@venta/
 import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { GrpcInstance, Logger } from '@venta/nest/modules';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { SchemaValidatorPipe } from '@venta/nest/validation';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
 	FileManagementServiceClient,

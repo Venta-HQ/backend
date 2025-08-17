@@ -12,7 +12,7 @@ import {
 } from '@venta/domains/infrastructure/contracts';
 import { HttpAuthGuard } from '@venta/nest/guards';
 import { GrpcInstance } from '@venta/nest/modules';
-import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { SchemaValidatorPipe } from '@venta/nest/validation';
 import {
 	VENDOR_MANAGEMENT_SERVICE_NAME,
 	VendorManagementServiceClient,

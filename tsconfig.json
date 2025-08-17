@@ -27,7 +27,8 @@
 			"@venta/utils": ["libs/utils/src"],
 			"@venta/domains/*": ["domains/*"],
 			"@venta/test/helpers": ["test/helpers"],
-			"@venta/test/helpers/*": ["test/helpers/*"]
+			"@venta/test/helpers/*": ["test/helpers/*"],
+			"@venta/nest/validation": ["libs/nest/validation"]
 		}
 	},
 	"exclude": ["**/*.spec.ts", "**/*.test.ts", "test/**/*", "node_modules", "dist"]
