@@ -1,9 +1,8 @@
-import { Injectable, OnModuleDestroy, OnModuleInit, Optional } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { Logger } from '../../core/logger';
-import { RequestContextService } from '../../networking/request-context';
 
-const getClient = (url) => {
+const getClient = (url: string) => {
 	return new PrismaClient({
 		datasources: {
 			db: {
@@ -27,7 +26,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 		connectionString: string,
 		_pulseKey: string,
 		private readonly logger: Logger,
-		@Optional() private readonly requestContextService?: RequestContextService,
 	) {
 		this.logger.setContext(PrismaService.name);
 		this.client = getClient(connectionString);
@@ -37,8 +35,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 			query: {
 				$allModels: {
 					$allOperations: async ({ model, operation, args, query }) => {
-						const requestId =
-							this.requestContextService?.getRequestId() || this.requestContextService?.getCorrelationId();
 						const start = Date.now();
 						try {
 							const result = await query(args);
@@ -47,7 +43,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 								action: operation,
 								params: args,
 								durationMs: Date.now() - start,
-								...(requestId && { requestId }),
 							});
 							return result;
 						} catch (err) {
@@ -56,7 +51,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 								action: operation,
 								params: args,
 								message: err instanceof Error ? err.message : String(err),
-								...(requestId && { requestId }),
 							});
 							throw err;
 						}
@@ -65,6 +59,7 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 			},
 		});
 
+		// NOTE: We can't accurately correlate a requestId to a Prisma query this way, so we are not doing this for now
 		// this.client.$on('query', (e) => {
 		// 	const requestId = this.requestContextService?.getRequestId() || this.requestContextService?.getCorrelationId();
 		// 	console.log('requestId', requestId);
