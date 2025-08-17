@@ -5,38 +5,35 @@ export class TransformationUtil {
 	/**
 	 * Transform location format (lat/long to latitude/longitude)
 	 */
-	static transformLocationToLatLong(location: { lat: number; long: number }) {
+	static transformLocationToLatLng(location: { lat: number; lng: number }) {
 		return {
 			latitude: location.lat,
-			longitude: location.long,
+			longitude: location.lng,
 		};
 	}
 
 	/**
 	 * Transform location format (latitude/longitude to lat/long)
 	 */
-	static transformLocationFromLatLong(location: { latitude: number; longitude: number }) {
+	static transformLocationFromLatLng(location: { latitude: number; longitude: number }) {
 		return {
 			lat: location.latitude,
-			long: location.longitude,
+			lng: location.longitude,
 		};
 	}
 
 	/**
 	 * Transform geospatial bounds format
 	 */
-	static transformBounds(bounds: {
-		northEast: { lat: number; long: number };
-		southWest: { lat: number; long: number };
-	}) {
+	static transformBounds(bounds: { northEast: { lat: number; lng: number }; southWest: { lat: number; lng: number } }) {
 		return {
 			ne: {
 				lat: bounds.northEast.lat,
-				long: bounds.northEast.long,
+				lng: bounds.northEast.lng,
 			},
 			sw: {
 				lat: bounds.southWest.lat,
-				long: bounds.southWest.long,
+				lng: bounds.southWest.lng,
 			},
 		};
 	}

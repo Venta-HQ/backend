@@ -20,8 +20,8 @@ export class UserVendorRequestACL {
 
 	static toGrpc(request: any): {
 		userId: string;
-		ne: { lat: number; long: number };
-		sw: { lat: number; long: number };
+		ne: { lat: number; lng: number };
+		sw: { lat: number; lng: number };
 	} {
 		this.validate(request);
 
@@ -32,11 +32,11 @@ export class UserVendorRequestACL {
 			userId: request.userId,
 			ne: {
 				lat: ne.lat,
-				long: ne.lng, // Convert lng to long for gRPC
+				lng: ne.lng,
 			},
 			sw: {
 				lat: sw.lat,
-				long: sw.lng, // Convert lng to long for gRPC
+				lng: sw.lng,
 			},
 		};
 	}

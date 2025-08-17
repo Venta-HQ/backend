@@ -121,13 +121,13 @@ export const dateRangeSchema = z
  *
  * @returns A Zod schema for coordinate validation
  * - lat: number between -90 and 90 (inclusive)
- * - long: number between -180 and 180 (inclusive)
+ * - lng: number between -180 and 180 (inclusive)
  *
  * @example
  * ```typescript
  * const point = {
  *   lat: 40.7128,
- *   long: -74.006,
+ *   lng: -74.006,
  * };
  * const result = coordinatesSchema.safeParse(point);
  * if (result.success) {
@@ -139,7 +139,7 @@ export const dateRangeSchema = z
  */
 export const coordinatesSchema = z.object({
 	lat: z.number().min(-90).max(90),
-	long: z.number().min(-180).max(180),
+	lng: z.number().min(-180).max(180),
 });
 
 /**

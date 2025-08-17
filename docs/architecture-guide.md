@@ -287,7 +287,7 @@ export const ErrorCodes = {
 // Domain-specific error with context
 throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_COORDINATES, 'Invalid coordinates provided', {
 	lat: data.lat,
-	long: data.long,
+	lng: data.lng,
 	domain: 'location-services',
 	operation: 'update_vendor_location',
 });

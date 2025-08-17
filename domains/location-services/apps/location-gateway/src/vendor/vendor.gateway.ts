@@ -126,7 +126,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 	 * Handle vendor location updates
 	 */
 	@SubscribeMessage('update_location')
-	async handleLocationUpdate(socket: Socket, data: { lat: number; long: number }) {
+	async handleLocationUpdate(socket: Socket, data: { lat: number; lng: number }) {
 		try {
 			const vendorId = await this.vendorConnectionManager.getSocketVendorId(socket.id);
 
@@ -142,7 +142,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				entityId: vendorId,
 				coordinates: {
 					lat: data.lat,
-					long: data.long,
+					lng: data.lng,
 				},
 			});
 
@@ -155,7 +155,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 					vendorId,
 					location: {
 						lat: data.lat,
-						long: data.long,
+						lng: data.lng,
 					},
 				});
 			});
@@ -165,7 +165,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				vendorId,
 				coordinates: {
 					lat: data.lat,
-					long: data.long,
+					lng: data.lng,
 				},
 			});
 

@@ -71,7 +71,7 @@ export class LocationUpdateACL {
 	static toGrpc(domain: LocationUpdate): {
 		entityId: string;
 		entityType: string;
-		coordinates: { lat: number; long: number };
+		coordinates: { lat: number; lng: number };
 		timestamp: string;
 	} {
 		return {
@@ -79,7 +79,7 @@ export class LocationUpdateACL {
 			entityType: domain.entityType,
 			coordinates: {
 				lat: domain.coordinates.lat,
-				long: domain.coordinates.lng, // Convert lng to long for gRPC
+				lng: domain.coordinates.lng,
 			},
 			timestamp: domain.timestamp,
 		};

@@ -283,7 +283,7 @@ export const data = {
 		id: 'vendor_123',
 		profileImage: 'https://example.com/image.jpg',
 		lat: 40.7128,
-		long: -74.006,
+		lng: -74.006,
 		name: 'Test Vendor',
 		open: true,
 		phone: '123-456-7890',

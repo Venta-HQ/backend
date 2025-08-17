@@ -169,19 +169,19 @@ export class LocationService {
 
 		if (data.long < -180 || data.long > 180) {
 			throw new AppError(ErrorType.VALIDATION, ErrorCodes.LOCATION_INVALID_LONGITUDE, 'Invalid longitude value', {
-				long: data.long,
+				lng: data.lng,
 			});
 		}
 
 		// Domain logic
 		await this.storeVendorLocation(data.entityId, {
 			lat: data.lat,
-			long: data.long,
+			lng: data.lng,
 		});
 
 		// Domain event
 		await this.eventService.emit('vendor.location.updated', {
-			location: { lat: data.lat, long: data.long },
+			location: { lat: data.lat, lng: data.lng },
 			timestamp: new Date(),
 			vendorId: data.entityId,
 		});
@@ -470,26 +470,26 @@ describe('UserController (e2e)', () => {
 // ❌ Bad - Direct dependency on another domain
 @Injectable()
 export class UserService {
-  constructor(
-    private vendorService: VendorService, // Cross-domain dependency
-  ) {}
+	constructor(
+		private vendorService: VendorService, // Cross-domain dependency
+	) {}
 }
 
 // ✅ Good - Use events for cross-domain communication
 @Injectable()
 export class UserService {
-  async createUser(data: UserData) {
-    const user = await this.prisma.db.user.create({ data });
+	async createUser(data: UserData) {
+		const user = await this.prisma.db.user.create({ data });
 
-    // Emit event for other domains to consume
-    await this.eventService.emit('user.created', {
-      id: user.id,
-      clerkId: user.clerkId,
-      timestamp: new Date(),
-    });
+		// Emit event for other domains to consume
+		await this.eventService.emit('user.created', {
+			id: user.id,
+			clerkId: user.clerkId,
+			timestamp: new Date(),
+		});
 
-    return user;
-  }
+		return user;
+	}
 }
 ```
 
@@ -499,27 +499,27 @@ export class UserService {
 // ❌ Bad - Business logic in controller
 @Controller('users')
 export class UserController {
-  @Post('register')
-  async registerUser(@Body() data: UserData) {
-    // Business logic here - should be in service
-    if (data.email && !isValidEmail(data.email)) {
-      throw new Error('Invalid email');
-    }
+	@Post('register')
+	async registerUser(@Body() data: UserData) {
+		// Business logic here - should be in service
+		if (data.email && !isValidEmail(data.email)) {
+			throw new Error('Invalid email');
+		}
 
-    const user = await this.prisma.db.user.create({ data });
-    return user;
-  }
+		const user = await this.prisma.db.user.create({ data });
+		return user;
+	}
 }
 
 // ✅ Good - Controller delegates to service
 @Controller('users')
 export class UserController {
-  constructor(private userService: UserService) {}
+	constructor(private userService: UserService) {}
 
-  @Post('register')
-  async registerUser(@Body() data: UserData) {
-    return this.userService.registerUser(data);
-  }
+	@Post('register')
+	async registerUser(@Body() data: UserData) {
+		return this.userService.registerUser(data);
+	}
 }
 ```
 
