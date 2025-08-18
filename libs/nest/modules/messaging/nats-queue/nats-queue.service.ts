@@ -34,7 +34,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 
 		try {
 			this.nc = await connect({ servers: natsUrl });
-			this.logger.log(`Connected to NATS server: ${natsUrl}`);
+			this.logger.debug(`Connected to NATS server: ${natsUrl}`);
 		} catch (error) {
 			this.logger.error('Failed to connect to NATS server:', error.stack, { error, natsUrl });
 			throw error;
@@ -50,7 +50,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 		// Close NATS connection
 		if (this.nc) {
 			await this.nc.close();
-			this.logger.log('NATS connection closed');
+			this.logger.debug('NATS connection closed');
 		}
 	}
 
@@ -83,7 +83,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 					// Run in ALS for downstream correlation
 					this.requestContextService.run(async () => {
 						const data = JSON.parse(msg.data.toString());
-						this.logger.log(`Processing message from queue ${queueGroup}: ${subject}`);
+						this.logger.debug(`Processing message from queue ${queueGroup}: ${subject}`);
 						try {
 							await handler(data);
 							span.end();
@@ -97,7 +97,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 
 					// In NATS v2, we don't need explicit ack/nak for regular subscriptions
 					// Messages are automatically acknowledged
-					this.logger.log(`Successfully processed message: ${subject}`);
+					this.logger.debug(`Successfully processed message: ${subject}`);
 				} catch (error) {
 					this.logger.error(`Error processing message ${subject}:`, error.stack, { error, subject, queueGroup });
 					// In regular subscriptions, we can't NAK - just log the error
@@ -106,7 +106,7 @@ export class NatsQueueService implements OnModuleInit, OnModuleDestroy {
 		})();
 
 		this.subscriptions.push(subscription);
-		this.logger.log(`Subscribed to ${subject} with queue group: ${queueGroup}`);
+		this.logger.debug(`Subscribed to ${subject} with queue group: ${queueGroup}`);
 	}
 
 	/**

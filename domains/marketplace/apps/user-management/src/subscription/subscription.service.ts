@@ -20,7 +20,7 @@ export class SubscriptionService {
 	 * Create user subscription record (legacy method)
 	 */
 	async createUserSubscription(data: UserSubscriptionData): Promise<void> {
-		this.logger.log('Creating user subscription record', {
+		this.logger.debug('Creating user subscription record', {
 			clerkUserId: data.clerkUserId,
 		});
 
@@ -40,7 +40,7 @@ export class SubscriptionService {
 				},
 			});
 
-			this.logger.log('User subscription record created successfully', {
+			this.logger.debug('User subscription record created successfully', {
 				clerkUserId: data.clerkUserId,
 			});
 		} catch (error) {

@@ -135,7 +135,7 @@ export class BootstrapService {
 
 		const { app, host, port } = await this.createHttpApp(options);
 
-		this.logger.log(`Starting HTTP server on ${host}:${port}`);
+		this.logger.debug(`Starting HTTP server on ${host}:${port}`);
 		await app.listen(port, host);
 
 		return app;
@@ -144,7 +144,7 @@ export class BootstrapService {
 	static async bootstrapGrpc(options: GrpcBootstrapOptions) {
 		const { app } = await this.createGrpcApp(options);
 
-		this.logger.log(`Starting gRPC microservice`);
+		this.logger.debug(`Starting gRPC microservice`);
 		await app.listen();
 
 		return app;
@@ -153,7 +153,7 @@ export class BootstrapService {
 	static async bootstrapNats(options: NatsBootstrapOptions) {
 		const { app } = await this.createNatsApp(options);
 
-		this.logger.log(`Starting NATS microservice`);
+		this.logger.debug(`Starting NATS microservice`);
 		await app.listen();
 
 		return app;
@@ -166,7 +166,7 @@ export class BootstrapService {
 		const port = options.port || 3000;
 		const host = options.host || '0.0.0.0';
 
-		this.logger.log(`Starting health check server on ${host}:${port}`);
+		this.logger.debug(`Starting health check server on ${host}:${port}`);
 		await app.listen(port, host);
 
 		return app;
@@ -202,7 +202,7 @@ export class BootstrapService {
 			// Setup graceful shutdown
 			this.setupGracefulShutdown(apps);
 
-			this.logger.log(`Successfully bootstrapped ${apps.length} service(s)`);
+			this.logger.debug(`Successfully bootstrapped ${apps.length} service(s)`);
 			return apps;
 		} catch (error) {
 			this.logger.error('Failed to bootstrap services:', error.stack, { error });
@@ -222,12 +222,12 @@ export class BootstrapService {
 
 	private static setupGracefulShutdown(apps: any[]) {
 		const shutdown = async (signal: string) => {
-			this.logger.log(`Received ${signal}, starting graceful shutdown...`);
+			this.logger.debug(`Received ${signal}, starting graceful shutdown...`);
 
 			for (const app of apps) {
 				try {
 					await app.close();
-					this.logger.log('Service closed successfully');
+					this.logger.debug('Service closed successfully');
 				} catch (error) {
 					this.logger.error('Error closing service:', error.stack, { error });
 				}

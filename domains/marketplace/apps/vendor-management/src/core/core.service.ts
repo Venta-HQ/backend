@@ -76,7 +76,7 @@ export class CoreService {
 	 * Domain method for vendor creation with business logic
 	 */
 	async createVendor(data: VendorCreate, userId: string): Promise<string> {
-		this.logger.log('Creating new vendor');
+		this.logger.debug('Creating new vendor');
 
 		try {
 			// Create vendor
@@ -99,7 +99,7 @@ export class CoreService {
 				});
 			}
 
-			this.logger.log('Vendor created successfully', {
+			this.logger.debug('Vendor created successfully', {
 				userId: userId,
 				vendorId: vendor.id,
 			});
@@ -131,7 +131,7 @@ export class CoreService {
 	 * Domain method for vendor profile updates
 	 */
 	async updateVendor(data: VendorUpdate, userId: string): Promise<void> {
-		this.logger.log('Updating vendor', { vendorId: data.id, userId });
+		this.logger.debug('Updating vendor', { vendorId: data.id, userId });
 
 		const updates: Prisma.VendorUpdateInput = {
 			...(data.name && { name: data.name }),
@@ -156,7 +156,7 @@ export class CoreService {
 				});
 			}
 
-			this.logger.log('Vendor updated successfully', {
+			this.logger.debug('Vendor updated successfully', {
 				userId: userId,
 				vendorId: data.id,
 			});

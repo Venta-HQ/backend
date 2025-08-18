@@ -18,7 +18,7 @@ export class RevenueCatController {
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.REVENUECAT_WEBHOOK_SECRET || ''))
 	async handleRevenueCatEvent(@Body() event: RevenueCatWebhookPayload): Promise<{ message: string }> {
-		this.logger.log(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
+		this.logger.debug(`Handling RevenueCat Webhook Event: ${event.event.type}`, {
 			eventType: event.event.type,
 			userId: event.event.app_user_id,
 		});

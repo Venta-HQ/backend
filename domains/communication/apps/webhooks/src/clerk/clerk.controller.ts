@@ -18,7 +18,7 @@ export class ClerkController {
 	@Post()
 	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
 	async handleClerkEvent(@Body() event: ClerkWebhookPayload): Promise<{ message: string }> {
-		this.logger.log(`Handling Clerk Webhook Event: ${event.type}`, {
+		this.logger.debug(`Handling Clerk Webhook Event: ${event.type}`, {
 			eventType: event.type,
 			userId: event.data?.id,
 		});

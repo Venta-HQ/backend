@@ -19,7 +19,7 @@ export class CoreService {
 	 * Domain method for user identity management with business logic
 	 */
 	async handleUserCreated(id: string): Promise<{ clerkId: string; id: string } | null> {
-		this.logger.log('Handling user identity creation from external auth provider', { clerkId: id });
+		this.logger.debug('Handling user identity creation from external auth provider', { clerkId: id });
 
 		try {
 			const userExists = await this.prisma.db.user.count({
@@ -36,14 +36,14 @@ export class CoreService {
 					select: { clerkId: true, id: true },
 				});
 
-				this.logger.log('User identity created successfully from external auth provider', {
+				this.logger.debug('User identity created successfully from external auth provider', {
 					clerkId: id,
 					userId: user.id,
 				});
 
 				return user;
 			} else {
-				this.logger.log('User identity already exists', { clerkId: id });
+				this.logger.debug('User identity already exists', { clerkId: id });
 				return await this.prisma.db.user.findFirst({
 					select: { clerkId: true, id: true },
 					where: { clerkId: id },
@@ -63,7 +63,7 @@ export class CoreService {
 	 * Domain method for user identity cleanup with business logic
 	 */
 	async handleUserDeleted(clerkId: string): Promise<void> {
-		this.logger.log('Handling user identity deletion from external auth provider', { clerkId });
+		this.logger.debug('Handling user identity deletion from external auth provider', { clerkId });
 
 		try {
 			// Get user before deletion for potential event emission
@@ -79,12 +79,12 @@ export class CoreService {
 					},
 				});
 
-				this.logger.log('User identity deleted successfully from external auth provider', {
+				this.logger.debug('User identity deleted successfully from external auth provider', {
 					clerkId,
 					userId: user.id,
 				});
 			} else {
-				this.logger.log('User identity not found for deletion', { clerkId });
+				this.logger.debug('User identity not found for deletion', { clerkId });
 			}
 		} catch (error) {
 			this.logger.error('Failed to handle user identity deletion', error.stack, { clerkId, error });

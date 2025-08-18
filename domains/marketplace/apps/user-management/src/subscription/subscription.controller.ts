@@ -21,7 +21,7 @@ export class SubscriptionController {
 		// Transform and validate gRPC data to domain format
 		const domainRequest = SubscriptionCreateACL.toDomain(request);
 
-		this.logger.log(`Handling subscription created event`, {
+		this.logger.debug(`Handling subscription created event`, {
 			userId: domainRequest.userId,
 			providerId: domainRequest.providerId,
 		});
@@ -32,7 +32,7 @@ export class SubscriptionController {
 				clerkUserId: domainRequest.userId,
 			});
 
-			this.logger.log('Subscription created successfully', {
+			this.logger.debug('Subscription created successfully', {
 				userId: domainRequest.userId,
 				providerId: domainRequest.providerId,
 			});

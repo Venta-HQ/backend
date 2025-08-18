@@ -16,7 +16,7 @@ export class LocationService {
 	 * Used by location event handlers
 	 */
 	async updateVendorLocation(vendorId: string, location: { lat: number; lng: number }): Promise<void> {
-		this.logger.log('Updating vendor location from event', {
+		this.logger.debug('Updating vendor location from event', {
 			vendorId,
 			location: `${location.lat}, ${location.lng}`,
 		});
@@ -31,7 +31,7 @@ export class LocationService {
 				},
 			});
 
-			this.logger.log('Vendor location updated from event successfully', {
+			this.logger.debug('Vendor location updated from event successfully', {
 				vendorId,
 				location: `${location.lat}, ${location.lng}`,
 			});

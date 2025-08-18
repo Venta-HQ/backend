@@ -42,7 +42,7 @@ export class GeolocationService {
 				location: request.coordinates,
 			});
 
-			this.logger.log('Vendor location updated', {
+			this.logger.debug('Vendor location updated', {
 				vendorId: request.entityId,
 				coordinates: request.coordinates,
 			});

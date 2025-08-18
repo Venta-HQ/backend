@@ -61,7 +61,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.join(vendorId);
 			});
 
-			this.logger.log('User connected', {
+			this.logger.debug('User connected', {
 				socketId: client.id,
 				userId,
 			});
@@ -106,7 +106,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.leave(vendorId);
 			});
 
-			this.logger.log('User disconnected', {
+			this.logger.debug('User disconnected', {
 				socketId: client.id,
 				userId: connectionInfo.userId,
 			});
@@ -193,7 +193,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				nearbyVendors,
 			});
 
-			this.logger.log('User location updated', {
+			this.logger.debug('User location updated', {
 				socketId: socket.id,
 				userId,
 				location: data,

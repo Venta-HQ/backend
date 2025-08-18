@@ -60,7 +60,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				});
 			});
 
-			this.logger.log('Vendor connected', {
+			this.logger.debug('Vendor connected', {
 				socketId: client.id,
 				vendorId,
 			});
@@ -105,7 +105,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				});
 			});
 
-			this.logger.log('Vendor disconnected', {
+			this.logger.debug('Vendor disconnected', {
 				socketId: client.id,
 				vendorId: connectionInfo.vendorId,
 			});
@@ -169,7 +169,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				},
 			});
 
-			this.logger.log('Vendor location updated', {
+			this.logger.debug('Vendor location updated', {
 				socketId: socket.id,
 				vendorId,
 				location: data,

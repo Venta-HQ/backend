@@ -27,14 +27,14 @@ export class CoreController {
 		// Transform and validate gRPC data to domain format
 		const domainRequest = UserIdentityACL.toDomain(request);
 
-		this.logger.log(`Handling User Created Event`, {
+		this.logger.debug(`Handling User Created Event`, {
 			userId: domainRequest.id,
 		});
 
 		try {
 			await this.coreService.handleUserCreated(domainRequest.id);
 
-			this.logger.log('User created successfully', {
+			this.logger.debug('User created successfully', {
 				userId: domainRequest.id,
 			});
 
@@ -57,14 +57,14 @@ export class CoreController {
 		// Transform and validate gRPC data to domain format
 		const domainRequest = UserIdentityACL.toDomain(request);
 
-		this.logger.log(`Handling User Deleted Event`, {
+		this.logger.debug(`Handling User Deleted Event`, {
 			userId: domainRequest.id,
 		});
 
 		try {
 			await this.coreService.handleUserDeleted(domainRequest.id);
 
-			this.logger.log('User deleted successfully', {
+			this.logger.debug('User deleted successfully', {
 				userId: domainRequest.id,
 			});
 
@@ -81,6 +81,4 @@ export class CoreController {
 			});
 		}
 	}
-
-	/* moved: getUserVendors handler extracted to vendors module */
 }

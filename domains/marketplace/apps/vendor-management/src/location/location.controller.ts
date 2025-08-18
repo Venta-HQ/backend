@@ -30,14 +30,12 @@ export class LocationController implements OnModuleInit {
 			'vendor-location-update-workers', // Queue group name - all instances share this
 			this.handleVendorLocationUpdate.bind(this),
 		);
-
-		this.logger.log('Vendor location events controller initialized with DDD event patterns');
 	}
 
 	private async handleVendorLocationUpdate(data: EventDataMap['location.vendor.location_updated']): Promise<void> {
 		const { vendorId, location, timestamp } = data;
 		// Enhanced logging with domain context
-		this.logger.log(`Handling vendor location event: location.vendor.location_updated`, {
+		this.logger.debug(`Handling vendor location event: location.vendor.location_updated`, {
 			vendorId,
 			location,
 			timestamp,
