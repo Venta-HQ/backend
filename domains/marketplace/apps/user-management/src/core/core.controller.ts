@@ -1,13 +1,11 @@
 import { Empty } from 'libs/proto/src/lib/shared/common';
-import { Metadata } from '@grpc/grpc-js';
 import { Controller } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { UserIdentityACL } from '@venta/domains/marketplace/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Logger } from '@venta/nest/modules';
 // gRPC types (wire format)
-import { USER_MANAGEMENT_SERVICE_NAME, UserIdentityData, VendorList } from '@venta/proto/marketplace/user-management';
-import { extractGrpcRequestMetadata } from '@venta/utils';
+import { USER_MANAGEMENT_SERVICE_NAME, UserIdentityData } from '@venta/proto/marketplace/user-management';
 import { CoreService } from './core.service';
 
 /**
@@ -84,38 +82,5 @@ export class CoreController {
 		}
 	}
 
-	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	async getUserVendors(_request: Empty, metadata: Metadata): Promise<VendorList> {
-		// Validate and transform request
-		const context = extractGrpcRequestMetadata(metadata);
-		const userId = context.user!.id;
-
-		this.logger.debug('Retrieving user vendors', {
-			userId,
-		});
-
-		try {
-			const vendors = await this.coreService.getUserVendors(userId);
-
-			this.logger.debug('Retrieved user vendors successfully', {
-				userId,
-				vendorCount: vendors.length,
-			});
-
-			return {
-				vendors,
-			};
-		} catch (error) {
-			this.logger.error('Failed to retrieve user vendors', error?.stack, {
-				error: error.message,
-				userId,
-			});
-
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {
-				operation: 'get_user_vendors',
-				userId,
-			});
-		}
-	}
+	/* moved: getUserVendors handler extracted to vendors module */
 }

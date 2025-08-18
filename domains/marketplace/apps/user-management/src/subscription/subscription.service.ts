@@ -44,7 +44,7 @@ export class SubscriptionService {
 				clerkUserId: data.clerkUserId,
 			});
 		} catch (error) {
-			this.logger.error('Failed to create user subscription record', error.stack, {
+			this.logger.error('Failed to create user subscription record', (error as Error).stack, {
 				clerkUserId: data.clerkUserId,
 				error,
 			});

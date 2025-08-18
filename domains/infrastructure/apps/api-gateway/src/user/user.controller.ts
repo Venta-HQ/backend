@@ -6,11 +6,11 @@ import { GrpcInstance } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
 @Controller('user')
+@UseGuards(HttpAuthGuard)
 export class UserController {
 	constructor(@Inject(USER_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<UserManagementServiceClient>) {}
 
-	@Get('/vendor')
-	@UseGuards(HttpAuthGuard)
+	@Get('/vendors')
 	async getUserVendors(@Req() _req: AuthenticatedRequest) {
 		return await firstValueFrom(
 			this.client.invoke('getUserVendors', {}).pipe(

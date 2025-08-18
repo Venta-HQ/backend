@@ -19,11 +19,11 @@ import {
 } from '@venta/proto/marketplace/vendor-management';
 
 @Controller('vendor')
+@UseGuards(HttpAuthGuard)
 export class VendorController {
 	constructor(@Inject(VENDOR_MANAGEMENT_SERVICE_NAME) private client: GrpcInstance<VendorManagementServiceClient>) {}
 
 	@Get('/:id')
-	@UseGuards(HttpAuthGuard)
 	@UsePipes(new SchemaValidatorPipe(idParamSchema))
 	async getVendorById(@Param() params: IdParam) {
 		return await firstValueFrom(
@@ -37,7 +37,6 @@ export class VendorController {
 	}
 
 	@Post()
-	@UseGuards(HttpAuthGuard)
 	@UsePipes(new SchemaValidatorPipe(vendorCreateSchema))
 	async createVendor(@Body() data: VendorCreateBody) {
 		// Validate and transform to gRPC
@@ -61,7 +60,6 @@ export class VendorController {
 	}
 
 	@Put('/:id')
-	@UseGuards(HttpAuthGuard)
 	async updateVendor(
 		@Param(new SchemaValidatorPipe(idParamSchema)) params: IdParam,
 		@Body(new SchemaValidatorPipe(vendorUpdateSchema)) data: VendorUpdateBody,
