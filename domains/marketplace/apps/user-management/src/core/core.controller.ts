@@ -85,7 +85,7 @@ export class CoreController {
 	}
 
 	@GrpcMethod(USER_MANAGEMENT_SERVICE_NAME)
-	async getUserVendors(request: Empty, metadata: Metadata): Promise<VendorList> {
+	async getUserVendors(_request: Empty, metadata: Metadata): Promise<VendorList> {
 		// Validate and transform request
 		const context = extractGrpcRequestMetadata(metadata);
 		const userId = context.user!.id;
