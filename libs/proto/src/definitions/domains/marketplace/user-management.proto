@@ -9,7 +9,7 @@ service UserManagementService {
   rpc HandleUserDeleted (UserIdentityData) returns (shared.common.Empty) {}
   // TODO: Get the real shape of subscription data
   rpc HandleSubscriptionCreated (CreateSubscriptionData) returns (CreateSubscriptionResponse) {}
-  rpc GetUserVendors (UserIdentityData) returns (VendorList) {}
+  rpc GetUserVendors (shared.common.Empty) returns (VendorList) {}
 }
 
 // Service Function Types

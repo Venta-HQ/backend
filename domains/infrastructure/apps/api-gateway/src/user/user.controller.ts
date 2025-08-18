@@ -11,9 +11,9 @@ export class UserController {
 
 	@Get('/vendor')
 	@UseGuards(HttpAuthGuard)
-	async getUserVendors(@Req() req: AuthenticatedRequest) {
+	async getUserVendors(@Req() _req: AuthenticatedRequest) {
 		return await firstValueFrom(
-			this.client.invoke('getUserVendors', { id: req.user.id }).pipe(
+			this.client.invoke('getUserVendors', {}).pipe(
 				catchError((error: Error) => {
 					// The AppExceptionFilter will handle the error conversion
 					throw error;

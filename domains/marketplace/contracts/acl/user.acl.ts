@@ -4,7 +4,7 @@ import type { UserIdentityData } from '@venta/proto/marketplace/user-management'
 import { validateSchema } from '@venta/utils';
 import { grpcUserIdentitySchema } from '../schemas/user.schemas';
 // Domain types (what gRPC maps to)
-import type { UserIdentity, UserVendorQuery } from '../types/domain';
+import type { UserIdentity } from '../types/domain';
 
 // ============================================================================
 // USER ACL - Bidirectional gRPC ↔ Domain transformation
@@ -25,25 +25,6 @@ export class UserIdentityACL {
 
 		return {
 			id: grpc.id,
-		};
-	}
-}
-
-/**
- * User Vendor Query ACL
- * Bidirectional validation and transformation for user vendor query operations
- */
-export class UserVendorQueryACL {
-	// gRPC → Domain (inbound)
-	static validateIncoming(grpc: UserIdentityData): void {
-		validateSchema(grpcUserIdentitySchema, grpc);
-	}
-
-	static toDomain(grpc: UserIdentityData): UserVendorQuery {
-		this.validateIncoming(grpc);
-
-		return {
-			userId: grpc.id,
 		};
 	}
 }

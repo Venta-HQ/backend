@@ -57,7 +57,7 @@ export interface UserManagementServiceClient {
     metadata?: Metadata,
   ): Observable<CreateSubscriptionResponse>;
 
-  getUserVendors(request: UserIdentityData, metadata?: Metadata): Observable<VendorList>;
+  getUserVendors(request: Empty, metadata?: Metadata): Observable<VendorList>;
 }
 
 export interface UserManagementServiceController {
@@ -72,10 +72,7 @@ export interface UserManagementServiceController {
     metadata?: Metadata,
   ): Promise<CreateSubscriptionResponse> | Observable<CreateSubscriptionResponse> | CreateSubscriptionResponse;
 
-  getUserVendors(
-    request: UserIdentityData,
-    metadata?: Metadata,
-  ): Promise<VendorList> | Observable<VendorList> | VendorList;
+  getUserVendors(request: Empty, metadata?: Metadata): Promise<VendorList> | Observable<VendorList> | VendorList;
 }
 
 export function UserManagementServiceControllerMethods() {

@@ -37,10 +37,6 @@ export interface SubscriptionProviderData {
 // User-Vendor Relationship (from gRPC UserVendorData)
 // ============================================================================
 
-export interface UserVendorQuery {
-	userId: string;
-}
-
 export interface UserVendorResult {
 	id: string;
 	name: string;
