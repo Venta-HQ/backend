@@ -24,7 +24,6 @@ export class PrismaService implements OnModuleInit, OnModuleDestroy {
 
 	constructor(
 		connectionString: string,
-		_pulseKey: string,
 		private readonly logger: Logger,
 	) {
 		this.logger.setContext(PrismaService.name);

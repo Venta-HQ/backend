@@ -4,7 +4,7 @@ import { VendorController } from './vendor.controller';
 import { VendorService } from './vendor.service';
 
 @Module({
-	imports: [PrismaModule],
+	imports: [PrismaModule.register()],
 	controllers: [VendorController],
 	providers: [VendorService],
 	exports: [VendorService],

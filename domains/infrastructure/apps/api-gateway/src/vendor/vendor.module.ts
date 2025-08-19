@@ -18,8 +18,7 @@ import { VendorController } from './vendor.controller';
 			protoPackage: MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
 			provide: VENDOR_MANAGEMENT_SERVICE_NAME,
 			serviceName: VENDOR_MANAGEMENT_SERVICE_NAME,
-			urlFactory: (configService: ConfigService) =>
-				configService.get('VENDOR_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5004',
+			urlFactory: (configService: ConfigService) => configService.get('VENDOR_SERVICE_ADDRESS') || 'localhost:5004',
 		}),
 	],
 	controllers: [VendorController],

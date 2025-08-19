@@ -16,7 +16,6 @@ async function bootstrap() {
 				port: configService.get('ALGOLIA_SYNC_HEALTH_PORT') || 3005,
 			},
 			main: {
-				defaultUrl: 'nats://localhost:4222',
 				module: AlgoliaSyncModule,
 				queue: 'algolia-sync-queue',
 				url: configService.get('NATS_URL') || 'nats://localhost:4222',

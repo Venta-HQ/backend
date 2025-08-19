@@ -2,14 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ConfigModule, EventService, PrismaModule } from '@venta/nest/modules';
-import { LocationModule } from '../location/location.module';
 import { CoreController } from './core.controller';
 import { CoreService } from './core.service';
 
 @Module({
 	imports: [
 		PrismaModule.register(),
-		LocationModule,
 		ClientsModule.registerAsync({
 			clients: [
 				{

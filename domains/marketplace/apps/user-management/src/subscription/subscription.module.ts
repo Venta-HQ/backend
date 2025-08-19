@@ -6,7 +6,7 @@ import { SubscriptionService } from './subscription.service';
 @Module({
 	controllers: [SubscriptionController],
 	exports: [SubscriptionService],
-	imports: [PrismaModule],
+	imports: [PrismaModule.register()],
 	providers: [SubscriptionService],
 })
 export class SubscriptionModule {}

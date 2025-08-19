@@ -162,8 +162,7 @@ import {
 			protoPackage: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
 			provide: MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
 			serviceName: MARKETPLACE_USER_MANAGEMENT_SERVICE_NAME,
-			urlFactory: (configService: ConfigService) =>
-				configService.get('USER_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5000',
+			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
 		}),
 	],
 })

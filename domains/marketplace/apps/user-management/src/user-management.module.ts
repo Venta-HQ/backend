@@ -12,7 +12,6 @@ import { VendorModule } from './vendor/vendor.module';
 			protocol: 'grpc',
 		}),
 		NatsQueueModule,
-
 		CoreModule,
 		SubscriptionModule,
 		VendorModule,

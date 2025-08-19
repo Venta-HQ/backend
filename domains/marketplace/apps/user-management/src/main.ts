@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import { BootstrapService, HealthCheckModule, Logger } from '@venta/nest/modules';
+import { MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME } from '@venta/proto/marketplace/user-management';
 import { UserManagementModule } from './user-management.module';
 
 async function bootstrap() {
@@ -18,10 +19,9 @@ async function bootstrap() {
 				port: configService.get('USER_HEALTH_PORT') || 3000,
 			},
 			main: {
-				defaultUrl: 'localhost:5000',
 				module: UserManagementModule,
-				package: 'user',
-				protoPath: 'user.proto',
+				package: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
+				protoPath: 'domains/marketplace/user-management.proto',
 				url: configService.get('USER_SERVICE_ADDRESS') || 'localhost:5000',
 			},
 		});

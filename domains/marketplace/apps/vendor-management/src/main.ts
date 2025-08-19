@@ -17,7 +17,6 @@ async function bootstrap() {
 				port: configService.get('VENDOR_HEALTH_PORT') || 3004,
 			},
 			main: {
-				defaultUrl: 'localhost:5004',
 				module: VendorManagementModule,
 				package: MARKETPLACE_VENDOR_MANAGEMENT_PACKAGE_NAME,
 				protoPath: 'domains/marketplace/vendor-management.proto',

@@ -15,7 +15,7 @@ vi.mock('@prisma/client', async (orig) => {
 
 describe('PrismaService', () => {
 	it('connects and disconnects on module hooks', async () => {
-		const svc = new PrismaService('postgres://example', '', {
+		const svc = new PrismaService('postgres://example', {
 			setContext: vi.fn(),
 			log: vi.fn(),
 			error: vi.fn(),

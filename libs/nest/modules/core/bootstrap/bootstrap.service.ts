@@ -19,7 +19,6 @@ export interface HttpBootstrapOptions {
 }
 
 export interface GrpcBootstrapOptions {
-	defaultUrl?: string;
 	module: any;
 	package: string;
 	protoPath: string; // Can be either a filename (e.g., 'vendor.proto') or a full path
@@ -27,7 +26,6 @@ export interface GrpcBootstrapOptions {
 }
 
 export interface NatsBootstrapOptions {
-	defaultUrl?: string;
 	module: any;
 	queue?: string;
 	url?: string;
@@ -85,7 +83,7 @@ export class BootstrapService {
 			options: {
 				package: options.package,
 				protoPath: ProtoPathUtil.resolveProtoPath(options.protoPath),
-				url: options.url || options.defaultUrl || 'localhost:5000',
+				url: options.url || 'localhost:5000',
 				loader: {
 					includeDirs: [ProtoPathUtil.getProtoRoot()],
 				},
@@ -110,7 +108,7 @@ export class BootstrapService {
 			bufferLogs: true as any,
 			options: {
 				queue: options.queue || 'default-queue',
-				servers: options.url || options.defaultUrl || 'nats://localhost:4222',
+				servers: options.url || 'nats://localhost:4222',
 			},
 			transport: Transport.NATS,
 		});

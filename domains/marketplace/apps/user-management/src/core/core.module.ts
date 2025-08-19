@@ -10,7 +10,7 @@ import { CoreService } from './core.service';
 			domain: 'marketplace',
 			protocol: 'grpc',
 		}),
-		PrismaModule,
+		PrismaModule.register(),
 	],
 	controllers: [CoreController],
 	providers: [CoreService],

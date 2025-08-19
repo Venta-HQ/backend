@@ -10,9 +10,6 @@
 // ACL CLASSES - Bidirectional gRPC ↔ Domain transformation
 // ============================================================================
 
-// User-related ACL classes (bidirectional gRPC ↔ Domain)
-export { UserVendorQueryACL } from './acl/user.acl';
-
 // Vendor-related ACL classes (bidirectional gRPC ↔ Domain)
 export { VendorLookupACL, VendorCreateACL, VendorUpdateACL } from './acl/vendor.acl';
 

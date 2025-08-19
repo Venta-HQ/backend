@@ -18,8 +18,7 @@ import { UserController } from './user.controller';
 			protoPackage: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
 			provide: USER_MANAGEMENT_SERVICE_NAME,
 			serviceName: USER_MANAGEMENT_SERVICE_NAME,
-			urlFactory: (configService: ConfigService) =>
-				configService.get('USER_MANAGEMENT_SERVICE_ADDRESS') || 'localhost:5002',
+			urlFactory: (configService: ConfigService) => configService.get('USER_SERVICE_ADDRESS') || 'localhost:5002',
 		}),
 	],
 	controllers: [UserController],

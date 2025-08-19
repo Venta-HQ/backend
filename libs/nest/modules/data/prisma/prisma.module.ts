@@ -20,7 +20,7 @@ export class PrismaModule {
 						if (!configService.get('DATABASE_URL')) {
 							throw new Error('DATABASE_URL required');
 						}
-						return new PrismaService(configService.get('DATABASE_URL'), configService.get('PULSE_API_KEY'), logger);
+						return new PrismaService(configService.get('DATABASE_URL'), logger);
 					},
 				},
 			],
