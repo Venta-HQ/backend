@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AuthModule } from '@venta/nest/guards';
 import { GrpcInstanceModule } from '@venta/nest/modules';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
@@ -10,6 +11,7 @@ import { UploadController } from './upload.controller';
 
 @Module({
 	imports: [
+		AuthModule,
 		ConfigModule,
 		GrpcInstanceModule.register<FileManagementServiceClient>({
 			proto: 'domains/infrastructure/file-management.proto',

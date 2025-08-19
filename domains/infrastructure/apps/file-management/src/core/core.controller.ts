@@ -1,27 +1,33 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { GrpcMethod } from '@nestjs/microservices';
 import { FileUploadACL } from '@venta/domains/infrastructure/contracts';
 import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { GrpcAuthGuard } from '@venta/nest/guards';
 import { Logger } from '@venta/nest/modules';
-import { FileManagementService } from '../../../core/services/file-management/file-management.service';
+import { extractGrpcRequestMetadata } from '@venta/utils';
+import { CoreService } from './core.service';
 
 /**
  * gRPC controller for file management operations
  */
 @Controller()
-export class FileManagementController {
+export class CoreController {
 	constructor(
-		private readonly fileManagementService: FileManagementService,
+		private readonly coreService: CoreService,
 		private readonly logger: Logger,
 	) {
-		this.logger.setContext(FileManagementController.name);
+		this.logger.setContext(CoreController.name);
 	}
 
 	@GrpcMethod('FileManagementService', 'UploadImage')
-	async uploadImage(request: FileUpload): Promise<FileUploadResult> {
+	@UseGuards(GrpcAuthGuard)
+	async uploadImage(request: FileUpload, metadata: any): Promise<FileUploadResult> {
 		// Transform gRPC input to domain using ACL
 		const domainRequest = FileUploadACL.toDomain(request);
+
+		// Extract user from metadata (validated by GrpcAuthGuard)
+		const _context = extractGrpcRequestMetadata(metadata);
 
 		this.logger.debug('Handling image upload request', {
 			filename: domainRequest.filename,
@@ -50,7 +56,7 @@ export class FileManagementController {
 				});
 			}
 
-			const result = await this.fileManagementService.uploadFile(domainRequest);
+			const result = await this.coreService.uploadFile(domainRequest);
 
 			return result;
 		} catch (error) {

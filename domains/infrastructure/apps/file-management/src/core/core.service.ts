@@ -1,28 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { CloudinaryOptionsACL } from '@venta/domains/infrastructure/contracts';
-import type {
-	CloudinaryUploadOptions,
-	FileUpload,
-	FileUploadResult,
-} from '@venta/domains/infrastructure/contracts/types/domain';
+import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { CloudinaryService, Logger } from '@venta/nest/modules';
 
 /**
- * File management service for infrastructure domain
+ * Core service for file management operations
  */
 @Injectable()
-export class FileManagementService {
+export class CoreService {
 	constructor(
 		private readonly cloudinaryService: CloudinaryService,
 		private readonly logger: Logger,
 	) {
-		this.logger.setContext(FileManagementService.name);
+		this.logger.setContext(CoreService.name);
 	}
 
-	/**
-	 * Upload a file to cloud storage
-	 */
 	async uploadFile(request: FileUpload): Promise<FileUploadResult> {
 		this.logger.debug('Processing file upload request', {
 			filename: request.filename,
@@ -31,28 +24,12 @@ export class FileManagementService {
 		});
 
 		try {
-			// Validate request using ACL (validation is done automatically in toDomain)
-			// The request should already be validated by the calling controller using FileUploadACL
-
 			// Convert to Cloudinary options using ACL
-			let options: CloudinaryUploadOptions;
-			try {
-				// Use default options - the FileUpload interface doesn't include context
-				// Options should be passed separately if needed
-				options = CloudinaryOptionsACL.toDomain({
-					folder: 'uploads',
-					transformation: 'auto',
-				});
-			} catch (error) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
-					field: 'options',
-					operation: 'convert_cloudinary_options',
-					filename: request.filename,
-					error: error instanceof Error ? error.message : 'Unknown error',
-				});
-			}
+			const options = CloudinaryOptionsACL.toDomain({
+				folder: 'uploads',
+				transformation: 'auto',
+			});
 
-			// Upload file
 			let result: any;
 			try {
 				result = await this.cloudinaryService.uploadBuffer(request.buffer, options);
@@ -65,12 +42,11 @@ export class FileManagementService {
 				});
 			}
 
-			// Convert response to domain format
 			const uploadResult: FileUploadResult = {
 				url: result.secure_url || result.url,
 				publicId: result.public_id,
-				format: result.format,
-				bytes: result.bytes,
+				format: result.format ?? 'unknown',
+				bytes: result.bytes ?? request.size,
 				createdAt: result.created_at || new Date().toISOString(),
 			};
 

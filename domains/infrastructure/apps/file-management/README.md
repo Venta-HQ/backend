@@ -2,12 +2,13 @@
 
 ## Purpose
 
-The File Management service handles all file upload and storage operations in the Venta backend system. It manages image uploads for user profiles and vendor images, providing secure file storage and retrieval capabilities. This service serves as the central authority for file operations, providing HTTP endpoints for file uploads and managing cloud storage integrations.
+The File Management service handles all file upload and storage operations in the Venta backend system. It manages image uploads for user profiles and vendor images, providing secure file storage and retrieval capabilities. This service serves as the central authority for file operations and exposes a gRPC API consumed by the API Gateway.
 
 ## Overview
 
 This microservice provides:
-- Image upload functionality for user profiles and vendor images
+
+- Image upload functionality for user profiles and vendor images (via gRPC)
 - Secure file storage and retrieval with cloud storage integration
 - File validation, processing, and optimization
 - File metadata management and organization
@@ -29,16 +30,16 @@ This microservice provides:
 
 ## Architecture
 
-The service follows a domain-driven design approach, focusing specifically on file management business logic. It exposes HTTP endpoints for file operations and publishes events for asynchronous communication with the rest of the system.
+The service follows a domain-driven design approach, focusing specifically on file management business logic. It exposes a gRPC API for file operations and publishes events for asynchronous communication with the rest of the system.
 
 ### Service Structure
 
 ```
 File Management Service
-├── Controllers (HTTP)
-│   └── Upload Controller - File upload processing
+├── Controllers (gRPC)
+│   └── FileManagementController - gRPC entrypoints
 ├── Services
-│   └── Upload Service - File upload and storage logic
+│   └── FileManagementService - File upload and storage logic
 └── Module Configuration
     └── BootstrapModule - Standardized service bootstrapping
 ```
@@ -62,7 +63,7 @@ docker-compose up file-management
 
 ```env
 # Service Configuration
-FILE_MANAGEMENT_SERVICE_ADDRESS=localhost:3005
+FILE_MANAGEMENT_SERVICE_ADDRESS=0.0.0.0:5005
 FILE_MANAGEMENT_HEALTH_PORT=3015
 
 # Cloud Storage
@@ -89,7 +90,7 @@ NATS_URL=nats://localhost:4222
 The service follows these patterns:
 
 - **BootstrapModule**: Uses the standardized BootstrapModule for service configuration
-- **HTTP Controllers**: Exposes HTTP endpoints for file upload operations
+- **gRPC Controllers**: Exposes gRPC endpoints for file upload operations
 - **File Processing**: Handles file validation, processing, and storage
 - **Event Publishing**: Publishes events to NATS for other services to consume
 - **Database Operations**: Uses PrismaService for database access via `prisma.db`
@@ -102,24 +103,9 @@ The service follows these patterns:
 - **Database**: Stores file metadata and access information
 - **HTTP API**: Provides RESTful endpoints for file operations
 
-## API Endpoints
+## gRPC API
 
-### POST /upload/image
-Upload an image file for user profile or vendor image.
-
-**Request:**
-- Content-Type: multipart/form-data
-- Body: Form data with 'file' field containing the image
-
-**Response:**
-```json
-{
-  "url": "https://res.cloudinary.com/...",
-  "publicId": "venta/...",
-  "format": "jpg",
-  "size": 12345
-}
-```
+See protobuf definition in `libs/proto/src/definitions/domains/infrastructure/file-management.proto` for service methods and messages.
 
 ## Development
 
@@ -164,7 +150,8 @@ docker run -p 3005:3005 venta-file-management
 ## Monitoring
 
 The service includes:
+
 - Health check endpoints
 - Prometheus metrics
 - Structured logging
-- Error tracking and monitoring 
+- Error tracking and monitoring

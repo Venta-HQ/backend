@@ -1,23 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CloudinaryService, Logger } from '@venta/nest/modules';
-import { UploadController } from './controllers/upload/upload.controller';
-import { UploadService } from './services/upload/upload.service';
+import { CloudinaryService } from '@venta/nest/modules';
+import { CoreController } from './core.controller';
+import { CoreService } from './core.service';
 
 @Module({
-	controllers: [UploadController],
-	providers: [
-		{
-			provide: UploadService,
-			useFactory: (logger: Logger) =>
-				new UploadService(
-					logger,
-					process.env.CLOUDINARY_API_KEY || '',
-					process.env.CLOUDINARY_API_SECRET || '',
-					process.env.CLOUDINARY_CLOUD_NAME || '',
-				),
-			inject: [Logger],
-		},
-		CloudinaryService,
-	],
+	controllers: [CoreController],
+	providers: [CoreService, CloudinaryService],
 })
 export class CoreModule {}

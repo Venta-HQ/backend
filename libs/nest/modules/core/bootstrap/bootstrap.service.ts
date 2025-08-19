@@ -87,6 +87,9 @@ export class BootstrapService {
 				loader: {
 					includeDirs: [ProtoPathUtil.getProtoRoot()],
 				},
+				// Increase limits to support image uploads up to 5MB (plus overhead)
+				maxReceiveMessageLength: 6 * 1024 * 1024,
+				maxSendMessageLength: 6 * 1024 * 1024,
 			},
 			transport: Transport.GRPC,
 		});

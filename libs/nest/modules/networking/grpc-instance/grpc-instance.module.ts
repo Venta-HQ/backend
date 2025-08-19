@@ -44,6 +44,9 @@ export class GrpcInstanceModule {
 										loader: {
 											includeDirs: [protoRoot],
 										},
+										// Increase limits to support 5MB image uploads (plus overhead)
+										maxReceiveMessageLength: 6 * 1024 * 1024,
+										maxSendMessageLength: 6 * 1024 * 1024,
 									},
 									transport: Transport.GRPC,
 								};
