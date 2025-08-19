@@ -73,6 +73,27 @@ this.logger.debug('Debug message');
 this.logger.verbose('Verbose message');
 ```
 
+### Controlling which logs go to Loki
+
+By default, the minimum level sent to Loki is environment-dependent: in production it's `log` (info), elsewhere it's `debug`. You can override this via `LOKI_MIN_LEVEL`. Supported values: `error`, `warn`, `log` (info), `debug`, `verbose`, and `info` (alias for `log`).
+
+Examples:
+
+```bash
+# Send only warning and error logs to Loki
+export LOKI_MIN_LEVEL=warn
+
+# Typical production: send info and above (map "info" to our "log" level)
+export LOKI_MIN_LEVEL=info
+
+# Send only errors
+export LOKI_MIN_LEVEL=error
+```
+
+This setting affects only the Loki transport. Console output continues to respect the runtime environment formatting.
+
+You can also disable Loki entirely using `LOKI_ENABLED=false` (accepted falsy aliases: `false`, `0`, `no`, `off`).
+
 ### Structured Logging
 
 Include structured data with your log messages:

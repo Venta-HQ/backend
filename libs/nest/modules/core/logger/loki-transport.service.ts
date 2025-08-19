@@ -20,12 +20,24 @@ interface LokiPayload {
 	streams: LokiStream[];
 }
 
+const levels = ['error', 'warn', 'log', 'debug', 'verbose'] as const;
+type Level = (typeof levels)[number];
+
 @Injectable()
 export class LokiTransportService {
 	private readonly lokiUrl: string;
 	private readonly lokiUsername: string;
 	private readonly lokiPassword: string;
 	private readonly appName: string;
+	private readonly lokiEnabled: boolean;
+	private readonly minLevel: Level;
+	private readonly levelPriority: Record<Level, number> = {
+		error: 50,
+		warn: 40,
+		log: 30, // "info" equivalent in our logger
+		debug: 20,
+		verbose: 10,
+	};
 	private readonly batch: LogEntry[] = [];
 	private batchTimeout: NodeJS.Timeout | null = null;
 	private readonly BATCH_SIZE = 10;
@@ -47,11 +59,30 @@ export class LokiTransportService {
 			this.lokiPassword = '';
 		}
 		this.appName = this.options.appName;
+
+		// Determine enablement; explicit false/0/no/off disables
+		const enabledRaw = (this.configService?.get('LOKI_ENABLED') || '').toString().toLowerCase();
+		this.lokiEnabled = !['false', '0', 'no', 'off'].includes(enabledRaw);
+
+		// Respect configurable minimum level for Loki transport.
+		// Default: production -> 'log' (info), others -> 'debug'
+		const env = (this.configService?.get('NODE_ENV') || '').toString().toLowerCase();
+		const isProduction = env === 'production';
+		const configuredMinLevel = (this.configService?.get('LOKI_MIN_LEVEL') || '').toString().toLowerCase();
+		// Support common alias "info" by mapping to our "log"
+		const normalizedMinLevel = configuredMinLevel === 'info' ? 'log' : configuredMinLevel;
+		const defaultLevel: Level = isProduction ? 'log' : 'debug';
+		this.minLevel = levels.includes(normalizedMinLevel as Level) ? (normalizedMinLevel as Level) : defaultLevel;
 	}
 
 	sendLog(entry: Omit<LogEntry, 'app'>): void {
 		if (!this.isConfigured()) {
 			return; // Skip if Loki is not configured
+		}
+
+		// Filter out logs below the configured minimum level
+		if (!this.shouldSendLevel(entry.level)) {
+			return;
 		}
 
 		const logEntry: LogEntry = {
@@ -68,8 +99,12 @@ export class LokiTransportService {
 		}
 	}
 
+	private shouldSendLevel(level: Level): boolean {
+		return this.levelPriority[level] >= this.levelPriority[this.minLevel];
+	}
+
 	private isConfigured(): boolean {
-		return !!this.lokiUrl;
+		return !!this.lokiUrl && this.lokiEnabled;
 	}
 
 	private async flushBatch(): Promise<void> {

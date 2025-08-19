@@ -26,6 +26,19 @@ export const configSchema = z.object({
 	LOKI_PASSWORD: z.string().optional(),
 
 	// Logging
+	LOKI_ENABLED: z
+		.union([z.string(), z.boolean()])
+		.transform((v) => {
+			const str = String(v).toLowerCase();
+			if (['false', '0', 'no', 'off'].includes(str)) return false;
+			if (['true', '1', 'yes', 'on'].includes(str)) return true;
+			return true; // default enabled when present
+		})
+		.optional(),
+	LOKI_MIN_LEVEL: z
+		.enum(['error', 'warn', 'log', 'debug', 'verbose', 'info'])
+		.transform((v) => (v === 'info' ? 'log' : v))
+		.optional(),
 	LOKI_URL: z.string().url(),
 	LOKI_USERNAME: z.string().optional(),
 	NATS_URL: z.string().default('nats://localhost:4222'),
