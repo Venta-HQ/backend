@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { CloudinaryOptionsACL } from '@venta/domains/infrastructure/contracts';
 import type { FileUpload, FileUploadResult } from '@venta/domains/infrastructure/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { CloudinaryService, Logger } from '@venta/nest/modules';
+import { buildAvatarUploadOptions } from '@venta/utils';
 
 /**
  * Core service for file management operations
@@ -12,6 +14,7 @@ export class CoreService {
 	constructor(
 		private readonly cloudinaryService: CloudinaryService,
 		private readonly logger: Logger,
+		private readonly configService: ConfigService,
 	) {
 		this.logger.setContext(CoreService.name);
 	}
@@ -24,10 +27,11 @@ export class CoreService {
 		});
 
 		try {
-			// Convert to Cloudinary options using ACL
+			// Enforce avatar preset/folder using shared helper
+			const avatarOptions = buildAvatarUploadOptions(this.configService);
 			const options = CloudinaryOptionsACL.toDomain({
-				folder: 'uploads',
-				transformation: 'auto',
+				folder: avatarOptions.folder,
+				transformation: avatarOptions.transformation,
 			});
 
 			let result: any;

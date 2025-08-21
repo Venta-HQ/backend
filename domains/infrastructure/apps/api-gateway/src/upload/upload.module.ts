@@ -2,11 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '@venta/nest/guards';
 import { GrpcInstanceModule } from '@venta/nest/modules';
+import { PrometheusService } from '@venta/nest/modules/monitoring/prometheus/prometheus.service';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
 	FileManagementServiceClient,
 	INFRASTRUCTURE_FILE_MANAGEMENT_PACKAGE_NAME,
 } from '@venta/proto/infrastructure/file-management';
+import { createUploadMetrics, UPLOAD_METRICS } from './metrics.provider';
 import { UploadController } from './upload.controller';
 
 @Module({
@@ -23,5 +25,12 @@ import { UploadController } from './upload.controller';
 		}),
 	],
 	controllers: [UploadController],
+	providers: [
+		{
+			provide: UPLOAD_METRICS,
+			inject: [PrometheusService],
+			useFactory: (prom: PrometheusService) => createUploadMetrics(prom),
+		},
+	],
 })
 export class UploadModule {}

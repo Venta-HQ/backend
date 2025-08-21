@@ -1,4 +1,5 @@
 import { firstValueFrom } from 'rxjs';
+import { timeout } from 'rxjs/operators';
 import {
 	Controller,
 	Inject,
@@ -10,6 +11,7 @@ import {
 	UseInterceptors,
 	UsePipes,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { HttpRequest } from '@venta/apitypes';
 import { FileUploadACL, ImageUploadQuery, imageUploadQuerySchema } from '@venta/domains/infrastructure/contracts';
@@ -23,6 +25,8 @@ import {
 	FileManagementServiceClient,
 	FileType,
 } from '@venta/proto/infrastructure/file-management';
+import { detectImageMimeFromMagicBytes, getAllowedUploadMimes, getMaxUploadSize } from '@venta/utils';
+import { UPLOAD_METRICS, UploadMetrics } from './metrics.provider';
 
 @Controller('upload')
 @UseGuards(HttpAuthGuard)
@@ -31,6 +35,8 @@ export class UploadController {
 		@Inject(FILE_MANAGEMENT_SERVICE_NAME)
 		private readonly fileManagementClient: GrpcInstance<FileManagementServiceClient>,
 		private readonly logger: Logger,
+		private readonly configService: ConfigService,
+		@Inject(UPLOAD_METRICS) private readonly metrics: UploadMetrics,
 	) {
 		this.logger.setContext(UploadController.name);
 	}
@@ -66,6 +72,7 @@ export class UploadController {
 		@Query() _query: ImageUploadQuery,
 		@Req() req: HttpRequest,
 	): Promise<FileUploadResult> {
+		const start = Date.now();
 		this.logger.debug('Handling image upload request', {
 			filename: file?.originalname,
 			size: file?.size,
@@ -79,8 +86,8 @@ export class UploadController {
 			}
 
 			// Basic magic-byte verification for common image types
-			const detectedType = detectCommonImageType(file.buffer);
-			const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+			const detectedType = detectImageMimeFromMagicBytes(file.buffer);
+			const allowedTypes = getAllowedUploadMimes(this.configService);
 			if (!detectedType || !allowedTypes.includes(detectedType)) {
 				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 					field: 'mimetype',
@@ -93,6 +100,15 @@ export class UploadController {
 					field: 'mimetype',
 					value: file.mimetype,
 					message: 'MIME type does not match file content',
+				});
+			}
+
+			// Enforce configurable size cap at runtime as an extra guard
+			const maxSize = getMaxUploadSize(this.configService);
+			if (file.size > maxSize) {
+				throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+					field: 'size',
+					message: `File exceeds size limit (${maxSize} bytes)`,
 				});
 			}
 
@@ -110,11 +126,24 @@ export class UploadController {
 				uploadedBy: req.user?.id || 'anonymous',
 			});
 
-			const grpcResult = await firstValueFrom(this.fileManagementClient.invoke('uploadImage', grpcRequest));
+			const grpcResult = await firstValueFrom(
+				this.fileManagementClient
+					.invoke('uploadImage', grpcRequest)
+					.pipe(timeout({ each: Number(this.configService.get<string>('UPLOAD_GRPC_TIMEOUT_MS') || '10000') })),
+			);
+
+			// Metrics: success
+			this.metrics.upload_requests_total.inc({ outcome: 'success' });
+			this.metrics.upload_bytes.observe(file.size);
+			this.metrics.upload_duration_seconds.observe({ outcome: 'success' }, (Date.now() - start) / 1000);
 
 			// Transform gRPC response back to domain using ACL
 			return FileUploadACL.fromGrpc(grpcResult);
 		} catch (error) {
+			// Metrics: failure
+			this.metrics.upload_requests_total.inc({ outcome: 'error' });
+			this.metrics.upload_duration_seconds.observe({ outcome: 'error' }, (Date.now() - start) / 1000);
+
 			this.logger.error('Failed to upload image', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				filename: file?.originalname,
@@ -131,44 +160,4 @@ export class UploadController {
 	}
 }
 
-// Minimal magic-byte detection for common image types used in uploads
-function detectCommonImageType(buffer: Buffer): string | null {
-	if (!buffer || buffer.length < 12) return null;
-	// JPEG: FF D8 FF
-	if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
-	// PNG: 89 50 4E 47 0D 0A 1A 0A
-	if (
-		buffer[0] === 0x89 &&
-		buffer[1] === 0x50 &&
-		buffer[2] === 0x4e &&
-		buffer[3] === 0x47 &&
-		buffer[4] === 0x0d &&
-		buffer[5] === 0x0a &&
-		buffer[6] === 0x1a &&
-		buffer[7] === 0x0a
-	)
-		return 'image/png';
-	// GIF: ASCII GIF87a or GIF89a
-	if (
-		buffer[0] === 0x47 &&
-		buffer[1] === 0x49 &&
-		buffer[2] === 0x46 &&
-		buffer[3] === 0x38 &&
-		(buffer[4] === 0x37 || buffer[4] === 0x39) &&
-		buffer[5] === 0x61
-	)
-		return 'image/gif';
-	// WEBP: RIFF....WEBP
-	if (
-		buffer[0] === 0x52 &&
-		buffer[1] === 0x49 &&
-		buffer[2] === 0x46 &&
-		buffer[3] === 0x46 &&
-		buffer[8] === 0x57 &&
-		buffer[9] === 0x45 &&
-		buffer[10] === 0x42 &&
-		buffer[11] === 0x50
-	)
-		return 'image/webp';
-	return null;
-}
+// image magic-byte detection moved to libs/utils
