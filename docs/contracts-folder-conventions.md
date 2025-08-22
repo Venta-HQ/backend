@@ -206,6 +206,12 @@ export interface UserProfile {
 	lastName?: string;
 }
 
+### 📚 Related docs
+
+- [Architecture Guide](./architecture-guide.md)
+- [Developer Guide](./developer-guide.md)
+- [Domain Contracts & Context Mapping](./domain-contracts-guide.md)
+- [API Documentation](./api-docs.md)
 export namespace Contracts {
 	export type ExternalClerkUser = z.infer<typeof BaseClerkUserSchema>;
 }

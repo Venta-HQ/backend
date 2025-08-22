@@ -536,12 +536,12 @@ services/vendor-management/
    ```typescript
    // Bad: Mixing domain logic
    class VendorService {
-     constructor(private locationService: LocationService) {} // Direct dependency
+   	constructor(private locationService: LocationService) {} // Direct dependency
    }
 
    // Good: Use contracts
    class VendorService {
-     constructor(private locationContract: MarketplaceLocationContract) {}
+   	constructor(private locationContract: MarketplaceLocationContract) {}
    }
    ```
 
@@ -615,13 +615,14 @@ services/vendor-management/
    }
    ```
 
-## Additional Resources
+## 📚 Related docs
 
-- [Architecture Guide](./architecture-guide.md) - System architecture overview
-- [gRPC Guide](./grpc-ddd-guide.md) - gRPC in DDD architecture
-- [Request Context Guide](./request-context-guide.md) - Request context handling
-- [Concepts Guide](./concepts-guide.md) - Key concepts and patterns
-- [API Documentation](./api-docs.md) - API endpoints and usage
-- [Testing Guide](./testing-guide.md) - Testing patterns and practices
+- [Architecture Guide](./architecture-guide.md)
+- [Contracts Folder Conventions](./contracts-folder-conventions.md)
+- [Domain Contracts & Context Mapping](./domain-contracts-guide.md)
+- [Request Context Guide](./request-context-guide.md)
+- [Concepts Guide](./concepts-guide.md)
+- [API Documentation](./api-docs.md)
+- [Testing Guide](./testing-guide.md)
 
 This guide should help you develop effectively in our DDD-based architecture. Remember to keep things simple, follow established patterns, and focus on maintainability.

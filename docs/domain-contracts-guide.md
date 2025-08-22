@@ -809,7 +809,6 @@ export class LocationContractImpl implements MarketplaceLocationContract {
 
 ### **Related Documentation**
 
-- [DDD Migration Guide](./ddd-migration-guide.md) - Complete migration strategy
 - [DDD Best Practices](./ddd-best-practices.md) - General DDD patterns
 
 ### **Code Examples**

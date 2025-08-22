@@ -14,12 +14,12 @@ Authorization: Bearer <token>
 
 ## 🏪 Marketplace Domain
 
-### User Management
+### User
 
-#### Get Current User
+#### Get User Vendors
 
 ```http
-GET /api/users/me
+GET /user/vendors
 ```
 
 **Response**
@@ -41,30 +41,12 @@ GET /api/users/me
 }
 ```
 
-#### Update User Preferences
-
-```http
-PUT /api/users/preferences
-```
-
-**Request Body**
-
-```json
-{
-  "notificationSettings": {
-    "email": boolean,
-    "push": boolean
-  },
-  "searchRadius": number
-}
-```
-
-### Vendor Management
+### Vendor
 
 #### Get Vendor Profile
 
 ```http
-GET /api/vendors/:id
+GET /vendor/:id
 ```
 
 **Response**
@@ -86,7 +68,7 @@ GET /api/vendors/:id
 #### Update Vendor Profile
 
 ```http
-PUT /api/vendors/:id
+PUT /vendor/:id
 ```
 
 **Request Body**
@@ -102,18 +84,10 @@ PUT /api/vendors/:id
 }
 ```
 
-#### Update Vendor Status
+#### Create Vendor
 
 ```http
-PUT /api/vendors/:id/status
-```
-
-**Request Body**
-
-```json
-{
-  "status": "active" | "inactive"
-}
+POST /vendor
 ```
 
 ### Search & Discovery
@@ -152,96 +126,23 @@ GET /api/search/vendors
 
 ## 📍 Location Services Domain
 
-### Geolocation
+### WebSockets
 
-#### Update Location
+#### Location Gateway (current)
 
-```http
-PUT /api/location
-```
+- Namespace: `/vendor`
+- Auth: Bearer token required
+- Query params: `vendorId` (required for vendor connections)
 
-**Request Body**
+Client → Server:
 
-```json
-{
-  "lat": number,
-  "lng": number,
-  "accuracy": number
-}
-```
+- `update_location` `{ lat: number; lng: number }`
 
-#### Get Nearby Vendors
+Server → Client:
 
-```http
-GET /api/location/nearby
-```
-
-**Query Parameters**
-
-- `lat`: Latitude
-- `lng`: Longitude
-- `radius`: Search radius in meters
-
-**Response**
-
-```json
-{
-  "vendors": [
-    {
-      "id": "string",
-      "name": "string",
-      "location": {
-        "lat": number,
-        "lng": number
-      },
-      "distance": number
-    }
-  ]
-}
-```
-
-### Real-time
-
-#### WebSocket Connection
-
-```websocket
-WS /ws
-```
-
-**Connection Parameters**
-
-- `token`: Authentication token
-
-**Events**
-
-Vendor Location Update:
-
-```json
-{
-  "type": "vendor_location_updated",
-  "data": {
-    "vendorId": "string",
-    "location": {
-      "lat": number,
-      "lng": number
-    },
-    "timestamp": "string"
-  }
-}
-```
-
-Proximity Alert:
-
-```json
-{
-  "type": "proximity_alert",
-  "data": {
-    "vendorId": "string",
-    "distance": number,
-    "timestamp": "string"
-  }
-}
-```
+- `vendor_status_changed` `{ vendorId: string; isOnline: boolean }`
+- `vendor_location_changed` `{ vendorId: string; location: { lat: number; lng: number } }`
+- `location_updated` `{ vendorId: string; coordinates: { lat: number; lng: number } }`
 
 ## 💬 Communication Domain
 
@@ -285,10 +186,10 @@ POST /webhooks/revenuecat
 
 ### File Management
 
-#### Upload File
+#### Upload Image (Avatar)
 
 ```http
-POST /api/files/upload
+POST /upload/image
 ```
 
 **Request**
@@ -301,9 +202,9 @@ POST /api/files/upload
 ```json
 {
   "url": "string",
-  "filename": "string",
-  "size": number,
-  "mimeType": "string"
+  "publicId": "string",
+  "bytes": number,
+  "format": "string"
 }
 ```
 
@@ -335,13 +236,9 @@ Common Error Codes:
 
 ## 📊 Rate Limiting
 
-API endpoints are rate limited:
+API endpoints may be rate limited depending on environment configuration.
 
-- Standard: 100 requests per minute
-- WebSocket: 60 messages per minute
-- File Upload: 10 uploads per minute
-
-Rate limit headers:
+Rate limit headers (when enabled):
 
 ```http
 X-RateLimit-Limit: 100

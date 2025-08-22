@@ -24,18 +24,13 @@ Welcome to the Venta Backend documentation. This documentation provides comprehe
 - [Monitoring Guide](./monitoring-guide.md) - Monitoring and observability
 - [Deployment Guide](./deployment-guide.md) - Deployment and operations
 
-### Post-Migration
+### Projects
 
-- [Post-Migration Plan](./post-migration-plan.md) - Future improvements and optimizations
+- (Removed)
 
 ## 📂 Archived Documentation
 
-Historical documentation from the DDD migration process is available in the [archived](./archived) directory:
-
-- [Product Understanding Questionnaire](./archived/product-understanding-questionnaire.md)
-- [DDD Migration Guide](./archived/ddd-migration-guide.md)
-- [DDD Migration Status](./archived/ddd-migration-status.md)
-- [DDD Context Mapping Refactor](./archived/ddd-context-mapping-refactor-summary.md)
+Removed to reduce noise. Contact maintainers if you need historical docs.
 
 ## 🔄 Documentation Updates
 

@@ -476,11 +476,13 @@ export class VendorService {
 - Scale based on domain load
 - Independent deployment
 
-## 📚 Additional Resources
+## 📚 Related docs
 
-- [Developer Guide](./developer-guide.md) - Detailed development guide
-- [Concepts Guide](./concepts-guide.md) - Key concepts and patterns
-- [API Documentation](./api-docs.md) - API endpoints and usage
-- [Testing Guide](./testing-guide.md) - Testing patterns and practices
+- [Developer Guide](./developer-guide.md)
+- [Concepts Guide](./concepts-guide.md)
+- [Contracts Folder Conventions](./contracts-folder-conventions.md)
+- [Domain Contracts & Context Mapping](./domain-contracts-guide.md)
+- [API Documentation](./api-docs.md)
+- [Testing Guide](./testing-guide.md)
 
 This architecture provides a solid foundation for building and scaling our application while maintaining code quality and developer productivity.

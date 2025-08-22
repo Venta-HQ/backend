@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how gRPC fits into our DDD architecture, focusing on inter-domain communication, bounded context boundaries, and maintaining domain integrity.
+This guide explains how gRPC fits into our DDD architecture. gRPC is a transport layer. Business communication happens through domain contracts; gRPC carries those contract calls across process boundaries.
 
 ## 📋 Table of Contents
 
@@ -33,9 +33,8 @@ This guide explains how gRPC fits into our DDD architecture, focusing on inter-d
 
 1. **Domain Boundaries**:
 
-   - gRPC services define explicit domain boundaries
-   - Each domain exposes its capabilities via gRPC interfaces
-   - Contracts enforce domain isolation
+   - Domain contracts define capabilities and enforce isolation
+   - gRPC services implement transport for those contracts (where cross-process is needed)
 
 2. **Type Safety**:
 
@@ -398,9 +397,11 @@ class GrpcClient {
 }
 ```
 
-## Additional Resources
+## 📚 Related docs
 
 - [Architecture Guide](./architecture-guide.md)
+- [Domain Contracts & Context Mapping](./domain-contracts-guide.md)
+- [Contracts Folder Conventions](./contracts-folder-conventions.md)
 - [Request Context Guide](./request-context-guide.md)
 - [Developer Guide](./developer-guide.md)
 - [Testing Guide](./testing-guide.md)
