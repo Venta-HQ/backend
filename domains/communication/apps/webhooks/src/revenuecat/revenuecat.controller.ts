@@ -32,11 +32,11 @@ export class RevenueCatController {
 					await this.client.invoke('handleSubscriptionCreated', {
 						clerkUserId: subscriptionEvent.userId,
 						data: {
-							eventId: event.event.transaction_id,
-							productId: event.event.product_id,
-							transactionId: subscriptionEvent.subscriptionId,
+							eventId: subscriptionEvent.eventId,
+							productId: subscriptionEvent.productId,
+							transactionId: subscriptionEvent.transactionId,
 						},
-						providerId: subscriptionEvent.subscriptionId,
+						providerId: subscriptionEvent.productId,
 					});
 					break;
 				}
@@ -44,8 +44,7 @@ export class RevenueCatController {
 				default:
 					throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 						field: 'event_type',
-						message: `Unsupported event type: ${event.event.type}`,
-						userId: event.event.app_user_id,
+						message: 'Unsupported event type',
 					});
 			}
 

@@ -20,16 +20,12 @@ export class ClerkWebhookACL {
 	static toUserEvent(webhook: ClerkWebhookPayload): {
 		userId: string;
 		eventType: string;
-		timestamp: string;
-		metadata: any;
 	} {
 		const validated = validateClerkWebhook(webhook);
 
 		return {
 			userId: validated.data.id,
 			eventType: validated.type,
-			timestamp: new Date().toISOString(),
-			metadata: validated.data,
 		};
 	}
 }
@@ -46,19 +42,23 @@ export class RevenueCatWebhookACL {
 
 	static toSubscriptionEvent(webhook: RevenueCatWebhookPayload): {
 		userId: string;
-		subscriptionId?: string;
+		productId: string;
+		transactionId: string;
+		eventId: string;
 		status: string;
-		timestamp: string;
-		metadata: any;
 	} {
 		const validated = validateRevenueCatWebhook(webhook);
 
+		// Prefer Clerk user id from subscriber attributes when present
+		const clerkUserId = validated.event.subscriber_attributes?.clerkUserId?.value;
+		const userId = clerkUserId || validated.event.app_user_id;
+
 		return {
-			userId: validated.event.app_user_id,
-			subscriptionId: validated.event.product_id,
+			userId,
+			productId: validated.event.product_id,
+			transactionId: validated.event.transaction_id,
+			eventId: validated.event.transaction_id,
 			status: mapEventTypeToStatus(validated.event.type),
-			timestamp: new Date().toISOString(),
-			metadata: webhook.event,
 		};
 	}
 }

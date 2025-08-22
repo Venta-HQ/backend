@@ -55,7 +55,15 @@ export function validateClerkWebhook(webhook: any): { type: string; data: any } 
  * Validates RevenueCat webhook payload
  */
 export function validateRevenueCatWebhook(webhook: any): {
-	event: { type: string; app_user_id: string; product_id?: string };
+	event: {
+		type: string;
+		app_user_id: string;
+		product_id: string;
+		transaction_id: string;
+		purchased_at_ms?: number;
+		expiration_at_ms?: number;
+		subscriber_attributes?: { clerkUserId?: { value?: string } };
+	};
 } {
 	if (!webhook.event?.type) {
 		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
@@ -71,11 +79,29 @@ export function validateRevenueCatWebhook(webhook: any): {
 		});
 	}
 
+	if (!webhook.event?.product_id) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'event.product_id',
+			message: 'Product ID is required in webhook event',
+		});
+	}
+
+	if (!webhook.event?.transaction_id) {
+		throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
+			field: 'event.transaction_id',
+			message: 'Transaction ID is required in webhook event',
+		});
+	}
+
 	return {
 		event: {
 			type: webhook.event.type,
 			app_user_id: webhook.event.app_user_id,
 			product_id: webhook.event.product_id,
+			transaction_id: webhook.event.transaction_id,
+			purchased_at_ms: webhook.event.purchased_at_ms,
+			expiration_at_ms: webhook.event.expiration_at_ms,
+			subscriber_attributes: webhook.event.subscriber_attributes,
 		},
 	};
 }

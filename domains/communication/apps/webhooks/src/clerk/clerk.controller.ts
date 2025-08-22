@@ -45,7 +45,7 @@ export class ClerkController {
 				default:
 					throw AppError.validation(ErrorCodes.ERR_INVALID_INPUT, {
 						field: 'event_type',
-						message: `Unsupported event type: ${event.type}`,
+						message: 'Unsupported event type',
 					});
 			}
 
