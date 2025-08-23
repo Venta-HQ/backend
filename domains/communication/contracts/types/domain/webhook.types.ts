@@ -32,6 +32,7 @@ export type RevenueCatInitialPurchaseEvent = {
 	event: {
 		type: 'INITIAL_PURCHASE';
 		app_user_id: string;
+		id: string;
 		product_id: string;
 		transaction_id: string;
 		purchased_at_ms: number;

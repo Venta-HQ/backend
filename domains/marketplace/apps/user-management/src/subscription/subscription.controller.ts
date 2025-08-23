@@ -23,18 +23,20 @@ export class SubscriptionController {
 
 		this.logger.debug(`Handling subscription created event`, {
 			userId: domainRequest.userId,
-			providerId: domainRequest.providerId,
+			provider: domainRequest.provider,
 		});
 
 		try {
 			// Create a user subscription record
 			await this.subscriptionService.createUserSubscription({
 				clerkUserId: domainRequest.userId,
+				provider: domainRequest.provider,
+				data: domainRequest.data,
 			});
 
 			this.logger.debug('Subscription created successfully', {
 				userId: domainRequest.userId,
-				providerId: domainRequest.providerId,
+				provider: domainRequest.provider,
 			});
 
 			return { message: 'Success' } as unknown as Empty;
@@ -42,7 +44,7 @@ export class SubscriptionController {
 			this.logger.error('Failed to create subscription', (error as Error).stack, {
 				error: (error as Error).message,
 				userId: domainRequest.userId,
-				providerId: domainRequest.providerId,
+				provider: domainRequest.provider,
 			});
 			if (error instanceof AppError) throw error;
 			throw AppError.internal(ErrorCodes.ERR_DB_OPERATION, {

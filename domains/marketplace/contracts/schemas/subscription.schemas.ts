@@ -8,6 +8,6 @@ const grpcSubscriptionProviderDataSchema = z.object({
 
 export const grpcSubscriptionCreateSchema = z.object({
 	clerkUserId: z.string(),
-	providerId: z.string(),
+	provider: z.number(),
 	data: grpcSubscriptionProviderDataSchema,
 });

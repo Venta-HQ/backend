@@ -94,6 +94,4 @@ export class CoreService {
 			});
 		}
 	}
-
-	/* moved: getUserVendors now lives in vendors service */
 }

@@ -21,9 +21,10 @@ export interface UserIdentity {
 // Subscription Management (from gRPC CreateSubscriptionData)
 // ============================================================================
 
+// provider uses the numeric value of gRPC enum SubscriptionProvider
 export interface SubscriptionCreate {
 	userId: string; // Mapped from clerkUserId in gRPC
-	providerId: string;
+	provider: number; // UserManagement.SubscriptionProvider
 	data: SubscriptionProviderData;
 }
 

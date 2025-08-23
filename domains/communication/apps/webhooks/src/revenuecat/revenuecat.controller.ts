@@ -3,7 +3,11 @@ import { RevenueCatWebhookACL, RevenueCatWebhookPayload } from '@venta/domains/c
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { SignedWebhookGuard } from '@venta/nest/guards';
 import { GrpcInstance, Logger } from '@venta/nest/modules';
-import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
+import {
+	SubscriptionProvider,
+	USER_MANAGEMENT_SERVICE_NAME,
+	UserManagementServiceClient,
+} from '@venta/proto/marketplace/user-management';
 
 @Controller()
 export class RevenueCatController {
@@ -31,12 +35,12 @@ export class RevenueCatController {
 				case 'INITIAL_PURCHASE': {
 					await this.client.invoke('handleSubscriptionCreated', {
 						clerkUserId: subscriptionEvent.userId,
+						provider: SubscriptionProvider.REVENUECAT,
 						data: {
 							eventId: subscriptionEvent.eventId,
 							productId: subscriptionEvent.productId,
 							transactionId: subscriptionEvent.transactionId,
 						},
-						providerId: subscriptionEvent.productId,
 					});
 					break;
 				}

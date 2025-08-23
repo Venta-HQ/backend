@@ -58,6 +58,7 @@ export function validateRevenueCatWebhook(webhook: any): {
 	event: {
 		type: string;
 		app_user_id: string;
+		id?: string;
 		product_id: string;
 		transaction_id: string;
 		purchased_at_ms?: number;
@@ -97,6 +98,7 @@ export function validateRevenueCatWebhook(webhook: any): {
 		event: {
 			type: webhook.event.type,
 			app_user_id: webhook.event.app_user_id,
+			id: webhook.event.id,
 			product_id: webhook.event.product_id,
 			transaction_id: webhook.event.transaction_id,
 			purchased_at_ms: webhook.event.purchased_at_ms,

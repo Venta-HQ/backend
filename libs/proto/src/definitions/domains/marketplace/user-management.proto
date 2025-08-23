@@ -17,9 +17,14 @@ message UserIdentityData {
     string id = 1;
 }
 
+enum SubscriptionProvider {
+    SUBSCRIPTION_PROVIDER_UNSPECIFIED = 0;
+    REVENUECAT = 1;
+}
+
 message CreateSubscriptionData {
     string clerkUserId = 1;
-    string providerId = 2;
+    SubscriptionProvider provider = 2;
     SubscriptionProviderData data = 3;
 }
 

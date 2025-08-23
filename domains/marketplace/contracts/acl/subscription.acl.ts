@@ -26,7 +26,7 @@ export class SubscriptionCreateACL {
 
 		return {
 			userId: grpc.clerkUserId,
-			providerId: grpc.providerId,
+			provider: grpc.provider,
 			data: grpc.data,
 		};
 	}

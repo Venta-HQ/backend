@@ -57,7 +57,7 @@ export class RevenueCatWebhookACL {
 			userId,
 			productId: validated.event.product_id,
 			transactionId: validated.event.transaction_id,
-			eventId: validated.event.transaction_id,
+			eventId: validated.event.id || validated.event.transaction_id,
 			status: mapEventTypeToStatus(validated.event.type),
 		};
 	}
