@@ -39,7 +39,7 @@ export class SubscriptionCreateACL {
 		};
 
 		// Validate Prisma/domain payload once
-		validateSchema(domainSubscriptionCreateSchema, domain as any);
+		validateSchema(domainSubscriptionCreateSchema, domain);
 		return domain;
 	}
 }
