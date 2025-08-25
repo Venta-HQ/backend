@@ -29,7 +29,7 @@ export class SubscriptionController {
 		try {
 			// Create a user subscription record
 			await this.subscriptionService.createUserSubscription({
-				clerkUserId: domainRequest.userId,
+				userId: domainRequest.userId,
 				provider: domainRequest.provider,
 				data: domainRequest.data,
 			});

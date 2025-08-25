@@ -52,7 +52,6 @@ export class RevenueCatWebhookACL {
 		// Prefer Clerk user id from subscriber attributes when present
 		const clerkUserId = validated.event.subscriber_attributes?.clerkUserId?.value;
 		const userId = clerkUserId || validated.event.app_user_id;
-
 		return {
 			userId,
 			productId: validated.event.product_id,

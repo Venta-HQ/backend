@@ -67,7 +67,7 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 	toHttpException(): HttpException {
 		const statusCode = this.getHttpStatusCode();
 		const response = {
-			message: this.message,
+			message: this.interpolateMessage(),
 			errorCode: this.errorCode,
 			errorType: this.errorType,
 			data: this.data,
@@ -127,6 +127,25 @@ export class AppError<T extends AvailableErrorCodes = AvailableErrorCodes> exten
 				return HttpStatus.BAD_GATEWAY;
 			default:
 				return HttpStatus.INTERNAL_SERVER_ERROR;
+		}
+	}
+
+	/**
+	 * Interpolates placeholders in the error message with fields from this.data
+	 * Example: 'Database operation failed: {operation}' + { operation: 'create' }
+	 * -> 'Database operation failed: create'
+	 */
+	private interpolateMessage(): string {
+		try {
+			const template = (ERROR_MESSAGES as any)?.[this.errorCode] || this.message;
+			if (!template || typeof template !== 'string') return this.message;
+			if (!this.data || typeof this.data !== 'object') return template;
+			return template.replace(/\{(\w+)\}/g, (_match: string, key: string) => {
+				const value = (this.data as any)?.[key];
+				return value !== undefined && value !== null ? String(value) : `{${key}}`;
+			});
+		} catch {
+			return this.message;
 		}
 	}
 

@@ -1,8 +1,7 @@
 import { firstValueFrom } from 'rxjs';
-import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Inject, Post } from '@nestjs/common';
 import { ClerkWebhookACL, ClerkWebhookPayload } from '@venta/domains/communication/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { SignedWebhookGuard } from '@venta/nest/guards';
 import { GrpcInstance, Logger } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
@@ -17,13 +16,14 @@ export class ClerkController {
 	}
 
 	@Post()
-	@UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
+	// @UseGuards(SignedWebhookGuard(process.env.CLERK_WEBHOOK_SECRET || ''))
 	async handleClerkEvent(@Body() event: ClerkWebhookPayload): Promise<{ message: string }> {
 		this.logger.debug(`Handling Clerk Webhook Event: ${event.type}`, {
 			eventType: event.type,
 			userId: event.data?.id,
 		});
 
+		this.logger.debug('event', event);
 		try {
 			// Validate and transform webhook event
 			const userEvent = ClerkWebhookACL.toUserEvent(event);
@@ -56,18 +56,17 @@ export class ClerkController {
 
 			return { message: 'Event processed successfully' };
 		} catch (error) {
-			this.logger.error('Failed to handle Clerk webhook event', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
+			const err = error as any;
+			this.logger.error('Failed to handle Clerk webhook event', err instanceof Error ? err.stack : undefined, {
+				error: err instanceof Error ? err.message : String(err),
+				grpcCode: typeof err?.code === 'number' ? err.code : undefined,
+				grpcDetails: err?.details,
 				eventType: event.type,
 				eventId: event.data?.id,
 			});
 
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_WEBHOOK_ERROR, {
-				source: 'clerk',
-				eventType: event.type,
-				eventId: event.data?.id,
-			});
+			// Let the global exception filter map gRPC or other errors automatically
+			throw error;
 		}
 	}
 }

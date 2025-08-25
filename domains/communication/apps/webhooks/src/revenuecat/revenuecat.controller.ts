@@ -57,18 +57,17 @@ export class RevenueCatController {
 
 			return { message: 'Event processed successfully' };
 		} catch (error) {
-			this.logger.error('Failed to handle RevenueCat webhook event', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
+			const err = error as any;
+			this.logger.error('Failed to handle RevenueCat webhook event', err instanceof Error ? err.stack : undefined, {
+				error: err instanceof Error ? err.message : String(err),
+				grpcCode: typeof err?.code === 'number' ? err.code : undefined,
+				grpcDetails: err?.details,
 				eventType: event.event.type,
 				userId: event.event.app_user_id,
 			});
 
-			if (error instanceof AppError) throw error;
-			throw AppError.internal(ErrorCodes.ERR_WEBHOOK_ERROR, {
-				source: 'revenuecat',
-				eventType: event.event.type,
-				userId: event.event.app_user_id,
-			});
+			// Let the global exception filter map gRPC or other errors automatically
+			throw error;
 		}
 	}
 }
