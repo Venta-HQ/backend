@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common';
 import { RevenueCatWebhookACL, RevenueCatWebhookPayload } from '@venta/domains/communication/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
@@ -9,7 +10,7 @@ import {
 	UserManagementServiceClient,
 } from '@venta/proto/marketplace/user-management';
 
-@Controller()
+@Controller('revenuecat')
 export class RevenueCatController {
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
@@ -33,15 +34,17 @@ export class RevenueCatController {
 
 			switch (event.event.type) {
 				case 'INITIAL_PURCHASE': {
-					await this.client.invoke('handleSubscriptionCreated', {
-						clerkUserId: subscriptionEvent.userId,
-						provider: SubscriptionProvider.REVENUECAT,
-						data: {
-							eventId: subscriptionEvent.eventId,
-							productId: subscriptionEvent.productId,
-							transactionId: subscriptionEvent.transactionId,
-						},
-					});
+					await firstValueFrom(
+						this.client.invoke('handleSubscriptionCreated', {
+							clerkUserId: subscriptionEvent.userId,
+							provider: SubscriptionProvider.REVENUECAT,
+							data: {
+								eventId: subscriptionEvent.eventId,
+								productId: subscriptionEvent.productId,
+								transactionId: subscriptionEvent.transactionId,
+							},
+						} as any),
+					);
 					break;
 				}
 

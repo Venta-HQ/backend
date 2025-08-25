@@ -4,10 +4,16 @@ import { ConfigService } from '@nestjs/config';
 import { RpcException } from '@nestjs/microservices';
 import { WsException } from '@nestjs/websockets';
 import { AppError, decodeGrpcError, ErrorCodes, mapGrpcCodeToAppErrorFallback } from '@venta/nest/errors';
+import { Logger } from '@venta/nest/modules';
 
 @Catch()
 export class AppExceptionFilter implements ExceptionFilter {
-	constructor(private readonly configService: ConfigService) {}
+	constructor(
+		private readonly configService: ConfigService,
+		private readonly logger: Logger,
+	) {
+		this.logger.setContext(AppExceptionFilter.name);
+	}
 
 	catch(exception: unknown, host: ArgumentsHost) {
 		const contextType = host.getType();
@@ -17,6 +23,30 @@ export class AppExceptionFilter implements ExceptionFilter {
 
 		// Add domain context to all errors for better debugging and monitoring
 		this.addDomainContext(appError);
+
+		// Log unhandled exceptions with context
+		try {
+			if (contextType === 'http') {
+				const http = host.switchToHttp();
+				const req = http.getRequest();
+				const method = req?.method;
+				const url = req?.url;
+				const requestId = req?.headers?.['x-request-id'] as string | undefined;
+
+				this.logger.error(`Unhandled error during HTTP request ${method} ${url}`, this.extractStack(exception), {
+					errorCode: (appError as any)?.errorCode,
+					errorType: (appError as any)?.errorType,
+					path: url,
+					requestId,
+				});
+			} else {
+				this.logger.error('Unhandled error in application', this.extractStack(exception), {
+					errorCode: (appError as any)?.errorCode,
+					errorType: (appError as any)?.errorType,
+					contextType,
+				});
+			}
+		} catch {}
 
 		switch (contextType) {
 			case 'http':
@@ -34,6 +64,21 @@ export class AppExceptionFilter implements ExceptionFilter {
 		if (domain && !(error as any).domain) {
 			(error as any).domain = domain;
 		}
+	}
+
+	private extractStack(exception: unknown): string | undefined {
+		if (exception && typeof exception === 'object') {
+			const err: any = exception as any;
+			if (typeof err.stack === 'string') return err.stack;
+			if (err instanceof HttpException) {
+				try {
+					return JSON.stringify(err.getResponse());
+				} catch {
+					return undefined;
+				}
+			}
+		}
+		return undefined;
 	}
 
 	private convertToAppError(exception: unknown, _host: ArgumentsHost): AppError {
@@ -138,6 +183,19 @@ export class AppExceptionFilter implements ExceptionFilter {
 		const httpException = (error as any).toHttpException();
 		const status = httpException.getStatus();
 		const responseBody = httpException.getResponse();
+
+		// Log the outgoing error response for visibility
+		try {
+			const isProd = this.configService.get('NODE_ENV') === 'production';
+			const logData: Record<string, any> = {
+				status,
+				path: request.url,
+			};
+			if (!isProd) {
+				logData.responseBody = responseBody;
+			}
+			this.logger.debug('Sending HTTP error response', logData);
+		} catch {}
 
 		response.status(status).json(responseBody);
 	}

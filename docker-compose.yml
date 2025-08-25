@@ -39,7 +39,7 @@ services:
 
   # Cache
   cache:
-    image: redis:6.2-alpine
+    image: redis:7-alpine
     restart: always
     ports:
       - '6379:6379'
@@ -49,7 +49,7 @@ services:
     networks:
       - venta
     healthcheck:
-      test: ['CMD', 'redis-cli', '--raw', 'incr', 'ping']
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81}', '--raw', 'PING']
       interval: 10s
       timeout: 5s
       retries: 5

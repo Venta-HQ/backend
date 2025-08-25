@@ -1,3 +1,4 @@
+import { firstValueFrom } from 'rxjs';
 import { Body, Controller, Inject, Post, UseGuards } from '@nestjs/common';
 import { ClerkWebhookACL, ClerkWebhookPayload } from '@venta/domains/communication/contracts';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
@@ -5,7 +6,7 @@ import { SignedWebhookGuard } from '@venta/nest/guards';
 import { GrpcInstance, Logger } from '@venta/nest/modules';
 import { USER_MANAGEMENT_SERVICE_NAME, UserManagementServiceClient } from '@venta/proto/marketplace/user-management';
 
-@Controller()
+@Controller('clerk')
 export class ClerkController {
 	constructor(
 		@Inject(USER_MANAGEMENT_SERVICE_NAME)
@@ -23,22 +24,27 @@ export class ClerkController {
 			userId: event.data?.id,
 		});
 
+		this.logger.debug('event', event);
 		try {
 			// Validate and transform webhook event
 			const userEvent = ClerkWebhookACL.toUserEvent(event);
 
 			switch (event.type) {
 				case 'user.created': {
-					await this.client.invoke('handleUserCreated', {
-						id: userEvent.userId,
-					});
+					await firstValueFrom(
+						this.client.invoke('handleUserCreated', {
+							id: userEvent.userId,
+						} as any),
+					);
 					break;
 				}
 
 				case 'user.deleted': {
-					await this.client.invoke('handleUserDeleted', {
-						id: userEvent.userId,
-					});
+					await firstValueFrom(
+						this.client.invoke('handleUserDeleted', {
+							id: userEvent.userId,
+						} as any),
+					);
 					break;
 				}
 

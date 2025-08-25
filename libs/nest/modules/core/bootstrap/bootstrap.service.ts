@@ -1,3 +1,4 @@
+// Removed custom body parsing; rely on Nest's rawBody support
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
@@ -47,7 +48,7 @@ export class BootstrapService {
 	private static readonly logger = new Logger().setContext(BootstrapService.name);
 
 	static async createHttpApp(options: HttpBootstrapOptions) {
-		const app = await NestFactory.create(options.module, { bufferLogs: true });
+		const app = await NestFactory.create(options.module, { bufferLogs: true, rawBody: true } as any);
 		const configService = app.get(ConfigService);
 
 		// Configure CORS if enabled

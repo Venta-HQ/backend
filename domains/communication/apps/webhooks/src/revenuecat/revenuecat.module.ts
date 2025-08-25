@@ -12,7 +12,7 @@ import { RevenueCatController } from './revenuecat.controller';
 	controllers: [RevenueCatController],
 	imports: [
 		GrpcInstanceModule.register<UserManagementServiceClient>({
-			proto: 'user-management.proto',
+			proto: 'domains/marketplace/user-management.proto',
 			protoPackage: MARKETPLACE_USER_MANAGEMENT_PACKAGE_NAME,
 			provide: USER_MANAGEMENT_SERVICE_NAME,
 			serviceName: USER_MANAGEMENT_SERVICE_NAME,

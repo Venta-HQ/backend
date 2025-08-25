@@ -1,7 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { AppExceptionFilter, GrpcExceptionFilter } from '@venta/nest/filters';
+import { Logger, LoggerModule } from '@venta/nest/modules';
 
 @Module({})
 export class ErrorHandlingModule {
@@ -18,13 +19,14 @@ export class ErrorHandlingModule {
 			// HTTP, WebSocket, NATS use the generic AppExceptionFilter
 			providers.push({
 				provide: APP_FILTER,
-				useClass: AppExceptionFilter,
+				useFactory: (configService: ConfigService, logger: Logger) => new AppExceptionFilter(configService, logger),
+				inject: [ConfigService, Logger],
 			});
 		}
 
 		return {
 			module: ErrorHandlingModule,
-			imports: [ConfigModule],
+			imports: [ConfigModule, LoggerModule.register()],
 			providers,
 			exports: [],
 		};
