@@ -11,7 +11,7 @@ async function bootstrap() {
 		await BootstrapService.bootstrapHttpService({
 			domain: 'location-services', // DDD domain for location services
 			module: LocationGatewayModule,
-			port: configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT') || 3003,
+			port: configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT') || 5003,
 		});
 	} catch (error) {
 		console.error('Failed to start websocket-gateway service:', error);
