@@ -24,7 +24,6 @@ export class ClerkController {
 			userId: event.data?.id,
 		});
 
-		this.logger.debug('event', event);
 		try {
 			// Validate and transform webhook event
 			const userEvent = ClerkWebhookACL.toUserEvent(event);
