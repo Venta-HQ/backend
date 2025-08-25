@@ -7,6 +7,7 @@ The Webhooks service handles all external webhook integrations in the Venta back
 ## Overview
 
 This microservice provides:
+
 - **Clerk Webhook Integration**: Handles user authentication events (user.created, user.deleted)
 - **RevenueCat Webhook Integration**: Handles subscription events (INITIAL_PURCHASE, RENEWAL)
 - **Event Transformation**: Converts external webhook formats to internal gRPC calls
@@ -18,6 +19,7 @@ This microservice provides:
 ## Architecture
 
 ### **Service Structure**
+
 ```
 apps/communication/services/webhooks/
 ├── src/
@@ -33,6 +35,7 @@ apps/communication/services/webhooks/
 ```
 
 ### **Webhook Flow**
+
 ```
 External Service (Clerk/RevenueCat)
          ↓
@@ -48,12 +51,14 @@ External Service (Clerk/RevenueCat)
 ## Features
 
 ### **Clerk Webhook Integration**
+
 - **user.created**: Handles new user registration events
 - **user.deleted**: Handles user deletion events
 - **Event Validation**: Validates Clerk webhook payloads
 - **gRPC Communication**: Calls user-management service for business logic
 
 ### **RevenueCat Webhook Integration**
+
 - **INITIAL_PURCHASE**: Handles new subscription purchases
 - **RENEWAL**: Handles subscription renewals
 - **Event Processing**: Processes subscription event data
@@ -62,17 +67,20 @@ External Service (Clerk/RevenueCat)
 ## Configuration
 
 ### **Environment Variables**
+
 - `USER_SERVICE_ADDRESS`: Address of the user-management gRPC service
 - `CLERK_WEBHOOK_SECRET`: Secret for validating Clerk webhooks
 - `REVENUECAT_WEBHOOK_SECRET`: Secret for validating RevenueCat webhooks
 
 ### **Service Dependencies**
+
 - **User Management Service**: For user-related business logic
 - **gRPC Infrastructure**: For internal service communication
 
 ## Development
 
 ### **Running the Service**
+
 ```bash
 # From the project root
 pnpm run start:webhooks
@@ -83,6 +91,7 @@ pnpm run start
 ```
 
 ### **Testing**
+
 ```bash
 # Run webhook service tests
 pnpm run test:webhooks
@@ -92,6 +101,7 @@ pnpm run test
 ```
 
 ### **Building**
+
 ```bash
 # Build the service
 pnpm run build:webhooks
@@ -103,18 +113,22 @@ pnpm run build
 ## API Endpoints
 
 ### **Clerk Webhooks**
+
 - `POST /webhook/clerk` - Handles Clerk authentication events
 
 ### **RevenueCat Webhooks**
+
 - `POST /webhook/revenuecat` - Handles RevenueCat subscription events
 
 ## Integration Points
 
 ### **Internal Services**
+
 - **User Management Service**: For user creation, deletion, and subscription management
 - **Event System**: For publishing domain events
 
 ### **External Services**
+
 - **Clerk**: User authentication and management
 - **RevenueCat**: Subscription and payment processing
 
@@ -137,4 +151,4 @@ pnpm run build
 - **Additional Webhook Providers**: Support for more external services
 - **Webhook Retry Logic**: Automatic retry for failed webhook processing
 - **Webhook Queue**: Asynchronous webhook processing
-- **Webhook Analytics**: Webhook event analytics and reporting 
+- **Webhook Analytics**: Webhook event analytics and reporting

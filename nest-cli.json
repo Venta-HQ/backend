@@ -78,13 +78,13 @@
 				"tsConfigPath": "domains/infrastructure/apps/file-management/tsconfig.app.json"
 			}
 		},
-		"webhooks": {
+		"webhooks-gateway": {
 			"type": "application",
-			"root": "domains/communication/apps/webhooks",
+			"root": "domains/communication/apps/webhooks-gateway",
 			"entryFile": "src/main",
 			"sourceRoot": "./",
 			"compilerOptions": {
-				"tsConfigPath": "domains/communication/apps/webhooks/tsconfig.app.json"
+				"tsConfigPath": "domains/communication/apps/webhooks-gateway/tsconfig.app.json"
 			}
 		},
 		"nest/modules": {
