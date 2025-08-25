@@ -8,7 +8,7 @@ async function bootstrap() {
 		await BootstrapService.bootstrapHttpService({
 			domain: 'communication',
 			module: WebhooksGatewayModule,
-			port: configService.get('WEBHOOKS_GATEWAYSERVICE_PORT') || 5006,
+			port: configService.get('WEBHOOKS_GATEWAY_SERVICE_PORT') || 5006,
 		});
 	} catch (error) {
 		console.error('Failed to start webhooks service:', error);
