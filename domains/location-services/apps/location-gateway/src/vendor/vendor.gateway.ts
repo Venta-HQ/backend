@@ -1,36 +1,31 @@
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { Inject, UseGuards } from '@nestjs/common';
-import {
-	OnGatewayConnection,
-	OnGatewayDisconnect,
-	SubscribeMessage,
-	WebSocketGateway,
-	WebSocketServer,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
-import { GrpcInstance, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
 	namespace: 'vendor',
 	cors: {
-		origin: '*',
+		origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
+		credentials: true,
 	},
 })
 @UseGuards(WsAuthGuard)
-export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisconnect {
-	@WebSocketServer()
-	server: Server;
+export class VendorLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+	protected readonly connectionManager = this.vendorConnectionManager;
 
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
 		@Inject(GEOLOCATION_SERVICE_NAME)
 		private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
-		private readonly logger: Logger,
+		protected readonly logger: Logger,
 	) {
+		super();
 		this.logger.setContext(VendorLocationGateway.name);
 	}
 
@@ -39,14 +34,9 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			const vendorId = client.handshake.query.vendorId?.toString();
-
-			if (!vendorId) {
-				this.logger.warn('Vendor connection attempt without vendorId', {
-					socketId: client.id,
-				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
-			}
+			// Validate connection using base class method
+			const vendorId = this.validateConnection(client, 'Vendor');
+			if (!vendorId) return;
 
 			// Register the vendor connection
 			await this.vendorConnectionManager.registerVendor(client.id, vendorId);
@@ -62,20 +52,11 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				});
 			});
 
-			this.logger.debug('Vendor connected', {
-				socketId: client.id,
-				vendorId,
-			});
+			// Log success using base class method
+			this.logConnectionSuccess(client, vendorId, 'Vendor');
 		} catch (error) {
-			this.logger.error('Failed to handle vendor connection', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				socketId: client.id,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-				operation: 'handle_vendor_connection',
-				socketId: client.id,
-			});
+			// Handle error using base class method
+			this.handleConnectionError(error, client, 'handle vendor connection');
 		}
 	}
 
@@ -87,7 +68,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 			const connectionInfo = await this.vendorConnectionManager.getConnectionInfo(client.id);
 
 			if (!connectionInfo) {
-				this.logger.warn('Vendor disconnection without connection info', {
+				this.logger.warn('Vendor disconnection attempt without connection info', {
 					socketId: client.id,
 				});
 				return;
@@ -107,20 +88,14 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 				});
 			});
 
-			this.logger.debug('Vendor disconnected', {
-				socketId: client.id,
-				vendorId: connectionInfo.vendorId,
-			});
+			// Log success using base class method
+			this.logDisconnectionSuccess(client, 'Vendor');
 		} catch (error) {
 			this.logger.error('Failed to handle vendor disconnection', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
-
-			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-				operation: 'handle_vendor_disconnection',
-				socketId: client.id,
-			});
+			// For disconnections, we don't throw - just log the error
 		}
 	}
 

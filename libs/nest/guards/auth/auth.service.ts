@@ -85,22 +85,11 @@ export class AuthService {
 	}
 
 	/**
-	 * Extracts a token from WebSocket handshake
+	 * Extracts a token from WebSocket handshake (Bearer authorization header only)
+	 * Standardized to match HTTP authentication behavior
 	 */
 	extractWsToken(handshake: any): string | null {
-		// Try to get token from handshake auth
-		const auth = handshake.auth;
-		if (auth?.token) {
-			return auth.token;
-		}
-
-		// Try to get token from query parameters
-		const query = handshake.query;
-		if (query?.token && typeof query.token === 'string') {
-			return query.token;
-		}
-
-		// Try to get token from headers
+		// Only accept Bearer authorization headers for consistency with HTTP
 		const headers = handshake.headers;
 		if (headers?.authorization) {
 			const authHeader = headers.authorization;

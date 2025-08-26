@@ -1,39 +1,34 @@
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { Inject, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import {
-	OnGatewayConnection,
-	OnGatewayDisconnect,
-	SubscribeMessage,
-	WebSocketGateway,
-	WebSocketServer,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
 import type { LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
-import { GrpcInstance, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
 	namespace: 'user',
 	cors: {
-		origin: '*',
+		origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
+		credentials: true,
 	},
 })
 @UseGuards(WsAuthGuard)
-export class UserLocationGateway implements OnGatewayConnection, OnGatewayDisconnect {
-	@WebSocketServer()
-	server: Server;
+export class UserLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
+	protected readonly connectionManager = this.userConnectionManager;
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
 		@Inject(GEOLOCATION_SERVICE_NAME)
 		private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
-		private readonly logger: Logger,
+		protected readonly logger: Logger,
 	) {
+		super();
 		this.logger.setContext(UserLocationGateway.name);
 	}
 
@@ -42,18 +37,9 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			// Minimal connect log; detailed handshake logs are handled by the global adapter
-			this.logger?.debug('handleConnection: start', { socketId: client.id });
-			const userId = (client as any).user?.id || client.handshake.query.userId?.toString();
-
-			if (!userId) {
-				this.logger?.warn('User connection attempt without userId', {
-					socketId: client.id,
-				});
-				// Do not throw in connection lifecycle; disconnect gracefully
-				client.disconnect(true);
-				return;
-			}
+			// Validate connection using base class method
+			const userId = this.validateConnection(client, 'User');
+			if (!userId) return;
 
 			// Register the user connection
 			await this.userConnectionManager.registerUser(client.id, userId);
@@ -66,14 +52,11 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.join(vendorId);
 			});
 
-			this.logger?.debug('User connected', { socketId: client.id, userId });
+			// Log success using base class method
+			this.logConnectionSuccess(client, userId, 'User');
 		} catch (error) {
-			this.logger?.error('Failed to handle user connection', error instanceof Error ? error.stack : undefined, {
-				socketId: client.id,
-			});
-			// Do not throw; disconnect to avoid crashing the process
-			client.disconnect(true);
-			return;
+			// Handle error using base class method
+			this.handleConnectionError(error, client, 'handle user connection');
 		}
 	}
 
@@ -82,17 +65,13 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	 */
 	async handleDisconnect(client: Socket) {
 		try {
-			this.logger.debug('handleDisconnect: start', { socketId: client.id });
 			const connectionInfo = await this.userConnectionManager.getConnectionInfo(client.id);
 
 			if (!connectionInfo) {
-				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
-					resourceType: 'user_connection',
-					resourceId: client.id,
-					operation: 'handle_user_disconnection',
+				this.logger.warn('User disconnection attempt without connection info', {
 					socketId: client.id,
-					type: 'user',
-				}).toWsException();
+				});
+				return;
 			}
 
 			// Get all vendor rooms this user is in before disconnecting
@@ -106,16 +85,13 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.leave(vendorId);
 			});
 
-			this.logger.debug('User disconnected', { socketId: client.id, userId: connectionInfo.userId });
+			// Log success using base class method
+			this.logDisconnectionSuccess(client, 'User');
 		} catch (error) {
 			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : undefined, {
 				socketId: client.id,
 			});
-
-			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-				operation: 'handle_user_disconnection',
-				socketId: client.id,
-			}).toWsException();
+			// For disconnections, we don't throw - just log the error
 		}
 	}
 
