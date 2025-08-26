@@ -2,7 +2,7 @@ import { DynamicModule, Global, Module, Provider } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ErrorHandlingModule } from '@venta/nest/errors';
-import { GrpcAuthGuard, WsAuthGuard } from '@venta/nest/guards';
+import { GrpcAuthGuard } from '@venta/nest/guards';
 import {
 	ClerkModule,
 	ConfigModule,
@@ -57,7 +57,7 @@ export class BootstrapModule {
 			case 'grpc':
 				return [GrpcAuthGuard];
 			case 'websocket':
-				return [WsAuthGuard];
+				return [];
 			default:
 				return [];
 		}
@@ -162,7 +162,7 @@ export class BootstrapModule {
 	}
 
 	private static getWebSocketProviders(): Provider[] {
-		// Let feature modules provide WS auth guards so they can also import AuthModule
-		return [WsAuthGuard];
+		// Feature modules should provide WsAuthGuard via AuthModule
+		return [];
 	}
 }

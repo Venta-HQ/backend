@@ -1,9 +1,10 @@
-import { ExecutionContext, Injectable } from '@nestjs/common';
+import { ExecutionContext, Inject, Injectable, Optional } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { WsException } from '@nestjs/websockets';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { Logger, PrometheusService } from '@venta/nest/modules';
+import { PrometheusService } from '@venta/nest/modules';
+import { Logger } from '../../modules/core/logger/logger.service';
 
 @Injectable()
 export class WsThrottlerGuard extends ThrottlerGuard {
@@ -11,8 +12,8 @@ export class WsThrottlerGuard extends ThrottlerGuard {
 		options: any,
 		storageService: any,
 		reflector: Reflector,
-		private readonly logger: Logger,
-		private readonly prometheus: PrometheusService,
+		@Inject(Logger) private readonly logger: Logger,
+		@Optional() private readonly prometheus?: PrometheusService,
 	) {
 		super(options, storageService, reflector);
 		this.logger.setContext(WsThrottlerGuard.name);

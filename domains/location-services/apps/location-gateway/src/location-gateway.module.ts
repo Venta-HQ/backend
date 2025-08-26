@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AuthModule, WsAuthGuard, WsThrottlerGuard } from '@venta/nest/guards';
+import { AuthModule, WsThrottlerGuard } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
 import {
 	GEOLOCATION_SERVICE_NAME,
@@ -29,7 +29,7 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		ConfigModule,
 		AuthModule,
 		GrpcInstanceModule.register<GeolocationServiceClient>({
-			proto: 'geolocation.proto',
+			proto: 'domains/location-services/geolocation.proto',
 			protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
 			provide: GEOLOCATION_SERVICE_NAME,
 			serviceName: GEOLOCATION_SERVICE_NAME,
@@ -81,8 +81,7 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		// Connection Managers
 		UserConnectionManagerService,
 		VendorConnectionManagerService,
-		// Authentication guard and global throttler guard
-		WsAuthGuard,
+		// Global throttler guard (WS)
 		{ provide: APP_GUARD, useClass: WsThrottlerGuard },
 	],
 })
