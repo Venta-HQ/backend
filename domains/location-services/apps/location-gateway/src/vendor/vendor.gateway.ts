@@ -1,5 +1,5 @@
 import { Server, Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { Inject, UseGuards } from '@nestjs/common';
 import {
 	OnGatewayConnection,
 	OnGatewayDisconnect,
@@ -10,7 +10,8 @@ import {
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
-import { Logger } from '@venta/nest/modules';
+import { GrpcInstance, Logger } from '@venta/nest/modules';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
@@ -26,7 +27,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
-		private readonly geolocationService: any, // TODO: Import proper geolocation service type
+		@Inject(GEOLOCATION_SERVICE_NAME) private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
 		private readonly logger: Logger,
 	) {
 		this.logger.setContext(VendorLocationGateway.name);
@@ -138,7 +139,7 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 			}
 
 			// Update vendor location in geolocation service
-			await this.geolocationService.updateVendorLocation({
+			await this.geolocationService.invoke('updateVendorLocation', {
 				entityId: vendorId,
 				coordinates: {
 					lat: data.lat,

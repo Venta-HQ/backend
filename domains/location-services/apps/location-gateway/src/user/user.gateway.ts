@@ -1,6 +1,6 @@
 import { Server, Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
-import { SkipThrottle, Throttle } from '@nestjs/throttler';
+import { Inject, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
 	OnGatewayConnection,
 	OnGatewayDisconnect,
@@ -10,11 +10,11 @@ import {
 } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
-import type { GeospatialQuery, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
+import type { LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
-import { Logger } from '@venta/nest/modules';
-import { GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
+import { GrpcInstance, Logger } from '@venta/nest/modules';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
@@ -30,7 +30,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
-		private readonly geolocationService: GeolocationServiceClient,
+		@Inject(GEOLOCATION_SERVICE_NAME) private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
 		private readonly logger: Logger,
 	) {
 		this.logger.setContext(UserLocationGateway.name);
@@ -155,13 +155,6 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 			// Validate the location update using ACL
 			LocationUpdateACL.validate(locationUpdate);
-
-			// Create geospatial query for nearby vendors using current location
-			const nearbyQuery: GeospatialQuery = {
-				entityType: 'vendor',
-				center: locationUpdate.coordinates,
-				radius: data.radius || 5000, // Default 5km radius
-			};
 
 			// Adjust to current gRPC API; if nearby search isn't exposed yet, keep current rooms unchanged
 			const nearbyVendors: Array<{ entityId: string }> = [];
