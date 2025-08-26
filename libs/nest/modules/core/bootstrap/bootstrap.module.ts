@@ -45,7 +45,7 @@ export class BootstrapModule {
 		const exportedProviders = this.getExportedProviders(options);
 
 		return {
-			exports: [...exportedProviders],
+			exports: [PrometheusModule, ...exportedProviders],
 			imports: [...baseModules, ...protocolModules, ...tracingModules, ...(options.additionalModules || [])],
 			module: BootstrapModule,
 			providers: [...protocolProviders, ...(options.additionalProviders || [])],
@@ -163,6 +163,6 @@ export class BootstrapModule {
 
 	private static getWebSocketProviders(): Provider[] {
 		// Let feature modules provide WS auth guards so they can also import AuthModule
-		return [];
+		return [WsAuthGuard];
 	}
 }

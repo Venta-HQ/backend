@@ -71,9 +71,9 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 	],
 	providers: [
 		{
-			inject: [PrometheusService],
 			provide: WEBSOCKET_METRICS,
-			useFactory: createWebSocketMetrics,
+			inject: [PrometheusService],
+			useFactory: (prom: PrometheusService) => createWebSocketMetrics(prom),
 		},
 		// Gateways
 		UserLocationGateway,
