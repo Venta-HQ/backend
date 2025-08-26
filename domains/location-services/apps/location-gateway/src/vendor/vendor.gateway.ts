@@ -27,7 +27,8 @@ export class VendorLocationGateway implements OnGatewayConnection, OnGatewayDisc
 
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
-		@Inject(GEOLOCATION_SERVICE_NAME) private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
+		@Inject(GEOLOCATION_SERVICE_NAME)
+		private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
 		private readonly logger: Logger,
 	) {
 		this.logger.setContext(VendorLocationGateway.name);

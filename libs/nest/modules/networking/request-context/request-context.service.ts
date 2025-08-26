@@ -169,4 +169,63 @@ export class RequestContextService {
 	setCorrelationId(correlationId: string): void {
 		this.set('correlationId', correlationId);
 	}
+
+	/**
+	 * Get the user ID from context
+	 * @returns The stored user ID or undefined if not found
+	 */
+	getUserId(): string | undefined {
+		return this.getString('userId');
+	}
+
+	/**
+	 * Set the user ID in context
+	 * @param userId The user ID to store
+	 */
+	setUserId(userId: string): void {
+		this.set('userId', userId);
+	}
+
+	/**
+	 * Get the clerk ID from context
+	 * @returns The stored clerk ID or undefined if not found
+	 */
+	getClerkId(): string | undefined {
+		return this.getString('clerkId');
+	}
+
+	/**
+	 * Set the clerk ID in context
+	 * @param clerkId The clerk ID to store
+	 */
+	setClerkId(clerkId: string): void {
+		this.set('clerkId', clerkId);
+	}
+
+	/**
+	 * Set complete user context for WebSocket connections
+	 * @param user User context with id and clerkId
+	 * @param requestId Optional request ID, will generate one if not provided
+	 */
+	setUserContext(user: { id: string; clerkId: string }, requestId?: string): void {
+		this.setUserId(user.id);
+		this.setClerkId(user.clerkId);
+		if (requestId) {
+			this.setRequestId(requestId);
+		}
+	}
+
+	/**
+	 * Run a function within a WebSocket context with user information
+	 * @param user The authenticated user context
+	 * @param callback The function to run within the context
+	 * @param requestId Optional request ID for correlation
+	 * @returns The result of the callback
+	 */
+	runWithUser<T>(user: { id: string; clerkId: string }, callback: () => T, requestId?: string): T {
+		return this.run(() => {
+			this.setUserContext(user, requestId);
+			return callback();
+		});
+	}
 }

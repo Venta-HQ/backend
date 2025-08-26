@@ -54,6 +54,10 @@ export class HttpAuthGuard implements CanActivate {
 			// Attach auth data to request
 			request.user = user;
 
+			// Also set user context in RequestContextService for singleton services
+			this.requestContextService.setUserId(user.id);
+			this.requestContextService.setClerkId(user.clerkId);
+
 			return true; // Allow access
 		} catch (error) {
 			// Log the specific error for debugging but don't expose it to the client

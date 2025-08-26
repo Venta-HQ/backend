@@ -30,8 +30,9 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
-		@Inject(GEOLOCATION_SERVICE_NAME) private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
-		@Inject(Logger) private readonly logger: Logger,
+		@Inject(GEOLOCATION_SERVICE_NAME)
+		private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
+		private readonly logger: Logger,
 	) {
 		this.logger.setContext(UserLocationGateway.name);
 	}
