@@ -12,6 +12,7 @@ async function bootstrap() {
 			domain: 'location-services', // DDD domain for location services
 			module: LocationGatewayModule,
 			port: configService.get('WEBSOCKET_GATEWAY_SERVICE_PORT') || 5003,
+			enableWebSocketAdapter: true,
 		});
 	} catch (error) {
 		console.error('Failed to start websocket-gateway service:', error);

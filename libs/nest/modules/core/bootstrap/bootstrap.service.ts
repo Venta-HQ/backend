@@ -2,7 +2,9 @@
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import { AuthService } from '@venta/nest/guards';
 import { ProtoPathUtil } from '@venta/utils';
+import { AuthenticatedSocketIoAdapter } from '../../networking';
 import { Logger } from '../logger';
 
 export interface HttpBootstrapOptions {
@@ -14,6 +16,8 @@ export interface HttpBootstrapOptions {
 	};
 	domain?: string; // DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
 	enableCors?: boolean;
+	// If true, apply the global Socket.IO adapter for handshake auth
+	enableWebSocketAdapter?: boolean;
 	host?: string;
 	module: any;
 	port?: number;
@@ -69,6 +73,22 @@ export class BootstrapService {
 		} catch (error) {
 			// Fallback to default logger if custom logger is not available
 			console.warn('Custom logger not available, using default logger');
+		}
+
+		// Optionally apply global Socket.IO adapter (only for apps that use websockets)
+		if (options.enableWebSocketAdapter) {
+			try {
+				const [authService, adapterLogger, configService] = await Promise.all([
+					app.resolve(AuthService),
+					app.resolve(Logger),
+					app.resolve(ConfigService),
+				]);
+				(app as any).useWebSocketAdapter(
+					new AuthenticatedSocketIoAdapter(app as any, authService, adapterLogger, configService),
+				);
+			} catch (error) {
+				console.warn('Failed to apply AuthenticatedSocketIoAdapter');
+			}
 		}
 
 		// Get port and host

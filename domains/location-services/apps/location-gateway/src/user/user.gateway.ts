@@ -31,7 +31,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
 		@Inject(GEOLOCATION_SERVICE_NAME) private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
-		private readonly logger: Logger,
+		@Inject(Logger) private readonly logger: Logger,
 	) {
 		this.logger.setContext(UserLocationGateway.name);
 	}
@@ -41,13 +41,17 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			const userId = client.handshake.query.userId?.toString();
+			// Minimal connect log; detailed handshake logs are handled by the global adapter
+			this.logger?.debug('handleConnection: start', { socketId: client.id });
+			const userId = (client as any).user?.id || client.handshake.query.userId?.toString();
 
 			if (!userId) {
-				this.logger.warn('User connection attempt without userId', {
+				this.logger?.warn('User connection attempt without userId', {
 					socketId: client.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
+				// Do not throw in connection lifecycle; disconnect gracefully
+				client.disconnect(true);
+				return;
 			}
 
 			// Register the user connection
@@ -61,20 +65,14 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.join(vendorId);
 			});
 
-			this.logger.debug('User connected', {
-				socketId: client.id,
-				userId,
-			});
+			this.logger?.debug('User connected', { socketId: client.id, userId });
 		} catch (error) {
-			this.logger.error('Failed to handle user connection', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
+			this.logger?.error('Failed to handle user connection', error instanceof Error ? error.stack : undefined, {
 				socketId: client.id,
 			});
-
-			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-				operation: 'handle_user_connection',
-				socketId: client.id,
-			});
+			// Do not throw; disconnect to avoid crashing the process
+			client.disconnect(true);
+			return;
 		}
 	}
 
@@ -83,6 +81,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 	 */
 	async handleDisconnect(client: Socket) {
 		try {
+			this.logger.debug('handleDisconnect: start', { socketId: client.id });
 			const connectionInfo = await this.userConnectionManager.getConnectionInfo(client.id);
 
 			if (!connectionInfo) {
@@ -92,7 +91,7 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 					operation: 'handle_user_disconnection',
 					socketId: client.id,
 					type: 'user',
-				});
+				}).toWsException();
 			}
 
 			// Get all vendor rooms this user is in before disconnecting
@@ -106,20 +105,16 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				client.leave(vendorId);
 			});
 
-			this.logger.debug('User disconnected', {
-				socketId: client.id,
-				userId: connectionInfo.userId,
-			});
+			this.logger.debug('User disconnected', { socketId: client.id, userId: connectionInfo.userId });
 		} catch (error) {
 			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
 
 			throw AppError.internal(ErrorCodes.ERR_WEBSOCKET_ERROR, {
 				operation: 'handle_user_disconnection',
 				socketId: client.id,
-			});
+			}).toWsException();
 		}
 	}
 
@@ -133,13 +128,14 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 		data: any, // Raw WebSocket data
 	) {
 		try {
+			this.logger.debug('handleLocationUpdate: start', { socketId: socket.id });
 			const userId = await this.userConnectionManager.getSocketUserId(socket.id);
 
 			if (!userId) {
 				this.logger.warn('Location update from unregistered user', {
 					socketId: socket.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED).toWsException();
 			}
 
 			// Transform WebSocket data to LocationUpdate domain object
@@ -186,21 +182,16 @@ export class UserLocationGateway implements OnGatewayConnection, OnGatewayDiscon
 				nearbyVendors,
 			});
 
-			this.logger.debug('User location updated', {
-				socketId: socket.id,
-				userId,
-				location: data,
-			});
+			this.logger.debug('User location updated', { socketId: socket.id, userId });
 		} catch (error) {
 			this.logger.error('Failed to update user location', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: socket.id,
 			});
 
 			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_user_location',
 				socketId: socket.id,
-			});
+			}).toWsException();
 		}
 	}
 }
