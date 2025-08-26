@@ -1,11 +1,10 @@
 import { Socket } from 'socket.io';
-import { Inject, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
-import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
-import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
+import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
@@ -21,8 +20,6 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
-		@Inject(GEOLOCATION_SERVICE_NAME)
-		private readonly geolocationService: GrpcInstance<GeolocationServiceClient>,
 		protected readonly logger: Logger,
 	) {
 		super();
@@ -115,13 +112,13 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 			}
 
 			// Update vendor location in geolocation service
-			await this.geolocationService.invoke('updateVendorLocation', {
-				entityId: vendorId,
-				coordinates: {
-					lat: data.lat,
-					lng: data.lng,
-				},
-			});
+			// await this.geolocationService.invoke('updateVendorLocation', {
+			// 	entityId: vendorId,
+			// 	coordinates: {
+			// 		lat: data.lat,
+			// 		lng: data.lng,
+			// 	},
+			// });
 
 			// Get all users in this vendor's room
 			const roomUsers = await this.vendorConnectionManager.getVendorRoomUsers(vendorId);

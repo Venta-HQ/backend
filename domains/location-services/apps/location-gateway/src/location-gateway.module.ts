@@ -6,19 +6,12 @@ import { APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule, WsThrottlerGuard } from '@venta/nest/guards';
-import { APP_NAMES, BootstrapModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
-import {
-	GEOLOCATION_SERVICE_NAME,
-	GeolocationServiceClient,
-	LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
-} from '@venta/proto/location-services/geolocation';
+import { APP_NAMES, BootstrapModule, PrometheusService } from '@venta/nest/modules';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
 import { UserLocationGateway } from './user/user.gateway';
 import { UserConnectionManagerService } from './user/user.manager';
 import { VendorLocationGateway } from './vendor/vendor.gateway';
 import { VendorConnectionManagerService } from './vendor/vendor.manager';
-
-// removed domain-local guard; using shared guard from libs
 
 @Module({
 	imports: [
@@ -28,13 +21,6 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		}),
 		ConfigModule,
 		AuthModule,
-		GrpcInstanceModule.register<GeolocationServiceClient>({
-			proto: 'domains/location-services/geolocation.proto',
-			protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
-			provide: GEOLOCATION_SERVICE_NAME,
-			serviceName: GEOLOCATION_SERVICE_NAME,
-			urlFactory: (configService: ConfigService) => configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5001',
-		}),
 		ClientsModule.registerAsync({
 			clients: [
 				{
