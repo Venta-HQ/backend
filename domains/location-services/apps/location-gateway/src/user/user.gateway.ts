@@ -1,13 +1,25 @@
 import { Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
+import { UseGuards, UsePipes } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
+import {
+	ConnectedSocket,
+	MessageBody,
+	OnGatewayConnection,
+	OnGatewayDisconnect,
+	SubscribeMessage,
+	WebSocketGateway,
+} from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
-import { LocationUpdateACL } from '@venta/domains/location-services/contracts';
-import type { LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
+import {
+	UserLocationUpdateACL,
+	userLocationUpdateSchema,
+	type UserLocationUpdateRequest,
+} from '@venta/domains/location-services/contracts';
+import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
 import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
@@ -93,13 +105,14 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	}
 
 	/**
-	 * Handle user location updates
+	 * Handle user location updates - now with clean decorator-based validation!
 	 */
 	@SubscribeMessage('update_location')
 	@Throttle({ default: { ttl: 60_000, limit: 15 } })
+	@UsePipes(new SchemaValidatorPipe(userLocationUpdateSchema))
 	async handleLocationUpdate(
-		socket: Socket,
-		data: any, // Raw WebSocket data
+		@ConnectedSocket() socket: AuthenticatedSocket,
+		@MessageBody() data: UserLocationUpdateRequest, // Automatically validated by pipe!
 	) {
 		try {
 			this.logger.debug('handleLocationUpdate: start', { socketId: socket.id });
@@ -109,22 +122,11 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 				this.logger.warn('Location update from unregistered user', {
 					socketId: socket.id,
 				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED).toWsException();
+				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
-			// Transform WebSocket data to LocationUpdate domain object
-			const locationUpdate: LocationUpdate = {
-				entityId: userId,
-				entityType: 'user',
-				coordinates: {
-					lat: data.lat || data.latitude,
-					lng: data.lng || data.longitude,
-				},
-				timestamp: new Date().toISOString(),
-			};
-
-			// Validate the location update using ACL
-			LocationUpdateACL.validate(locationUpdate);
+			// Transform validated data to domain object using ACL
+			const locationUpdate: LocationUpdate = UserLocationUpdateACL.toDomain(data, userId);
 
 			// Adjust to current gRPC API; if nearby search isn't exposed yet, keep current rooms unchanged
 			const nearbyVendors: Array<{ entityId: string }> = [];
@@ -165,7 +167,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
 				operation: 'update_user_location',
 				socketId: socket.id,
-			}).toWsException();
+			});
 		}
 	}
 }

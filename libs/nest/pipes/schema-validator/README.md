@@ -2,14 +2,14 @@
 
 ## Purpose
 
-The Schema Validator Pipe provides Zod-based request data validation for the Venta backend system. It validates incoming request data against predefined schemas and ensures data integrity across all endpoints with structured error handling and type safety.
+The Schema Validator Pipe provides Zod-based validation for both HTTP and WebSocket protocols in the Venta backend system. It validates incoming data against predefined schemas and ensures data integrity across all endpoints with structured error handling and type safety.
 
 ## Overview
 
 This pipe provides:
 
-- Zod-based request data validation
-- Structured validation error responses
+- Zod-based data validation for **both HTTP and WebSocket**
+- Structured validation error responses (`AppError` for HTTP, `WsException` for WebSocket)
 - TypeScript integration with Zod schemas
 - Parameter and query validation
 - Global and endpoint-specific validation
@@ -18,9 +18,9 @@ This pipe provides:
 
 ## Usage
 
-### Basic Validation
+### HTTP Validation (Default)
 
-Apply schema validation to controller endpoints:
+Apply schema validation to HTTP controller endpoints:
 
 ```typescript
 import { userCreateSchema } from '@venta/domains/marketplace/contracts/types';
@@ -36,6 +36,37 @@ export class UserController {
 	}
 }
 ```
+
+### WebSocket Validation (Auto-Detection)
+
+Apply schema validation to WebSocket message handlers - **no configuration needed!**
+
+The pipe automatically detects WebSocket contexts and throws `WsException` instead of `AppError`.
+
+```typescript
+import { userLocationUpdateSchema } from '@venta/domains/location-services/contracts';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
+
+@WebSocketGateway({ namespace: 'user' })
+export class UserLocationGateway {
+	@SubscribeMessage('update_location')
+	@UsePipes(new SchemaValidatorPipe(userLocationUpdateSchema)) // Auto-detects WebSocket context!
+	async handleLocationUpdate(
+		@MessageBody() data: UserLocationUpdateRequest, // Automatically validated and typed
+		@ConnectedSocket() socket: AuthenticatedSocket,
+	) {
+		// Data is automatically validated before reaching this method
+		// Pipe automatically throws WsException for WebSocket handlers
+		return this.locationService.updateLocation(data);
+	}
+}
+```
+
+**Auto-Detection Logic:**
+
+- **WebSocket decorators** (`@MessageBody()`, `@ConnectedSocket()`) use `metadata.type === 'custom'`
+- **HTTP decorators** (`@Body()`, `@Query()`, `@Param()`) use specific types like `'body'`, `'query'`, `'param'`
+- This leverages NestJS's built-in decorator metadata patterns for reliable detection
 
 ### Multiple Schema Validation
 

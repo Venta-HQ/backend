@@ -1,112 +1,124 @@
 // Validation utilities
-import {
-	validateCoordinates,
-	validateEntityType,
-	validateRadius,
-	validateRequiredString,
-} from '../schemas/validation.utils';
+import { validateSchema } from '@venta/utils';
+import { grpcGeospatialQuerySchema, grpcLocationUpdateSchema } from '../schemas/location.schemas';
+// WebSocket types - only need types now since validation is handled by SchemaValidatorPipe
+import type { UserLocationUpdateRequest, VendorLocationUpdateRequest } from '../schemas/websocket.schemas';
+// Domain types (what gRPC maps to)
+import type { GeospatialQuery, LocationUpdate } from '../types/domain';
 
-/**
- * Location Services ACL
- * Handles validation and transformation for location-related operations
- */
-
-// Domain types
-export interface LocationUpdate {
+// gRPC types (wire format) - from proto when available
+// For now, we'll define them here until proto types are available
+interface GrpcLocationUpdateData {
 	entityId: string;
 	entityType: 'user' | 'vendor';
 	coordinates: {
 		lat: number;
 		lng: number;
 	};
-	timestamp: string;
+	timestamp?: string;
 }
 
-export interface GeospatialQuery {
+interface GrpcGeospatialQueryData {
 	entityType: 'user' | 'vendor';
 	center: {
 		lat: number;
 		lng: number;
 	};
-	radius: number; // in meters
+	radius: number;
 }
 
-export interface LocationResult {
-	entityId: string;
-	entityType: 'user' | 'vendor';
-	coordinates: {
-		lat: number;
-		lng: number;
-	};
-	distance?: number;
-	lastUpdated: string;
+// ============================================================================
+// LOCATION ACL - Multi-protocol validation and transformation
+// ============================================================================
+
+/**
+ * Location Update ACL (gRPC)
+ * Handles validation and transformation for gRPC location updates
+ */
+export class LocationUpdateACL {
+	// gRPC → Domain (inbound)
+	static validateIncoming(grpc: GrpcLocationUpdateData): void {
+		validateSchema(grpcLocationUpdateSchema, grpc);
+	}
+
+	static toDomain(grpc: GrpcLocationUpdateData): LocationUpdate {
+		this.validateIncoming(grpc);
+
+		return {
+			entityId: grpc.entityId,
+			entityType: grpc.entityType,
+			coordinates: {
+				lat: grpc.coordinates.lat,
+				lng: grpc.coordinates.lng,
+			},
+			timestamp: grpc.timestamp || new Date().toISOString(),
+		};
+	}
 }
 
 /**
- * Location Update ACL
- * Validates and transforms location update requests
+ * User Location Update ACL (WebSocket)
+ * Handles transformation for user location updates from WebSocket
+ * Validation handled by SchemaValidatorPipe
  */
-export class LocationUpdateACL {
-	// External → Domain (inbound)
-	static validate(data: any): void {
-		validateRequiredString(data.entityId, 'entityId');
-		validateEntityType(data.entityType, 'entityType');
-		validateCoordinates(data.coordinates, 'coordinates');
-	}
-
-	static toDomain(data: any): LocationUpdate {
-		this.validate(data);
-
-		const coordinates = validateCoordinates(data.coordinates, 'coordinates');
+export class UserLocationUpdateACL {
+	// WebSocket → Domain (inbound)
+	static toDomain(wsData: UserLocationUpdateRequest, entityId: string): LocationUpdate {
+		// Handle user format - supports both lat/lng and latitude/longitude
+		const coordinates = {
+			lat: wsData.lat ?? wsData.latitude!,
+			lng: wsData.lng ?? wsData.longitude!,
+		};
 
 		return {
-			entityId: data.entityId,
-			entityType: validateEntityType(data.entityType, 'entityType'),
+			entityId,
+			entityType: 'user',
 			coordinates,
-			timestamp: data.timestamp || new Date().toISOString(),
+			timestamp: new Date().toISOString(),
 		};
 	}
+}
 
-	// Domain → gRPC (outbound)
-	static toGrpc(domain: LocationUpdate): {
-		entityId: string;
-		entityType: string;
-		coordinates: { lat: number; lng: number };
-		timestamp: string;
-	} {
+/**
+ * Vendor Location Update ACL (WebSocket)
+ * Handles transformation for vendor location updates from WebSocket
+ * Validation handled by SchemaValidatorPipe
+ */
+export class VendorLocationUpdateACL {
+	// WebSocket → Domain (inbound)
+	static toDomain(wsData: VendorLocationUpdateRequest, entityId: string): LocationUpdate {
 		return {
-			entityId: domain.entityId,
-			entityType: domain.entityType,
+			entityId,
+			entityType: 'vendor',
 			coordinates: {
-				lat: domain.coordinates.lat,
-				lng: domain.coordinates.lng,
+				lat: wsData.lat,
+				lng: wsData.lng,
 			},
-			timestamp: domain.timestamp,
+			timestamp: new Date().toISOString(),
 		};
 	}
 }
 
 /**
  * Geospatial Query ACL
- * Validates and transforms geospatial queries
+ * Bidirectional validation and transformation for geospatial query operations
  */
 export class GeospatialQueryACL {
-	// External → Domain (inbound)
-	static validate(data: any): void {
-		validateEntityType(data.entityType, 'entityType');
-		validateCoordinates(data.center, 'center');
-		validateRadius(data.radius, 'radius');
+	// gRPC → Domain (inbound)
+	static validateIncoming(grpc: GrpcGeospatialQueryData): void {
+		validateSchema(grpcGeospatialQuerySchema, grpc);
 	}
 
-	static toDomain(data: any): GeospatialQuery {
-		this.validate(data);
-
-		const center = validateCoordinates(data.center, 'center');
+	static toDomain(grpc: GrpcGeospatialQueryData): GeospatialQuery {
+		this.validateIncoming(grpc);
 
 		return {
-			entityType: validateEntityType(data.entityType, 'entityType'),
-			center,
-			radius: validateRadius(data.radius, 'radius'),
+			entityType: grpc.entityType,
+			center: {
+				lat: grpc.center.lat,
+				lng: grpc.center.lng,
+			},
+			radius: grpc.radius,
 		};
 	}
 }

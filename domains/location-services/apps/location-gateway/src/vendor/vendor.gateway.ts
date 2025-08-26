@@ -1,10 +1,24 @@
 import { Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
-import { OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
+import { UseGuards, UsePipes } from '@nestjs/common';
+import {
+	ConnectedSocket,
+	MessageBody,
+	OnGatewayConnection,
+	OnGatewayDisconnect,
+	SubscribeMessage,
+	WebSocketGateway,
+} from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
+import {
+	VendorLocationUpdateACL,
+	vendorLocationUpdateSchema,
+	type VendorLocationUpdateRequest,
+} from '@venta/domains/location-services/contracts';
+import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsAuthGuard } from '@venta/nest/guards';
 import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
+import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
@@ -97,10 +111,14 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	}
 
 	/**
-	 * Handle vendor location updates
+	 * Handle vendor location updates - now with clean decorator-based validation!
 	 */
 	@SubscribeMessage('update_location')
-	async handleLocationUpdate(socket: Socket, data: { lat: number; lng: number }) {
+	@UsePipes(new SchemaValidatorPipe(vendorLocationUpdateSchema))
+	async handleLocationUpdate(
+		@ConnectedSocket() socket: AuthenticatedSocket,
+		@MessageBody() data: VendorLocationUpdateRequest, // Automatically validated by pipe!
+	) {
 		try {
 			const vendorId = await this.vendorConnectionManager.getSocketVendorId(socket.id);
 
@@ -111,12 +129,15 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
 			}
 
+			// Transform validated data to domain object using ACL
+			const locationUpdate: LocationUpdate = VendorLocationUpdateACL.toDomain(data, vendorId);
+
 			// Update vendor location in geolocation service
 			// await this.geolocationService.invoke('updateVendorLocation', {
 			// 	entityId: vendorId,
 			// 	coordinates: {
-			// 		lat: data.lat,
-			// 		lng: data.lng,
+			// 		lat: locationUpdate.coordinates.lat,
+			// 		lng: locationUpdate.coordinates.lng,
 			// 	},
 			// });
 
@@ -128,8 +149,8 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 				this.server.to(userId).emit('vendor_location_changed', {
 					vendorId,
 					location: {
-						lat: data.lat,
-						lng: data.lng,
+						lat: locationUpdate.coordinates.lat,
+						lng: locationUpdate.coordinates.lng,
 					},
 				});
 			});
@@ -138,15 +159,15 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 			socket.emit('location_updated', {
 				vendorId,
 				coordinates: {
-					lat: data.lat,
-					lng: data.lng,
+					lat: locationUpdate.coordinates.lat,
+					lng: locationUpdate.coordinates.lng,
 				},
 			});
 
 			this.logger.debug('Vendor location updated', {
 				socketId: socket.id,
 				vendorId,
-				location: data,
+				location: locationUpdate.coordinates,
 			});
 		} catch (error) {
 			this.logger.error('Failed to update vendor location', error instanceof Error ? error.stack : undefined, {
