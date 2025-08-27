@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { UseGuards, UsePipes } from '@nestjs/common';
+import { UseInterceptors, UsePipes } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
 	ConnectedSocket,
@@ -17,7 +17,7 @@ import {
 } from '@venta/domains/location-services/contracts';
 import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { WsAuthGuard } from '@venta/nest/guards';
+import { WsErrorInterceptor } from '@venta/nest/interceptors';
 import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { UserConnectionManagerService } from './user.manager';
@@ -29,7 +29,7 @@ import { UserConnectionManagerService } from './user.manager';
 		credentials: true,
 	},
 })
-@UseGuards(WsAuthGuard)
+@UseInterceptors(WsErrorInterceptor)
 export class UserLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	protected readonly connectionManager = this.userConnectionManager;
 

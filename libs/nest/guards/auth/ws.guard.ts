@@ -18,42 +18,23 @@ export class WsAuthGuard implements CanActivate {
 
 	async canActivate(context: ExecutionContext): Promise<boolean> {
 		const client = context.switchToWs().getClient<AuthenticatedSocket>();
-		this.logger.debug('WS auth check: start', {
-			socketId: client?.id,
-			hasAuthorization: typeof (client?.handshake?.headers as any)?.authorization === 'string',
-		});
 
-		const token = this.authService.extractWsToken(client.handshake);
-		this.logger.debug('WS auth check: token extracted', { hasToken: !!token });
-
-		if (!token) {
-			this.logger.warn('WebSocket connection attempt without Bearer authorization token');
+		// Authentication is already done by AuthenticatedSocketIoAdapter at handshake
+		// This guard just sets the request context from the already-authenticated user
+		if (!client.user) {
+			this.logger.warn('WebSocket connection without authenticated user - handshake auth failed');
 			throw new WsException(
 				AppError.unauthorized(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-					operation: 'auth_check',
+					operation: 'auth_context_check',
 				}),
 			);
 		}
 
-		try {
-			const user = await this.authService.validateToken(token);
+		// Set user context in RequestContextService for singleton services
+		this.requestContextService.setUserId(client.user.id);
+		this.requestContextService.setClerkId(client.user.clerkId);
 
-			// Attach auth data to socket
-			client.user = user;
-
-			// Set user context in RequestContextService for singleton services
-			this.requestContextService.setUserId(user.id);
-			this.requestContextService.setClerkId(user.clerkId);
-
-			this.logger.debug('WS auth check: success', { userId: user?.id });
-			return true;
-		} catch (error) {
-			this.logger.warn('WebSocket authentication failed', { error: (error as any)?.message });
-			throw new WsException(
-				AppError.unauthorized(ErrorCodes.ERR_WEBSOCKET_ERROR, {
-					operation: 'auth_check',
-				}),
-			);
-		}
+		this.logger.debug('WS auth context set', { userId: client.user.id });
+		return true;
 	}
 }

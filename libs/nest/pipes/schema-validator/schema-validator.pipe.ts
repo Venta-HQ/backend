@@ -15,7 +15,6 @@ export class SchemaValidatorPipe implements PipeTransform {
 		} catch (error) {
 			this.logger.error('Schema validation failed', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				value,
 				type: metadata.type,
 				data: metadata.data,
 			});

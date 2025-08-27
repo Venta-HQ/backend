@@ -1,5 +1,6 @@
 import { Socket } from 'socket.io';
-import { UseGuards, UsePipes } from '@nestjs/common';
+import { UseInterceptors, UsePipes } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -16,7 +17,7 @@ import {
 } from '@venta/domains/location-services/contracts';
 import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { WsAuthGuard } from '@venta/nest/guards';
+import { WsErrorInterceptor } from '@venta/nest/interceptors';
 import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
@@ -28,7 +29,7 @@ import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 		credentials: true,
 	},
 })
-@UseGuards(WsAuthGuard)
+@UseInterceptors(WsErrorInterceptor)
 export class VendorLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	protected readonly connectionManager = this.vendorConnectionManager;
 
@@ -114,6 +115,7 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	 * Handle vendor location updates - now with clean decorator-based validation!
 	 */
 	@SubscribeMessage('update_location')
+	@Throttle({ default: { ttl: 60_000, limit: 15 } })
 	@UsePipes(new SchemaValidatorPipe(vendorLocationUpdateSchema))
 	async handleLocationUpdate(
 		@ConnectedSocket() socket: AuthenticatedSocket,

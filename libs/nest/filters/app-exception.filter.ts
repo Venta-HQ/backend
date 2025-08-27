@@ -51,8 +51,6 @@ export class AppExceptionFilter implements ExceptionFilter {
 		switch (contextType) {
 			case 'http':
 				return this.handleHttpException(appError, host);
-			case 'ws':
-				return this.handleWsException(appError, host);
 			default:
 				throw appError;
 		}
@@ -198,22 +196,5 @@ export class AppExceptionFilter implements ExceptionFilter {
 		} catch {}
 
 		response.status(status).json(responseBody);
-	}
-
-	private handleWsException(error: AppError, host: ArgumentsHost) {
-		const ctx = host.switchToWs();
-		const client = ctx.getClient();
-		const data = ctx.getData();
-
-		// Add context information if available
-		if (data && data.requestId) {
-			(error as any).requestId = data.requestId;
-		}
-
-		const wsException = (error as any).toWsException();
-		const wsError = wsException.getError();
-
-		// Emit error to WebSocket client
-		client.emit('error', wsError);
 	}
 }
