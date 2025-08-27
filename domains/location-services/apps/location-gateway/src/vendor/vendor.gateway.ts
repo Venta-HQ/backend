@@ -1,5 +1,6 @@
+import { firstValueFrom } from 'rxjs';
 import { Socket } from 'socket.io';
-import { UseGuards, UseInterceptors } from '@nestjs/common';
+import { Inject, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -18,8 +19,9 @@ import type { LocationUpdate } from '@venta/domains/location-services/contracts/
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
@@ -37,6 +39,7 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
 		protected readonly logger: Logger,
+		@Inject(GEOLOCATION_SERVICE_NAME) private client: GrpcInstance<GeolocationServiceClient>,
 	) {
 		super();
 		this.logger.setContext(VendorLocationGateway.name);
@@ -53,17 +56,6 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 
 			// Register the vendor connection
 			await this.vendorConnectionManager.registerVendor(client.id, vendorId);
-
-			// Get all users in this vendor's room
-			const roomUsers = await this.vendorConnectionManager.getVendorRoomUsers(vendorId);
-
-			// Notify users that vendor is online
-			roomUsers.forEach((userId) => {
-				this.server.to(userId).emit('vendor_status_changed', {
-					vendorId,
-					isOnline: true,
-				});
-			});
 
 			// Log success using base class method
 			this.logConnectionSuccess(client, vendorId, 'Vendor');
@@ -134,19 +126,19 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 			const locationUpdate: LocationUpdate = VendorLocationUpdateACL.toDomain(data, vendorId);
 
 			// Update vendor location in geolocation service
-			// await this.geolocationService.invoke('updateVendorLocation', {
-			// 	entityId: vendorId,
-			// 	coordinates: {
-			// 		lat: locationUpdate.coordinates.lat,
-			// 		lng: locationUpdate.coordinates.lng,
-			// 	},
-			// });
-
-			// Get all users in this vendor's room
-			const roomUsers = await this.vendorConnectionManager.getVendorRoomUsers(vendorId);
+			await firstValueFrom(
+				this.client.invoke('updateVendorLocation', {
+					entityId: vendorId,
+					coordinates: {
+						lat: locationUpdate.coordinates.lat,
+						lng: locationUpdate.coordinates.lng,
+					},
+				}),
+			);
 
 			// Notify users about location update
-			roomUsers.forEach((userId) => {
+			const users = await this.vendorConnectionManager.getVendorRoomUsers(vendorId);
+			users.forEach((userId) => {
 				this.server.to(userId).emit('vendor_location_changed', {
 					vendorId,
 					location: {

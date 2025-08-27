@@ -144,37 +144,9 @@ export class VendorConnectionManagerService {
 	/**
 	 * Get all sockets for a vendor
 	 */
-	async getVendorSockets(vendorId: string): Promise<string[]> {
-		try {
-			return this.redis.smembers(`vendor:${vendorId}:sockets`);
-		} catch (error) {
-			this.logger.error('Failed to get vendor sockets', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				vendorId,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
-				operation: 'get_vendor_sockets',
-			});
-		}
-	}
-
-	/**
-	 * Check if vendor is online
-	 */
-	async isVendorOnline(vendorId: string): Promise<boolean> {
-		try {
-			const sockets = await this.redis.smembers(`vendor:${vendorId}:sockets`);
-			return sockets.length > 0;
-		} catch (error) {
-			this.logger.error('Failed to check if vendor is online', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				vendorId,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
-				operation: 'is_vendor_online',
-			});
-		}
-	}
+	/*
+	Removed unused methods:
+	- getVendorSockets
+	- isVendorOnline
+*/
 }
