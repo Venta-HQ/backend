@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
+// import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, PrometheusService } from '@venta/nest/modules';
@@ -20,21 +20,6 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		}),
 		ConfigModule,
 		AuthModule,
-		ClientsModule.registerAsync({
-			clients: [
-				{
-					imports: [ConfigModule],
-					inject: [ConfigService],
-					name: 'NATS_SERVICE',
-					useFactory: (configService: ConfigService) => ({
-						options: {
-							servers: configService.get('NATS_URL') || 'nats://localhost:4222',
-						},
-						transport: Transport.NATS,
-					}),
-				},
-			],
-		}),
 		ThrottlerModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],

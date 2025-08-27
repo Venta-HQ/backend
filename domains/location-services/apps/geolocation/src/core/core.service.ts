@@ -3,7 +3,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import type { LocationResult, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { EventService, Logger } from '@venta/nest/modules';
+import { EventService, Logger, PrometheusService } from '@venta/nest/modules';
 
 type RedisGeosearchResult = Array<[string, string | undefined, [string | number, string | number]]>;
 
@@ -13,6 +13,7 @@ export class CoreService {
 		@InjectRedis() private readonly redis: Redis,
 		private readonly eventService: EventService,
 		private readonly logger: Logger,
+		private readonly prometheus: PrometheusService,
 	) {
 		this.logger.setContext(CoreService.name);
 	}
@@ -52,6 +53,19 @@ export class CoreService {
 	 * Get nearby vendors based on location bounds
 	 */
 	async getNearbyVendors(center: { lat: number; lng: number }, radius: number): Promise<LocationResult[]> {
+		const histogramName = 'redis_geosearch_duration_seconds';
+		if (!this.prometheus.hasMetric(histogramName)) {
+			this.prometheus.registerMetrics([
+				{
+					name: histogramName,
+					help: 'Redis GEOSEARCH duration',
+					buckets: [0.005, 0.01, 0.05, 0.1, 0.5],
+					type: 'histogram',
+				},
+			]);
+		}
+		const histogram = this.prometheus.getMetric(histogramName) as any;
+		const endTimer = histogram.startTimer();
 		try {
 			// Get nearby vendors using GEOSEARCH (GEORADIUS is deprecated in Redis 7+)
 			const nearbyVendors = (await this.redis.geosearch(
@@ -88,21 +102,10 @@ export class CoreService {
 				radius,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
+		} finally {
+			endTimer();
 		}
 	}
 
-	/**
-	 * Validate coordinates
-	 */
-	private isValidCoordinates(coordinates: { lat: number; lng: number }): boolean {
-		return (
-			coordinates &&
-			typeof coordinates.lat === 'number' &&
-			typeof coordinates.lng === 'number' &&
-			coordinates.lat >= -90 &&
-			coordinates.lat <= 90 &&
-			coordinates.lng >= -180 &&
-			coordinates.lng <= 180
-		);
-	}
+	/* removed unused isValidCoordinates */
 }

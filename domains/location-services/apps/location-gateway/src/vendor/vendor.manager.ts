@@ -1,28 +1,43 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class VendorConnectionManagerService {
+	private readonly keyPrefix: string;
+
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly logger: Logger,
+		private readonly configService: ConfigService,
 	) {
 		this.logger.setContext(VendorConnectionManagerService.name);
+		const env = this.configService.get<string>('NODE_ENV') || 'development';
+		this.keyPrefix = `${env}:locgw:`;
 	}
+
+	private buildKey(...parts: string[]): string {
+		return this.keyPrefix + parts.join(':');
+	}
+
+	private readonly SOCKET_TTL_SECONDS = 10 * 60; // 10 minutes
 
 	/**
 	 * Register a new vendor connection
 	 */
 	async registerVendor(socketId: string, vendorId: string): Promise<void> {
 		try {
-			// Store socket ID to vendor ID mapping
-			await this.redis.set(`socket:${socketId}:vendor`, vendorId);
-
-			// Store vendor ID to socket ID mapping
-			await this.redis.set(`vendor:${vendorId}:socket`, socketId);
+			// Store socket<->vendor mappings with TTL (single-roundtrip using pipeline + SETEX)
+			const socketKey = this.buildKey('socket', socketId, 'vendor');
+			const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+			await this.redis
+				.pipeline()
+				.setex(socketKey, this.SOCKET_TTL_SECONDS, vendorId)
+				.setex(vendorKey, this.SOCKET_TTL_SECONDS, socketId)
+				.exec();
 
 			this.logger.debug('Vendor connection registered', {
 				socketId,
@@ -46,7 +61,8 @@ export class VendorConnectionManagerService {
 	 */
 	async getConnectionInfo(socketId: string): Promise<{ vendorId: string } | null> {
 		try {
-			const vendorId = await this.redis.get(`socket:${socketId}:vendor`);
+			const socketKey = this.buildKey('socket', socketId, 'vendor');
+			const vendorId = await this.redis.get(socketKey);
 			if (!vendorId) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
 					resourceType: 'vendor_connection',
@@ -56,6 +72,13 @@ export class VendorConnectionManagerService {
 				});
 			}
 
+			// refresh TTLs on activity
+			const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+			await this.redis
+				.pipeline()
+				.expire(socketKey, this.SOCKET_TTL_SECONDS)
+				.expire(vendorKey, this.SOCKET_TTL_SECONDS)
+				.exec();
 			return { vendorId };
 		} catch (error) {
 			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : undefined, {
@@ -74,7 +97,17 @@ export class VendorConnectionManagerService {
 	 */
 	async getSocketVendorId(socketId: string): Promise<string | null> {
 		try {
-			return this.redis.get(`socket:${socketId}:vendor`);
+			const socketKey = this.buildKey('socket', socketId, 'vendor');
+			const vendorId = await this.redis.get(socketKey);
+			if (vendorId) {
+				const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+				await this.redis
+					.pipeline()
+					.expire(socketKey, this.SOCKET_TTL_SECONDS)
+					.expire(vendorKey, this.SOCKET_TTL_SECONDS)
+					.exec();
+			}
+			return vendorId;
 		} catch (error) {
 			this.logger.error('Failed to get socket vendor ID', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -92,7 +125,7 @@ export class VendorConnectionManagerService {
 	 */
 	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
 		try {
-			return this.redis.smembers(`vendor:${vendorId}:room_users`);
+			return this.redis.smembers(this.buildKey('vendor', vendorId, 'room_users'));
 		} catch (error) {
 			this.logger.error('Failed to get vendor room users', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -119,10 +152,10 @@ export class VendorConnectionManagerService {
 			}
 
 			// Remove socket ID from vendor's socket set
-			await this.redis.srem(`vendor:${vendorId}:sockets`, socketId);
+			await this.redis.srem(this.buildKey('vendor', vendorId, 'sockets'), socketId);
 
 			// Remove socket ID to vendor ID mapping
-			await this.redis.del(`socket:${socketId}:vendor`);
+			await this.redis.del(this.buildKey('socket', socketId, 'vendor'));
 
 			this.logger.debug('Vendor disconnected', {
 				socketId,

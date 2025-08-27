@@ -52,7 +52,7 @@ export class CoreController {
 	}
 
 	@GrpcMethod(GEOLOCATION_SERVICE_NAME)
-	async nearbyVendors(request: VendorLocationRequest): Promise<VendorLocationResponse> {
+	async vendorLocations(request: VendorLocationRequest): Promise<VendorLocationResponse> {
 		const domainRequest = GeospatialQueryACL.toDomain(request);
 
 		this.logger.debug('Handling nearby entities request', {

@@ -1,28 +1,43 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { Logger } from '@venta/nest/modules';
 
 @Injectable()
 export class UserConnectionManagerService {
+	private readonly keyPrefix: string;
+
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly logger: Logger,
+		private readonly configService: ConfigService,
 	) {
 		this.logger.setContext(UserConnectionManagerService.name);
+		const env = this.configService.get<string>('NODE_ENV') || 'development';
+		this.keyPrefix = `${env}:locgw:`;
 	}
+
+	private buildKey(...parts: string[]): string {
+		return this.keyPrefix + parts.join(':');
+	}
+
+	private readonly SOCKET_TTL_SECONDS = 10 * 60; // 10 minutes
 
 	/**
 	 * Register a new user connection
 	 */
 	async registerUser(socketId: string, userId: string): Promise<void> {
 		try {
-			// Store socket ID to user ID mapping
-			await this.redis.set(`socket:${socketId}:user`, userId);
-
-			// Store user ID to socket ID mapping
-			await this.redis.set(`user:${userId}:socket`, socketId);
+			// Store socket<->user mappings with TTL (single-roundtrip using pipeline + SETEX)
+			const socketKey = this.buildKey('socket', socketId, 'user');
+			const userKey = this.buildKey('user', userId, 'socket');
+			await this.redis
+				.pipeline()
+				.setex(socketKey, this.SOCKET_TTL_SECONDS, userId)
+				.setex(userKey, this.SOCKET_TTL_SECONDS, socketId)
+				.exec();
 
 			this.logger.debug('User connection registered', {
 				socketId,
@@ -46,7 +61,8 @@ export class UserConnectionManagerService {
 	 */
 	async getConnectionInfo(socketId: string): Promise<{ userId: string } | null> {
 		try {
-			const userId = await this.redis.get(`socket:${socketId}:user`);
+			const socketKey = this.buildKey('socket', socketId, 'user');
+			const userId = await this.redis.get(socketKey);
 			if (!userId) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
 					resourceType: 'user_connection',
@@ -56,6 +72,13 @@ export class UserConnectionManagerService {
 				});
 			}
 
+			// refresh TTLs on activity (pipeline both)
+			const userKey = this.buildKey('user', userId, 'socket');
+			await this.redis
+				.pipeline()
+				.expire(socketKey, this.SOCKET_TTL_SECONDS)
+				.expire(userKey, this.SOCKET_TTL_SECONDS)
+				.exec();
 			return { userId };
 		} catch (error) {
 			this.logger.error('Failed to get connection info', error instanceof Error ? error.stack : undefined, {
@@ -74,7 +97,17 @@ export class UserConnectionManagerService {
 	 */
 	async getSocketUserId(socketId: string): Promise<string | null> {
 		try {
-			return this.redis.get(`socket:${socketId}:user`);
+			const socketKey = this.buildKey('socket', socketId, 'user');
+			const userId = await this.redis.get(socketKey);
+			if (userId) {
+				const userKey = this.buildKey('user', userId, 'socket');
+				await this.redis
+					.pipeline()
+					.expire(socketKey, this.SOCKET_TTL_SECONDS)
+					.expire(userKey, this.SOCKET_TTL_SECONDS)
+					.exec();
+			}
+			return userId;
 		} catch (error) {
 			this.logger.error('Failed to get socket user ID', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -92,7 +125,7 @@ export class UserConnectionManagerService {
 	 */
 	async getUserVendorRooms(userId: string): Promise<string[]> {
 		try {
-			return this.redis.smembers(`user:${userId}:vendor_rooms`);
+			return this.redis.smembers(this.buildKey('user', userId, 'vendor_rooms'));
 		} catch (error) {
 			this.logger.error('Failed to get user vendor rooms', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -110,7 +143,7 @@ export class UserConnectionManagerService {
 	 */
 	async addUserToVendorRoom(userId: string, vendorId: string): Promise<void> {
 		try {
-			await this.redis.sadd(`user:${userId}:vendor_rooms`, vendorId);
+			await this.redis.sadd(this.buildKey('user', userId, 'vendor_rooms'), vendorId);
 
 			this.logger.debug('User added to vendor room', {
 				userId,
@@ -134,7 +167,7 @@ export class UserConnectionManagerService {
 	 */
 	async removeUserFromVendorRoom(userId: string, vendorId: string): Promise<void> {
 		try {
-			await this.redis.srem(`user:${userId}:vendor_rooms`, vendorId);
+			await this.redis.srem(this.buildKey('user', userId, 'vendor_rooms'), vendorId);
 
 			this.logger.debug('User removed from vendor room', {
 				userId,
@@ -167,10 +200,12 @@ export class UserConnectionManagerService {
 			}
 
 			// Remove socket ID from user's socket set
-			await this.redis.srem(`user:${userId}:sockets`, socketId);
+			const socketsSetKey = this.buildKey('user', userId, 'sockets');
+			await this.redis.srem(socketsSetKey, socketId);
 
 			// Remove socket ID to user ID mapping
-			await this.redis.del(`socket:${socketId}:user`);
+			const socketKey = this.buildKey('socket', socketId, 'user');
+			await this.redis.del(socketKey);
 
 			this.logger.debug('User disconnected', {
 				socketId,
