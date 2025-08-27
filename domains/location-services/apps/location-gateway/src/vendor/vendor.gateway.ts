@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { UseInterceptors, UsePipes } from '@nestjs/common';
+import { UseInterceptors } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
 	ConnectedSocket,
@@ -116,10 +116,9 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	 */
 	@SubscribeMessage('update_location')
 	@Throttle({ default: { ttl: 60_000, limit: 15 } })
-	@UsePipes(new SchemaValidatorPipe(vendorLocationUpdateSchema))
 	async handleLocationUpdate(
 		@ConnectedSocket() socket: AuthenticatedSocket,
-		@MessageBody() data: VendorLocationUpdateRequest, // Automatically validated by pipe!
+		@MessageBody(new SchemaValidatorPipe(vendorLocationUpdateSchema)) data: VendorLocationUpdateRequest,
 	) {
 		try {
 			const vendorId = await this.vendorConnectionManager.getSocketVendorId(socket.id);

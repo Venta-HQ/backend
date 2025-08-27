@@ -64,16 +64,13 @@ export class LocationUpdateACL {
 export class UserLocationUpdateACL {
 	// WebSocket → Domain (inbound)
 	static toDomain(wsData: UserLocationUpdateRequest, entityId: string): LocationUpdate {
-		// Handle user format - supports both lat/lng and latitude/longitude
-		const coordinates = {
-			lat: wsData.lat ?? wsData.latitude!,
-			lng: wsData.lng ?? wsData.longitude!,
-		};
-
 		return {
 			entityId,
 			entityType: 'user',
-			coordinates,
+			coordinates: {
+				lat: wsData.lat,
+				lng: wsData.lng,
+			},
 			timestamp: new Date().toISOString(),
 		};
 	}

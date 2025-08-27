@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { UseInterceptors, UsePipes } from '@nestjs/common';
+import { UseInterceptors } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import {
 	ConnectedSocket,
@@ -108,11 +108,10 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	 * Handle user location updates - now with clean decorator-based validation!
 	 */
 	@SubscribeMessage('update_location')
-	@Throttle({ default: { ttl: 60_000, limit: 15 } })
-	@UsePipes(new SchemaValidatorPipe(userLocationUpdateSchema))
+	@Throttle({ default: { ttl: 60_000, limit: 2 } })
 	async handleLocationUpdate(
 		@ConnectedSocket() socket: AuthenticatedSocket,
-		@MessageBody() data: UserLocationUpdateRequest, // Automatically validated by pipe!
+		@MessageBody(new SchemaValidatorPipe(userLocationUpdateSchema)) data: UserLocationUpdateRequest,
 	) {
 		try {
 			this.logger.debug('handleLocationUpdate: start', { socketId: socket.id });
