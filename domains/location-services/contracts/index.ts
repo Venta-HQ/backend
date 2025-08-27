@@ -14,9 +14,9 @@
 // Location-related ACL classes (gRPC ↔ Domain, WebSocket ↔ Domain)
 export {
 	LocationUpdateACL,
+	GeospatialQueryACL,
 	UserLocationUpdateACL,
 	VendorLocationUpdateACL,
-	GeospatialQueryACL,
 } from './acl/location.acl';
 
 // Realtime-related ACL classes (bidirectional gRPC ↔ Domain)

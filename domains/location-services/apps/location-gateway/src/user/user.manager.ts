@@ -188,41 +188,4 @@ export class UserConnectionManagerService {
 			});
 		}
 	}
-
-	/**
-	 * Get all sockets for a user
-	 */
-	async getUserSockets(userId: string): Promise<string[]> {
-		try {
-			return this.redis.smembers(`user:${userId}:sockets`);
-		} catch (error) {
-			this.logger.error('Failed to get user sockets', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				userId,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
-				operation: 'get_user_sockets',
-			});
-		}
-	}
-
-	/**
-	 * Check if user is in vendor room
-	 */
-	async isUserInVendorRoom(userId: string, vendorId: string): Promise<boolean> {
-		try {
-			return (await this.redis.sismember(`user:${userId}:vendor_rooms`, vendorId)) === 1;
-		} catch (error) {
-			this.logger.error('Failed to check if user is in vendor room', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				userId,
-				vendorId,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
-				operation: 'is_user_in_vendor_room',
-			});
-		}
-	}
 }

@@ -8,3 +8,4 @@ export * from './file/file-type.util';
 export * from './upload/upload-config.util';
 export * from './grpc/grpc-deadline.util';
 export * from './cloudinary/avatar.util';
+export * from './location.util';

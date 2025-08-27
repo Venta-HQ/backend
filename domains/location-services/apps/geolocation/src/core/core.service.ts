@@ -1,23 +1,20 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
-import { GeospatialQueryACL } from '@venta/domains/location-services/contracts';
-import type {
-	GeospatialQuery,
-	LocationResult,
-	LocationUpdate,
-} from '@venta/domains/location-services/contracts/types/domain';
+import type { LocationResult, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { EventService, Logger } from '@venta/nest/modules';
 
+type RedisGeosearchResult = Array<[string, string | undefined, [string | number, string | number]]>;
+
 @Injectable()
-export class GeolocationService {
+export class CoreService {
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly eventService: EventService,
 		private readonly logger: Logger,
 	) {
-		this.logger.setContext(GeolocationService.name);
+		this.logger.setContext(CoreService.name);
 	}
 
 	/**
@@ -25,15 +22,6 @@ export class GeolocationService {
 	 */
 	async updateVendorLocation(request: LocationUpdate): Promise<void> {
 		try {
-			// Validate coordinates
-			if (!this.isValidCoordinates(request.coordinates)) {
-				throw AppError.validation(ErrorCodes.ERR_INVALID_COORDINATES, {
-					field: 'coordinates',
-					entityId: request.entityId,
-					coordinates: request.coordinates,
-				});
-			}
-
 			// Update vendor location in Redis
 			await this.redis.geoadd('vendor_locations', request.coordinates.lng, request.coordinates.lat, request.entityId);
 
@@ -63,44 +51,41 @@ export class GeolocationService {
 	/**
 	 * Get nearby vendors based on location bounds
 	 */
-	async getNearbyVendors(request: GeospatialQuery): Promise<LocationResult[]> {
+	async getNearbyVendors(center: { lat: number; lng: number }, radius: number): Promise<LocationResult[]> {
 		try {
-			// Validate coordinates using ACL
-			GeospatialQueryACL.validate(request);
-
-			// Get nearby vendors from Redis using provided center and radius
-			const nearbyVendors = await this.redis.georadius(
-				`${request.entityType}_locations`,
-				request.center.lng,
-				request.center.lat,
-				request.radius,
+			// Get nearby vendors using GEOSEARCH (GEORADIUS is deprecated in Redis 7+)
+			const nearbyVendors = (await this.redis.geosearch(
+				'vendor_locations',
+				'FROMLONLAT',
+				center.lng,
+				center.lat,
+				'BYRADIUS',
+				radius,
 				'm', // radius is in meters
 				'WITHCOORD',
 				'WITHDIST',
-			);
+			)) as RedisGeosearchResult;
 
 			// Format results to match LocationResult interface
 			return nearbyVendors.map(([member, distance, [lng, lat]]) => ({
 				entityId: member as string,
-				entityType: request.entityType,
 				coordinates: {
 					lat: Number(lat),
 					lng: Number(lng),
 				},
 				distance: distance ? Number(distance) : undefined,
-				lastUpdated: new Date().toISOString(),
 			}));
 		} catch (error) {
 			this.logger.error('Failed to get nearby entities', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
-				center: request.center,
-				radius: request.radius,
+				center,
+				radius,
 			});
 
 			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
 				operation: 'get_nearby_entities',
-				center: request.center,
-				radius: request.radius,
+				center,
+				radius,
 				error: error instanceof Error ? error.message : 'Unknown error',
 			});
 		}

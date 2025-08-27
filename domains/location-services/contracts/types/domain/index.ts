@@ -5,32 +5,30 @@
 
 export interface LocationUpdate {
 	entityId: string;
-	entityType: 'user' | 'vendor';
 	coordinates: {
 		lat: number;
 		lng: number;
 	};
-	timestamp: string;
 }
 
 export interface GeospatialQuery {
-	entityType: 'user' | 'vendor';
-	center: {
+	ne: {
 		lat: number;
 		lng: number;
 	};
-	radius: number; // in meters
+	sw: {
+		lat: number;
+		lng: number;
+	};
 }
 
 export interface LocationResult {
 	entityId: string;
-	entityType: 'user' | 'vendor';
 	coordinates: {
 		lat: number;
 		lng: number;
 	};
 	distance?: number;
-	lastUpdated: string;
 }
 
 // Re-export realtime types that are still in the ACL

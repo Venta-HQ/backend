@@ -14,16 +14,13 @@ const coordinatesSchema = z.object({
 // Location update schema for gRPC
 export const grpcLocationUpdateSchema = z.object({
 	entityId: z.string(),
-	entityType: z.enum(['user', 'vendor']),
 	coordinates: coordinatesSchema,
-	timestamp: z.string().optional(),
 });
 
 // Geospatial query schema for gRPC
 export const grpcGeospatialQuerySchema = z.object({
-	entityType: z.enum(['user', 'vendor']),
-	center: coordinatesSchema,
-	radius: z.number().positive(),
+	ne: coordinatesSchema,
+	sw: coordinatesSchema,
 });
 
 // Location result schema for gRPC responses

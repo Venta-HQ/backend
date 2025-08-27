@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { RedisModule } from '@venta/nest/modules';
-import { GeolocationController } from './geolocation.controller';
-import { GeolocationService } from './geolocation.service';
-import { LocationTrackingService } from './location-tracking.service';
+import { CoreController } from './core.controller';
+import { CoreService } from './core.service';
 
 @Module({
 	imports: [RedisModule],
-	controllers: [GeolocationController],
-	providers: [GeolocationService, LocationTrackingService],
-	exports: [GeolocationService, LocationTrackingService],
+	controllers: [CoreController],
+	providers: [CoreService],
+	exports: [CoreService],
 })
 export class CoreModule {}

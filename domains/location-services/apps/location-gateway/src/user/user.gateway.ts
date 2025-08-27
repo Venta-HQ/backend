@@ -1,5 +1,6 @@
+import { firstValueFrom } from 'rxjs';
 import { Socket } from 'socket.io';
-import { UseGuards, UseInterceptors } from '@nestjs/common';
+import { Inject, UseGuards, UseInterceptors } from '@nestjs/common';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -14,12 +15,12 @@ import {
 	userLocationUpdateSchema,
 	type UserLocationUpdateRequest,
 } from '@venta/domains/location-services/contracts';
-import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
@@ -37,6 +38,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
 		protected readonly logger: Logger,
+		@Inject(GEOLOCATION_SERVICE_NAME) private client: GrpcInstance<GeolocationServiceClient>,
 	) {
 		super();
 		this.logger.setContext(UserLocationGateway.name);
@@ -117,15 +119,19 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 			}
 
 			// Transform validated data to domain object using ACL
-			const locationUpdate: LocationUpdate = UserLocationUpdateACL.toDomain(data, userId);
+			const locationUpdate = UserLocationUpdateACL.toDomain(data, userId);
 
-			// Adjust to current gRPC API; if nearby search isn't exposed yet, keep current rooms unchanged
-			const nearbyVendors: Array<{ entityId: string }> = [];
+			const { vendors: nearbyVendors } = await firstValueFrom(
+				this.client.invoke('vendorLocations', {
+					ne: locationUpdate.coordinates,
+					sw: locationUpdate.coordinates,
+				}),
+			);
 
 			// Join rooms for nearby vendors
 			nearbyVendors.forEach((vendor) => {
-				socket.join(vendor.entityId);
-				this.userConnectionManager.addUserToVendorRoom(userId, vendor.entityId);
+				socket.join(vendor.vendorId);
+				this.userConnectionManager.addUserToVendorRoom(userId, vendor.vendorId);
 			});
 
 			// Get current vendor rooms
@@ -133,7 +139,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 
 			// Leave rooms for vendors that are no longer nearby
 			currentRooms.forEach((vendorId) => {
-				if (!nearbyVendors.some((vendor) => vendor.entityId === vendorId)) {
+				if (!nearbyVendors.some((vendor) => vendor.vendorId === vendorId)) {
 					socket.leave(vendorId);
 					this.userConnectionManager.removeUserFromVendorRoom(userId, vendorId);
 				}
