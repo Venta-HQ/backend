@@ -1,6 +1,5 @@
 import { Socket } from 'socket.io';
-import { UseInterceptors } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -17,6 +16,7 @@ import {
 } from '@venta/domains/location-services/contracts';
 import type { LocationUpdate } from '@venta/domains/location-services/contracts/types';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
 import { BaseWebSocketGateway, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
@@ -30,6 +30,7 @@ import { UserConnectionManagerService } from './user.manager';
 	},
 })
 @UseInterceptors(WsErrorInterceptor)
+@UseGuards(WsThrottlerGuard)
 export class UserLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	protected readonly connectionManager = this.userConnectionManager;
 
@@ -108,7 +109,6 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	 * Handle user location updates - now with clean decorator-based validation!
 	 */
 	@SubscribeMessage('update_location')
-	@Throttle({ default: { ttl: 60_000, limit: 2 } })
 	async handleLocationUpdate(
 		@ConnectedSocket() socket: AuthenticatedSocket,
 		@MessageBody(new SchemaValidatorPipe(userLocationUpdateSchema)) data: UserLocationUpdateRequest,

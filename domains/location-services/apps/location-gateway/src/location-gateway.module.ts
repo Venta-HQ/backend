@@ -2,10 +2,9 @@ import Redis from 'ioredis';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { AuthModule, WsThrottlerGuard } from '@venta/nest/guards';
+import { AuthModule } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, PrometheusService } from '@venta/nest/modules';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
 import { UserLocationGateway } from './user/user.gateway';
@@ -45,9 +44,9 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 				return {
 					throttlers: [
 						{
-							name: 'ws-user',
+							name: 'default',
 							ttl: 60_000,
-							limit: 15,
+							limit: 30,
 						},
 					],
 					storage: new ThrottlerStorageRedisService(redis),
@@ -67,8 +66,6 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		// Connection Managers
 		UserConnectionManagerService,
 		VendorConnectionManagerService,
-		// Global throttler guard (WS)
-		{ provide: APP_GUARD, useClass: WsThrottlerGuard },
 	],
 })
 export class LocationGatewayModule {}

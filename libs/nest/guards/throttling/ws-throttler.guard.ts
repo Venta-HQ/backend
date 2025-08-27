@@ -19,7 +19,27 @@ export class WsThrottlerGuard extends ThrottlerGuard {
 		this.logger.setContext(WsThrottlerGuard.name);
 	}
 
-	protected throwThrottlingException(context: ExecutionContext): never {
+	/**
+	 * Override HTTP-specific request/response extraction for WebSocket contexts.
+	 * Returns a minimal HTTP-like shape so base ThrottlerGuard logic works without headers support.
+	 */
+	protected getRequestResponse(context: ExecutionContext): { req: any; res: any } {
+		const client: any = context.switchToWs().getClient();
+		const headers = client?.handshake?.headers ?? {};
+		const ip =
+			client?.handshake?.address ||
+			client?.conn?.remoteAddress ||
+			client?._socket?.remoteAddress ||
+			client?.request?.socket?.remoteAddress ||
+			'0.0.0.0';
+
+		// Provide a no-op header function to satisfy base guard's header writes
+		const res = { header: (_key: string, _value: any) => void 0 };
+
+		return { req: { headers, ip }, res };
+	}
+
+	protected throwThrottlingException(context: ExecutionContext, throttlerLimitDetail?: any): never {
 		try {
 			const client: any = context.switchToWs().getClient();
 			const socketId = client?.id;
@@ -30,10 +50,26 @@ export class WsThrottlerGuard extends ThrottlerGuard {
 				inc?.({ type: 'rate_limit' });
 			} catch {}
 
-			this.logger.warn('WebSocket rate limit exceeded', { socketId });
+			const retryAfterSeconds = throttlerLimitDetail?.timeToBlockExpire ?? throttlerLimitDetail?.timeToExpire ?? 60;
+
+			this.logger.warn('WebSocket rate limit exceeded', { socketId, retryAfterSeconds });
+
+			// Emit error directly in guard since interceptors don't catch guard-stage errors
+			try {
+				client?.emit?.(
+					'ws_error',
+					AppError.validation(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
+						retryAfterSeconds,
+						socketId,
+					})
+						.toWsException()
+						.getError(),
+				);
+			} catch {}
+
 			throw new WsException(
 				AppError.validation(ErrorCodes.ERR_RATE_LIMIT_EXCEEDED, {
-					retryAfterSeconds: 60,
+					retryAfterSeconds,
 					socketId,
 				}),
 			);
