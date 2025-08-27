@@ -54,14 +54,6 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 			// Register the user connection
 			await this.userConnectionManager.registerUser(client.id, userId);
 
-			// Get all vendor rooms this user is in
-			const vendorRooms = await this.userConnectionManager.getUserVendorRooms(userId);
-
-			// Join all vendor rooms
-			vendorRooms.forEach((vendorId) => {
-				client.join(vendorId);
-			});
-
 			// Log success using base class method
 			this.logConnectionSuccess(client, userId, 'User');
 		} catch (error) {

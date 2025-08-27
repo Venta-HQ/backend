@@ -21,8 +21,8 @@ export class UserConnectionManagerService {
 			// Store socket ID to user ID mapping
 			await this.redis.set(`socket:${socketId}:user`, userId);
 
-			// Add socket ID to user's socket set
-			await this.redis.sadd(`user:${userId}:sockets`, socketId);
+			// Store user ID to socket ID mapping
+			await this.redis.set(`user:${userId}:socket`, socketId);
 
 			this.logger.debug('User connection registered', {
 				socketId,

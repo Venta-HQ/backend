@@ -21,8 +21,8 @@ export class VendorConnectionManagerService {
 			// Store socket ID to vendor ID mapping
 			await this.redis.set(`socket:${socketId}:vendor`, vendorId);
 
-			// Add socket ID to vendor's socket set
-			await this.redis.sadd(`vendor:${vendorId}:sockets`, socketId);
+			// Store vendor ID to socket ID mapping
+			await this.redis.set(`vendor:${vendorId}:socket`, socketId);
 
 			this.logger.debug('Vendor connection registered', {
 				socketId,
