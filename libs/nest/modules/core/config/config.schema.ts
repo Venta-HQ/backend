@@ -1,19 +1,23 @@
 import { z } from 'zod';
 
-export const configSchema = z.object({
-	// Required services
+// Group: Required third-party services
+const requiredServicesSchema = z.object({
 	// Algolia admin/search key
 	ALGOLIA_API_KEY: z.string(),
 	// Algolia application identifier
 	ALGOLIA_APPLICATION_ID: z.string(),
 	// Health check port for Algolia sync worker
 	ALGOLIA_SYNC_HEALTH_PORT: z.string().or(z.number()),
+});
 
-	// CORS Configuration
+// Group: CORS configuration
+const corsSchema = z.object({
 	// Comma-separated origin allowlist for WS/HTTP
 	ALLOWED_ORIGINS: z.string().optional(),
+});
 
-	// WebSocket configuration
+// Group: WebSocket configuration
+const websocketSchema = z.object({
 	// Max Socket.IO message payload size (bytes)
 	WS_MAX_PAYLOAD_BYTES: z.string().or(z.number()).optional(),
 	// Socket.IO ping interval (ms)
@@ -34,17 +38,24 @@ export const configSchema = z.object({
 	WS_PRESENCE_TTL_SECONDS: z.string().or(z.number()).optional(),
 	// Min interval between presence touch operations (ms)
 	WS_PRESENCE_REFRESH_MIN_MS: z.string().or(z.number()).optional(),
-	// Application configuration
+});
+
+// Group: Application configuration
+const appSchema = z.object({
 	// Service name used in logs/metrics/tracing
 	APP_NAME: z.string().optional(),
-	DOMAIN: z.string().optional(), // DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
+	// DDD domain (e.g., 'user', 'vendor', 'location', 'marketplace')
+	DOMAIN: z.string().optional(),
 	// Clerk backend API key
 	CLERK_SECRET_KEY: z.string(),
 	// Cloudinary credentials
 	CLOUDINARY_API_KEY: z.string(),
 	CLOUDINARY_API_SECRET: z.string(),
 	CLOUDINARY_CLOUD_NAME: z.string(),
-	// Required core services
+});
+
+// Group: Core services / networking
+const coreServicesSchema = z.object({
 	// Primary database connection URL
 	DATABASE_URL: z.string().url(),
 	// API Gateway HTTP port
@@ -55,12 +66,8 @@ export const configSchema = z.object({
 	LOCATION_HEALTH_PORT: z.string().or(z.number()),
 	// Geolocation service gRPC address
 	LOCATION_SERVICE_ADDRESS: z.string(),
-
-	// Optional services
 	// Loki basic auth password (if enabled)
 	LOKI_PASSWORD: z.string().optional(),
-
-	// Logging
 	// Enable/disable Loki log shipping
 	LOKI_ENABLED: z
 		.union([z.string(), z.boolean()])
@@ -101,8 +108,18 @@ export const configSchema = z.object({
 	WEBSOCKET_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
 	// Webhooks gateway HTTP port
 	WEBHOOKS_GATEWAY_SERVICE_PORT: z.string().or(z.number()),
-	// Tracing
+});
+
+// Group: Tracing / observability
+const tracingSchema = z.object({
 	// OTLP traces exporter endpoint and extra resource attributes
 	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.string().url(),
 	OTEL_RESOURCE_ATTRIBUTES: z.string().optional(),
 });
+
+export const configSchema = requiredServicesSchema
+	.merge(corsSchema)
+	.merge(websocketSchema)
+	.merge(appSchema)
+	.merge(coreServicesSchema)
+	.merge(tracingSchema);
