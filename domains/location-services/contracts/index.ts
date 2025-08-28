@@ -19,8 +19,7 @@ export {
 	VendorLocationUpdateACL,
 } from './acl/location.acl';
 
-// Realtime-related ACL classes (bidirectional gRPC ↔ Domain)
-export { RealtimeMessageACL, NatsSubscriptionACL } from './acl/realtime.acl';
+// (Removed) Realtime-related ACL classes - no current usage
 
 // ============================================================================
 // WebSocket Schemas

@@ -1,21 +1,12 @@
 import { z } from 'zod';
+import { coordinatesSchema } from './common.schemas';
 
 /**
  * gRPC schemas for location services
  * These schemas validate gRPC data at the service boundaries
  */
 
-// Coordinates schema
-const coordinatesSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
-
-// Location update schema for gRPC
-export const grpcLocationUpdateSchema = z.object({
-	entityId: z.string(),
-	coordinates: coordinatesSchema,
-});
+// Coordinates schema (shared)
 
 // Geospatial query schema for gRPC
 export const grpcGeospatialQuerySchema = z.object({

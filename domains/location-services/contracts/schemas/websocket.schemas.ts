@@ -1,22 +1,19 @@
 import { z } from 'zod';
+import { coordinatesSchema } from './common.schemas';
 
 /**
  * WebSocket message schemas for location services
  * These schemas are used with SchemaValidatorPipe to validate incoming WebSocket messages
  */
 
-// User location update schema - requires lat/lng only
-export const userLocationUpdateSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
+// Base coordinates schema used by both user and vendor update messages
+export const locationCoordinatesSchema = coordinatesSchema;
 
-// Vendor location update schema
-export const vendorLocationUpdateSchema = z.object({
-	lat: z.number().min(-90).max(90),
-	lng: z.number().min(-180).max(180),
-});
+// Backward-compatible aliases for clearer intent at call sites
+export const userLocationUpdateSchema = locationCoordinatesSchema;
+export const vendorLocationUpdateSchema = locationCoordinatesSchema;
 
 // Type exports
-export type UserLocationUpdateRequest = z.infer<typeof userLocationUpdateSchema>;
-export type VendorLocationUpdateRequest = z.infer<typeof vendorLocationUpdateSchema>;
+export type LocationCoordinatesRequest = z.infer<typeof locationCoordinatesSchema>;
+export type UserLocationUpdateRequest = LocationCoordinatesRequest;
+export type VendorLocationUpdateRequest = LocationCoordinatesRequest;

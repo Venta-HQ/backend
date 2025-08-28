@@ -113,23 +113,7 @@ export class VendorConnectionManagerService {
 		}
 	}
 
-	/**
-	 * Get all users in a vendor room
-	 */
-	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
-		try {
-			return this.redis.smembers(this.redisKeys.buildKey('vendor', vendorId, 'room_users'));
-		} catch (error) {
-			this.logger.error('Failed to get vendor room users', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
-				vendorId,
-			});
-
-			throw AppError.internal(ErrorCodes.ERR_REDIS_OPERATION_FAILED, {
-				operation: 'get_vendor_room_users',
-			});
-		}
-	}
+	// Note: vendor room membership is managed on the user side via user.manager
 
 	/**
 	 * Handle vendor disconnect

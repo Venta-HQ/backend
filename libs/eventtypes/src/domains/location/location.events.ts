@@ -17,6 +17,14 @@ export const locationEventSchemas = {
 			.datetime()
 			.default(() => new Date().toISOString()),
 	}).withContext(['vendorId']),
+	'location.vendor.location_update_requested': createEventSchema({
+		vendorId: z.string(),
+		location: LocationSchema,
+		timestamp: z
+			.string()
+			.datetime()
+			.default(() => new Date().toISOString()),
+	}).withContext(['vendorId']),
 } as const satisfies EnforceValidDomainEvents<'location'>;
 
 // Type-safe event data map

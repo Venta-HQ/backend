@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 // import { ClientsModule, Transport } from '@nestjs/microservices';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@venta/nest/guards';
-import { APP_NAMES, BootstrapModule, PrometheusService } from '@venta/nest/modules';
+import { APP_NAMES, BootstrapModule, EventsModule, PrometheusService } from '@venta/nest/modules';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
 import { UserLocationGateway } from './user/user.gateway';
 import { UserConnectionManagerService } from './user/user.manager';
@@ -20,6 +20,7 @@ import { VendorConnectionManagerService } from './vendor/vendor.manager';
 		}),
 		ConfigModule,
 		AuthModule,
+		EventsModule.register(),
 		ThrottlerModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],

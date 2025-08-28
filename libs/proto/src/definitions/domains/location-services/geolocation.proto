@@ -6,16 +6,11 @@ import "shared/common.proto";
 import "shared/location.proto";
 
 service GeolocationService {
-  rpc UpdateVendorLocation (LocationUpdate) returns (shared.common.Empty) {}
   rpc VendorLocations (VendorLocationRequest) returns (VendorLocationResponse) {}
 }
 
 // Vendor Location Operations
 
-message LocationUpdate {
-    string entityId = 1;
-    shared.location.Location coordinates = 2;
-}
 
 message VendorLocationRequest {
     shared.location.Location ne = 1;

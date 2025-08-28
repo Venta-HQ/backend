@@ -35,6 +35,10 @@ import { UserConnectionManagerService } from './user.manager';
 export class UserLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 	protected readonly connectionManager = this.userConnectionManager;
 
+	private buildVendorRoom(vendorId: string): string {
+		return `vendor:${vendorId}`;
+	}
+
 	constructor(
 		private readonly userConnectionManager: UserConnectionManagerService,
 		protected readonly logger: Logger,
@@ -86,7 +90,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 
 			// Leave all vendor rooms
 			vendorRooms.forEach((vendorId) => {
-				client.leave(vendorId);
+				client.leave(this.buildVendorRoom(vendorId));
 			});
 
 			// Log success using base class method
@@ -130,7 +134,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 
 			// Join rooms for nearby vendors
 			nearbyVendors.forEach((vendor) => {
-				socket.join(vendor.vendorId);
+				socket.join(this.buildVendorRoom(vendor.vendorId));
 				this.userConnectionManager.addUserToVendorRoom(userId, vendor.vendorId);
 			});
 
@@ -140,7 +144,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 			// Leave rooms for vendors that are no longer nearby
 			currentRooms.forEach((vendorId) => {
 				if (!nearbyVendors.some((vendor) => vendor.vendorId === vendorId)) {
-					socket.leave(vendorId);
+					socket.leave(this.buildVendorRoom(vendorId));
 					this.userConnectionManager.removeUserFromVendorRoom(userId, vendorId);
 				}
 			});

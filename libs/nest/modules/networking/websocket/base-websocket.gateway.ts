@@ -1,4 +1,4 @@
-import { Server } from 'socket.io';
+import { Namespace, Server } from 'socket.io';
 import { WebSocketServer } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
 import { Logger } from '@venta/nest/modules';
@@ -67,5 +67,20 @@ export abstract class BaseWebSocketGateway {
 		this.logger.debug(`${entityType} disconnected`, {
 			socketId: client.id,
 		});
+	}
+
+	/**
+	 * Access the root Socket.IO server regardless of whether this.gateway is a Namespace
+	 */
+	protected getRootServer(): Server {
+		const maybeNamespace = this.server as unknown as Server & { server?: Server };
+		return maybeNamespace.server ?? maybeNamespace;
+	}
+
+	/**
+	 * Resolve a namespace by path from the root server
+	 */
+	protected getNamespace(path: string): Namespace {
+		return this.getRootServer().of(path);
 	}
 }

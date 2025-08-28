@@ -1,10 +1,7 @@
-import {
-	LocationUpdate as GrpcLocationUpdate,
-	VendorLocationRequest,
-} from '@venta/proto/location-services/geolocation';
-import { validateSchema } from '@venta/utils';
-import { grpcGeospatialQuerySchema, grpcLocationUpdateSchema } from '../schemas/location.schemas';
-import { validateCoordinates } from '../schemas/validation.utils';
+import { EventDataMap, locationEventSchemas } from '@venta/eventtypes';
+import { VendorLocationRequest } from '@venta/proto/location-services/geolocation';
+import { validateCoordinates, validateSchema } from '@venta/utils';
+import { grpcGeospatialQuerySchema } from '../schemas/location.schemas';
 import {
 	userLocationUpdateSchema,
 	vendorLocationUpdateSchema,
@@ -23,19 +20,19 @@ import type { GeospatialQuery, LocationUpdate } from '../types/domain';
  */
 export class LocationUpdateACL {
 	// gRPC → Domain (inbound)
-	static validateIncoming(grpc: GrpcLocationUpdate): void {
-		validateSchema(grpcLocationUpdateSchema, grpc);
-		validateCoordinates(grpc.coordinates);
+	static validateIncoming(grpc: EventDataMap['location.vendor.location_update_requested']): void {
+		validateSchema(locationEventSchemas['location.vendor.location_update_requested'], grpc);
+		validateCoordinates(grpc.location);
 	}
 
-	static toDomain(grpc: GrpcLocationUpdate): LocationUpdate {
+	static toDomain(grpc: EventDataMap['location.vendor.location_update_requested']): LocationUpdate {
 		this.validateIncoming(grpc);
 
 		return {
-			entityId: grpc.entityId,
+			entityId: grpc.vendorId,
 			coordinates: {
-				lat: grpc.coordinates.lat,
-				lng: grpc.coordinates.lng,
+				lat: grpc.location.lat,
+				lng: grpc.location.lng,
 			},
 		};
 	}

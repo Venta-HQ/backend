@@ -31,5 +31,4 @@ export interface LocationResult {
 	distance?: number;
 }
 
-// Re-export realtime types that are still in the ACL
-export type { RealtimeMessage, WebSocketConnection, NatsSubscriptionOptions } from '../../acl/realtime.acl';
+// (Removed) Realtime ACL types - no current usage
