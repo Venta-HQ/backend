@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io';
-import { Inject, UseGuards, UseInterceptors } from '@nestjs/common';
+import { UseGuards, UseInterceptors } from '@nestjs/common';
 import {
 	ConnectedSocket,
 	MessageBody,
@@ -18,9 +18,8 @@ import type { LocationUpdate } from '@venta/domains/location-services/contracts/
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, EventService, GrpcInstance, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, EventService, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
-import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
@@ -38,7 +37,6 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	constructor(
 		private readonly vendorConnectionManager: VendorConnectionManagerService,
 		protected readonly logger: Logger,
-		@Inject(GEOLOCATION_SERVICE_NAME) private client: GrpcInstance<GeolocationServiceClient>,
 		private readonly eventService: EventService,
 	) {
 		super();
