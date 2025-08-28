@@ -3,6 +3,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
+import { RedisKeyService } from '@venta/nest/modules';
 import { PrismaService } from '@venta/nest/modules/data/prisma';
 import { ClerkService } from '@venta/nest/modules/external/clerk';
 import { Logger } from '../../modules/core/logger/logger.service';
@@ -14,6 +15,7 @@ export class AuthService {
 		private readonly prisma: PrismaService,
 		@InjectRedis() private readonly redis: Redis,
 		private readonly logger: Logger,
+		private readonly redisKeys: RedisKeyService,
 	) {
 		this.logger.setContext(AuthService.name);
 	}
@@ -27,7 +29,8 @@ export class AuthService {
 			const tokenContents = await this.clerkService.verifyToken(token);
 
 			// Fetch our user using a redis cache to avoid overfetching
-			let internalUserId = await this.redis.get(`user:${tokenContents.sub}`);
+			const userKey = this.redisKeys.buildKey('user', tokenContents.sub);
+			let internalUserId = await this.redis.get(userKey);
 
 			if (!internalUserId) {
 				const internalUser = await this.prisma.db.user.findFirst({
@@ -52,7 +55,7 @@ export class AuthService {
 				internalUserId = internalUser.id;
 
 				// Cache the result
-				await this.redis.set(`user:${tokenContents.sub}`, internalUserId, 'EX', 3600); // 3600 = 1hr
+				await this.redis.set(userKey, internalUserId, 'EX', 3600); // 3600 = 1hr
 			}
 
 			return {
