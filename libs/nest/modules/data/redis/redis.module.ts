@@ -1,9 +1,10 @@
 import { RedisModule as BaseRedisModule } from '@nestjs-modules/ioredis';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NamespacedRedisService } from './redis.service';
 
 @Module({
-	exports: [BaseRedisModule],
+	exports: [BaseRedisModule, NamespacedRedisService],
 	imports: [
 		BaseRedisModule.forRootAsync({
 			imports: [ConfigModule],
@@ -17,5 +18,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 			}),
 		}),
 	],
+	providers: [NamespacedRedisService],
 })
 export class RedisModule {}

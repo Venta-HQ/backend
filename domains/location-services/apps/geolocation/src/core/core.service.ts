@@ -3,7 +3,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import type { LocationResult, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { EventService, Logger, PrometheusService } from '@venta/nest/modules';
+import { EventService, Logger, NamespacedRedisService, PrometheusService } from '@venta/nest/modules';
 
 type RedisGeosearchResult = Array<[string, string | undefined, [string | number, string | number]]>;
 
@@ -14,6 +14,7 @@ export class CoreService {
 		private readonly eventService: EventService,
 		private readonly logger: Logger,
 		private readonly prometheus: PrometheusService,
+		private readonly nredis: NamespacedRedisService,
 	) {
 		this.logger.setContext(CoreService.name);
 	}
@@ -23,8 +24,9 @@ export class CoreService {
 	 */
 	async updateVendorLocation(request: LocationUpdate): Promise<void> {
 		try {
+			const geoKey = this.nredis.buildKey('vendor_locations');
 			// Update vendor location in Redis
-			await this.redis.geoadd('vendor_locations', request.coordinates.lng, request.coordinates.lat, request.entityId);
+			await this.redis.geoadd(geoKey, request.coordinates.lng, request.coordinates.lat, request.entityId);
 
 			this.eventService.emit('location.vendor.location_updated', {
 				vendorId: request.entityId,
@@ -67,9 +69,10 @@ export class CoreService {
 		const histogram = this.prometheus.getMetric(histogramName) as any;
 		const endTimer = histogram.startTimer();
 		try {
+			const geoKey = this.nredis.buildKey('vendor_locations');
 			// Get nearby vendors using GEOSEARCH (GEORADIUS is deprecated in Redis 7+)
 			const nearbyVendors = (await this.redis.geosearch(
-				'vendor_locations',
+				geoKey,
 				'FROMLONLAT',
 				center.lng,
 				center.lat,

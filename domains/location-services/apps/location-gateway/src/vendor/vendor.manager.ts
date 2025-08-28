@@ -3,27 +3,20 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { Logger } from '@venta/nest/modules';
+import { Logger, NamespacedRedisService } from '@venta/nest/modules';
 
 @Injectable()
 export class VendorConnectionManagerService {
-	private readonly keyPrefix: string;
+	private readonly SOCKET_TTL_SECONDS = 10 * 60; // 10 minutes
 
 	constructor(
 		@InjectRedis() private readonly redis: Redis,
 		private readonly logger: Logger,
 		private readonly configService: ConfigService,
+		private readonly nredis: NamespacedRedisService,
 	) {
 		this.logger.setContext(VendorConnectionManagerService.name);
-		const env = this.configService.get<string>('NODE_ENV') || 'development';
-		this.keyPrefix = `${env}:locgw:`;
 	}
-
-	private buildKey(...parts: string[]): string {
-		return this.keyPrefix + parts.join(':');
-	}
-
-	private readonly SOCKET_TTL_SECONDS = 10 * 60; // 10 minutes
 
 	/**
 	 * Register a new vendor connection
@@ -31,8 +24,8 @@ export class VendorConnectionManagerService {
 	async registerVendor(socketId: string, vendorId: string): Promise<void> {
 		try {
 			// Store socket<->vendor mappings with TTL (single-roundtrip using pipeline + SETEX)
-			const socketKey = this.buildKey('socket', socketId, 'vendor');
-			const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+			const socketKey = this.nredis.buildKey('socket', socketId, 'vendor');
+			const vendorKey = this.nredis.buildKey('vendor', vendorId, 'socket');
 			await this.redis
 				.pipeline()
 				.setex(socketKey, this.SOCKET_TTL_SECONDS, vendorId)
@@ -61,7 +54,7 @@ export class VendorConnectionManagerService {
 	 */
 	async getConnectionInfo(socketId: string): Promise<{ vendorId: string } | null> {
 		try {
-			const socketKey = this.buildKey('socket', socketId, 'vendor');
+			const socketKey = this.nredis.buildKey('socket', socketId, 'vendor');
 			const vendorId = await this.redis.get(socketKey);
 			if (!vendorId) {
 				throw AppError.notFound(ErrorCodes.ERR_RESOURCE_NOT_FOUND, {
@@ -73,7 +66,7 @@ export class VendorConnectionManagerService {
 			}
 
 			// refresh TTLs on activity
-			const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+			const vendorKey = this.nredis.buildKey('vendor', vendorId, 'socket');
 			await this.redis
 				.pipeline()
 				.expire(socketKey, this.SOCKET_TTL_SECONDS)
@@ -97,10 +90,10 @@ export class VendorConnectionManagerService {
 	 */
 	async getSocketVendorId(socketId: string): Promise<string | null> {
 		try {
-			const socketKey = this.buildKey('socket', socketId, 'vendor');
+			const socketKey = this.nredis.buildKey('socket', socketId, 'vendor');
 			const vendorId = await this.redis.get(socketKey);
 			if (vendorId) {
-				const vendorKey = this.buildKey('vendor', vendorId, 'socket');
+				const vendorKey = this.nredis.buildKey('vendor', vendorId, 'socket');
 				await this.redis
 					.pipeline()
 					.expire(socketKey, this.SOCKET_TTL_SECONDS)
@@ -125,7 +118,7 @@ export class VendorConnectionManagerService {
 	 */
 	async getVendorRoomUsers(vendorId: string): Promise<string[]> {
 		try {
-			return this.redis.smembers(this.buildKey('vendor', vendorId, 'room_users'));
+			return this.redis.smembers(this.nredis.buildKey('vendor', vendorId, 'room_users'));
 		} catch (error) {
 			this.logger.error('Failed to get vendor room users', error instanceof Error ? error.stack : undefined, {
 				error: error instanceof Error ? error.message : 'Unknown error',
@@ -152,10 +145,12 @@ export class VendorConnectionManagerService {
 			}
 
 			// Remove socket ID from vendor's socket set
-			await this.redis.srem(this.buildKey('vendor', vendorId, 'sockets'), socketId);
+			const socketsSetKey = this.nredis.buildKey('vendor', vendorId, 'sockets');
+			await this.redis.srem(socketsSetKey, socketId);
 
 			// Remove socket ID to vendor ID mapping
-			await this.redis.del(this.buildKey('socket', socketId, 'vendor'));
+			const socketKey = this.nredis.buildKey('socket', socketId, 'vendor');
+			await this.redis.del(socketKey);
 
 			this.logger.debug('Vendor disconnected', {
 				socketId,
@@ -173,13 +168,4 @@ export class VendorConnectionManagerService {
 			});
 		}
 	}
-
-	/**
-	 * Get all sockets for a vendor
-	 */
-	/*
-	Removed unused methods:
-	- getVendorSockets
-	- isVendorOnline
-*/
 }
