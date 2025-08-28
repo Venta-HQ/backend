@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { InjectRedis } from '@nestjs-modules/ioredis';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { PrismaService } from '@venta/nest/modules/data/prisma';
