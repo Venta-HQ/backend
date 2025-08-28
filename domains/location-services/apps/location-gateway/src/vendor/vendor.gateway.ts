@@ -18,9 +18,8 @@ import type { LocationUpdate } from '@venta/domains/location-services/contracts/
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, EventService, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, EventService, Logger, PresenceService } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
-import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 
 @WebSocketGateway({
 	namespace: 'vendor',
@@ -32,12 +31,10 @@ import { VendorConnectionManagerService } from '../vendor/vendor.manager';
 @UseInterceptors(WsErrorInterceptor)
 @UseGuards(WsThrottlerGuard)
 export class VendorLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-	protected readonly connectionManager = this.vendorConnectionManager;
-
 	constructor(
-		private readonly vendorConnectionManager: VendorConnectionManagerService,
 		protected readonly logger: Logger,
 		private readonly eventService: EventService,
+		protected readonly presence: PresenceService,
 	) {
 		super();
 		this.logger.setContext(VendorLocationGateway.name);
@@ -48,17 +45,8 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			// Validate connection using base class method
-			const vendorId = this.validateConnection(client, 'Vendor');
-			if (!vendorId) return;
-
-			// Register the vendor connection
-			await this.vendorConnectionManager.registerVendor(client.id, vendorId);
-
-			// Log success using base class method
-			this.logConnectionSuccess(client, vendorId, 'Vendor');
+			await this.handleConnectionStandard(client, 'vendor');
 		} catch (error) {
-			// Handle error using base class method
 			this.handleConnectionError(error, client, 'handle vendor connection');
 		}
 	}
@@ -68,32 +56,16 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	 */
 	async handleDisconnect(client: Socket) {
 		try {
-			const connectionInfo = await this.vendorConnectionManager.getConnectionInfo(client.id);
-
-			if (!connectionInfo) {
-				this.logger.warn('Vendor disconnection attempt without connection info', {
-					socketId: client.id,
+			await this.handleDisconnectStandard(client, 'vendor', async (vendorId) => {
+				this.getNamespace('/user').to(`vendor:${vendorId}`).emit('vendor_status_changed', {
+					vendorId,
+					isOnline: false,
 				});
-				return;
-			}
-
-			// Handle vendor disconnection
-			await this.vendorConnectionManager.handleVendorDisconnect(client.id, connectionInfo.vendorId);
-
-			// Notify users in the vendor's room (user namespace) that vendor is offline
-			this.getNamespace('/user').to(`vendor:${connectionInfo.vendorId}`).emit('vendor_status_changed', {
-				vendorId: connectionInfo.vendorId,
-				isOnline: false,
 			});
-
-			// Log success using base class method
-			this.logDisconnectionSuccess(client, 'Vendor');
 		} catch (error) {
 			this.logger.error('Failed to handle vendor disconnection', error instanceof Error ? error.stack : undefined, {
-				error: error instanceof Error ? error.message : 'Unknown error',
 				socketId: client.id,
 			});
-			// For disconnections, we don't throw - just log the error
 		}
 	}
 
@@ -106,14 +78,10 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 		@MessageBody(new SchemaValidatorPipe(vendorLocationUpdateSchema)) data: VendorLocationUpdateRequest,
 	) {
 		try {
-			const vendorId = await this.vendorConnectionManager.getSocketVendorId(socket.id);
-
-			if (!vendorId) {
-				this.logger.warn('Location update from unregistered vendor', {
-					socketId: socket.id,
-				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
-			}
+			// Use authenticated user id as source of truth (guarded at transport layer)
+			const vendorId = (socket.user as any)?.id as string;
+			// Consolidated TTL refresh via presence service
+			await this.presence.touch('vendor', socket.id, (socket.user as any)?.id as string);
 
 			// Transform validated data to domain object using ACL
 			const locationUpdate: LocationUpdate = VendorLocationUpdateACL.toDomain(data, vendorId);

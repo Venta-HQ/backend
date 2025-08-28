@@ -18,7 +18,7 @@ import {
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, GrpcInstance, Logger } from '@venta/nest/modules';
+import { BaseWebSocketGateway, GrpcInstance, Logger, PresenceService } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
 import { UserConnectionManagerService } from './user.manager';
@@ -33,8 +33,6 @@ import { UserConnectionManagerService } from './user.manager';
 @UseInterceptors(WsErrorInterceptor)
 @UseGuards(WsThrottlerGuard)
 export class UserLocationGateway extends BaseWebSocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
-	protected readonly connectionManager = this.userConnectionManager;
-
 	private buildVendorRoom(vendorId: string): string {
 		return `vendor:${vendorId}`;
 	}
@@ -43,6 +41,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 		private readonly userConnectionManager: UserConnectionManagerService,
 		protected readonly logger: Logger,
 		@Inject(GEOLOCATION_SERVICE_NAME) private client: GrpcInstance<GeolocationServiceClient>,
+		protected readonly presence: PresenceService,
 	) {
 		super();
 		this.logger.setContext(UserLocationGateway.name);
@@ -53,17 +52,8 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			// Validate connection using base class method
-			const userId = this.validateConnection(client, 'User');
-			if (!userId) return;
-
-			// Register the user connection
-			await this.userConnectionManager.registerUser(client.id, userId);
-
-			// Log success using base class method
-			this.logConnectionSuccess(client, userId, 'User');
+			await this.handleConnectionStandard(client, 'user');
 		} catch (error) {
-			// Handle error using base class method
 			this.handleConnectionError(error, client, 'handle user connection');
 		}
 	}
@@ -73,33 +63,13 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	 */
 	async handleDisconnect(client: Socket) {
 		try {
-			const connectionInfo = await this.userConnectionManager.getConnectionInfo(client.id);
-
-			if (!connectionInfo) {
-				this.logger.warn('User disconnection attempt without connection info', {
-					socketId: client.id,
-				});
-				return;
-			}
-
-			// Get all vendor rooms this user is in before disconnecting
-			const vendorRooms = await this.userConnectionManager.getUserVendorRooms(connectionInfo.userId);
-
-			// Handle user disconnection
-			await this.userConnectionManager.handleUserDisconnect(client.id, connectionInfo.userId);
-
-			// Leave all vendor rooms
-			vendorRooms.forEach((vendorId) => {
-				client.leave(this.buildVendorRoom(vendorId));
+			await this.handleDisconnectStandard(client, 'user', async (userId) => {
+				await this.userConnectionManager.clearUserVendorRooms(userId);
 			});
-
-			// Log success using base class method
-			this.logDisconnectionSuccess(client, 'User');
 		} catch (error) {
 			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : undefined, {
 				socketId: client.id,
 			});
-			// For disconnections, we don't throw - just log the error
 		}
 	}
 
@@ -113,14 +83,10 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	) {
 		try {
 			this.logger.debug('handleLocationUpdate: start', { socketId: socket.id });
-			const userId = await this.userConnectionManager.getSocketUserId(socket.id);
-
-			if (!userId) {
-				this.logger.warn('Location update from unregistered user', {
-					socketId: socket.id,
-				});
-				throw AppError.unauthorized(ErrorCodes.ERR_UNAUTHORIZED);
-			}
+			// Use authenticated user id as source of truth (guarded at transport layer)
+			const userId = (socket.user as any)?.id as string;
+			// Consolidated TTL refresh via presence service
+			await this.presence.touch('user', socket.id, (socket.user as any)?.id as string);
 
 			// Transform validated data to domain object using ACL
 			const locationUpdate = UserLocationUpdateACL.toDomain(data, userId);

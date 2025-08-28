@@ -1,7 +1,7 @@
-import { Namespace, Server } from 'socket.io';
+import { Namespace, Server, Socket } from 'socket.io';
 import { WebSocketServer } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
-import { Logger } from '@venta/nest/modules';
+import { Logger, PresenceService } from '@venta/nest/modules';
 
 /**
  * Base WebSocket Gateway providing common functionality and standardized patterns.
@@ -12,7 +12,7 @@ export abstract class BaseWebSocketGateway {
 	server: Server;
 
 	protected abstract readonly logger: Logger;
-	protected abstract readonly connectionManager: any;
+	protected readonly presence!: PresenceService;
 
 	/**
 	 * Get the entity ID from the authenticated socket user
@@ -82,5 +82,42 @@ export abstract class BaseWebSocketGateway {
 	 */
 	protected getNamespace(path: string): Namespace {
 		return this.getRootServer().of(path);
+	}
+
+	/**
+	 * Standardized connection handling using PresenceService.
+	 */
+	protected async handleConnectionStandard(
+		client: AuthenticatedSocket,
+		kind: 'user' | 'vendor',
+		onAfter?: (entityId: string) => void | Promise<void>,
+	): Promise<string | null> {
+		const entityType = kind === 'user' ? 'User' : 'Vendor';
+		const entityId = this.validateConnection(client, entityType);
+		if (!entityId) return null;
+
+		await this.presence.register(kind, client.id, entityId);
+		if (onAfter) await onAfter(entityId);
+		this.logConnectionSuccess(client, entityId, entityType);
+		return entityId;
+	}
+
+	/**
+	 * Standardized disconnect handling using PresenceService.
+	 */
+	protected async handleDisconnectStandard(
+		client: Socket,
+		kind: 'user' | 'vendor',
+		onAfter?: (entityId: string) => void | Promise<void>,
+	): Promise<void> {
+		const entityId = await this.presence.lookup(kind, client.id);
+		if (!entityId) {
+			this.logger.warn('Disconnect without presence mapping', { socketId: client.id });
+			return;
+		}
+
+		await this.presence.disconnect(kind, client.id, entityId);
+		if (onAfter) await onAfter(entityId);
+		this.logDisconnectionSuccess(client as unknown as AuthenticatedSocket, kind === 'user' ? 'User' : 'Vendor');
 	}
 }
