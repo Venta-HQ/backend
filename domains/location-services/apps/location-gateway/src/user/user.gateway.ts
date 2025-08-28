@@ -21,7 +21,6 @@ import { WsErrorInterceptor } from '@venta/nest/interceptors';
 import { BaseWebSocketGateway, GrpcInstance, Logger, PresenceService } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
 import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto/location-services/geolocation';
-import { UserConnectionManagerService } from './user.manager';
 
 @WebSocketGateway({
 	namespace: 'user',
@@ -38,7 +37,6 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	}
 
 	constructor(
-		private readonly userConnectionManager: UserConnectionManagerService,
 		protected readonly logger: Logger,
 		@Inject(GEOLOCATION_SERVICE_NAME) private client: GrpcInstance<GeolocationServiceClient>,
 		protected readonly presence: PresenceService,
@@ -63,9 +61,7 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 	 */
 	async handleDisconnect(client: Socket) {
 		try {
-			await this.handleDisconnectStandard(client, 'user', async (userId) => {
-				await this.userConnectionManager.clearUserVendorRooms(userId);
-			});
+			await this.handleDisconnectStandard(client, 'user');
 		} catch (error) {
 			this.logger.error('Failed to handle user disconnection', error instanceof Error ? error.stack : undefined, {
 				socketId: client.id,
@@ -99,19 +95,14 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 			);
 
 			// Join rooms for nearby vendors
-			nearbyVendors.forEach((vendor) => {
-				socket.join(this.buildVendorRoom(vendor.vendorId));
-				this.userConnectionManager.addUserToVendorRoom(userId, vendor.vendorId);
-			});
+			const nextRooms = new Set<string>(nearbyVendors.map((v) => this.buildVendorRoom(v.vendorId)));
+			nextRooms.forEach((room) => socket.join(room));
 
-			// Get current vendor rooms
-			const currentRooms = await this.userConnectionManager.getUserVendorRooms(userId);
-
-			// Leave rooms for vendors that are no longer nearby
-			currentRooms.forEach((vendorId) => {
-				if (!nearbyVendors.some((vendor) => vendor.vendorId === vendorId)) {
-					socket.leave(this.buildVendorRoom(vendorId));
-					this.userConnectionManager.removeUserFromVendorRoom(userId, vendorId);
+			// Leave rooms for vendors that are no longer nearby (based on live socket rooms)
+			const currentRooms = socket.rooms;
+			currentRooms.forEach((room) => {
+				if (room.startsWith('vendor:') && !nextRooms.has(room)) {
+					socket.leave(room);
 				}
 			});
 

@@ -7,7 +7,6 @@ import { AuthModule } from '@venta/nest/guards';
 import { APP_NAMES, BootstrapModule, EventsModule, PrometheusService } from '@venta/nest/modules';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
 import { UserLocationGateway } from './user/user.gateway';
-import { UserConnectionManagerService } from './user/user.manager';
 import { VendorLocationGateway } from './vendor/vendor.gateway';
 
 @Module({
@@ -47,8 +46,7 @@ import { VendorLocationGateway } from './vendor/vendor.gateway';
 		// Gateways
 		UserLocationGateway,
 		VendorLocationGateway,
-		// Connection Manager (user rooms only)
-		UserConnectionManagerService,
+		// No connection managers needed (rooms via Socket.IO; presence via PresenceService)
 	],
 })
 export class LocationGatewayModule {}
