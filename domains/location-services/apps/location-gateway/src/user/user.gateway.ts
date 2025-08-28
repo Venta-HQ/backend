@@ -24,10 +24,6 @@ import { GEOLOCATION_SERVICE_NAME, GeolocationServiceClient } from '@venta/proto
 
 @WebSocketGateway({
 	namespace: 'user',
-	cors: {
-		origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
-		credentials: true,
-	},
 })
 @UseInterceptors(WsErrorInterceptor)
 @UseGuards(WsThrottlerGuard)

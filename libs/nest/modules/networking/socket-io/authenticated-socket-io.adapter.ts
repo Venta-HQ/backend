@@ -16,7 +16,29 @@ export class AuthenticatedSocketIoAdapter extends IoAdapter {
 	}
 
 	createIOServer(port: number, options?: any): Server {
-		const server = super.createIOServer(port, options) as Server;
+		const maxHttpBufferSize = Number(this.config?.get('WS_MAX_PAYLOAD_BYTES') ?? 65536);
+		const pingInterval = Number(this.config?.get('WS_PING_INTERVAL_MS') ?? 25000);
+		const pingTimeout = Number(this.config?.get('WS_PING_TIMEOUT_MS') ?? 60000);
+		const allowedOriginsEnv = this.config?.get<string>('ALLOWED_ORIGINS');
+		const corsOrigin = allowedOriginsEnv
+			? allowedOriginsEnv
+					.split(',')
+					.map((o) => o.trim())
+					.filter(Boolean)
+			: ['http://localhost:3000', 'http://localhost:3001'];
+
+		const mergedOptions = {
+			...options,
+			maxHttpBufferSize,
+			pingInterval,
+			pingTimeout,
+			cors: {
+				origin: corsOrigin,
+				credentials: true,
+			},
+		};
+
+		const server = super.createIOServer(port, mergedOptions) as Server;
 
 		const isProd = this.config?.get('NODE_ENV') === 'production';
 		const verbose = this.config?.get('WS_LOG_HANDSHAKES') === 'true';
@@ -46,6 +68,25 @@ export class AuthenticatedSocketIoAdapter extends IoAdapter {
 				return next(new Error('ERR_INVALID_TOKEN'));
 			}
 		});
+
+		// Graceful shutdown: close WS server on process signals
+		let closed = false;
+		const shutdown = (signal: string) => {
+			if (closed) return;
+			closed = true;
+			try {
+				this.logger.warn('Shutting down WebSocket server', { signal });
+				server.close((err?: Error) => {
+					if (err) this.logger.error('Error while closing WS server', err.stack);
+				});
+			} catch (e: any) {
+				try {
+					this.logger.error('Unhandled error during WS shutdown', e?.stack);
+				} catch {}
+			}
+		};
+		process.once('SIGTERM', () => shutdown('SIGTERM'));
+		process.once('SIGINT', () => shutdown('SIGINT'));
 
 		return server;
 	}

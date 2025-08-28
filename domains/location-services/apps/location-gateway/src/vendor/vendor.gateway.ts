@@ -23,10 +23,6 @@ import { SchemaValidatorPipe } from '@venta/nest/pipes';
 
 @WebSocketGateway({
 	namespace: 'vendor',
-	cors: {
-		origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:3001'],
-		credentials: true,
-	},
 })
 @UseInterceptors(WsErrorInterceptor)
 @UseGuards(WsThrottlerGuard)
