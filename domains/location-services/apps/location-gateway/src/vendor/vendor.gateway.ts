@@ -45,7 +45,13 @@ export class VendorLocationGateway extends BaseWebSocketGateway implements OnGat
 	 */
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
-			await this.handleConnectionStandard(client, 'vendor');
+			// The vendor might have been disconnected and reconnected while users are still in the room
+			await this.handleConnectionStandard(client, 'vendor', async (vendorId) => {
+				this.getNamespace('/user').to(`vendor:${vendorId}`).emit('vendor_status_changed', {
+					vendorId,
+					isOnline: true,
+				});
+			});
 		} catch (error) {
 			this.handleConnectionError(error, client, 'handle vendor connection');
 		}
