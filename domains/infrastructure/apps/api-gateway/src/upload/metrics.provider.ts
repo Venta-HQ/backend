@@ -12,13 +12,12 @@ export interface UploadMetrics {
 export function createUploadMetrics(prometheusService: PrometheusService): UploadMetrics {
 	const metrics = prometheusService.registerMetrics([
 		MetricsFactory.counter('upload_requests_total', 'Total upload requests', ['outcome']),
-		MetricsFactory.histogram('upload_bytes', 'Histogram of uploaded image sizes in bytes', [
-			16 * 1024,
-			64 * 1024,
-			256 * 1024,
-			1024 * 1024,
-			5 * 1024 * 1024,
-		]),
+		MetricsFactory.histogram(
+			'upload_bytes',
+			'Histogram of uploaded image sizes in bytes',
+			[16 * 1024, 64 * 1024, 256 * 1024, 1024 * 1024, 5 * 1024 * 1024],
+			[],
+		),
 		MetricsFactory.histogram(
 			'upload_duration_seconds',
 			'Histogram of upload end-to-end duration in seconds',

@@ -1,10 +1,8 @@
-import Redis from 'ioredis';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import { AuthUser } from '@venta/apitypes';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { RedisKeyService } from '@venta/nest/modules';
 import { PrismaService } from '@venta/nest/modules/data/prisma';
+import { RedisService } from '@venta/nest/modules/data/redis';
 import { ClerkService } from '@venta/nest/modules/external/clerk';
 import { Logger } from '../../modules/core/logger/logger.service';
 
@@ -13,9 +11,8 @@ export class AuthService {
 	constructor(
 		private readonly clerkService: ClerkService,
 		private readonly prisma: PrismaService,
-		@InjectRedis() private readonly redis: Redis,
+		private readonly redis: RedisService,
 		private readonly logger: Logger,
-		private readonly redisKeys: RedisKeyService,
 	) {
 		this.logger.setContext(AuthService.name);
 	}
@@ -29,7 +26,7 @@ export class AuthService {
 			const tokenContents = await this.clerkService.verifyToken(token);
 
 			// Fetch our user using a redis cache to avoid overfetching
-			const userKey = this.redisKeys.buildKey('user', tokenContents.sub);
+			const userKey = this.redis.buildKey('user', tokenContents.sub);
 			let internalUserId = await this.redis.get(userKey);
 
 			if (!internalUserId) {
@@ -100,7 +97,6 @@ export class AuthService {
 				return authHeader.substring(7);
 			}
 		}
-
 		return null;
 	}
 }

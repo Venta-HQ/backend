@@ -1,15 +1,21 @@
-import type Redis from 'ioredis';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Logger, RedisKeyService } from '@venta/nest/modules';
+import { Logger, RedisService } from '@venta/nest/modules';
 
 type PresenceKind = 'user' | 'vendor';
+
+export interface PresenceUpdate {
+	entityId: string;
+	coordinates: {
+		lat: number;
+		lng: number;
+	};
+}
 
 @Injectable()
 export class PresenceService {
 	/**
-	 * TTL in seconds for presence keys (socket→entity and entity→socket).
+	 * TTL for presence records in Redis, in seconds.
 	 * Configurable via WS_PRESENCE_TTL_SECONDS (defaults to 600s / 10m).
 	 */
 	private readonly ttlSeconds: number;
@@ -27,8 +33,7 @@ export class PresenceService {
 	private readonly lastTouchMs = new Map<string, number>();
 
 	constructor(
-		@InjectRedis() private readonly redis: Redis,
-		private readonly keys: RedisKeyService,
+		private readonly redis: RedisService,
 		private readonly logger: Logger,
 		@Optional() private readonly config?: ConfigService,
 	) {
@@ -48,8 +53,8 @@ export class PresenceService {
 	 * Also records the last touch time for local rate limiting.
 	 */
 	async register(kind: PresenceKind, socketId: string, entityId: string): Promise<void> {
-		const socketKey = this.keys.buildKey('socket', socketId, kind);
-		const entityKey = this.keys.buildKey(kind, entityId, 'socket');
+		const socketKey = this.redis.buildKey('socket', socketId, kind);
+		const entityKey = this.redis.buildKey(kind, entityId, 'socket');
 		await this.redis
 			.pipeline()
 			.setex(socketKey, this.ttlSeconds, entityId)
@@ -63,7 +68,7 @@ export class PresenceService {
 	 * Returns null if the mapping does not exist or is expired.
 	 */
 	async lookup(kind: PresenceKind, socketId: string): Promise<string | null> {
-		const socketKey = this.keys.buildKey('socket', socketId, kind);
+		const socketKey = this.redis.buildKey('socket', socketId, kind);
 		return (await this.redis.get(socketKey)) as string | null;
 	}
 
@@ -72,7 +77,7 @@ export class PresenceService {
 	 * Returns null if the mapping does not exist or is expired.
 	 */
 	async reverseLookup(kind: PresenceKind, entityId: string): Promise<string | null> {
-		const entityKey = this.keys.buildKey(kind, entityId, 'socket');
+		const entityKey = this.redis.buildKey(kind, entityId, 'socket');
 		return (await this.redis.get(entityKey)) as string | null;
 	}
 
@@ -87,7 +92,7 @@ export class PresenceService {
 		const last = this.lastTouchMs.get(keyId) ?? 0;
 		if (now - last < this.minRefreshMs) return;
 
-		const socketKey = this.keys.buildKey('socket', socketId, kind);
+		const socketKey = this.redis.buildKey('socket', socketId, kind);
 		const results = await this.redis.pipeline().expire(socketKey, this.ttlSeconds).exec();
 		const ok = Array.isArray(results) && results[0] && results[0][1] === 1;
 		if (!ok) {
@@ -104,7 +109,7 @@ export class PresenceService {
 	 * and clear the local last-touch book keeping.
 	 */
 	async disconnect(kind: PresenceKind, socketId: string, _entityId: string): Promise<void> {
-		const socketKey = this.keys.buildKey('socket', socketId, kind);
+		const socketKey = this.redis.buildKey('socket', socketId, kind);
 		await this.redis.del(socketKey);
 		this.lastTouchMs.delete(`${kind}:${socketId}`);
 	}

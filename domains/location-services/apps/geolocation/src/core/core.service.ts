@@ -1,20 +1,17 @@
-import Redis from 'ioredis';
-import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
 import type { LocationResult, LocationUpdate } from '@venta/domains/location-services/contracts/types/domain';
 import { AppError, ErrorCodes } from '@venta/nest/errors';
-import { EventService, Logger, PrometheusService, RedisKeyService } from '@venta/nest/modules';
+import { EventService, Logger, PrometheusService, RedisService } from '@venta/nest/modules';
 
 type RedisGeosearchResult = Array<[string, string | undefined, [string | number, string | number]]>;
 
 @Injectable()
 export class CoreService {
 	constructor(
-		@InjectRedis() private readonly redis: Redis,
 		private readonly eventService: EventService,
 		private readonly logger: Logger,
 		private readonly prometheus: PrometheusService,
-		private readonly redisKeys: RedisKeyService,
+		private readonly redis: RedisService,
 	) {
 		this.logger.setContext(CoreService.name);
 	}
@@ -24,7 +21,7 @@ export class CoreService {
 	 */
 	async updateVendorLocation(request: LocationUpdate): Promise<void> {
 		try {
-			const geoKey = this.redisKeys.buildKey('vendor_locations');
+			const geoKey = this.redis.buildKey('vendor_locations');
 			// Update vendor location in Redis
 			await this.redis.geoadd(geoKey, request.coordinates.lng, request.coordinates.lat, request.entityId);
 
@@ -69,7 +66,7 @@ export class CoreService {
 		const histogram = this.prometheus.getMetric(histogramName) as any;
 		const endTimer = histogram.startTimer();
 		try {
-			const geoKey = this.redisKeys.buildKey('vendor_locations');
+			const geoKey = this.redis.buildKey('vendor_locations');
 			// Get nearby vendors using GEOSEARCH (GEORADIUS is deprecated in Redis 7+)
 			const nearbyVendors = (await this.redis.geosearch(
 				geoKey,
@@ -99,8 +96,8 @@ export class CoreService {
 				radius,
 			});
 
-			throw AppError.internal(ErrorCodes.ERR_QUERY_FAILED, {
-				operation: 'get_nearby_entities',
+			throw AppError.internal(ErrorCodes.ERR_OPERATION_FAILED, {
+				operation: 'get_nearby_vendors',
 				center,
 				radius,
 				error: error instanceof Error ? error.message : 'Unknown error',

@@ -1,17 +1,18 @@
+import Redis from 'ioredis';
+import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
-export class RedisKeyService {
-	private readonly prefix: string;
-
-	constructor(private readonly config: ConfigService) {
-		const env = this.config.get<string>('NODE_ENV') || 'development';
-		const ns = this.config.get<string>('REDIS_NAMESPACE') || 'locgw';
-		this.prefix = `${env}:${ns}:`;
+export class RedisService extends Redis {
+	constructor(@InjectRedis() redis: Redis) {
+		// Call the parent Redis constructor with the existing connection's options
+		super(redis.options);
 	}
 
-	buildKey(...parts: string[]): string {
-		return this.prefix + parts.join(':');
+	/**
+	 * Build a Redis key with proper prefixing
+	 */
+	buildKey(...parts: (string | number)[]): string {
+		return parts.join(':');
 	}
 }
