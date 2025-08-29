@@ -19,8 +19,8 @@ async function bootstrap() {
 			},
 			main: {
 				module: GeolocationModule,
-				package: 'location',
-				protoPath: 'location.proto',
+				package: 'location_services.geolocation',
+				protoPath: 'domains/location-services/geolocation.proto',
 				url: configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5002',
 			},
 		});
