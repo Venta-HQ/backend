@@ -12,7 +12,7 @@ export abstract class BaseWebSocketGateway {
 	server: Server;
 
 	protected abstract readonly logger: Logger;
-	protected readonly presence!: PresenceService;
+	protected abstract readonly presence: PresenceService;
 
 	/**
 	 * Get the entity ID from the authenticated socket user

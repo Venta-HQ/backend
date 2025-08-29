@@ -4,7 +4,18 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@venta/nest/guards';
-import { APP_NAMES, BootstrapModule, EventsModule, PrometheusService } from '@venta/nest/modules';
+import {
+	APP_NAMES,
+	BootstrapModule,
+	EventsModule,
+	GrpcInstanceModule,
+	PresenceService,
+	PrometheusService,
+} from '@venta/nest/modules';
+import {
+	GEOLOCATION_SERVICE_NAME,
+	LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
+} from '@venta/proto/location-services/geolocation';
 import { createWebSocketMetrics, WEBSOCKET_METRICS } from './metrics.provider';
 import { UserLocationGateway } from './user/user.gateway';
 import { VendorLocationGateway } from './vendor/vendor.gateway';
@@ -18,6 +29,13 @@ import { VendorLocationGateway } from './vendor/vendor.gateway';
 		ConfigModule,
 		AuthModule,
 		EventsModule.register(),
+		GrpcInstanceModule.register({
+			provide: GEOLOCATION_SERVICE_NAME,
+			proto: 'domains/location-services/geolocation.proto',
+			protoPackage: LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,
+			serviceName: GEOLOCATION_SERVICE_NAME,
+			urlFactory: (configService: ConfigService) => configService.get('LOCATION_SERVICE_ADDRESS') || 'localhost:5002',
+		}),
 		ThrottlerModule.forRootAsync({
 			imports: [ConfigModule],
 			inject: [ConfigService],
@@ -43,6 +61,8 @@ import { VendorLocationGateway } from './vendor/vendor.gateway';
 			inject: [PrometheusService],
 			useFactory: (prom: PrometheusService) => createWebSocketMetrics(prom),
 		},
+		// WebSocket utilities
+		PresenceService,
 		// Gateways
 		UserLocationGateway,
 		VendorLocationGateway,

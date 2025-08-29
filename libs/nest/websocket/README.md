@@ -1,8 +1,16 @@
-# WebSocket Base Classes
+# WebSocket Module
 
 ## Purpose
 
 This module provides base classes and utilities for building consistent WebSocket gateways across the Venta backend system. It standardizes common patterns like connection validation, error handling, and logging to ensure all WebSocket implementations follow the same conventions.
+
+## Module Structure
+
+The WebSocketModule provides:
+
+- **BaseWebSocketGateway**: Abstract base class for all WebSocket gateways
+- **PresenceService**: Service for managing WebSocket presence and socket-to-entity mapping
+- **Proper dependency injection**: All services are properly provided and exported
 
 ## Components
 
@@ -63,6 +71,36 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 - **`logDisconnectionSuccess(client, entityType)`**: Disconnection logging
 - **`getEntityId(client)`**: Extract entity ID from authenticated socket
 
+## Usage
+
+### Import the Module
+
+```typescript
+import { WebSocketModule } from '@venta/nest/modules';
+
+@Module({
+	imports: [WebSocketModule],
+	// ... other configuration
+})
+export class YourModule {}
+```
+
+### Extend BaseWebSocketGateway
+
+```typescript
+import { BaseWebSocketGateway, PresenceService } from '@venta/nest/modules';
+
+@WebSocketGateway()
+export class YourGateway extends BaseWebSocketGateway {
+	constructor(
+		protected readonly logger: Logger,
+		protected readonly presence: PresenceService,
+	) {
+		super();
+	}
+}
+```
+
 ## Benefits
 
 - **Consistency**: All WebSocket gateways follow the same patterns
@@ -70,3 +108,4 @@ export class UserLocationGateway extends BaseWebSocketGateway implements OnGatew
 - **Better Error Handling**: Graceful disconnection prevents crashes
 - **Standardized Logging**: Consistent log structure across all gateways
 - **Type Safety**: TypeScript support with proper interfaces
+- **Proper Module Structure**: Follows NestJS best practices

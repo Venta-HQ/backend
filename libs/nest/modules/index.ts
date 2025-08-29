@@ -17,3 +17,6 @@ export * from './monitoring';
 export * from './networking';
 export * from './infra';
 export * from './validation';
+
+// WebSocket utilities
+export * from '../websocket';

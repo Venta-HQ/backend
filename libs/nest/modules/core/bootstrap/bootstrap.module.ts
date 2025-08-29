@@ -158,7 +158,7 @@ export class BootstrapModule {
 
 	private static getWebSocketModules(): any[] {
 		// WebSocket services need Redis and Clerk for auth, but not HTTP throttling
-		return [ClerkModule.register(), RedisModule];
+		return [PrismaModule.register(), ClerkModule.register(), RedisModule];
 	}
 
 	private static getWebSocketProviders(): Provider[] {
