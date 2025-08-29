@@ -1,7 +1,8 @@
 import { Namespace, Server, Socket } from 'socket.io';
 import { WebSocketServer } from '@nestjs/websockets';
 import type { AuthenticatedSocket } from '@venta/apitypes';
-import { Logger, PresenceService } from '@venta/nest/modules';
+import { Logger } from '@venta/nest/modules';
+import { PresenceService } from './presence.service';
 
 /**
  * Base WebSocket Gateway providing common functionality and standardized patterns.

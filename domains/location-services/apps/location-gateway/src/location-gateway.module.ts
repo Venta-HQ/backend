@@ -4,14 +4,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@venta/nest/guards';
-import {
-	APP_NAMES,
-	BootstrapModule,
-	EventsModule,
-	GrpcInstanceModule,
-	PresenceService,
-	PrometheusService,
-} from '@venta/nest/modules';
+import { APP_NAMES, BootstrapModule, EventsModule, GrpcInstanceModule, PrometheusService } from '@venta/nest/modules';
+import { PresenceService } from '@venta/nest/websocket';
 import {
 	GEOLOCATION_SERVICE_NAME,
 	LOCATION_SERVICES_GEOLOCATION_PACKAGE_NAME,

@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { AuthService } from '@venta/nest/guards';
 import { ProtoPathUtil } from '@venta/utils';
-import { AuthenticatedSocketIoAdapter } from '../../networking';
+import { AuthenticatedSocketIoAdapter } from '../../../socket-io';
 import { Logger } from '../logger';
 
 export interface HttpBootstrapOptions {

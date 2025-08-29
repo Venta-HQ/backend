@@ -18,8 +18,9 @@ import type { LocationUpdate } from '@venta/domains/location-services/contracts/
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { WsThrottlerGuard } from '@venta/nest/guards';
 import { WsErrorInterceptor } from '@venta/nest/interceptors';
-import { BaseWebSocketGateway, EventService, Logger, PresenceService } from '@venta/nest/modules';
+import { EventService, Logger } from '@venta/nest/modules';
 import { SchemaValidatorPipe } from '@venta/nest/pipes';
+import { BaseWebSocketGateway, PresenceService } from '@venta/nest/websocket';
 
 @WebSocketGateway({
 	namespace: 'vendor',
