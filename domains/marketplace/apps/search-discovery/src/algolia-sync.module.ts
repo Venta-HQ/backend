@@ -10,7 +10,7 @@ import { AlgoliaSyncService } from './algolia-sync.service';
 			domain: 'marketplace',
 			protocol: 'nats',
 		}),
-		AlgoliaModule,
+		AlgoliaModule.register(),
 		NatsQueueModule,
 	],
 	providers: [AlgoliaSyncController, AlgoliaSyncService],
