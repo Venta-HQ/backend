@@ -19,7 +19,7 @@ import type { FileUploadResult } from '@venta/domains/infrastructure/contracts/t
 import { AppError, ErrorCodes } from '@venta/nest/errors';
 import { HttpAuthGuard } from '@venta/nest/guards';
 import { GrpcInstance, Logger } from '@venta/nest/modules';
-import { SchemaValidatorPipe } from '@venta/nest/validation';
+import { SchemaValidatorPipe } from '@venta/nest/pipes/schema-validator';
 import {
 	FILE_MANAGEMENT_SERVICE_NAME,
 	FileManagementServiceClient,

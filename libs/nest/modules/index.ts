@@ -15,5 +15,3 @@ export * from './monitoring';
 
 // Networking and communication modules
 export * from './networking';
-export * from './infra';
-export * from './validation';
